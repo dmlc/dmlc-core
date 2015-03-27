@@ -7,16 +7,20 @@
  */
 #ifndef DMLC_LOGGING_H_
 #define DMLC_LOGGING_H_
-#include <stdio>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include "./base.h"
+
+#ifndef DMLC_STRICT_CXX98_
+#include <cstdarg>
+#endif
 
 #if DMLC_USE_GLOG
 #include <glog/logging.h>
 #else
 // define simple logging command here
 #endif
-
 namespace dmlc {
 #ifndef DMLC_CUSTOMIZE_ERROR_
 /*! 
@@ -31,6 +35,10 @@ inline void HandleUserError(const char *msg) {
 #else
 void HandleCheckError(const char *msg);
 #endif
+
+#ifdef RABIT_STRICT_CXX98_
+extern "C" void (*Error)(const char *fmt, ...);
+#else
 /*!
  * \brief report error message to user
  *   use this function instead of logger when

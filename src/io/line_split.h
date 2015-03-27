@@ -7,6 +7,8 @@
 #ifndef DMLC_IO_LINE_SPLIT_H_
 #define DMLC_IO_LINE_SPLIT_H_
 
+#include <vector>
+#include <cstdio>
 #include <string>
 #include <cstring>
 #include "../../include/io.h"
@@ -41,7 +43,7 @@ class LineSplitter : public InputSplit {
   // destructor
   virtual ~LineSplitter(void);
   // get next line
-  virtual bool NextLine(std::string *out_data);
+  virtual bool ReadLine(std::string *out_data);
   /*!
    * \brief split names given a splitter
    * \param out_fname st

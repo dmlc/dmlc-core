@@ -11,6 +11,11 @@
 #define DMLC_USE_GLOG 0
 #endif
 
+/*! \brief whether compile with hdfs support */
+#ifndef DMLC_USE_HDFS
+#define DMLC_USE_HDFS 0
+#endif
+
 ///
 /// code block to handle optionally loading
 ///

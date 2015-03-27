@@ -13,7 +13,13 @@ endif
 
 .PHONY: clean all
 
-all: $(BIN)
+OBJ=line_split.o io.o
+
+all: $(OBJ)
+
+line_split.o: src/io/line_split.cc
+io.o: src/io.cc
+
 
 $(BIN) : 
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc,  $^) -lrabit $(LDFLAGS) 

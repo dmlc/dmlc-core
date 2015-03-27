@@ -5,6 +5,8 @@
  */
 #ifndef DMLC_IO_H_
 #define DMLC_IO_H_
+#include <string>
+#include <vector>
 #include "./base.h"
 
 /*! \brief namespace for dmlc */
