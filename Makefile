@@ -1,3 +1,11 @@
+ifneq ("$(wildcard ./config.mk)","")
+	config = config.mk
+else
+	config = make/config.mk
+endif
+# use customized config file
+include $(config)
+
 # this is the common build script for rabit programs
 # you do not have to use it
 export LDFLAGS= -L../../lib -pthread -lm -lrt

@@ -9,6 +9,7 @@
 
 #include <string>
 #include <cstdlib>
+#include <cstring>
 #include <vector>
 #include <hdfs.h>
 #include <errno.h>
@@ -37,7 +38,7 @@ class HDFSStream : public ISeekStream {
       Error("HDFSStream: unknown flag %s", mode);
     }
     fp_ = hdfsOpenFile(fs_, fname, flag, 0, 0, 0);
-    if (fp == NULL) {
+    if (fp_ == NULL) {
       Error("HDFSStream: fail to open %s", fname);
     }
   }
@@ -46,7 +47,7 @@ class HDFSStream : public ISeekStream {
     if (disconnect_when_done_) {
       if (hdfsDisconnect(fs_) != 0) {
         int errsv = errno;
-        Error("HDFSStream.hdfsDisconnect Error:%s", stererror(errsv));
+        Error("HDFSStream.hdfsDisconnect Error:%s", strerror(errsv));
       }
     }
   }
@@ -114,7 +115,10 @@ class HDFSProvider : public LineSplitter::IFileProvider {
  public:
   explicit HDFSProvider(const char *uri) {
     fs_ = hdfsConnect(HDFSStream::GetNameNode().c_str(), 0);
-    utils::Check(fs_ != NULL, "error when connecting to default HDFS");
+    if (fs_ == NULL) {
+      int errsv = errno;      
+      Error("error when connecting to HDFS:%s", strerror(errsv));
+    }
     std::vector<std::string> paths;
     LineSplitter::SplitNames(&paths, uri, "#");
     // get the files
@@ -148,14 +152,14 @@ class HDFSProvider : public LineSplitter::IFileProvider {
   virtual ~HDFSProvider(void) {
     if (hdfsDisconnect(fs_) != 0) {
       int errsv = errno;
-      Error("HDFSStream.hdfsDisconnect Error:%s", stererror(errsv));
+      Error("HDFSStream.hdfsDisconnect Error:%s", strerror(errsv));
     }
   }  
   virtual const std::vector<size_t> &ListFileSize(void) const {
     return fsize_;
   }
   virtual ISeekStream *Open(size_t file_index) {
-    utils::Assert(file_index < fnames_.size(), "file index exceed bound"); 
+    //utils::Assert(file_index < fnames_.size(), "file index exceed bound"); 
     return new HDFSStream(fs_, fnames_[file_index].c_str(), "r", false);
   }
   
