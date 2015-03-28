@@ -41,7 +41,7 @@ class LineSplitter : public InputSplit {
                         unsigned rank,
                         unsigned nsplit);
   // destructor
-  virtual ~LineSplitter(void);
+  virtual ~LineSplitter(void) {}
   // get next line
   virtual bool ReadLine(std::string *out_data);
   /*!

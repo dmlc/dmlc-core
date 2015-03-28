@@ -6,10 +6,9 @@ endif
 # use customized config file
 include $(config)
 
-# this is the common build script for rabit programs
-# you do not have to use it
-export LDFLAGS= -L../../lib -pthread -lm -lrt
-export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -I../../include  
+# this is the common build script for wormhole lib
+export LDFLAGS= -pthread -lm 
+export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC  
 
 # setup opencv
 ifeq ($(USE_HDFS),1)
@@ -22,18 +21,21 @@ endif
 .PHONY: clean all
 
 OBJ=line_split.o io.o
-
-all: $(OBJ)
+ALIB=libwormhole.a
+all: $(ALIB)
 
 line_split.o: src/io/line_split.cc
 io.o: src/io.cc
-
+libwormhole.a: $(OBJ)
 
 $(BIN) : 
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc,  $^) -lrabit $(LDFLAGS) 
 
 $(OBJ) : 
 	$(CXX) -c $(CFLAGS) -o $@ $(firstword $(filter %.cpp %.c %.cc, $^) )
+
+$(ALIB):
+	ar cr $@ $+
 
 clean:
 	$(RM) $(OBJ) $(BIN)  *~ ../src/*~

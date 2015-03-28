@@ -30,4 +30,21 @@ InputSplit* InputSplit::Create(const char *uri,
   }
   return new LineSplitter(new FileProvider(uri), part, nsplit);
 }
+
+ISeekStream *ISeekStream::Create(const char *uri, const char * const flag) {
+  using namespace std;
+  using namespace dmlc::io;
+  if (!strncmp(uri, "file://", 7)) {
+    return new FileStream(uri + 7, flag);
+  }
+  if (!strncmp(uri, "hdfs://", 7)) {
+#if DMLC_USE_HDFS
+    return new HDFSStream(hdfsConnect(HDFSStream::GetNameNode().c_str(), 0),
+                          uri, flag, true);
+#else
+    Error("Please compile with DMLC_USE_HDFS=1");
+#endif
+  }
+  return new FileStream(uri, flag);
+}
 }  // namespace dmlc
