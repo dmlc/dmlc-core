@@ -8,7 +8,6 @@ import sys
 import os
 import subprocess
 from threading import Thread
-import time
 import tracker
 import signal
 
@@ -91,4 +90,5 @@ def mthread_submit(nworker, nserver, envs):
         procs[i].start()
  
 # call submit, with nslave, the commands to run each job and submit function
-tracker.submit(args.nworker, args.server_nodes, fun_submit = mthread_submit, verbose = args.verbose, pscmd= (' '.join(args.command)))
+tracker.submit(args.nworker, args.server_nodes, fun_submit = mthread_submit,
+               verbose = args.verbose, pscmd= (' '.join(args.command)))
