@@ -20,13 +20,14 @@
 #include <glog/logging.h>
 #else
 // define simple logging command here
+#include <>
 #endif
 namespace dmlc {
 #ifndef DMLC_CUSTOMIZE_ERROR_
-/*! 
+/*!
  * \brief handling of user error,
  *  caused by inappropriate input
- * \param msg error message 
+ * \param msg error message
  */
 inline void HandleUserError(const char *msg) {
   fprintf(stderr, "%s\n", msg);
