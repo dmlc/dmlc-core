@@ -11,8 +11,8 @@
 #include <cstdio>
 #include <string>
 #include <cstring>
-#include "../../include/io.h"
-#include "../../include/io/stream_buffer_reader.h"
+#include <dmlc/io.h>
+#include <dmlc/io/stream_buffer_reader.h>
 
 namespace dmlc {
 namespace io {

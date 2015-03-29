@@ -5,38 +5,35 @@ else
 endif
 # use customized config file
 include $(config)
+include make/wormhole.mk
 
 # this is the common build script for wormhole lib
 export LDFLAGS= -pthread -lm
-export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC
+export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude 
+LDFLAGS+= $(WORMHOLE_LDFLAGS)
+CFLAGS+= $(WORMHOLE_CFLAGS)
 
-# setup opencv
-ifeq ($(USE_HDFS),1)
-	CFLAGS+= -DDMLC_USE_HDFS=1 -I$(HADOOP_HDFS_HOME)/include -I$(JAVA_HOME)/include
-	LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm
-else
-	CFLAGS+= -DDMLC_USE_HDFS=0
-endif
-
-.PHONY: clean all
+.PHONY: clean all test
 
 OBJ=line_split.o io.o
 ALIB=libwormhole.a
-TEST=logging_test
+TEST=test/logging_test
 
 all: $(ALIB)
+test: $(TEST)
 
 line_split.o: src/io/line_split.cc
 io.o: src/io.cc
-logging_test: src/test/logging_test.cc
+test/logging_test: test/logging_test.cc
 
 libwormhole.a: $(OBJ)
 
-$(TEST) :
-	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc,  $^) $(LDFLAGS)
+
+$(TEST) : libwormhole.a
+	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
 
 $(BIN) :
-	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc,  $^) -lrabit $(LDFLAGS)
+	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
 
 $(OBJ) :
 	$(CXX) -c $(CFLAGS) -o $@ $(firstword $(filter %.cpp %.c %.cc, $^) )

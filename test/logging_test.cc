@@ -1,4 +1,4 @@
-#include "../base/logging.h"
+#include <dmlc/logging.h>
 
 int main(int argc, char *argv[]) {
 

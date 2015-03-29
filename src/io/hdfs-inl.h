@@ -13,7 +13,7 @@
 #include <vector>
 #include <hdfs.h>
 #include <errno.h>
-#include "../../include/io.h"
+#include <dmlc/io.h>
 #include "./line_split.h"
 
 /*! \brief io interface */

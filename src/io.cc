@@ -1,7 +1,7 @@
 // use direct path for to save compile flags
 #include <cstring>
-#include "../include/io.h"
-#include "../include/logging.h"
+#include <dmlc/io.h>
+#include <dmlc/logging.h>
 #include "io/line_split.h"
 #include "io/localfile-inl.h"
 

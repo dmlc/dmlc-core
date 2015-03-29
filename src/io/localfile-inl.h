@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 #include <cstdio>
-#include "../../include/io.h"
+#include <dmlc/io.h>
 #include "./line_split.h"
 
 namespace dmlc {
