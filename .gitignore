@@ -28,3 +28,4 @@
 *.app
 *~
 config.mk
+*.pyc
