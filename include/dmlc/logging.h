@@ -179,12 +179,12 @@ namespace dmlc {
  *  caused by inappropriate input
  * \param msg error message
  */
-inline void HandleUserError(const char *msg) {
-  fprintf(stderr, "%s\n", msg);
+inline void Error(const std::string &msg) {
+  fprintf(stderr, "%s\n", msg.c_str());
   exit(-1);
 }
 #else
-void HandleCheckError(const char *msg);
+inline void Error(const std::string &msg);
 #endif
 
 #ifdef RABIT_STRICT_CXX98_
@@ -205,7 +205,7 @@ inline void Error(const char *fmt, ...) {
   va_start(args, fmt);
   vsnprintf(&msg[0], kPrintBuffer, fmt, args);
   va_end(args);
-  HandleUserError(msg.c_str());
+  Error(msg);
 }
 #endif
 }  // namespace dmlc
