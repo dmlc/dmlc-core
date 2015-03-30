@@ -31,7 +31,7 @@ InputSplit* InputSplit::Create(const char *uri,
   return new LineSplitter(new FileProvider(uri), part, nsplit);
 }
 
-ISeekStream *ISeekStream::Create(const char *uri, const char * const flag) {
+IStream *IStream::Create(const char *uri, const char * const flag) {
   using namespace std;
   using namespace dmlc::io;
   if (!strncmp(uri, "file://", 7)) {

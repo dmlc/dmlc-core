@@ -31,6 +31,14 @@ class IStream {
   virtual void Write(const void *ptr, size_t size) = 0;
   /*! \brief virtual destructor */
   virtual ~IStream(void) {}
+  /*!
+   * \brief generic factory function
+   *    create an stream, the stream will close the underlying files
+   *    upon deletion
+   * \param uri the uri of the input, can contain hdfs prefix
+   * \param flag can be "w", "r", "a"
+   */
+  static IStream *Create(const char *uri, const char* const flag);
   // helper functions to write/read different data structures
   /*!
    * \brief writes a vector
@@ -69,14 +77,6 @@ class ISeekStream: public IStream {
   virtual size_t Tell(void) = 0;
   /*! \return whether we are at end of file */
   virtual bool AtEnd(void) const = 0;  
-  /*!
-   * \brief generic factory function
-   *    create an stream, the stream will close the underlying files
-   *    upon deletion
-   * \param uri the uri of the input, can contain hdfs prefix
-   * \param flag can be "w", "r", "a"
-   */
-  static ISeekStream *Create(const char *uri, const char* const flag);
 };
 /*!
  * \brief input split header, used to create input split on input dataset

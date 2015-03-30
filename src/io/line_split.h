@@ -27,12 +27,13 @@ class LineSplitter : public InputSplit {
      */
     virtual const std::vector<size_t> &ListFileSize(void) const = 0;
     /*!
-     * \brief get the seek stream of given file_index
+     * \brief get the stream of given file_index, starting at a specified place
      * \param file_index the index of the file in the group
+     * \param begin_pos the beginning position of the stream
      * \return the corresponding seek stream at head of the stream
-     *  the seek stream's resource can be freed by calling delete 
+     *  the stream's resource can be freed by calling delete 
      */
-    virtual ISeekStream *Open(size_t file_index) = 0;
+    virtual IStream *Open(size_t file_index, size_t begin_pos) = 0;
     // virtual destructor
     virtual ~IFileProvider() {}
   };
@@ -65,7 +66,7 @@ class LineSplitter : public InputSplit {
   /*! \brief FileProvider */
   IFileProvider *provider_;
   /*! \brief current input stream */
-  ISeekStream *fs_;
+  IStream *fs_;
   /*! \brief file pointer of which file to read on */
   size_t file_ptr_;
   /*! \brief file pointer where the end of file lies */

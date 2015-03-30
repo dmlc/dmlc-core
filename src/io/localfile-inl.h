@@ -11,6 +11,7 @@
 #include <vector>
 #include <cstdio>
 #include <dmlc/io.h>
+#include <dmlc/logging.h>
 #include "./line_split.h"
 
 namespace dmlc {
@@ -88,9 +89,11 @@ class FileProvider : public LineSplitter::IFileProvider {
   }
   // destrucor
   virtual ~FileProvider(void) {}  
-  virtual ISeekStream *Open(size_t file_index) {
-    //utils::Assert(file_index < fnames_.size(), "file index exceed bound"); 
-    return new FileStream(fnames_[file_index].c_str(), "rb");
+  virtual IStream *Open(size_t file_index, size_t begin_pos) {
+    CHECK(file_index < fnames_.size()) << "file index exceed bound";
+    FileStream *fp = new FileStream(fnames_[file_index].c_str(), "rb");
+    if (begin_pos != 0) fp->Seek(begin_pos);
+    return fp;
   }
   virtual const std::vector<size_t> &ListFileSize(void) const {
     return fsize_;

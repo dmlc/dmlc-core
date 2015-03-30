@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <dmlc/logging.h>
 #include "./line_split.h"
 
 namespace dmlc {
@@ -26,11 +27,10 @@ LineSplitter::LineSplitter(IFileProvider *provider,
   file_ptr_end_ = std::upper_bound(file_offset_.begin(),
                                    file_offset_.end(),
                                    offset_end_) - file_offset_.begin() - 1;
-  fs_ = provider_->Open(file_ptr_);
+  fs_ = provider_->Open(file_ptr_, offset_begin_ - file_offset_[file_ptr_]);
   reader_.set_stream(fs_);
   // try to set the starting position correctly
   if (file_offset_[file_ptr_] != offset_begin_) {
-    fs_->Seek(offset_begin_ - file_offset_[file_ptr_]);
     while (true) {
       char c = reader_.GetChar(); 
       if (!reader_.AtEnd()) ++offset_curr_;
@@ -50,13 +50,12 @@ bool LineSplitter::ReadLine(std::string *out_data) {
       file_ptr_ += 1;
       if (offset_curr_ >= offset_end_) return false;
       if (offset_curr_ != file_offset_[file_ptr_]) {
-        //utils::Error("warning: FILE size not calculated correctly\n");
+        LOG(FATAL) <<"FILE size not calculated correctly\n";
         offset_curr_ = file_offset_[file_ptr_];
       }
-      // TODO wait for logger
-      //utils::Assert(file_ptr_ + 1 < file_offset_.size(), "boundary check");
+      CHECK(file_ptr_ + 1 < file_offset_.size()) << "boundary check";
       delete fs_;
-      fs_ = provider_->Open(file_ptr_);
+      fs_ = provider_->Open(file_ptr_, 0);
       reader_.set_stream(fs_);
     } else {
       ++offset_curr_;

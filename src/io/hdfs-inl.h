@@ -14,6 +14,7 @@
 #include <hdfs.h>
 #include <errno.h>
 #include <dmlc/io.h>
+#include <dmlc/logging.h>
 #include "./line_split.h"
 
 /*! \brief io interface */
@@ -158,9 +159,11 @@ class HDFSProvider : public LineSplitter::IFileProvider {
   virtual const std::vector<size_t> &ListFileSize(void) const {
     return fsize_;
   }
-  virtual ISeekStream *Open(size_t file_index) {
-    //utils::Assert(file_index < fnames_.size(), "file index exceed bound"); 
-    return new HDFSStream(fs_, fnames_[file_index].c_str(), "r", false);
+  virtual IStream *Open(size_t file_index, size_t begin_pos) {
+    CHECK(file_index < fnames_.size()) << "file index exceed bound";
+    ISeekStream * fp = new HDFSStream(fs_, fnames_[file_index].c_str(), "r", false);
+    if (begin_pos != 0) fp->Seek(begin_pos);
+    return fp;
   }
   
  private:
