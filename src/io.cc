@@ -9,6 +9,10 @@
 #include "io/hdfs-inl.h"
 #endif
 
+#if DMLC_USE_S3
+#include "io/aws_s3-inl.h"
+#endif
+
 namespace dmlc {
 InputSplit* InputSplit::Create(const char *uri,
                                unsigned part,
@@ -28,6 +32,13 @@ InputSplit* InputSplit::Create(const char *uri,
     Error("Please compile with DMLC_USE_HDFS=1");
 #endif
   }
+    if (!strncmp(uri, "s3://", 5)) {
+#if DMLC_USE_HDFS
+    return new LineSplitter(new S3Provider(uri), part, nsplit);
+#else
+    Error("Please compile with DMLC_USE_S3=1");
+#endif
+  }
   return new LineSplitter(new FileProvider(uri), part, nsplit);
 }
 
@@ -43,6 +54,14 @@ IStream *IStream::Create(const char *uri, const char * const flag) {
                           uri, flag, true);
 #else
     Error("Please compile with DMLC_USE_HDFS=1");
+#endif
+  }
+
+  if (!strncmp(uri, "s3://", 5)) {
+#if DMLC_USE_S3
+    return S3FileSytem().Open(S3FileSytem::Path(uri), flag);
+#else
+    Error("Please compile with DMLC_USE_S3=1");
 #endif
   }
   return new FileStream(uri, flag);

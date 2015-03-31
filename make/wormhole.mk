@@ -17,3 +17,11 @@ ifeq ($(USE_HDFS),1)
 else
 	WORMHOLE_CFLAGS+= -DDMLC_USE_HDFS=0
 endif
+
+# setup S3
+ifeq ($(USE_S3),1)
+	WORMHOLE_CFLAGS+= -DDMLC_USE_S3=1
+	WORMHOLE_LDFLAGS+= -lcurl -lssl
+else
+	WORMHOLE_CFLAGS+= -DDMLC_USE_S3=0
+endif

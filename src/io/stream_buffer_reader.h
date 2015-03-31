@@ -5,7 +5,7 @@
  */
 #ifndef DMLC_IO_STREAM_BUFFER_READER_H_
 #define DMLC_IO_STREAM_BUFFER_READER_H_
-#include "../io.h"
+#include <dmlc/io.h>
 
 namespace dmlc {
 /*! \brief namespace of all things related to io */

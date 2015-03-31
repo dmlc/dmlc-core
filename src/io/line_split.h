@@ -12,7 +12,7 @@
 #include <string>
 #include <cstring>
 #include <dmlc/io.h>
-#include <dmlc/io/stream_buffer_reader.h>
+#include "./stream_buffer_reader.h"
 
 namespace dmlc {
 namespace io {

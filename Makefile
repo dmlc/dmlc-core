@@ -19,7 +19,7 @@ OBJ=line_split.o io.o
 ALIB=libwormhole.a
 TEST=test/logging_test test/aws_s3_test
 
-all: $(ALIB)
+all: $(ALIB) $(TEST)
 test: $(TEST)
 
 line_split.o: src/io/line_split.cc

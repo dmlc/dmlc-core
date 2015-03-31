@@ -16,6 +16,11 @@
 #define DMLC_USE_HDFS 0
 #endif
 
+/*! \brief whether compile with s3 support */
+#ifndef DMLC_USE_S3
+#define DMLC_USE_S3 0
+#endif
+
 ///
 /// code block to handle optionally loading
 ///
@@ -48,8 +53,8 @@ extern "C" {
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
-typedef unsigned long uint64_t;
-typedef long int64_t;
+typedef unsigned long long uint64_t;
+typedef long long int64_t;
 #else
 #include <inttypes.h>
 #endif
