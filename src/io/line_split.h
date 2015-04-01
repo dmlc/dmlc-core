@@ -12,6 +12,7 @@
 #include <string>
 #include <cstring>
 #include <dmlc/io.h>
+#include "./filesys.h"
 #include "./stream_buffer_reader.h"
 
 namespace dmlc {
@@ -19,52 +20,25 @@ namespace io {
 /*! \brief class that split the files by line */
 class LineSplitter : public InputSplit {
  public:
-  /*! \brief provider class that provide  */
-  class IFileProvider {
-   public:
-    /*!
-     * \return const reference to size of each files
-     */
-    virtual const std::vector<size_t> &ListFileSize(void) const = 0;
-    /*!
-     * \brief get the stream of given file_index, starting at a specified place
-     * \param file_index the index of the file in the group
-     * \param begin_pos the beginning position of the stream
-     * \return the corresponding seek stream at head of the stream
-     *  the stream's resource can be freed by calling delete 
-     */
-    virtual IStream *Open(size_t file_index, size_t begin_pos) = 0;
-    // virtual destructor
-    virtual ~IFileProvider() {}
-  };
   // constructor
-  explicit LineSplitter(IFileProvider *provider,
+  explicit LineSplitter(IFileSystem *fs,
+                        const char *uri,
                         unsigned rank,
                         unsigned nsplit);
   // destructor
-  virtual ~LineSplitter(void) {}
+  virtual ~LineSplitter(void);
   // get next line
   virtual bool ReadLine(std::string *out_data);
-  /*!
-   * \brief split names given a splitter
-   * \param out_fname st
-   * \param uri the input file list
-   * \param dlm deliminetr
-   */
-  static void SplitNames(std::vector<std::string> *out_fname,
-                         const char *uri,
-                         const char *dlm) {
-    std::string uri_ = uri;
-    char *p = std::strtok(BeginPtr(uri_), dlm);
-    while (p != NULL) {
-      out_fname->push_back(std::string(p));
-      p = std::strtok(NULL, dlm);
-    }
-  }
   
+ protected:
+  /*! \brief initialize information in files */
+  void InitInputFileInfo(const char *uri);
+
  private:
-  /*! \brief FileProvider */
-  IFileProvider *provider_;
+  /*! \brief FileSystem */
+  IFileSystem *filesys_;
+  /*! \brief information about files */
+  std::vector<FileInfo> files_;
   /*! \brief current input stream */
   IStream *fs_;
   /*! \brief file pointer of which file to read on */

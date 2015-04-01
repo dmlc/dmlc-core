@@ -4,16 +4,19 @@
 
 namespace dmlc {
 namespace io {
-LineSplitter::LineSplitter(IFileProvider *provider,
+LineSplitter::LineSplitter(IFileSystem *filesys,
+                           const char *uri,
                            unsigned rank,
                            unsigned nsplit) 
-  : provider_(provider), fs_(NULL),
+  : filesys_(filesys), fs_(NULL),
     reader_(kBufferSize) {
-  std::vector<size_t> file_size = provider->ListFileSize();  
-  file_offset_.resize(file_size.size() + 1);
+  // initialize the path
+  this->InitInputFileInfo(uri);
+  
+  file_offset_.resize(files_.size() + 1);
   file_offset_[0] = 0;
-  for (size_t i = 0; i < file_size.size(); ++i) {
-    file_offset_[i + 1] = file_offset_[i] + file_size[i];
+  for (size_t i = 0; i < files_.size(); ++i) {
+    file_offset_[i + 1] = file_offset_[i] + files_[i].size;
   }
   size_t ntotal = file_offset_.back();
   size_t nstep = (ntotal + nsplit - 1) / nsplit;
@@ -27,7 +30,8 @@ LineSplitter::LineSplitter(IFileProvider *provider,
   file_ptr_end_ = std::upper_bound(file_offset_.begin(),
                                    file_offset_.end(),
                                    offset_end_) - file_offset_.begin() - 1;
-  fs_ = provider_->Open(file_ptr_, offset_begin_ - file_offset_[file_ptr_]);
+  fs_ = filesys_->OpenPartForRead(files_[file_ptr_].path,
+                                  offset_begin_ - file_offset_[file_ptr_]);
   reader_.set_stream(fs_);
   // try to set the starting position correctly
   if (file_offset_[file_ptr_] != offset_begin_) {
@@ -37,6 +41,40 @@ LineSplitter::LineSplitter(IFileProvider *provider,
       if (c == '\n' || c == '\r' || c == EOF) return;
     }
   }  
+}
+
+LineSplitter::~LineSplitter(void) {
+  if (fs_ != NULL) {
+    delete fs_; fs_ = NULL;
+  }
+  delete filesys_;  
+}
+
+void LineSplitter::InitInputFileInfo(const char *uri) {
+  // split by #
+  const char *dlm = "#";
+  std::string uri_ = uri;
+  char *p = std::strtok(BeginPtr(uri_), dlm);
+  std::vector<URI> vec;
+
+  while (p != NULL) {
+    URI path(p);
+    FileInfo info = filesys_->GetPathInfo(path);
+    if (info.type == kDirectory) {
+      std::vector<FileInfo> dfiles;
+      filesys_->ListDirectory(info.path, &dfiles);
+      for (size_t i = 0; i < dfiles.size(); ++i) {
+        if (dfiles[i].size != 0 && dfiles[i].type == kFile) {
+          files_.push_back(dfiles[i]);
+        }
+      }
+    } else {
+      if (info.size != 0) {
+        files_.push_back(info);
+      }
+    }
+    p = std::strtok(NULL, dlm);
+  }
 }
 
 bool LineSplitter::ReadLine(std::string *out_data) {
@@ -55,7 +93,7 @@ bool LineSplitter::ReadLine(std::string *out_data) {
       }
       CHECK(file_ptr_ + 1 < file_offset_.size()) << "boundary check";
       delete fs_;
-      fs_ = provider_->Open(file_ptr_, 0);
+      fs_ = filesys_->OpenPartForRead(files_[file_ptr_].path, 0);
       reader_.set_stream(fs_);
     } else {
       ++offset_curr_;

@@ -62,6 +62,216 @@ class S3FileSytem {
       }
     }
   };
+  explicit S3FileSytem(const std::string &aws_access_id,
+                       const std::string &aws_secret_key)
+      : aws_access_id_(aws_access_id),
+        aws_secret_key_(aws_secret_key) {
+  }
+  explicit S3FileSytem(void) {
+    const char *keyid = getenv("AWS_ACCESS_KEY_ID");
+    const char *seckey = getenv("AWS_SECRET_ACCESS_KEY");
+    if (keyid == NULL) {
+      Error("Need to set enviroment variable AWS_ACCESS_KEY_ID to use S3");
+    }
+    if (seckey == NULL) {
+      Error("Need to set enviroment variable AWS_SECRET_ACCESS_KEY to use S3");
+    }
+    aws_access_id_ = keyid;
+    aws_secret_key_ = seckey;
+  }
+  /*!
+   * \brief list the objects in the bucket
+   * \param uri the uri to the bucket
+   * \paam out_list stores the output results
+   */
+  inline void ListObjects(const Path &path, std::vector<ObjectInfo> *out_list) {
+    out_list->clear();
+    std::vector<std::string> amz;
+    std::string date = GetDateString();
+    std::string signature = Sign(aws_secret_key_, "GET", "", "", date, amz,
+                                 std::string("/") + path.bucket + "/");    
+    
+    std::stringstream sauth, sdate, surl;
+    std::stringstream result;
+    sauth << "Authorization: AWS " << aws_access_id_ << ":" << signature;
+    sdate << "Date: " << date;
+    surl << "http://" << path.bucket << ".s3.amazonaws.com"
+         << "/?delimiter=/&prefix=" << path.prefix;
+    // make request
+    CURL *curl = curl_easy_init();
+    curl_slist *slist = NULL;
+    slist = curl_slist_append(slist, sdate.str().c_str());
+    slist = curl_slist_append(slist, sauth.str().c_str());
+    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
+    curl_easy_perform(curl);
+    curl_slist_free_all(slist);
+    curl_easy_cleanup(curl);
+    // parse xml
+    std::string ret = result.str();
+    if (ret.find("<Error>") != std::string::npos) {
+      Error(ret);
+    }
+    {// get files
+      XMLIter xml(ret.c_str());
+      XMLIter data;
+      CHECK(xml.GetNext("IsTruncated", &data)) << "missing IsTruncated";
+      CHECK(data.str() == "false") << "the returning list is truncated";
+      while (xml.GetNext("Contents", &data)) {
+        ObjectInfo info;
+        XMLIter value;
+        CHECK(data.GetNext("Key", &value));
+        info.key = value.str();
+        CHECK(data.GetNext("Size", &value));      
+        info.size = static_cast<size_t>(atol(value.str().c_str()));
+        info.is_dir = false;
+        out_list->push_back(info);
+      }
+    }
+    {// get directories
+      XMLIter xml(ret.c_str());
+      XMLIter data;
+      while (xml.GetNext("CommonPrefixes", &data)) {
+        ObjectInfo info;
+        XMLIter value;
+        CHECK(data.GetNext("Prefix", &value));
+        info.key = value.str();
+        info.size = 0; info.is_dir = true;
+        out_list->push_back(info);
+      }
+    }
+  }
+  /*!
+   * \brief list path, similar behavior to filesystem
+   * \param uri the uri to the bucket
+   * \paam out_list stores the output results
+   */
+  inline void ListPath(const Path &path, std::vector<ObjectInfo> *out_list) {
+    std::vector<ObjectInfo> ret;
+    if (path.prefix[path.prefix.length() - 1] == '/') {
+      this->ListObjects(path, out_list); return;
+    }
+    std::string prefp = path.prefix + '/';
+    out_list->clear();
+    this->ListObjects(path, &ret);
+    for (size_t i = 0; i < ret.size(); ++i) {
+      if (ret[i].key == path.prefix) {
+        CHECK(!ret[i].is_dir);
+        out_list->push_back(ret[i]);
+        return;
+      }
+      if (ret[i].key == prefp) {
+        CHECK(ret[i].is_dir);
+        Path ps = path; ps.prefix = prefp;
+        this->ListObjects(ps, out_list);
+        return;
+      }
+    }
+  }
+  /*!
+   * \brief open a new stream to read a certain object
+   * the stream is still valid even when FileSystem get destructed
+   * \param path the path to the object
+   * \param begin_pos the beginning position to read
+   */
+  IStream *OpenForRead(const Path &path, size_t begin_pos) {
+    std::vector<std::string> amz;
+    std::string date = GetDateString();
+    std::string signature = Sign(aws_secret_key_, "GET", "", "", date, amz,
+                                 std::string("/") + path.bucket + "/" + path.prefix);
+    // generate headers
+    std::stringstream sauth, sdate, surl, srange;
+    std::stringstream result;
+    sauth << "Authorization: AWS " << aws_access_id_ << ":" << signature;
+    sdate << "Date: " << date;
+    surl << "http://" << path.bucket << ".s3.amazonaws.com" << "/" << path.prefix;
+    srange << "Range: bytes=" << begin_pos << "-";
+    // make request
+    CURL *curl = curl_easy_init();
+    curl_slist *slist = NULL;
+    slist = curl_slist_append(slist, sdate.str().c_str());
+    slist = curl_slist_append(slist, srange.str().c_str());
+    slist = curl_slist_append(slist, sauth.str().c_str());
+    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_HEADER, 0L) == CURLE_OK);
+    return new ReadStream(curl, slist);
+  }
+
+  IStream *Open(const Path &path, const char * const flag) {
+    if (!strcmp(flag, "r") || !strcmp(flag, "rb")) {
+      return OpenForRead(path, 0);
+    } else {
+      CHECK(false) << "S3 flag " << flag << " was  not supported";
+    }
+    return NULL;
+  }
+
+ private:
+  inline static std::string
+  Sign(const std::string &key,
+       const std::string &method,
+       const std::string &content_md5,
+       const std::string &content_type,
+       const std::string &date,
+       std::vector<std::string> amz_headers,
+       const std::string &resource) {
+	std::ostringstream stream;
+    stream << method << "\n";
+    stream << content_md5 << "\n";
+    stream << content_type << "\n";
+    stream << date << "\n";
+    std::sort(amz_headers.begin(), amz_headers.end());
+    for (size_t i = 0; i < amz_headers.size(); ++i) {
+      stream << amz_headers[i] << "\n";
+    }
+    stream << resource;
+    return Sign(key, stream.str());
+  }
+  /*!
+   * \brief sign given AWS secret key
+   * \param secret_key the key to compute the sign
+   * \param content the content to sign
+   */
+  inline static std::string Sign(const std::string &key, const std::string &content) {
+    HMAC_CTX ctx;
+    unsigned char md[EVP_MAX_MD_SIZE];
+    unsigned int rlen = 0;
+    HMAC_CTX_init(&ctx);
+    HMAC_Init(&ctx, key.c_str(), key.length(), EVP_sha1());
+    HMAC_Update(&ctx,
+                reinterpret_cast<const unsigned char*>(content.c_str()),
+                content.length());
+    HMAC_Final(&ctx, md, &rlen);
+    HMAC_CTX_cleanup(&ctx);
+    // encode base64
+    BIO *fp = BIO_push(BIO_new(BIO_f_base64()),
+                       BIO_new(BIO_s_mem()));    
+    BIO_write(fp, md, rlen);
+    BIO_ctrl(fp, BIO_CTRL_FLUSH, 0, NULL);    
+    BUF_MEM *res;
+    BIO_get_mem_ptr(fp, &res);    
+    std::string ret(res->data, res->length - 1);
+    BIO_free_all(fp);
+    return ret;
+  }
+  /*!
+   * \brief get the datestring needed by AWS
+   * \return datestring
+   */
+  inline static std::string GetDateString(void) {
+    time_t t = time(NULL);
+    tm gmt;
+    gmtime_r(&t, &gmt);
+    char buf[256];
+    strftime(buf, 256, "%a, %d %b %Y %H:%M:%S GMT", &gmt);
+    return std::string(buf);
+  }
+  
   /*! \brief reader stream that can be used to read */
   struct ReadStream : public IStream {
    public:
@@ -186,155 +396,32 @@ class S3FileSytem {
       return size;
     }
   };
-  explicit S3FileSytem(const std::string &aws_access_id,
-                       const std::string &aws_secret_key)
-      : aws_access_id_(aws_access_id),
-        aws_secret_key_(aws_secret_key) {
-  }
-  explicit S3FileSytem(void) {
-    const char *keyid = getenv("AWS_ACCESS_KEY_ID");
-    const char *seckey = getenv("AWS_SECRET_ACCESS_KEY");
-    if (keyid == NULL) {
-      Error("Need to set enviroment variable AWS_ACCESS_KEY_ID to use S3");
+  /*! \brief reader stream that can be used to read */
+  struct WriteStream : public IStream {
+   public:    
+   private:
+    explicit WriteStream(const std::string &aws_access_id,
+                         const std::string &aws_secret_key,
+                         const Path &path)
+        : aws_access_id_(aws_access_id),
+          aws_secret_key_(aws_secret_key) {
+      path_ = path;
     }
-    if (seckey == NULL) {
-      Error("Need to set enviroment variable AWS_SECRET_ACCESS_KEY to use S3");
-    }
-    aws_access_id_ = keyid;
-    aws_secret_key_ = seckey;
-  }
-  /*!
-   * \brief list the objects in the bucket
-   * \param uri the uri to the bucket
-   * \paam out_list stores the output results
-   */
-  inline void ListObjects(const Path &path, std::vector<ObjectInfo> *out_list) {
-    out_list->clear();
-    std::vector<std::string> amz;
-    std::string date = GetDateString();
-    std::string signature = Sign("GET", "", "", date, amz,
-                                 std::string("/") + path.bucket + "/");    
-    
-    std::stringstream sauth, sdate, surl;
-    std::stringstream result;
-    sauth << "Authorization: AWS " << aws_access_id_ << ":" << signature;
-    sdate << "Date: " << date;
-    surl << "http://" << path.bucket << ".s3.amazonaws.com"
-         << "/?delimiter=/&prefix=" << path.prefix;
-    // make request
-    CURL *curl = curl_easy_init();
-    curl_slist *slist = NULL;
-    slist = curl_slist_append(slist, sdate.str().c_str());
-    slist = curl_slist_append(slist, sauth.str().c_str());
-    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
-    curl_easy_perform(curl);
-    curl_slist_free_all(slist);
-    curl_easy_cleanup(curl);
-    // parse xml
-    std::string ret = result.str();
-    if (ret.find("<Error>") != std::string::npos) {
-      Error(ret);
-    }
-    {// get files
-      XMLIter xml(ret.c_str());
-      XMLIter data;
-      CHECK(xml.GetNext("IsTruncated", &data)) << "missing IsTruncated";
-      CHECK(data.str() == "false") << "the returning list is truncated";
-      while (xml.GetNext("Contents", &data)) {
-        ObjectInfo info;
-        XMLIter value;
-        CHECK(data.GetNext("Key", &value));
-        info.key = value.str();
-        CHECK(data.GetNext("Size", &value));      
-        info.size = static_cast<size_t>(atol(value.str().c_str()));
-        info.is_dir = false;
-        out_list->push_back(info);
-      }
-    }
-    {// get directories
-      XMLIter xml(ret.c_str());
-      XMLIter data;
-      while (xml.GetNext("CommonPrefixes", &data)) {
-        ObjectInfo info;
-        XMLIter value;
-        CHECK(data.GetNext("Prefix", &value));
-        info.key = value.str();
-        info.size = 0; info.is_dir = true;
-        out_list->push_back(info);
-      }
-    }
-  }
-  /*!
-   * \brief list path, similar behavior to filesystem
-   * \param uri the uri to the bucket
-   * \paam out_list stores the output results
-   */
-  inline void ListPath(const Path &path, std::vector<ObjectInfo> *out_list) {
-    std::vector<ObjectInfo> ret;
-    if (path.prefix[path.prefix.length() - 1] == '/') {
-      this->ListObjects(path, out_list); return;
-    }
-    std::string prefp = path.prefix + '/';
-    out_list->clear();
-    this->ListObjects(path, &ret);
-    for (size_t i = 0; i < ret.size(); ++i) {
-      if (ret[i].key == path.prefix) {
-        CHECK(!ret[i].is_dir);
-        out_list->push_back(ret[i]);
-        return;
-      }
-      if (ret[i].key == prefp) {
-        CHECK(ret[i].is_dir);
-        Path ps = path; ps.prefix = prefp;
-        this->ListObjects(ps, out_list);
-        return;
-      }
-    }
-  }
-  /*!
-   * \brief open a new stream to read a certain object
-   * the stream is still valid even when FileSystem get destructed
-   * \param path the path to the object
-   * \param begin_pos the beginning position to read
-   */
-  IStream *OpenForRead(const Path &path, size_t begin_pos) {
-    std::vector<std::string> amz;
-    std::string date = GetDateString();
-    std::string signature = Sign("GET", "", "", date, amz,
-                                 std::string("/") + path.bucket + "/" + path.prefix);
-    // generate headers
-    std::stringstream sauth, sdate, surl, srange;
-    std::stringstream result;
-    sauth << "Authorization: AWS " << aws_access_id_ << ":" << signature;
-    sdate << "Date: " << date;
-    surl << "http://" << path.bucket << ".s3.amazonaws.com" << "/" << path.prefix;
-    srange << "Range: bytes=" << begin_pos << "-";
-    // make request
-    CURL *curl = curl_easy_init();
-    curl_slist *slist = NULL;
-    slist = curl_slist_append(slist, sdate.str().c_str());
-    slist = curl_slist_append(slist, srange.str().c_str());
-    slist = curl_slist_append(slist, sauth.str().c_str());
-    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_HEADER, 0L) == CURLE_OK);
-    return new ReadStream(curl, slist);
-  }
-
-  IStream *Open(const Path &path, const char * const flag) {
-    if (!strcmp(flag, "r") || !strcmp(flag, "rb")) {
-      return OpenForRead(path, 0);
-    } else {
-      CHECK(false) << "S3 flag " << flag << " was  not supported";
-    }
-    return NULL;
-  }
- private:
+    // friend of S3FileSytem
+    friend class S3FileSytem;
+    // access id to aws
+    std::string aws_access_id_;
+    // access key to aws
+    std::string aws_secret_key_;
+    // internal data buffer
+    std::string buffer_;
+    // path to write data
+    Path path_;
+    // curl handle
+    CURL *curl_;
+    // header list
+    curl_slist *slist_;
+  };
   // access id to aws
   std::string aws_access_id_;
   // access key to aws
@@ -385,64 +472,6 @@ class S3FileSytem {
       return true;
     }
   };
-  inline std::string Sign(const std::string &method,
-                          const std::string &content_md5,
-                          const std::string &content_type,
-                          const std::string &date,
-                          std::vector<std::string> amz_headers,
-                          const std::string &resource) {
-	std::ostringstream stream;
-    stream << method << "\n";
-    stream << content_md5 << "\n";
-    stream << content_type << "\n";
-    stream << date << "\n";
-    std::sort(amz_headers.begin(), amz_headers.end());
-    for (size_t i = 0; i < amz_headers.size(); ++i) {
-      stream << amz_headers[i] << "\n";
-    }
-    stream << resource;
-    return Sign(stream.str());
-  }
-  /*!
-   * \brief sign given AWS secret key
-   * \param secret_key the key to compute the sign
-   * \param content the content to sign
-   */
-  inline std::string Sign(const std::string &content) {
-    HMAC_CTX ctx;
-    unsigned char md[EVP_MAX_MD_SIZE];
-    unsigned int rlen = 0;
-    HMAC_CTX_init(&ctx);
-    HMAC_Init(&ctx, aws_secret_key_.c_str(),
-              aws_secret_key_.length(), EVP_sha1());
-    HMAC_Update(&ctx,
-                reinterpret_cast<const unsigned char*>(content.c_str()),
-                content.length());
-    HMAC_Final(&ctx, md, &rlen);
-    HMAC_CTX_cleanup(&ctx);
-    // encode base64
-    BIO *fp = BIO_push(BIO_new(BIO_f_base64()),
-                       BIO_new(BIO_s_mem()));    
-    BIO_write(fp, md, rlen);
-    BIO_ctrl(fp, BIO_CTRL_FLUSH, 0, NULL);    
-    BUF_MEM *res;
-    BIO_get_mem_ptr(fp, &res);    
-    std::string ret(res->data, res->length - 1);
-    BIO_free_all(fp);
-    return ret;
-  }
-  /*!
-   * \brief get the datestring needed by AWS
-   * \return datestring
-   */
-  inline static std::string GetDateString(void) {
-    time_t t = time(NULL);
-    tm gmt;
-    gmtime_r(&t, &gmt);
-    char buf[256];
-    strftime(buf, 256, "%a, %d %b %Y %H:%M:%S GMT", &gmt);
-    return std::string(buf);
-  }
 };
 
 /*! \brief line split from normal file system */

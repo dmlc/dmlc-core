@@ -15,7 +15,7 @@ CFLAGS+= $(WORMHOLE_CFLAGS)
 
 .PHONY: clean all test
 
-OBJ=line_split.o io.o
+OBJ=line_split.o io.o hdfs_filesys.o local_filesys.o
 ALIB=libwormhole.a
 TEST=test/logging_test test/aws_s3_test
 
@@ -23,6 +23,8 @@ all: $(ALIB) $(TEST)
 test: $(TEST)
 
 line_split.o: src/io/line_split.cc
+hdfs_filesys.o: src/io/hdfs_filesys.cc
+local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
 test/logging_test: test/logging_test.cc
 test/aws_s3_test: test/aws_s3_test.cc src/io/*.h
