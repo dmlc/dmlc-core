@@ -11,7 +11,7 @@
 #endif
 
 #if DMLC_USE_S3
-//#include "io/aws_s3-inl.h"
+#include "io/s3_filesys.h"
 #endif
 
 namespace dmlc {
@@ -34,8 +34,8 @@ InputSplit* InputSplit::Create(const char *uri,
 #endif
   }
   if (!strncmp(uri, "s3://", 5)) {
-#if DMLC_USE_HDFS
-      //return new LineSplitter(new S3Provider(uri), part, nsplit);
+#if DMLC_USE_S3
+    return new LineSplitter(new S3FileSystem(), uri, part, nsplit);
 #else
     Error("Please compile with DMLC_USE_S3=1");
 #endif
@@ -59,7 +59,7 @@ IStream *IStream::Create(const char *uri, const char * const flag) {
 
   if (!strncmp(uri, "s3://", 5)) {
 #if DMLC_USE_S3
-    //return S3FileSytem().Open(S3FileSytem::Path(uri), flag);
+    return S3FileSystem().Open(URI(uri), flag);
 #else
     Error("Please compile with DMLC_USE_S3=1");
 #endif

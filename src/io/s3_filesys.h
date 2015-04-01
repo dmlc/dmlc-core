@@ -13,10 +13,11 @@ namespace dmlc {
 namespace io {
 /*! \brief AWS S3 filesystem */
 class S3FileSystem : public IFileSystem {
+ public:
   /*! \brief constructor */
   S3FileSystem();
   /*! \brief destructor */
-  virtual ~S3FileSystem();
+  virtual ~S3FileSystem() {}
   /*!
    * \brief get information about a path 
    * \param path the path to the file
@@ -46,7 +47,6 @@ class S3FileSystem : public IFileSystem {
   virtual IStream *OpenPartForRead(const URI &path, size_t begin_bytes);
 
  private:
-
   /*! \brief AWS access id */
   std::string aws_access_id_;
   /*! \brief AWS secret key */
