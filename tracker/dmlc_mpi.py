@@ -9,7 +9,7 @@ import subprocess
 import tracker
 from threading import Thread
 
-parser = argparse.ArgumentParser(description='Rabit script to submit rabit job using MPI')
+parser = argparse.ArgumentParser(description='DMLC script to submit dmlc job using MPI')
 parser.add_argument('-n', '--nworker', required=True, type=int,
                     help = 'number of worker proccess to be launched')
 parser.add_argument('-s', '--server-nodes', default = 0, type=int,
@@ -19,7 +19,7 @@ parser.add_argument('-v', '--verbose', default=0, choices=[0, 1], type=int,
 parser.add_argument('-H', '--hostfile', type=str,
                     help = 'the hostfile of mpi server')
 parser.add_argument('command', nargs='+',
-                    help = 'command for rabit program')
+                    help = 'command for dmlc program')
 args = parser.parse_args()
 #
 # submission script using MPI

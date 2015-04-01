@@ -37,14 +37,14 @@ class LocalFileSystem : public IFileSystem {
    * \param uri the uri of the input, can contain hdfs prefix
    * \param flag can be "w", "r", "a"   
    */  
-  virtual IStream *Open(const URI &path, const char* const flag);
+  virtual ISeekStream *Open(const URI &path, const char* const flag);
   /*!
    * \brief open a part of stream stream for read,
    *   with ability to specify starting location
    * \param path the path to the file
    * \parma begin_bytes the beginning bytes to start reading
    */
-  virtual IStream *OpenPartForRead(const URI &path, size_t begin_bytes);
+  virtual ISeekStream *OpenPartForRead(const URI &path, size_t begin_bytes);
 };
 }  // namespace io
 }  // namespace dmlc

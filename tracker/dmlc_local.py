@@ -11,7 +11,7 @@ from threading import Thread
 import tracker
 import signal
 
-parser = argparse.ArgumentParser(description='DMLC script to submit rabit job locally as python subprocess')
+parser = argparse.ArgumentParser(description='DMLC script to submit dmlc job locally as python subprocess')
 parser.add_argument('-n', '--nworker', required=True, type=int,
                     help = 'number of worker nodes to be launched')
 parser.add_argument('-s', '--server-nodes', default = 0, type=int,

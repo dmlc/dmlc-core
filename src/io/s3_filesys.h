@@ -4,21 +4,19 @@
  * \brief HDFS access module
  * \author Tianqi Chen
  */
-#ifndef DMLC_IO_HDFS_FILESYS_H_
-#define DMLC_IO_HDFS_FILESYS_H_
+#ifndef DMLC_IO_S3_FILESYS_H_
+#define DMLC_IO_S3_FILESYS_H_
 
-#include <hdfs.h>
 #include "./filesys.h"
 
 namespace dmlc {
 namespace io {
-/*! \brief HDFS file system */
-class HDFSFileSystem : public IFileSystem {
- public:
+/*! \brief AWS S3 filesystem */
+class S3FileSystem : public IFileSystem {
   /*! \brief constructor */
-  HDFSFileSystem();
+  S3FileSystem();
   /*! \brief destructor */
-  virtual ~HDFSFileSystem();
+  virtual ~S3FileSystem();
   /*!
    * \brief get information about a path 
    * \param path the path to the file
@@ -38,21 +36,22 @@ class HDFSFileSystem : public IFileSystem {
    * \param uri the uri of the input, can contain hdfs prefix
    * \param flag can be "w", "r", "a"   
    */  
-  virtual ISeekStream *Open(const URI &path, const char* const flag);
+  virtual IStream *Open(const URI &path, const char* const flag);
   /*!
    * \brief open a part of stream stream for read,
    *   with ability to specify starting location
    * \param path the path to the file
    * \parma begin_bytes the beginning bytes to start reading
    */
-  virtual ISeekStream *OpenPartForRead(const URI &path, size_t begin_bytes);
+  virtual IStream *OpenPartForRead(const URI &path, size_t begin_bytes);
 
  private:
-  /*! \brief namenode address */
-  std::string namenode_;
-  /*! \brief hdfs handle */
-  hdfsFS fs_;
+
+  /*! \brief AWS access id */
+  std::string aws_access_id_;
+  /*! \brief AWS secret key */
+  std::string aws_secret_key_;
 };
 }  // namespace io
 }  // namespace dmlc
-#endif  // DMLC_IO_HDFS_FILESYS_H_
+#endif 

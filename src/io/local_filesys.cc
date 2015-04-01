@@ -90,7 +90,8 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
   if (dir == NULL) {
     int errsv = errno;
     Error("LocalFileSystem.ListDirectory  error: %s", strerror(errsv));
-  }  
+  }
+  out_list->clear();
   struct dirent *ent;
   /* print all the files and directories within directory */
   while ((ent = readdir(dir)) != NULL) {
@@ -106,10 +107,10 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
   closedir(dir);
 }
 
-IStream *LocalFileSystem::Open(const URI &path, const char* const flag) {
+ISeekStream *LocalFileSystem::Open(const URI &path, const char* const flag) {
   return new FileStream(path.name.c_str(), flag);
 }
-IStream *LocalFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
+ISeekStream *LocalFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
   FileStream *fp = new FileStream(path.name.c_str(), "r");
   fp->Seek(begin_bytes);
   return fp;

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-This is a script to submit rabit job via Yarn
-rabit will run as a Yarn application
+This is a script to submit dmlc job via Yarn
+dmlc will run as a Yarn application
 """
 import argparse
 import sys
@@ -20,7 +20,7 @@ if not os.path.exists(YARN_JAR_PATH):
     cmd = 'cd %s;./build.sh' % (os.path.dirname(__file__) + '/../yarn/')
     print cmd
     subprocess.check_call(cmd, shell = True, env = os.environ) 
-    assert os.path.exists(YARN_JAR_PATH), "failed to build rabit-yarn.jar, try it manually"
+    assert os.path.exists(YARN_JAR_PATH), "failed to build dmlc-yarn.jar, try it manually"
 
 hadoop_binary  = None
 # code 
@@ -32,7 +32,7 @@ if hadoop_home != None:
         assert os.path.exists(hadoop_binary), "HADOOP_HOME does not contain the hadoop binary"
 
 
-parser = argparse.ArgumentParser(description='Rabit script to submit rabit jobs to Yarn.')
+parser = argparse.ArgumentParser(description='Dmlc script to submit dmlc jobs to Yarn.')
 parser.add_argument('-n', '--nworker', required=True, type=int,
                     help = 'number of worker proccess to be launched')
 parser.add_argument('-hip', '--host_ip', default='auto', type=str,
@@ -56,10 +56,10 @@ parser.add_argument('-f', '--files', default = [], action='append',
 parser.add_argument('--jobname', default='auto', help = 'customize jobname in tracker')
 parser.add_argument('--tempdir', default='/tmp', help = 'temporary directory in HDFS that can be used to store intermediate results')
 parser.add_argument('--vcores', default = 1, type=int,
-                    help = 'number of vcpores to request in each mapper, set it if each rabit job is multi-threaded')
+                    help = 'number of vcpores to request in each mapper, set it if each dmlc job is multi-threaded')
 parser.add_argument('-mem', '--memory_mb', default=1024, type=int,
                     help = 'maximum memory used by the process. Guide: set it large (near mapred.cluster.max.map.memory.mb)'\
-                        'if you are running multi-threading rabit,'\
+                        'if you are running multi-threading dmlc,'\
                         'so that each node can occupy all the mapper slots in a machine for maximum performance')
 parser.add_argument('--libhdfs-opts', default='-Xmx128m', type=str,
                     help = 'setting to be passed to libhdfs')
@@ -67,11 +67,11 @@ parser.add_argument('--name-node', default='default', type=str,
                     help = 'the namenode address of hdfs, libhdfs should connect to, normally leave it as default')
 
 parser.add_argument('command', nargs='+',
-                    help = 'command for rabit program')
+                    help = 'command for dmlc program')
 args = parser.parse_args()
 
 if args.jobname == 'auto':
-    args.jobname = ('Rabit[nworker=%d]:' % args.nworker) + args.command[0].split('/')[-1];
+    args.jobname = ('Dmlc[nworker=%d]:' % args.nworker) + args.command[0].split('/')[-1];
 
 if hadoop_binary == None:
     parser.add_argument('-hb', '--hadoop_binary', required = True,
@@ -97,7 +97,7 @@ hadoop_version = out[1].split('.')
 (classpath, err) = subprocess.Popen('%s classpath --glob' % args.hadoop_binary, shell = True, stdout=subprocess.PIPE).communicate()
 
 if hadoop_version < 2:    
-    print 'Current Hadoop Version is %s, rabit_yarn will need Yarn(Hadoop 2.0)' % out[1]
+    print 'Current Hadoop Version is %s, dmlc_yarn will need Yarn(Hadoop 2.0)' % out[1]
 
 def yarn_submit(nworker, nserver, pass_env):
     """

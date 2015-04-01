@@ -134,11 +134,11 @@ void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_l
   hdfsFreeFileInfo(files, nentry);
 }
 
-IStream *HDFSFileSystem::Open(const URI &path, const char* const flag) {
+ISeekStream *HDFSFileSystem::Open(const URI &path, const char* const flag) {
   return new HDFSStream(namenode_.c_str(), path.str().c_str(), flag);
 }
 
-IStream *HDFSFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
+ISeekStream *HDFSFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
   ISeekStream *stream = new HDFSStream(namenode_.c_str(), path.str().c_str(), "r");
   stream->Seek(begin_bytes);
   return stream;
