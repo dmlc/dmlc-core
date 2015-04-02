@@ -187,7 +187,7 @@ inline void Error(const std::string &msg) {
 inline void Error(const std::string &msg);
 #endif
 
-#ifdef RABIT_STRICT_CXX98_
+#ifdef DMLC_STRICT_CXX98_
 extern "C" void (*Error)(const char *fmt, ...);
 #else
 /*!
