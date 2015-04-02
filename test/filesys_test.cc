@@ -55,6 +55,6 @@ int main(int argc, char *argv[]) {
     printf("copy %s to %s finished\n", argv[2], argv[3]);
     return 0;
   }
-  Error("unknown command %s", argv[1]);
+  LOG(FATAL) << "unknown command " << argv[1];
   return 0;
 }

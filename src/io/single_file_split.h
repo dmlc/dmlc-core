@@ -26,9 +26,7 @@ class SingleFileSplit : public InputSplit {
     }
     if (!use_stdin_) {
       std::FILE *fp = fopen64(fname, "rb");
-      if (fp == NULL) {
-        Error("FileStream: fail to open %s", fname);
-      }
+      CHECK (fp != NULL) << "SingleFileSplit: fail to open " << fname;
     }
     end_of_file_ = false;
   }

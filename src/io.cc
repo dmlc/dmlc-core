@@ -26,17 +26,17 @@ IFileSystem *IFileSystem::Create(const std::string &protocol) {
 #if DMLC_USE_HDFS
     return new HDFSFileSystem();
 #else
-    Error("Please compile with DMLC_USE_HDFS=1 to use hdfs");
+    LOG(FATAL) << "Please compile with DMLC_USE_HDFS=1 to use hdfs";
 #endif
   }
   if (protocol == "s3://") {
 #if DMLC_USE_HDFS
     return new S3FileSystem();
 #else
-    Error("Please compile with DMLC_USE_HDFS=1 to use hdfs");
+    LOG(FATAL) << "Please compile with DMLC_USE_HDFS=1 to use hdfs";
 #endif
   }
-  Error("unknown filesystem protocol " + protocol);
+  LOG(FATAL) << "unknown filesystem protocol " + protocol;
   return NULL;
 }
 } // namespace io

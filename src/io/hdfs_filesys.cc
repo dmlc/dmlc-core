@@ -19,25 +19,23 @@ class HDFSStream : public ISeekStream {
     } else if (!strcmp(mode, "a"))  {
       flag = O_WRONLY | O_APPEND;
     } else {
-      Error("HDFSStream: unknown flag %s", mode);
+      LOG(FATAL) << "HDFSStream: unknown flag %s" << mode;
     }
     fp_ = hdfsOpenFile(fs_, fname, flag, 0, 0, 0);
-    if (fp_ == NULL) {
-      Error("HDFSStream: fail to open %s", fname);
-    }
+    CHECK(fp_ != NULL) << "HDFSStream: fail to open " << fname;
   }
   virtual ~HDFSStream(void) {
     this->Close();
     if (hdfsDisconnect(fs_) != 0) {
       int errsv = errno;
-      Error("HDFSStream.hdfsDisconnect Error:%s", strerror(errsv));
+      LOG(FATAL) << "HDFSStream.hdfsDisconnect Error:" << strerror(errsv);
     }
   }
   virtual size_t Read(void *ptr, size_t size) {
     tSize nread = hdfsRead(fs_, fp_, ptr, size);
     if (nread == -1) {
       int errsv = errno;
-      Error("HDFSStream.Read Error:%s", strerror(errsv));
+      LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);
     }
     if (nread == 0) {
       at_end_ = true;
@@ -50,7 +48,7 @@ class HDFSStream : public ISeekStream {
       tSize nwrite = hdfsWrite(fs_, fp_, buf, size);
       if (nwrite == -1) {
         int errsv = errno;
-        Error("HDFSStream.Write Error:%s", strerror(errsv));
+        LOG(FATAL) << "HDFSStream.hdfsWrite Error:" << strerror(errsv);
       }
       size_t sz = static_cast<size_t>(nwrite);
       buf += sz; size -= sz;
@@ -59,14 +57,14 @@ class HDFSStream : public ISeekStream {
   virtual void Seek(size_t pos) {
     if (hdfsSeek(fs_, fp_, pos) != 0) {
       int errsv = errno;
-      Error("HDFSStream.Seek Error:%s", strerror(errsv));
+      LOG(FATAL) << "HDFSStream.hdfsSeek Error:" << strerror(errsv);
     }
   }
   virtual size_t Tell(void) {
     tOffset offset = hdfsTell(fs_, fp_);
     if (offset == -1) {
       int errsv = errno;
-      Error("HDFSStream.Tell Error:%s", strerror(errsv));
+      LOG(FATAL) << "HDFSStream.hdfsTell Error:" << strerror(errsv);
     }
     return static_cast<size_t>(offset);
   }
@@ -77,7 +75,7 @@ class HDFSStream : public ISeekStream {
     if (fp_ != NULL) {
       if (hdfsCloseFile(fs_, fp_) == -1) {
         int errsv = errno;
-        Error("HDFSStream.Close Error:%s", strerror(errsv));
+        LOG(FATAL) << "HDFSStream.hdfsClose Error:" << strerror(errsv);
       }
       fp_ = NULL;
     }
@@ -95,7 +93,7 @@ HDFSFileSystem::HDFSFileSystem(void) {
 HDFSFileSystem::~HDFSFileSystem(void) {
   if (hdfsDisconnect(fs_) != 0) {
     int errsv = errno;
-    Error("HDFSStream.hdfsDisconnect Error:%s", strerror(errsv));
+    LOG(FATAL) << "HDFSStream.hdfsDisconnect Error:" << strerror(errsv);
   }  
 }
 
@@ -105,7 +103,7 @@ inline FileInfo ConvertPathInfo(const hdfsFileInfo &info) {
   switch (info.mKind) {
     case 'D': ret.type = kDirectory; break;
     case 'F': ret.type = kFile; break;
-    default: CHECK(false) << "unknown file type" << info.mKind;
+    default: LOG(FATAL) << "unknown file type" << info.mKind;
   }
   return ret;
 }
@@ -113,9 +111,7 @@ inline FileInfo ConvertPathInfo(const hdfsFileInfo &info) {
 FileInfo HDFSFileSystem::GetPathInfo(const URI &path) {
   CHECK(path.protocol == "hdfs") << "HDFSFileSystem only works with hdfs";
   hdfsFileInfo *info = hdfsGetPathInfo(fs_, path.str().c_str());
-  if (info == NULL) {
-    Error(std::string("path do not exist:") + path.str());
-  }
+  CHECK(info != NULL) << "Path do not exist:" << path.str();
   FileInfo ret = ConvertPathInfo(*info);
   hdfsFreeFileInfo(info, 1);
   return ret;
@@ -124,9 +120,7 @@ FileInfo HDFSFileSystem::GetPathInfo(const URI &path) {
 void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_list) {
   int nentry;
   hdfsFileInfo *files = hdfsListDirectory(fs_, path.str().c_str(), &nentry);
-  if (files == NULL) {
-    Error(std::string("error when ListDirectory ") + path.str());
-  }
+  CHECK(files != NULL) << "Error when ListDirectory " << path.str();
   out_list->clear();
   for (int i = 0; i < nentry; ++i) {
     out_list->push_back(ConvertPathInfo(files[i]));

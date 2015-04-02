@@ -36,9 +36,7 @@ class FileStream : public ISeekStream {
       if (flag == "w") flag = "wb";
       if (flag == "r") flag = "rb";
       fp = fopen64(fname, flag.c_str());
-      if (fp == NULL) {
-        Error("FileStream: fail to open %s", fname);
-      }
+      CHECK(fp != NULL) << "FileStream: fail to open " << fname;
     }
   }
   virtual ~FileStream(void) {
@@ -74,7 +72,8 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
   struct stat sb;
   if (stat(path.name.c_str(), &sb) == -1) {
     int errsv = errno;
-    Error("LocalFileSystem.GetPathInfo %s error:%s", path.name.c_str(), strerror(errsv));
+    LOG(FATAL) << "LocalFileSystem.GetPathInfo " << path.name 
+               << " Error:" << strerror(errsv);
   }
   FileInfo ret;
   ret.path = path;
@@ -93,7 +92,8 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
   DIR *dir = opendir(path.name.c_str());
   if (dir == NULL) {
     int errsv = errno;
-    Error("LocalFileSystem.ListDirectory  error: %s", strerror(errsv));
+    LOG(FATAL) << "LocalFileSystem.ListDirectory " << path.str()
+               <<" error: " << strerror(errsv);
   }
   out_list->clear();
   struct dirent *ent;
@@ -115,7 +115,8 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
   HANDLE handle = FindFirstFile(pattern.c_str(), &fd); 
   if (handle == INVALID_HANDLE_VALUE) {
     int errsv = GetLastError();
-    Error("LocalFileSystem.ListDirectory %s error: %s", path.name.c_str(), strerror(errsv));  
+    LOG(FATAL) << "LocalFileSystem.ListDirectory " << path.str()
+               << " error: " << strerror(errsv);
   }
   do {
    if (strcmp(fd.cFileName, ".") && strcmp(fd.cFileName, "..")) {

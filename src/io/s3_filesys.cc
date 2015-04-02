@@ -304,7 +304,7 @@ void ReadStream::Init(size_t begin_bytes) {
   this->FillBuffer(1);
   if (FindHttpError(header_)) {
     while (this->FillBuffer(buffer_.length() + 256) != 0);
-    Error("Error\n" + header_ + buffer_);
+    LOG(FATAL) << "AWS S3 Error:\n" << header_ << buffer_;
   }
   // setup the variables
   at_end_ = false;
@@ -546,7 +546,7 @@ void WriteStream::Run(const std::string &method,
   *out_data = rdata.str();
   if (FindHttpError(*out_header) ||
       out_data->find("<Error>") != std::string::npos) {
-    Error("Error:\n" + *out_header + *out_data);
+    LOG(FATAL) << "AWS S3 Error:\n" << *out_header << *out_data;
   }
 }
 void WriteStream::Init(void) {
@@ -636,7 +636,7 @@ void ListObjects(const URI &path,
   // parse xml
   std::string ret = result.str();
   if (ret.find("<Error>") != std::string::npos) {
-    Error(ret);
+    LOG(FATAL) << ret;
   }
   {// get files
     XMLIter xml(ret.c_str());
@@ -677,10 +677,10 @@ S3FileSystem::S3FileSystem() {
   const char *keyid = getenv("AWS_ACCESS_KEY_ID");
   const char *seckey = getenv("AWS_SECRET_ACCESS_KEY");
   if (keyid == NULL) {
-    Error("Need to set enviroment variable AWS_ACCESS_KEY_ID to use S3");
+    LOG(FATAL) << "Need to set enviroment variable AWS_ACCESS_KEY_ID to use S3";
   }
   if (seckey == NULL) {
-    Error("Need to set enviroment variable AWS_SECRET_ACCESS_KEY to use S3");
+    LOG(FATAL) << "Need to set enviroment variable AWS_SECRET_ACCESS_KEY to use S3";
   }
   aws_access_id_ = keyid;
   aws_secret_key_ = seckey;
@@ -694,7 +694,7 @@ FileInfo S3FileSystem::GetPathInfo(const URI &path) {
     if (files[i].path.name == path.name) return files[i];
     if (files[i].path.name == pdir) return files[i];
   }
-  Error("S3FileSytem.GetPathInfo cannot find information about" + path.str());
+  LOG(FATAL) << "S3FileSytem.GetPathInfo cannot find information about " + path.str();
   return files[0];
 }
 void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_list) {
