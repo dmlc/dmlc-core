@@ -9,13 +9,19 @@ include make/wormhole.mk
 
 # this is the common build script for wormhole lib
 export LDFLAGS= -pthread -lm
-export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude 
-LDFLAGS+= $(WORMHOLE_LDFLAGS) -lcurl 
+export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude
+LDFLAGS+= $(WORMHOLE_LDFLAGS) -lcurl
 CFLAGS+= $(WORMHOLE_CFLAGS)
 
 .PHONY: clean all test
 
-OBJ=line_split.o io.o hdfs_filesys.o local_filesys.o s3_filesys.o
+OBJ=line_split.o io.o local_filesys.o s3_filesys.o
+
+ifeq ($(USE_HDFS), 1)
+OBJ+=hdfs_filesys.o
+CFLAGS+=-DDMLC_USE_HDFS=1
+endif
+
 ALIB=libwormhole.a
 TEST=test/logging_test test/filesys_test
 
@@ -33,7 +39,7 @@ test/filesys_test: test/filesys_test.cc src/io/*.h  libwormhole.a
 
 libwormhole.a: $(OBJ)
 
-$(TEST) : 
+$(TEST) :
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
 
 $(BIN) :
@@ -47,4 +53,3 @@ $(ALIB):
 
 clean:
 	$(RM) $(OBJ) $(BIN)  *~ src/*~ src/*/*~
-
