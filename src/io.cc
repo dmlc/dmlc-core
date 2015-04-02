@@ -1,4 +1,5 @@
 // use direct path for to save compile flags
+#define _CRT_SECURE_NO_WARNINGS
 #include <cstring>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>

@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wormhole", "wormhole\wormhole.vcxproj", "{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "filesys_test", "filesys_test\filesys_test.vcxproj", "{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F} = {BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Debug|Win32.ActiveCfg = Release|x64
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Debug|Win32.Build.0 = Release|x64
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Debug|x64.ActiveCfg = Debug|x64
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Debug|x64.Build.0 = Debug|x64
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Release|Win32.ActiveCfg = Release|x64
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Release|Win32.Build.0 = Release|x64
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Release|x64.ActiveCfg = Release|x64
+		{BE145A31-FD9D-4B97-8DD6-FD0550D1D28F}.Release|x64.Build.0 = Release|x64
+		{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}.Debug|Win32.Build.0 = Debug|Win32
+		{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}.Debug|x64.ActiveCfg = Debug|Win32
+		{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}.Release|Win32.ActiveCfg = Release|Win32
+		{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}.Release|Win32.Build.0 = Release|Win32
+		{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}.Release|x64.ActiveCfg = Release|x64
+		{E8FB972D-222C-4F21-AF25-9A7D8CED81F6}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,15 +1,17 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <dmlc/logging.h>
 #include "./local_filesys.h"
 #include <errno.h>
-
+extern "C"{
+#include <sys/stat.h>
+}
 #ifndef _MSC_VER
 extern "C" {
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <dirent.h>
 }
 #else
-#pragma message ("Warning: Windows do not have GetPathInfo")
+#include <Windows.h>
 #endif
 
 namespace dmlc {
@@ -72,12 +74,13 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
   struct stat sb;
   if (stat(path.name.c_str(), &sb) == -1) {
     int errsv = errno;
-    Error("LocalFileSystem.GetPathInfo error:%s", strerror(errsv));
+    Error("LocalFileSystem.GetPathInfo %s error:%s", path.name.c_str(), strerror(errsv));
   }
   FileInfo ret;
   ret.path = path;
   ret.size = sb.st_size;
-  if (S_ISDIR(sb.st_mode)) {
+
+  if ((sb.st_mode & S_IFMT) == S_IFDIR) {
     ret.type = kDirectory;
   } else {
     ret.type = kFile;
@@ -86,6 +89,7 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
 }
 
 void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_list) {
+#ifndef _MSC_VER
   DIR *dir = opendir(path.name.c_str());
   if (dir == NULL) {
     int errsv = errno;
@@ -105,6 +109,29 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
     out_list->push_back(GetPathInfo(pp));
   }
   closedir(dir);
+#else
+  WIN32_FIND_DATA fd;
+  std::string pattern = path.name + "/*";
+  HANDLE handle = FindFirstFile(pattern.c_str(), &fd); 
+  if (handle == INVALID_HANDLE_VALUE) {
+    int errsv = GetLastError();
+    Error("LocalFileSystem.ListDirectory %s error: %s", path.name.c_str(), strerror(errsv));  
+  }
+  do {
+   if (strcmp(fd.cFileName, ".") && strcmp(fd.cFileName, "..")) {
+    URI pp = path;
+	char clast = pp.name[pp.name.length() - 1];
+	if (pp.name == ".") {
+	  pp.name = fd.cFileName;
+	} else if (clast != '/' && clast != '\\') {
+      pp.name += '/';
+	  pp.name += fd.cFileName;
+    }
+	out_list->push_back(GetPathInfo(pp));
+   }
+  }  while(FindNextFile(handle, &fd)); 
+  FindClose(handle); 
+#endif
 }
 
 ISeekStream *LocalFileSystem::Open(const URI &path, const char* const flag) {

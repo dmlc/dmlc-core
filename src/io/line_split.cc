@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <algorithm>
 #include <dmlc/logging.h>
 #include "./line_split.h"
