@@ -17,7 +17,7 @@ CFLAGS+= $(WORMHOLE_CFLAGS)
 
 OBJ=line_split.o io.o hdfs_filesys.o local_filesys.o s3_filesys.o
 ALIB=libwormhole.a
-TEST=test/logging_test test/aws_s3_test
+TEST=test/logging_test test/filesys_test
 
 all: $(ALIB) $(TEST)
 test: $(TEST)
@@ -27,13 +27,13 @@ hdfs_filesys.o: src/io/hdfs_filesys.cc
 s3_filesys.o: src/io/s3_filesys.cc
 local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
+
 test/logging_test: test/logging_test.cc
-test/aws_s3_test: test/aws_s3_test.cc src/io/*.h s3_filesys.o
+test/filesys_test: test/filesys_test.cc src/io/*.h  libwormhole.a
 
 libwormhole.a: $(OBJ)
 
-
-$(TEST) : libwormhole.a
+$(TEST) : 
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
 
 $(BIN) :
@@ -46,4 +46,5 @@ $(ALIB):
 	ar cr $@ $+
 
 clean:
-	$(RM) $(OBJ) $(BIN)  *~ ../src/*~
+	$(RM) $(OBJ) $(BIN)  *~ src/*~ src/*/*~
+

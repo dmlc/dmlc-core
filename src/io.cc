@@ -4,6 +4,7 @@
 #include <dmlc/logging.h>
 #include "io/line_split.h"
 #include "io/single_file_split.h"
+#include "io/filesys.h"
 #include "io/local_filesys.h"
 
 #if DMLC_USE_HDFS
@@ -15,6 +16,30 @@
 #endif
 
 namespace dmlc {
+namespace io {
+IFileSystem *IFileSystem::Create(const std::string &protocol) {
+  if (protocol == "file://" || protocol.length() == 0) {
+    return new LocalFileSystem();
+  }
+  if (protocol == "hdfs://") {
+#if DMLC_USE_HDFS
+    return new HDFSFileSystem();
+#else
+    Error("Please compile with DMLC_USE_HDFS=1 to use hdfs");
+#endif
+  }
+  if (protocol == "s3://") {
+#if DMLC_USE_HDFS
+    return new S3FileSystem();
+#else
+    Error("Please compile with DMLC_USE_HDFS=1 to use hdfs");
+#endif
+  }
+  Error("unknown filesystem protocol " + protocol);
+  return NULL;
+}
+} // namespace io
+
 InputSplit* InputSplit::Create(const char *uri,
                                unsigned part,
                                unsigned nsplit) {
@@ -23,47 +48,17 @@ InputSplit* InputSplit::Create(const char *uri,
   if (!strcmp(uri, "stdin")) {
     return new SingleFileSplit(uri);
   }
-  if (!strncmp(uri, "file://", 7)) {
-    return new LineSplitter(new LocalFileSystem(), uri, part, nsplit);
-  }
-  if (!strncmp(uri, "hdfs://", 7)) {
-#if DMLC_USE_HDFS
-    return new LineSplitter(new HDFSFileSystem(), uri, part, nsplit);
-#else
-    Error("Please compile with DMLC_USE_HDFS=1");
-#endif
-  }
-  if (!strncmp(uri, "s3://", 5)) {
-#if DMLC_USE_S3
-    return new LineSplitter(new S3FileSystem(), uri, part, nsplit);
-#else
-    Error("Please compile with DMLC_USE_S3=1");
-#endif
-  }
-  return new LineSplitter(new LocalFileSystem(), uri, part, nsplit);
+  URI path(uri);
+  return new LineSplitter(IFileSystem::Create(path.protocol), uri, part, nsplit);
 }
 
 IStream *IStream::Create(const char *uri, const char * const flag) {
   using namespace std;
   using namespace dmlc::io;
-  if (!strncmp(uri, "file://", 7)) {
-    return LocalFileSystem().Open(URI(uri), flag);
-  }
-  if (!strncmp(uri, "hdfs://", 7)) {
-#if DMLC_USE_HDFS
-    return HDFSFileSystem().Open(URI(uri), flag);
-#else
-    Error("Please compile with DMLC_USE_HDFS=1");
-#endif
-  }
-
-  if (!strncmp(uri, "s3://", 5)) {
-#if DMLC_USE_S3
-    return S3FileSystem().Open(URI(uri), flag);
-#else
-    Error("Please compile with DMLC_USE_S3=1");
-#endif
-  }
-  return LocalFileSystem().Open(URI(uri), flag);
+  URI path(uri);
+  IFileSystem *fs = IFileSystem::Create(path.protocol);
+  IStream *ret = fs->Open(path, flag);
+  delete fs;
+  return ret;
 }
 }  // namespace dmlc

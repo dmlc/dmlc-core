@@ -73,6 +73,14 @@ struct FileInfo {
 /*! \brief file system system interface */
 class IFileSystem {
  public:
+  /*!
+   * \brief create filesystem according to protocol
+   * \param protocol can be s3://, hdfs://, file://,
+   *            empty string(will return local)
+   * \return a corresponding filesystem, report error if
+   *         we cannot find a matching system
+   */
+  static IFileSystem* Create(const std::string &protocol);  
   /*! \brief virtual destructor */
   virtual ~IFileSystem() {}
   /*!

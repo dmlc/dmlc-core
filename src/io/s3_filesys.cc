@@ -10,6 +10,7 @@ extern "C" {
 #include <curl/curl.h>
 #include <curl/curl.h>
 #include <openssl/hmac.h>
+#include <openssl/md5.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 }
@@ -62,6 +63,24 @@ struct XMLIter {
   }
 };
 /*!
+ * \brief return a base64 encodes string
+ * \param md the data
+ * \param len the length of data
+ * \return the encoded string
+ */
+std::string Base64(unsigned char md[], unsigned len) {
+  // encode base64
+  BIO *fp = BIO_push(BIO_new(BIO_f_base64()),
+                       BIO_new(BIO_s_mem()));    
+  BIO_write(fp, md, len);
+  BIO_ctrl(fp, BIO_CTRL_FLUSH, 0, NULL);    
+  BUF_MEM *res;
+  BIO_get_mem_ptr(fp, &res);   
+  std::string ret(res->data, res->length - 1);
+  BIO_free_all(fp);
+  return ret;
+}
+/*!
  * \brief sign given AWS secret key
  * \param secret_key the key to compute the sign
  * \param content the content to sign
@@ -69,7 +88,7 @@ struct XMLIter {
 std::string Sign(const std::string &key, const std::string &content) {
   HMAC_CTX ctx;
   unsigned char md[EVP_MAX_MD_SIZE];
-  unsigned int rlen = 0;
+  unsigned rlen = 0;
   HMAC_CTX_init(&ctx);
   HMAC_Init(&ctx, key.c_str(), key.length(), EVP_sha1());
   HMAC_Update(&ctx,
@@ -77,16 +96,7 @@ std::string Sign(const std::string &key, const std::string &content) {
                 content.length());
   HMAC_Final(&ctx, md, &rlen);
   HMAC_CTX_cleanup(&ctx);
-  // encode base64
-  BIO *fp = BIO_push(BIO_new(BIO_f_base64()),
-                       BIO_new(BIO_s_mem()));    
-  BIO_write(fp, md, rlen);
-  BIO_ctrl(fp, BIO_CTRL_FLUSH, 0, NULL);    
-  BUF_MEM *res;
-  BIO_get_mem_ptr(fp, &res);    
-  std::string ret(res->data, res->length - 1);
-  BIO_free_all(fp);
-  return ret;
+  return Base64(md, rlen);
 }
 // sign AWS key
 std::string Sign(const std::string &key,
@@ -108,6 +118,15 @@ std::string Sign(const std::string &key,
   stream << resource;
   return Sign(key, stream.str());
 }
+
+std::string ComputeMD5(const std::string &buf) {
+  if (buf.length() == 0) return "";
+  const int kLen = 128 / 8;
+  unsigned char md[kLen];
+  MD5(reinterpret_cast<const unsigned char *>(buf.c_str()),
+      buf.length(), md);
+  return Base64(md, kLen);
+}
 // remove the beginning slash at name
 inline const char *RemoveBeginSlash(const std::string &name) {
   const char *s = BeginPtr(name);
@@ -115,6 +134,20 @@ inline const char *RemoveBeginSlash(const std::string &name) {
     ++s;
   }
   return s;
+}
+// fin dthe error field of the header
+inline bool FindHttpError(const std::string &header) {
+  std::string hd, ret;
+  int code;
+  std::istringstream is(header);
+  if (is >> hd >> code >> ret) {
+    if (code == 206 || ret == "OK") {
+      return false;
+    } else if (ret == "Continue") {
+      return false;
+    }
+  }
+  return true;
 }
 /*!
  * \brief get the datestring needed by AWS
@@ -143,6 +176,26 @@ size_t WriteStringCallback(char *buf, size_t size, size_t count, void *fp) {
   return size;
 }
 
+// useful callback for reading memory
+struct ReadStringStream {
+  const char *dptr;
+  size_t nleft;
+  // constructor
+  ReadStringStream(const std::string &data) {
+    dptr = BeginPtr(data);
+    nleft = data.length();
+  }
+  // curl callback to write sstream
+  static size_t Callback(char *buf, size_t size, size_t count, void *fp) {
+    size *= count;
+    ReadStringStream *s = static_cast<ReadStringStream*>(fp);
+    size_t nread = std::min(size, s->nleft);
+    std::memcpy(buf, s->dptr, nread);
+    s->dptr += nread; s->nleft -= nread;
+    return nread;
+  }
+};
+
 /*! \brief reader stream that can be used to read */
 class ReadStream : public ISeekStream {
  public:
@@ -157,7 +210,7 @@ class ReadStream : public ISeekStream {
     this->Cleanup();
   }
   virtual void Write(const void *ptr, size_t size) {
-    CHECK(false) << "ReadStream cannot be used for write";
+    CHECK(false) << "S3.ReadStream cannot be used for write";
   }
   // lazy seek function
   virtual void Seek(size_t pos) {
@@ -172,7 +225,7 @@ class ReadStream : public ISeekStream {
   virtual bool AtEnd(void) const {
     return at_end_;
   }  
-  virtual size_t Read(void *ptr, size_t size);  
+  virtual size_t Read(void *ptr, size_t size);
   /*!
    * \brief initialize the stream at begin_bytes
    * this is the true seek function
@@ -222,8 +275,8 @@ void ReadStream::Init(size_t begin_bytes) {
   std::string signature = Sign(aws_key_, "GET", "", "", date, amz,
                                std::string("/") + path_.host + '/' + RemoveBeginSlash(path_.name));
   // generate headers
-  std::stringstream sauth, sdate, surl, srange;
-  std::stringstream result;
+  std::ostringstream sauth, sdate, surl, srange;
+  std::ostringstream result;
   sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
   sdate << "Date: " << date;
   surl << "http://" << path_.host << ".s3.amazonaws.com" << '/'
@@ -238,20 +291,18 @@ void ReadStream::Init(size_t begin_bytes) {
   CHECK(curl_easy_setopt(ecurl_, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl_, CURLOPT_HTTPGET, 1L) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADER, 0L) == CURLE_OK);
-  mcurl_ = curl_multi_init();
   CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteStringCallback) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &buffer_) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERFUNCTION, WriteStringCallback) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &header_) == CURLE_OK);
+  mcurl_ = curl_multi_init();
   CHECK(curl_multi_add_handle(mcurl_, ecurl_) == CURLM_OK);
   int nrun;
   curl_multi_perform(mcurl_, &nrun);
   CHECK(nrun != 0 || header_.length() != 0 || buffer_.length() != 0);
   // start running and check header
   this->FillBuffer(1);
-  int code;
-  if (sscanf(header_.c_str(), "%*s%d", &code) != 1 ||
-      (code != 206 && code != 204)) {
+  if (FindHttpError(header_)) {
     while (this->FillBuffer(buffer_.length() + 256) != 0);
     Error("Error\n" + header_ + buffer_);
   }
@@ -346,6 +397,205 @@ void ReadStream::Cleanup() {
   buffer_.clear(); header_.clear();
   curr_bytes_ = 0; at_end_ = false;
 }
+// End of ReadStream functions
+class WriteStream : public IStream {
+ public:
+  WriteStream(const URI &path,
+              const std::string &aws_id,
+              const std::string &aws_key)
+      : path_(path), aws_id_(aws_id),
+        aws_key_(aws_key) {
+    const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
+    if (buz != NULL) {
+      max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
+    } else {
+      // 64 MB
+      const size_t kDefaultBufferSize = 64 << 20UL;
+      max_buffer_size_ = kDefaultBufferSize;
+    }
+    ecurl_ = curl_easy_init();
+    this->Init();
+  }
+  virtual size_t Read(void *ptr, size_t size) {
+    CHECK(false) << "S3.WriteStream cannot be used for read";
+    return 0;
+  }
+  virtual void Write(const void *ptr, size_t size);
+  // destructor
+  virtual ~WriteStream() {
+    this->Upload();
+    this->Finish();
+    curl_easy_cleanup(ecurl_);
+  }
+    
+ private:
+  // internal maximum buffer size
+  size_t max_buffer_size_;
+  // path we are reading
+  URI path_;
+  // aws access key and id
+  std::string aws_id_, aws_key_;
+  // easy curl handle used for the request
+  CURL *ecurl_;
+  // upload_id used by AWS
+  std::string upload_id_;
+  // write data buffer
+  std::string buffer_;
+  // etags of each part we uploaded
+  std::vector<std::string> etags_;
+  // part id of each part we uploaded
+  std::vector<size_t> part_ids_;
+  /*!
+   * \brief helper function to do http post request
+   * \param method method to peform
+   * \param path the resource to post
+   * \param url_args additional arguments in URL
+   * \param url_args translated arguments to sign
+   * \param content_type content type of the data
+   * \param data data to post
+   * \param out_header holds output Header
+   * \param out_data holds output data
+   */
+  void Run(const std::string &method,
+           const URI &path,
+           const std::string &args,
+           const std::string &content_type,
+           const std::string &data,
+           std::string *out_header,
+           std::string *out_data);
+  /*!
+   * \brief initialize the upload request
+   */
+  void Init(void);
+  /*!
+   * \brief upload the buffer to S3, store the etag
+   * clear the buffer
+   */
+  void Upload(void);
+  /*!
+   * \brief commit the upload and finish the session
+   */
+  void Finish(void);
+};
+
+void WriteStream::Write(const void *ptr, size_t size) {
+  size_t rlen = buffer_.length();
+  buffer_.resize(rlen + size);
+  std::memcpy(BeginPtr(buffer_) + rlen, ptr, size);
+  if (buffer_.length() >= max_buffer_size_) {
+    this->Upload();
+  }
+}
+
+void WriteStream::Run(const std::string &method,
+                      const URI &path,
+                      const std::string &args,
+                      const std::string &content_type,
+                      const std::string &data,
+                      std::string *out_header,
+                      std::string *out_data) {
+  // initialize the curl request
+  std::vector<std::string> amz;
+  std::string md5str = ComputeMD5(data);
+  std::string date = GetDateString();
+  std::string signature = Sign(aws_key_, method.c_str(), md5str,
+                               content_type, date, amz,
+                               std::string("/") + path_.host + '/' +
+                               RemoveBeginSlash(path_.name) + args);
+  
+  // generate headers
+  std::ostringstream sauth, sdate, surl, scontent, smd5;
+  std::ostringstream rheader, rdata;
+  sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
+  sdate << "Date: " << date;
+  surl << "http://" << path_.host << ".s3.amazonaws.com" << '/'
+       << RemoveBeginSlash(path_.name) << args;
+  scontent << "Content-Type: " << content_type;
+  // helper for read string
+  ReadStringStream ss(data);
+  // list
+  curl_slist *slist = NULL;
+  slist = curl_slist_append(slist, sdate.str().c_str());
+  slist = curl_slist_append(slist, scontent.str().c_str());
+  if (md5str.length() != 0) {
+    smd5 << "Content-MD5: " << md5str;
+    slist = curl_slist_append(slist, smd5.str().c_str());
+  }
+  slist = curl_slist_append(slist, sauth.str().c_str());
+  curl_easy_reset(ecurl_);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADER, 0L) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &rdata) == CURLE_OK);  
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEHEADER, WriteSStreamCallback) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
+  if (method == "POST") {
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_POST, 0L) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_POSTFIELDSIZE, data.length()) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_POSTFIELDS, BeginPtr(data)) == CURLE_OK);
+  } else if (method == "PUT") {
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_PUT, 1L) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_READDATA, &ss) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_INFILESIZE_LARGE, data.length()) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_READFUNCTION, ReadStringStream::Callback) == CURLE_OK);
+  }
+  CHECK(curl_easy_perform(ecurl_) == CURLE_OK);
+  curl_slist_free_all(slist);
+  *out_header = rheader.str();
+  *out_data = rdata.str();
+  if (FindHttpError(*out_header) ||
+      out_data->find("<Error>") != std::string::npos) {
+    Error("Error:\n" + *out_header + *out_data);
+  }
+}
+void WriteStream::Init(void) {
+  std::string rheader, rdata;
+  Run("POST", path_, "?uploads",
+      "binary/octel-stream", "", &rheader, &rdata);
+  XMLIter xml(rdata.c_str());
+  XMLIter upid;
+  CHECK(xml.GetNext("UploadId", &upid)) << "missing UploadId";
+  upload_id_ = upid.str();
+}
+
+void WriteStream::Upload(void) {
+  if (buffer_.length() == 0) return;
+  std::ostringstream sarg;
+  std::string rheader, rdata;
+  size_t partno = etags_.size() + 1;
+
+  sarg << "?partNumber=" << partno << "&uploadId=" << upload_id_;
+  Run("PUT", path_, sarg.str(),
+      "binary/octel-stream", buffer_, &rheader, &rdata);
+  const char *p = strstr(rheader.c_str(), "ETag: ");
+  CHECK(p != NULL) << "cannot find ETag in header";
+  p = strchr(p, '\"');
+  CHECK(p != NULL) << "cannot find ETag in header";  
+  const char *end = strchr(p + 1, '\"');
+  CHECK(end != NULL) << "cannot find ETag in header";
+  
+  etags_.push_back(std::string(p, end - p + 1));
+  part_ids_.push_back(partno);
+  buffer_.clear();
+}
+
+void WriteStream::Finish(void) {
+  std::ostringstream sarg, sdata;
+  std::string rheader, rdata;
+  sarg << "?uploadId=" << upload_id_;
+  sdata << "<CompleteMultipartUpload>\n";
+  CHECK(etags_.size() == part_ids_.size());
+  for (size_t i = 0; i < etags_.size(); ++i) {
+    sdata << " <Part>\n"
+          << "  <PartNumber>" << part_ids_[i] << "</PartNumber>\n"
+          << "  <ETag>" << etags_[i] << "</ETag>\n"
+          << " </Part>\n";
+  }
+  sdata << "</CompleteMultipartUpload>\n";
+  Run("POST", path_, sarg.str(),
+      "text/xml", sdata.str(), &rheader, &rdata);
+}
 /*!
  * \brief list the objects in the bucket with prefix specified by path.name
  * \param path the path to query
@@ -364,8 +614,8 @@ void ListObjects(const URI &path,
   std::string signature = Sign(aws_key, "GET", "", "", date, amz,
                                std::string("/") + path.host + "/");    
   
-  std::stringstream sauth, sdate, surl;
-  std::stringstream result;
+  std::ostringstream sauth, sdate, surl;
+  std::ostringstream result;
   sauth << "Authorization: AWS " << aws_id << ":" << signature;
   sdate << "Date: " << date;
   surl << "http://" << path.host << ".s3.amazonaws.com"
@@ -380,7 +630,7 @@ void ListObjects(const URI &path,
   CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
-  curl_easy_perform(curl);
+  CHECK(curl_easy_perform(curl) == CURLE_OK);
   curl_slist_free_all(slist);
   curl_easy_cleanup(curl);
   // parse xml
@@ -477,8 +727,10 @@ IStream *S3FileSystem::Open(const URI &path, const char* const flag) {
   using namespace std;
   if (!strcmp(flag, "r") || !strcmp(flag, "rb")) {
     return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
-  } else {
-    CHECK(false) << "S3FileSytem.Open do not support flag " << flag;
+  } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
+    return new s3::WriteStream(path, aws_access_id_, aws_secret_key_);
+  }else {
+    CHECK(false) << "S3FileSytem.Open do not support flag " << flag;    
     return NULL;
   }
 }
