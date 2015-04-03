@@ -1,6 +1,6 @@
 """
-Tracker script for DMLC 
-Implements the tracker control protocol 
+Tracker script for DMLC
+Implements the tracker control protocol
  - start dmlc jobs
  - start ps scheduler and rabit tracker
  - help nodes to establish links with each other
@@ -19,13 +19,13 @@ from threading import Thread
 """
 Extension of socket to handle recv and send of special data
 """
-class ExSocket:    
+class ExSocket:
     def __init__(self, sock):
         self.sock = sock
     def recvall(self, nbytes):
         res = []
         sock = self.sock
-        nread = 0    
+        nread = 0
         while nread < nbytes:
             chunk = self.sock.recv(min(nbytes - nread, 1024))
             nread += len(chunk)
@@ -106,7 +106,7 @@ class SlaveEntry:
             for r in conset:
                 self.sock.sendstr(wait_conn[r].host)
                 self.sock.sendint(wait_conn[r].port)
-                self.sock.sendint(r)        
+                self.sock.sendint(r)
             nerr = self.sock.recvint()
             if nerr != 0:
                 continue
@@ -121,10 +121,10 @@ class SlaveEntry:
                 wait_conn.pop(r, None)
             self.wait_accept = len(badset) - len(conset)
             return rmset
-    
+
 class RabitTracker:
     """
-    tracker for rabit 
+    tracker for rabit
     """
     def __init__(self, hostIP, nslave, port = 9091, port_end = 9999, verbose = True):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -141,7 +141,7 @@ class RabitTracker:
         self.hostIP = hostIP
         self.log_print('start listen on %s:%d' % (socket.gethostname(), self.port), 1)
 
-        
+
     def __del__(self):
         self.sock.close()
 
@@ -151,7 +151,7 @@ class RabitTracker:
         can be passed in as args or envs
         """
         return {'DMLC_TRACKER_URI': self.hostIP,
-                'DMLC_TRACKER_PORT': self.port}        
+                'DMLC_TRACKER_PORT': self.port}
 
     def get_neighbor(self, rank, nslave):
         rank = rank + 1
@@ -159,7 +159,7 @@ class RabitTracker:
         if rank > 1:
             ret.append(rank / 2 - 1)
         if rank * 2 - 1  < nslave:
-            ret.append(rank * 2 - 1)            
+            ret.append(rank * 2 - 1)
         if rank * 2 < nslave:
             ret.append(rank * 2)
         return ret
@@ -199,10 +199,10 @@ class RabitTracker:
         rlst = self.find_share_ring(tree_map, parent_map, 0)
         assert len(rlst) == len(tree_map)
         ring_map = {}
-        nslave = len(tree_map)        
+        nslave = len(tree_map)
         for r in range(nslave):
             rprev = (r + nslave - 1) % nslave
-            rnext = (r + 1) % nslave            
+            rnext = (r + 1) % nslave
             ring_map[rlst[r]] = (rlst[rprev], rlst[rnext])
         return ring_map
 
@@ -232,7 +232,7 @@ class RabitTracker:
             else:
                 parent_map_[rmap[k]] = -1
         return tree_map_, parent_map_, ring_map_
-        
+
     def handle_print(self,slave, msg):
         sys.stdout.write(msg)
 
@@ -254,14 +254,14 @@ class RabitTracker:
         pending = []
         # lazy initialize tree_map
         tree_map = None
-        
+
         while len(shutdown) != nslave:
             fd, s_addr = self.sock.accept()
             s = SlaveEntry(fd, s_addr)
             if s.cmd == 'print':
                 msg = s.sock.recvstr()
                 self.handle_print(s, msg)
-                continue                
+                continue
             if s.cmd == 'shutdown':
                 assert s.rank >= 0 and s.rank not in shutdown
                 assert s.rank not in wait_conn
@@ -281,12 +281,12 @@ class RabitTracker:
                 assert s.world_size == -1 or s.world_size == nslave
             if s.cmd == 'recover':
                 assert s.rank >= 0
-            
+
             rank = s.decide_rank(job_map)
             # batch assignment of ranks
             if rank == -1:
                 assert len(todo_nodes) != 0
-                pending.append(s)                
+                pending.append(s)
                 if len(pending) == len(todo_nodes):
                     pending.sort(key = lambda x : x.host)
                     for s in pending:
@@ -308,7 +308,7 @@ class RabitTracker:
         self.log_print('@tracker All nodes finishes job', 2)
         self.end_time = time.time()
         self.log_print('@tracker %s secs between node start and job finish' % str(self.end_time - self.start_time), 2)
-        
+
     def start(self, nslave):
         def run():
             self.accept_slaves(nslave)
@@ -325,6 +325,9 @@ class PSTracker:
     Tracker module for PS
     """
     def __init__(self, hostIP, cmd, port = 9091, port_end = 9999, envs = {}):
+        """
+        Starts the PS scheduler
+        """
         self.cmd = cmd
         if cmd is None:
             return
@@ -339,7 +342,7 @@ class PSTracker:
             except socket.error:
                 continue
         env = os.environ.copy()
-        
+
         env['DMLC_ROLE'] = 'scheduler'
         env['DMLC_PS_ROOT_URI'] = str(self.hostIP)
         env['DMLC_PS_ROOT_PORT'] = str(self.port)
@@ -348,12 +351,12 @@ class PSTracker:
         self.thread = Thread(target = (lambda : subprocess.check_call(self.cmd, env=env, shell=True)), args = ())
         self.thread.setDaemon(True)
         self.thread.start()
-                
+
     def join(self):
         if self.cmd is not None:
             while self.thread.isAlive():
                 self.thread.join(100)
-    
+
     def slave_envs(self):
         if self.cmd is None:
             return {}
@@ -368,7 +371,7 @@ def submit(nworker, nserver, fun_submit, verbose, hostIP = 'auto', pscmd = None)
         hostIP = socket.gethostname()
     elif hostIP == 'ip':
         hostIP = socket.gethostbyname(socket.getfqdn())
-        
+
     if nserver == 0:
         pscmd = None
 
@@ -384,8 +387,6 @@ def submit(nworker, nserver, fun_submit, verbose, hostIP = 'auto', pscmd = None)
     fun_submit(nworker, nserver, envs)
 
     pserver.join()
-    
     # start rabit tracker in another thread
     if nserver == 0:
         rabit.join()
-        

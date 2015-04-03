@@ -37,7 +37,7 @@ def mpi_submit(nworker, nserver, pass_envs):
 
     for k, v in pass_envs.items():
         env[k] = str(v)
-    
+
     sargs = ' '.join(args.command)
     if args.hostfile is None:
         cmd = 'mpirun -n %d' % (nworker + nserver)
@@ -45,10 +45,13 @@ def mpi_submit(nworker, nserver, pass_envs):
         cmd = 'mpirun -n %d --hostfile %s ' % (nworker + nserver, args.hostfile)
 
     for k, v in pass_envs.items():
-        cmd += ' -x %s' % k
+        cmd += ' -env %s %s' % (k, v)
+        # cmd += ' -x %s' % k
     cmd += ' '
     cmd += ' '.join(args.command)
 
+    print '%s' % cmd
+    # known issue: results do not show in emacs eshell
     def run():
         subprocess.check_call(cmd, shell = True, env = env)
     thread = Thread(target = run, args=())

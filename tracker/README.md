@@ -1,6 +1,4 @@
 tracker
 ====
-This folder contains tracker scripts that can be used to submit dmlc jobs to different platforms.
-
-
-
+This folder contains tracker scripts that can be used to submit jobs to
+different platforms.

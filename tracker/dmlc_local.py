@@ -11,7 +11,7 @@ from threading import Thread
 import tracker
 import signal
 
-parser = argparse.ArgumentParser(description='DMLC script to submit dmlc job locally as python subprocess')
+parser = argparse.ArgumentParser(description='Submit wormhole job locally as python subprocess')
 parser.add_argument('-n', '--nworker', required=True, type=int,
                     help = 'number of worker nodes to be launched')
 parser.add_argument('-s', '--server-nodes', default = 0, type=int,
@@ -25,10 +25,10 @@ args = parser.parse_args()
 keepalive = """
 nrep=0
 rc=254
-while [ $rc -eq 254 ]; 
+while [ $rc -eq 254 ];
 do
     export DMLC_NUM_ATTEMPT=$nrep
-    %s 
+    %s
     rc=$?;
     nrep=$((nrep+1));
 done
@@ -41,7 +41,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env = os.environ.copy()
     for k, v in pass_env.items():
         env[k] = str(v)
-        
+
     env['DMLC_TASK_ID'] = str(taskid)
     env['DMLC_ROLE'] = role
 
@@ -57,7 +57,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
             bash = keepalive % (cmd)
             ret = subprocess.call(bash, shell=True, executable='bash', env = env)
         if ret == 0:
-            if args.verbose != 0:        
+            if args.verbose != 0:
                 print 'Thread %d exit with 0' % taskid
             return
         else:
@@ -88,7 +88,7 @@ def mthread_submit(nworker, nserver, envs):
         procs[i] = Thread(target = exec_cmd, args = (args.command, role, i, envs))
         procs[i].setDaemon(True)
         procs[i].start()
- 
+
 # call submit, with nslave, the commands to run each job and submit function
 tracker.submit(args.nworker, args.server_nodes, fun_submit = mthread_submit,
                verbose = args.verbose, pscmd= (' '.join(args.command)))
