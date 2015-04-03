@@ -10,16 +10,16 @@ include make/wormhole.mk
 # this is the common build script for wormhole lib
 export LDFLAGS= -pthread -lm
 export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude
-LDFLAGS+= $(WORMHOLE_LDFLAGS) -lcurl
+LDFLAGS+= $(WORMHOLE_LDFLAGS)
 CFLAGS+= $(WORMHOLE_CFLAGS)
 
 .PHONY: clean all test
 
 OBJ=line_split.o io.o local_filesys.o s3_filesys.o
 
+# TODO move to make/wormhole.mk?
 ifeq ($(USE_HDFS), 1)
 OBJ+=hdfs_filesys.o
-CFLAGS+=-DDMLC_USE_HDFS=1
 endif
 
 ALIB=libwormhole.a
