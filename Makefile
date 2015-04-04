@@ -5,24 +5,24 @@ else
 endif
 # use customized config file
 include $(config)
-include make/wormhole.mk
+include make/dmlc.mk
 
-# this is the common build script for wormhole lib
+# this is the common build script for dmlc lib
 export LDFLAGS= -pthread -lm
 export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude
-LDFLAGS+= $(WORMHOLE_LDFLAGS)
-CFLAGS+= $(WORMHOLE_CFLAGS)
+LDFLAGS+= $(DMLC_LDFLAGS)
+CFLAGS+= $(DMLC_CFLAGS)
 
 .PHONY: clean all test
 
 OBJ=line_split.o io.o local_filesys.o s3_filesys.o
 
-# TODO move to make/wormhole.mk?
+# TODO move to make/dmlc.mk?
 ifeq ($(USE_HDFS), 1)
 OBJ+=hdfs_filesys.o
 endif
 
-ALIB=libwormhole.a
+ALIB=libdmlc.a
 TEST=test/logging_test test/filesys_test
 
 all: $(ALIB) $(TEST)
@@ -35,9 +35,9 @@ local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
 
 test/logging_test: test/logging_test.cc
-test/filesys_test: test/filesys_test.cc src/io/*.h  libwormhole.a
+test/filesys_test: test/filesys_test.cc src/io/*.h libdmlc.a
 
-libwormhole.a: $(OBJ)
+libdmlc.a: $(OBJ)
 
 $(TEST) :
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
