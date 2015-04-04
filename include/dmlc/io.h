@@ -35,7 +35,8 @@ class IStream {
    * \brief generic factory function
    *    create an stream, the stream will close the underlying files
    *    upon deletion
-   * \param uri the uri of the input, can contain hdfs prefix
+   * \param uri the uri of the input currently we support
+   *            hdfs://, s3://, and file:// by default file:// will be used
    * \param flag can be "w", "r", "a"
    */
   static IStream *Create(const char *uri, const char* const flag);
