@@ -58,6 +58,8 @@ typedef long long int64_t;
 #else
 #include <inttypes.h>
 #endif
+#include <vector>
+#include <string>
 
 /*! \brief namespace for dmlc */
 namespace dmlc {

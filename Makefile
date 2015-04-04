@@ -23,7 +23,7 @@ OBJ+=hdfs_filesys.o
 endif
 
 ALIB=libdmlc.a
-TEST=test/logging_test test/filesys_test
+TEST=test/logging_test test/filesys_test test/dataiter_test
 
 all: $(ALIB) $(TEST)
 test: $(TEST)
@@ -36,6 +36,7 @@ io.o: src/io.cc
 
 test/logging_test: test/logging_test.cc
 test/filesys_test: test/filesys_test.cc src/io/*.h libdmlc.a
+test/dataiter_test: test/dataiter_test.cc  libdmlc.a
 
 libdmlc.a: $(OBJ)
 
