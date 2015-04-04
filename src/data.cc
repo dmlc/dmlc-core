@@ -3,11 +3,11 @@
 #include <cstring>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
-
 #include "data/basic_row_iter.h"
 #include "data/libsvm_parser.h"
 
 namespace dmlc {
+/*! \brief namespace for useful input data structure */
 namespace data {
 template<typename IndexType>
 static IDataIter<RowBlock<IndexType> > *

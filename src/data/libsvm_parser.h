@@ -4,15 +4,14 @@
  * \brief iterator parser to parse libsvm format
  * \author Tianqi Chen
  */
-#ifndef DMLC_DATA_LIBSVM_ITER_H_
-#define DMLC_DATA_LIBSVM_ITER_H_
+#ifndef DMLC_DATA_LIBSVM_PARSER_H_
+#define DMLC_DATA_LIBSVM_PARSER_H_
 
 #include <vector>
 #include <sstream>
 #include <dmlc/data.h>
 
 namespace dmlc {
-/*! \brief namespace for useful input data structure */
 namespace data {
 /*!
  * \brief libsvm parser that parses the input lines
