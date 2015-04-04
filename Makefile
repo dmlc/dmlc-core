@@ -15,7 +15,7 @@ CFLAGS+= $(DMLC_CFLAGS)
 
 .PHONY: clean all test
 
-OBJ=line_split.o io.o local_filesys.o s3_filesys.o
+OBJ=line_split.o io.o local_filesys.o s3_filesys.o data.o
 
 # TODO move to make/dmlc.mk?
 ifeq ($(USE_HDFS), 1)
@@ -33,6 +33,7 @@ hdfs_filesys.o: src/io/hdfs_filesys.cc
 s3_filesys.o: src/io/s3_filesys.cc
 local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
+data.o: src/data.cc
 
 test/logging_test: test/logging_test.cc
 test/filesys_test: test/filesys_test.cc src/io/*.h libdmlc.a

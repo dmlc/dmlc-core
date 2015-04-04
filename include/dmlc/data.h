@@ -7,6 +7,7 @@
 #ifndef DMLC_DATA_H_
 #define DMLC_DATA_H_
 #include <string>
+#include <vector>
 #include "./base.h"
 #include "./io.h"
 #include "./logging.h"
@@ -17,9 +18,10 @@ namespace dmlc {
  * that will be used to store feature values
  */
 typedef float real_t;
+
 /*!
- * \brief this defines the index type
- * that will be used to store feature index
+ * \brief this defines the unsigned integer type
+ * that can normally be used store feature index
  */
 typedef unsigned index_t;
 
@@ -138,7 +140,8 @@ struct RowBlock {
 
 // implementation of operator[]
 template<typename IndexType>
-inline Row<IndexType> RowBlock<IndexType>::operator[](size_t rowid) const {
+inline Row<IndexType>
+RowBlock<IndexType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType> inst;
   inst.label = label[rowid];
@@ -149,7 +152,7 @@ inline Row<IndexType> RowBlock<IndexType>::operator[](size_t rowid) const {
   } else {
     inst.value = value + offset[rowid];
   }
-  return inst;  
+  return inst;
 }
 }  // namespace dmlc
 #endif  // DMLC_DATA_H_
