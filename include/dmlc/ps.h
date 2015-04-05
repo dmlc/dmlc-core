@@ -14,11 +14,18 @@ namespace ps {
 typedef uint64_t K;
 
 /*!
- * @brief Parameter cache on worker nodes
+ * @brief key-value cache for worker nodes
+ *
+ * @tparam V the type of value
  */
+template<typename V>
 class KVCache {
  public:
-  KVCache();
+  /**
+   * @param id the unique identity which is used to find the KVStore at the
+   * parameter server. Negative IDs is preserved by system.
+   */
+  explicit KVCache(int id = 0);
   ~KVCache();
 
   /*! @brief Timestamp dependencies */
@@ -38,7 +45,7 @@ class KVCache {
    * (3.1,3.2)}, where the value is a 2-length float vector. We then can push these
    * two pairs into the parameter server:
    \code
-     KVCache<float> cache;
+     KVCache<float> cache(0);
      std::vector<K> keys = {1, 3};
      std::vector<float> vals = {1.1, 1.2, 3.1, 3.2};
      cache.Push(keys, vals);
@@ -55,13 +62,13 @@ class KVCache {
    *
    * @return the timestamp of this request.
    */
-  template<typename V>
   int Push(const std::vector<K>& keys,
            const std::vector<V>& values,
            const Deps& deps = {},
            const Call& callback = Call()) {
-    return Push(
-        keys.data(), keys.size(), values.data(), values.size(), deps, callback);
+    return Push(keys.data(), keys.size(),
+                values.data(), values.size(),
+                deps, callback);
   }
 
   /*!
@@ -82,20 +89,20 @@ class KVCache {
    * Sample usage: again assume each key is associated with a 2-length float
    * vector value. We then can pull the newest value from the parameter server:
    \code
-     KVCache<float> cache;
+     KVCache<float> cache(0);
      std::vector<K> keys = {1, 3};
      std::vector<float> vals(4);
      cache.Pull(keys, &vals);
    \endcode
    * @return the timestamp of this request
    */
-  template<typename V>
   int Pull(const std::vector<K>& keys,
            std::vector<V>* values,
            const Deps& deps = {},
            const Call& callback = Call()) {
-    return Pull(
-        keys.data(), keys.size(), values.data(), values.size(), deps, callback);
+    return Pull(keys.data(), keys.size(),
+                values.data(), values.size(),
+                deps, callback);
   }
 
 
@@ -113,20 +120,20 @@ class KVCache {
 
   /*! @brief C-array style Push and Pull */
 
-  template<typename V>
   int Push(const K* key_ptr, size_t key_size,
            const V* val_ptr, size_t val_size,
            const Deps& deps = {},
            const Call& callback = Call()) {
-    return Push_(key_ptr, key_size, val_ptr, val_size, false, deps, callback);
+    return Push_(key_ptr, key_size, val_ptr, val_size,
+                 false, deps, callback);
   }
 
-  template<typename V>
   int Pull(const K* key_ptr, size_t key_size,
            V* val_ptr, size_t val_size,
            const Deps& deps = {},
            const Call& callback = Call()) {
-    return Pull_(key_ptr, key_size, val_ptr, val_size, false, deps, callback);
+    return Pull_(key_ptr, key_size, val_ptr, val_size,
+                 false, deps, callback);
   }
 
   /*!
@@ -138,20 +145,20 @@ class KVCache {
    * (and val_ptr) unchanged until the request is finished, namely Wait(ts)
    * returns or the callback is called.
    */
-  template<typename V>
   int ZPush(const K* key_ptr, size_t key_size,
             const V* val_ptr, size_t val_size,
             const Deps& deps = {},
             const Call& callback = Call()) {
-    return Push_(key_ptr, key_size, val_ptr, val_size, true, deps, callback);
+    return Push_(key_ptr, key_size, val_ptr, val_size,
+                 true, deps, callback);
   }
 
-  template<typename V>
   int ZPull(const K* key_ptr, size_t key_size,
             V* val_ptr, size_t val_size,
             const Deps& deps = {},
             const Call& callback = Call()) {
-    return Pull_(key_ptr, key_size, val_ptr, val_size, true, deps, callback);
+    return Pull_(key_ptr, key_size, val_ptr, val_size,
+                 true, deps, callback);
   }
 
   /*! @brief advanced APIs */
@@ -166,16 +173,14 @@ class KVCache {
 
   /*! @brief Send a pull message */
   int Pull(Message* msg);
- private:
 
-  template<typename V>
+ private:
   int Push_(const K* key_ptr, size_t key_size, const V* val_ptr, size_t val_size,
             bool zero_copy, const Deps& deps, const Call& callback) {
     // TODO
     Message msg; return Push(&msg);
   }
 
-  template<typename V>
   int Pull_(const K* key_ptr, size_t key_size, V* val_ptr, size_t val_size,
             bool zero_copy, const Deps& deps, const Call& callback) {
     // TODO
@@ -184,19 +189,112 @@ class KVCache {
 };
 
 
+typedef -1 DYNAMIC_LEN;
+
+/*!
+ * @brief key-value store for server nodes
+ *
+ * @tparam V the value type
+ * @tparam val_len the length of a value = val_len * sizeof(V), which is also
+ * could be a dynamic length DYNAMIC_LEN, such as neural network
+ */
+template <typename V, int val_len = 1>
+class KVStore {
+ public:
+
+  /**
+   * @brief Process key-value pairs in online or batch style
+   *
+   * - ONLINE: individual key-value pairs received from workers are feed into
+   *   user-defined writer/reader one by one.
+   *
+   * - BATCH: all key-value pairs received from a worker in a Push/Pull request
+   *   are feed into writer/reader togeter
+   *
+   * Implementation & Performance
+   *
+   * - ONLINE: use unordered_map or other equivalence data structure to store KV
+   *   pairs. It is suitable when new keys appears during running, such as
+   *   SGD/online learning algorithms. However, both read and write could be 5x
+   *   slower comparing to BATCH
+   *
+   * - BATCH: use array to store KV pairs. Suitable for the keys set is fixed at
+   *   the beginning, such as batch algorithm. Both read and write are fast, but
+   *
+   */
+  enum Type { ONLINE, BATCH };
+
+  /**
+   * @param type which affects how key-value pairs are feed into updater and
+   *  initializer, see comments below
+   * @param id the unique identity. Negative IDs is preserved by system.
+   */
+  KVStore(int id = 0, Type type = ONLINE);
+  ~KVStore();
+
+  /**
+   * @brief User-defined function
+   *
+   * @param key pointer to the received keys
+   * @param key_size number of received keys, which is 1 if the type is
+   * ONLINE, or the number of keys received from a worker in a push or pull
+   * request
+   * @param src_val pointer to the source value buffer
+   * @param dst_val pointer to the destination value buffer
+   */
+  typedef std::function<void(const K* key, size_t key_size,
+                             const V* src_val, V* dst_val)> UDF;
+
+  /**
+   * @brief Handle PULL requests from worker nodes
+   *
+   * - src_val: value stored at the parameter server, whose size is key_size *
+   *   val_len * sizeof(V)
+   *
+   * - dst_val: value received from a worker node, whose size is key_size *
+   *   recv_val_len * sizeof(V)
+   *
+   * @param udf
+   * @param recv_val_len the value length of received KV pairs
+   */
+  void SetReader(const UDF& udf, int recv_val_len);
+
+  /**
+   * @brief Handle PUSH requests from worker nodes
+   *
+   * - src_val: value received from a worker node, whose size is key_size *
+   *   recv_val_len * sizeof(V)
+   *
+   * - dst_val: value stored at the parameter server, whose size is key_size *
+   *   val_len * sizeof(V)
+   *
+   * @param udf
+   * @param recv_val_len the value length of received KV pairs
+   */
+  void SetWriter(const UDF& udf, int recv_val_len);
+
+  /**
+   * @brief Will be called when the first time a Push or a Pull request is
+   * received on keys
+   *
+   * - src_val: NULL
+   *
+   * - dst_val: value stored at the parameter server, whose size is key_size *
+   *   val_len * sizeof(V)
+   *
+   * @param udf
+   * @param recv_val_len the value length of received KV pairs
+   */
+  void SetIntializer(const UDF& udf, int recv_val_len);
+
+  /**
+   * @brief Must be called after all set functions are done
+   */
+  void Init();
+};
 
 
-
-
-
-
-
-
-
-
-
-
-/// advanced functions ///
+/// functions to query my node information ///
 
 /*! @brief Return true if this node is a worker node. */
 bool IsWorkerNode();
