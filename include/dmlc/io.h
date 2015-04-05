@@ -5,9 +5,9 @@
  */
 #ifndef DMLC_IO_H_
 #define DMLC_IO_H_
+#include <cstdio>
 #include <string>
 #include <vector>
-#include "./base.h"
 
 /*! \brief namespace for dmlc */
 namespace dmlc {
@@ -79,6 +79,22 @@ class ISeekStream: public IStream {
   /*! \return whether we are at end of file */
   virtual bool AtEnd(void) const = 0;  
 };
+
+/*! \brief interface for serializable objects */
+class ISerializable {
+ public:
+  /*! 
+  * \brief load the model from a stream
+  * \param fi stream where to load the model from
+  */
+  virtual void Load(IStream &fi) = 0;
+  /*! 
+  * \brief saves the model to a stream
+  * \param fo stream where to save the model to
+  */
+  virtual void Save(IStream &fo) const = 0;
+};
+
 /*!
  * \brief input split header, used to create input split on input dataset
  * this class can be used to obtain filesystem invariant splits from input files
@@ -104,10 +120,11 @@ class InputSplit {
                             unsigned part_index,
                             unsigned num_parts);
 };
+
 // implementations of inline functions
 template<typename T>
 inline void IStream::Write(const std::vector<T> &vec) {
-  uint64_t sz = static_cast<uint64_t>(vec.size());
+  size_t sz = vec.size();
   this->Write(&sz, sizeof(sz));
   if (sz != 0) {
     this->Write(&vec[0], sizeof(T) * sz);
@@ -115,7 +132,7 @@ inline void IStream::Write(const std::vector<T> &vec) {
 }
 template<typename T>
 inline bool IStream::Read(std::vector<T> *out_vec) {
-  uint64_t sz;
+  size_t sz;
   if (this->Read(&sz, sizeof(sz)) == 0) return false;
   out_vec->resize(sz);
   if (sz != 0) {
@@ -124,14 +141,14 @@ inline bool IStream::Read(std::vector<T> *out_vec) {
   return true;
 }
 inline void IStream::Write(const std::string &str) {
-  uint64_t sz = static_cast<uint64_t>(str.length());
+  size_t sz = str.length();
   this->Write(&sz, sizeof(sz));
   if (sz != 0) {
     this->Write(&str[0], sizeof(char) * sz);
   }
 }
 inline bool IStream::Read(std::string *out_str) {
-  uint64_t sz;
+  size_t sz;
   if (this->Read(&sz, sizeof(sz)) == 0) return false;
   out_str->resize(sz);
   if (sz != 0) {

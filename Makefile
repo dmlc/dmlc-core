@@ -54,4 +54,4 @@ $(ALIB):
 	ar cr $@ $+
 
 clean:
-	$(RM) $(OBJ) $(BIN)  *~ src/*~ src/*/*~
+	$(RM) $(OBJ) $(BIN) $(ALIB)  *~ src/*~ src/*/*~
