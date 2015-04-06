@@ -30,7 +30,7 @@ IFileSystem *IFileSystem::Create(const std::string &protocol) {
 #endif
   }
   if (protocol == "s3://") {
-#if DMLC_USE_HDFS
+#if DMLC_USE_S3
     return new S3FileSystem();
 #else
     LOG(FATAL) << "Please compile with DMLC_USE_HDFS=1 to use hdfs";

@@ -109,7 +109,7 @@ inline FileInfo ConvertPathInfo(const hdfsFileInfo &info) {
 }
 
 FileInfo HDFSFileSystem::GetPathInfo(const URI &path) {
-  CHECK(path.protocol == "hdfs") << "HDFSFileSystem only works with hdfs";
+  CHECK(path.protocol == "hdfs://") << "HDFSFileSystem only works with hdfs";
   hdfsFileInfo *info = hdfsGetPathInfo(fs_, path.str().c_str());
   CHECK(info != NULL) << "Path do not exist:" << path.str();
   FileInfo ret = ConvertPathInfo(*info);

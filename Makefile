@@ -1,7 +1,9 @@
-ifneq ("$(wildcard ./config.mk)","")
-	config = config.mk
-else
-	config = make/config.mk
+ifndef config
+	ifneq ("$(wildcard ./config.mk)","")
+		config = config.mk
+	else
+		config = make/config.mk
+	endif
 endif
 # use customized config file
 include $(config)
@@ -15,11 +17,14 @@ CFLAGS+= $(DMLC_CFLAGS)
 
 .PHONY: clean all test
 
-OBJ=line_split.o io.o local_filesys.o s3_filesys.o data.o
+OBJ=line_split.o io.o local_filesys.o data.o
 
-# TODO move to make/dmlc.mk?
 ifeq ($(USE_HDFS), 1)
-OBJ+=hdfs_filesys.o
+	OBJ += hdfs_filesys.o
+endif
+
+ifeq ($(USE_S3), 1)
+	OBJ += s3_filesys.o	
 endif
 
 ALIB=libdmlc.a
