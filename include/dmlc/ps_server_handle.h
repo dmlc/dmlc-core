@@ -10,28 +10,64 @@ namespace dmlc {
 namespace ps {
 
 /**
- * \brief The default handle, which sums the data pushed from worker nodes.
+ * \brief The interface of a handle
  * \tparam V the value type
  */
 template <typename V>
-class DefaultHandle {
+class IHandle {
  public:
-  DefautHandle() { }
-  ~DefaultHandle() { }
+  IHandle() { }
+  virtual ~IHandle() { }
 
   /**
    * \brief Initialize the handle using the main arguments
    */
-  void Init(int argc, char *argv[]) { }
+  virtual void Init(int argc, char *argv[]) { }
 
   /**
    * \brief Handle PUSH requests from worker nodes
    *
    * @param recv_keys received keys
    * @param recv_vals received values
-   * @param my_vals local values
-   * @param my_size local value size
+   * @param my_vals_data local values
+   * @param my_vals_size local value size
    */
+  virtual void HandlePush(const Slice<K> recv_keys,
+                          const Slice<V> recv_vals,
+                          V* my_vals_data, size_t my_vals_size) = 0;
+
+  /**
+   * \brief Handle PUSH requests from worker nodes
+   *
+   * @param recv_keys received keys
+   * @param my_vals local values
+   * @param send_vals_data values sent to workers
+   * @param send_vals_size the size of values sent to workers
+   *
+   */
+  virtual void HandlePull(const Slice<K> recv_keys,
+                          const Slice<V> my_vals,
+                          V* send_vals_data, size_t send_vals_size) = 0;
+
+  /**
+   * \brief Initialize local values
+   *
+   * @param keys local keys
+   * @param vals_data local values
+   * @param vals_size local value size
+   */
+  void HandleInit(const Slice<K> keys, V* vals_data, size_t vals_size) = 0;
+};
+
+/**
+ * \brief The default handle, which sums the data pushed from worker nodes.
+ */
+template <typename V>
+class DefaultHandle : public IHandle<V> {
+ public:
+  DefautHandle() { }
+  ~DefaultHandle() { }
+
   void HandlePush(const Slice<K> recv_keys, const Slice<V> recv_vals,
                   V* my_vals, size_t my_size) {
     CHECK_EQ(recv_vals.size(), my_size);
@@ -40,15 +76,6 @@ class DefaultHandle {
     }
   }
 
-  /**
-   * \brief Handle PUSH requests from worker nodes
-   *
-   * @param recv_keys received keys
-   * @param my_vals local values
-   * @param send_vals values sent to workers
-   * @param send_size the size of values sent to workers
-   *
-   */
   void HandlePull(const Slice<K> recv_keys, const Slice<V> my_vals,
                   V* send_vals, size_t send_size) {
     CHECK_EQ(recv_size, recv_vals.size());
@@ -57,13 +84,6 @@ class DefaultHandle {
     }
   }
 
-  /**
-   * \brief Initialize local values
-   *
-   * @param keys local keys
-   * @param vals local values
-   * @param vals_size local value size
-   */
   void HandleInit(const Slice<K> keys, V* vals, size_t vals_size) {
     for (size_t i = 0; i < my_size; ++i) {
       my_vals[i] = 0;
@@ -79,7 +99,7 @@ class DefaultHandle {
  * \tparam V the value type
  */
 template <typename V>
-class EigenHandle {
+class EigenHandle : public IHandle<V> {
  public:
   EigenHandle() { }
   virtual ~EigenHandle() { }
