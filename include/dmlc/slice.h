@@ -62,13 +62,12 @@ class Slice {
   /// eigen3 support
 #if DMLC_USE_EIGEN
   typedef Eigen::Map<
-    const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic> > EigenArrayMap;
+    const Eigen::Array<T, Eigen::Dynamic, 1> > EigenArrayMap;
   /*!
-   * \brief Return a size()/k by k Eigen3 Array
+   * \brief Return a size() by 1 Eigen3 Array
    */
   EigenArrayMap ToEigenArray(int k = 1) const {
-    CHECK_EQ(size() % k, 0);
-    return EigenArrayMap(data(), size() / k, k);
+    return EigenArrayMap(data(), size());
   }
 
   typedef Eigen::Map<
