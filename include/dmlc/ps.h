@@ -1,7 +1,6 @@
 /*!
  * @file   ps.h
- *
- * @brief  The parameter server interface
+ * \brief  The parameter server interface
  */
 #ifndef DMLC_PS_H_
 #define DMLC_PS_H_
@@ -10,11 +9,19 @@
 namespace dmlc {
 namespace ps {
 
-/*! @brief The default type of a key */
+/*! \brief The default type of a key */
 typedef uint64_t K;
 
+}  // namespace ps
+}  // namespace dmlc
+
+#include "./slice.h"
+#include "./ps_server_handle.h"
+
+namespace dmlc {
+namespace ps {
 /*!
- * @brief key-value cache for worker nodes
+ * \brief key-value cache for worker nodes
  *
  * @tparam V the type of value
  */
@@ -28,14 +35,14 @@ class KVCache {
   explicit KVCache(int id = 0);
   ~KVCache();
 
-  /*! @brief Timestamp dependencies */
+  /*! \brief Timestamp dependencies */
   typedef std::initializer_list<int> Deps;
 
-  /*! @brief Callback function */
+  /*! \brief Callback function */
   typedef std::function<void()> Call;
 
   /*!
-   * @brief Pushes a list of key-value pairs into the parameter server
+   * \brief Pushes a list of key-value pairs into the parameter server
    *
    * It's a non-blocking call, which returns immediately once the message is
    * queued in the system's sending buffer. The actual push is finished only
@@ -62,17 +69,13 @@ class KVCache {
    *
    * @return the timestamp of this request.
    */
-  int Push(const std::vector<K>& keys,
-           const std::vector<V>& values,
-           const Deps& deps = {},
-           const Call& callback = Call()) {
-    return Push(keys.data(), keys.size(),
-                values.data(), values.size(),
-                deps, callback);
+  int Push(const std::vector<K>& keys, const std::vector<V>& values,
+           const Deps& deps = {}, const Call& callback = Call()) {
+    return Push(Slice<K>(keys), Slice<K>(values), deps, callback);
   }
 
   /*!
-   * @brief Pulls the values associated with the keys from the parameter server
+   * \brief Pulls the values associated with the keys from the parameter server
    *
    * It's a non-blocking call, which returns immediately once the message is
    * queued in the system's sending buffer. The actual push is finished only
@@ -96,18 +99,14 @@ class KVCache {
    \endcode
    * @return the timestamp of this request
    */
-  int Pull(const std::vector<K>& keys,
-           std::vector<V>* values,
-           const Deps& deps = {},
-           const Call& callback = Call()) {
-    return Pull(keys.data(), keys.size(),
-                values.data(), values.size(),
+  int Pull(const std::vector<K>& keys, std::vector<V>* values,
+           const Deps& deps = {}, const Call& callback = Call()) {
+    return Pull(Slice<K>(keys), values.data(), values.size(),
                 deps, callback);
   }
 
-
   /*!
-   * @brief Waits until a request has been finished
+   * \brief Waits until a request has been finished
    *
    * Sample usage:
    \code
@@ -118,26 +117,20 @@ class KVCache {
    */
   void Wait(int timestamp);
 
-  /*! @brief C-array style Push and Pull */
+  /*! \brief another style Push and Pull */
 
-  int Push(const K* key_ptr, size_t key_size,
-           const V* val_ptr, size_t val_size,
-           const Deps& deps = {},
-           const Call& callback = Call()) {
-    return Push_(key_ptr, key_size, val_ptr, val_size,
-                 false, deps, callback);
+  int Push(const Slice<K>& keys, const Slice<V>& values,
+           const Deps& deps = {}, const Call& callback = Call()) {
+    return Push_(keys, values, false, deps, callback);
   }
 
-  int Pull(const K* key_ptr, size_t key_size,
-           V* val_ptr, size_t val_size,
-           const Deps& deps = {},
-           const Call& callback = Call()) {
-    return Pull_(key_ptr, key_size, val_ptr, val_size,
-                 false, deps, callback);
+  int Pull(const Slice<K>& keys, V* val_data, size_t val_size,
+           const Deps& deps = {}, const Call& callback = Call()) {
+    return Pull_(keys, val_data, val_size, false, deps, callback);
   }
 
   /*!
-   * @brief Zero-copy Push and Pull.
+   * \brief Zero-copy Push and Pull.
    *
    * Similar to the C-array style Push and Pull, but the data in key_ptr (also
    * val_ptr in Push) will not be copied to reduce the communication delay.
@@ -145,44 +138,39 @@ class KVCache {
    * (and val_ptr) unchanged until the request is finished, namely Wait(ts)
    * returns or the callback is called.
    */
-  int ZPush(const K* key_ptr, size_t key_size,
-            const V* val_ptr, size_t val_size,
-            const Deps& deps = {},
-            const Call& callback = Call()) {
-    return Push_(key_ptr, key_size, val_ptr, val_size,
-                 true, deps, callback);
+  int Push(const Slice<K>& keys, const Slice<V>& values,
+           const Deps& deps = {}, const Call& callback = Call()) {
+    return Push_(keys, values, true, deps, callback);
   }
 
-  int ZPull(const K* key_ptr, size_t key_size,
-            V* val_ptr, size_t val_size,
-            const Deps& deps = {},
-            const Call& callback = Call()) {
-    return Pull_(key_ptr, key_size, val_ptr, val_size,
-                 true, deps, callback);
+  int Pull(const Slice<K>& keys, V* val_data, size_t val_size,
+           const Deps& deps = {}, const Call& callback = Call()) {
+    return Pull_(keys, val_data, val_size, true, deps, callback);
   }
 
-  /*! @brief advanced APIs */
+  /*! \brief advanced APIs */
 
   /*!
-   * @brief Increases the clock by delta
+   * \brief Increases the clock by delta
    */
   void IncrClock(int delta = 1);
 
-  /*! @brief Send a push message */
+  /*! \brief Send a push message */
   int Push(Message* msg);
 
-  /*! @brief Send a pull message */
+  /*! \brief Send a pull message */
   int Pull(Message* msg);
 
  private:
-  int Push_(const K* key_ptr, size_t key_size, const V* val_ptr, size_t val_size,
+
+  int Push_(const Slice<K>& keys, const Slice<V>& values,
             bool zero_copy, const Deps& deps, const Call& callback) {
     // TODO
     Message msg; return Push(&msg);
   }
 
-  int Pull_(const K* key_ptr, size_t key_size, V* val_ptr, size_t val_size,
-            bool zero_copy, const Deps& deps, const Call& callback) {
+  int Pull(const Slice<K>& keys, V* val_data, size_t val_size,
+           bool zero_copy, const Deps& deps, const Call& callback) {
     // TODO
     Message msg; return Push(&msg);
   }
@@ -192,18 +180,20 @@ class KVCache {
 typedef -1 DYNAMIC_LEN;
 
 /*!
- * @brief key-value store for server nodes
+ * \brief key-value store for server nodes
  *
  * @tparam V the value type
- * @tparam val_len the length of a value = val_len * sizeof(V), which is also
- * could be a dynamic length DYNAMIC_LEN, such as neural network
+ * @Handle User-defined handles
+ * @tparam val_len the length of a value (= val_len * sizeof(V)) that stored in
+ * local. It could be a dynamic length DYNAMIC_LEN
+ * @tparam sync_val_len the length of value will be synchronized
  */
-template <typename V, int val_len = 1>
+template <typename V, typename Handle = DefaultHanle<V>,
+          int val_len = 1, int sync_val_len = 1>
 class KVStore {
  public:
-
   /**
-   * @brief Process key-value pairs in online or batch style
+   * \brief Process key-value pairs in online or batch style
    *
    * - ONLINE: individual key-value pairs received from workers are feed into
    *   user-defined writer/reader one by one.
@@ -232,80 +222,26 @@ class KVStore {
   KVStore(int id = 0, Type type = ONLINE);
   ~KVStore();
 
-  /**
-   * @brief User-defined function
-   *
-   * @param key pointer to the received keys
-   * @param key_size number of received keys, which is 1 if the type is
-   * ONLINE, or the number of keys received from a worker in a push or pull
-   * request
-   * @param src_val pointer to the source value buffer
-   * @param dst_val pointer to the destination value buffer
-   */
-  typedef std::function<void(const K* key, size_t key_size,
-                             const V* src_val, V* dst_val)> UDF;
-
-  /**
-   * @brief Handle PULL requests from worker nodes
-   *
-   * - src_val: value stored at the parameter server, whose size is key_size *
-   *   val_len * sizeof(V)
-   *
-   * - dst_val: value received from a worker node, whose size is key_size *
-   *   recv_val_len * sizeof(V)
-   *
-   * @param udf
-   * @param recv_val_len the value length of received KV pairs
-   */
-  void SetReader(const UDF& udf, int recv_val_len);
-
-  /**
-   * @brief Handle PUSH requests from worker nodes
-   *
-   * - src_val: value received from a worker node, whose size is key_size *
-   *   recv_val_len * sizeof(V)
-   *
-   * - dst_val: value stored at the parameter server, whose size is key_size *
-   *   val_len * sizeof(V)
-   *
-   * @param udf
-   * @param recv_val_len the value length of received KV pairs
-   */
-  void SetWriter(const UDF& udf, int recv_val_len);
-
-  /**
-   * @brief Will be called when the first time a Push or a Pull request is
-   * received on keys
-   *
-   * - src_val: NULL
-   *
-   * - dst_val: value stored at the parameter server, whose size is key_size *
-   *   val_len * sizeof(V)
-   *
-   * @param udf
-   * @param recv_val_len the value length of received KV pairs
-   */
-  void SetIntializer(const UDF& udf, int recv_val_len);
-
-  /**
-   * @brief Must be called after all set functions are done
-   */
-  void Init();
+  void Init(int argc, char *argv[]) {
+    handle_.Init(argc, argv);
+  }
+ private:
+  Handle handle_;
 };
 
 
 /// functions to query my node information ///
 
-/*! @brief Return true if this node is a worker node. */
+/*! \brief Return true if this node is a worker node. */
 bool IsWorkerNode();
 
-/*! @brief Return true if this node is a server node. */
-bool IsWorkerNode();
+/*! \brief Return true if this node is a server node. */
+bool IsServerNode();
 
-/*! @brief Return true if this node is a scheduler node. */
+/*! \brief Return true if this node is a scheduler node. */
 bool IsSchedulerNode();
 
-/*! @brief The global unique string ID of this node */
+/*! \brief The global unique string ID of this node */
 std::string MyNodeID()
 
 
