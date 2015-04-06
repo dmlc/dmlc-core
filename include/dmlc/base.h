@@ -26,6 +26,12 @@
 #define DMLC_USE_PS 0
 #endif
 
+/*! \brief whether or not use eigen3 */
+#ifndef DMLC_USE_EIGEN
+#define DMLC_USE_EIGEN 0
+#endif
+
+
 ///
 /// code block to handle optionally loading
 ///
