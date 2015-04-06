@@ -1,19 +1,25 @@
 /*!
  * @file   ps.h
- *
  * \brief  The parameter server interface
  */
 #ifndef DMLC_PS_H_
 #define DMLC_PS_H_
 #if DMLC_USE_PS
 #include "./base.h"
-#include "./slice.h"
 namespace dmlc {
 namespace ps {
 
 /*! \brief The default type of a key */
 typedef uint64_t K;
 
+}  // namespace ps
+}  // namespace dmlc
+
+#include "./slice.h"
+#include "./ps_server_handle.h"
+
+namespace dmlc {
+namespace ps {
 /*!
  * \brief key-value cache for worker nodes
  *
@@ -177,13 +183,15 @@ typedef -1 DYNAMIC_LEN;
  * \brief key-value store for server nodes
  *
  * @tparam V the value type
- * @tparam val_len the length of a value = val_len * sizeof(V), which is also
- * could be a dynamic length DYNAMIC_LEN, such as neural network
+ * @Handle User-defined handles
+ * @tparam val_len the length of a value (= val_len * sizeof(V)) that stored in
+ * local. It could be a dynamic length DYNAMIC_LEN
+ * @tparam sync_val_len the length of value will be synchronized
  */
-template <typename V, int val_len = 1, >
+template <typename V, typename Handle = DefaultHanle<V>,
+          int val_len = 1, int sync_val_len = 1>
 class KVStore {
  public:
-
   /**
    * \brief Process key-value pairs in online or batch style
    *
@@ -214,65 +222,11 @@ class KVStore {
   KVStore(int id = 0, Type type = ONLINE);
   ~KVStore();
 
-  /**
-   * \brief User-defined function
-   *
-   * @param key pointer to the received keys
-   * @param key_size number of received keys, which is 1 if the type is
-   * ONLINE, or the number of keys received from a worker in a push or pull
-   * request
-   * @param src_val pointer to the source value buffer
-   * @param dst_val pointer to the destination value buffer
-   */
-  typedef std::function<void(const K* key, size_t key_size,
-                             const V* src_val, V* dst_val)> UDF;
-
-  /**
-   * \brief Handle PULL requests from worker nodes
-   *
-   * - src_val: value stored at the parameter server, whose size is key_size *
-   *   val_len * sizeof(V)
-   *
-   * - dst_val: value received from a worker node, whose size is key_size *
-   *   recv_val_len * sizeof(V)
-   *
-   * @param udf
-   * @param recv_val_len the value length of received KV pairs
-   */
-  void SetReader(const UDF& udf, int recv_val_len);
-
-  /**
-   * \brief Handle PUSH requests from worker nodes
-   *
-   * - src_val: value received from a worker node, whose size is key_size *
-   *   recv_val_len * sizeof(V)
-   *
-   * - dst_val: value stored at the parameter server, whose size is key_size *
-   *   val_len * sizeof(V)
-   *
-   * @param udf
-   * @param recv_val_len the value length of received KV pairs
-   */
-  void SetWriter(const UDF& udf, int recv_val_len);
-
-  /**
-   * \brief Will be called when the first time a Push or a Pull request is
-   * received on keys
-   *
-   * - src_val: NULL
-   *
-   * - dst_val: value stored at the parameter server, whose size is key_size *
-   *   val_len * sizeof(V)
-   *
-   * @param udf
-   * @param recv_val_len the value length of received KV pairs
-   */
-  void SetIntializer(const UDF& udf, int recv_val_len);
-
-  /**
-   * \brief Must be called after all set functions are done
-   */
-  void Init();
+  void Init(int argc, char *argv[]) {
+    handle_.Init(argc, argv);
+  }
+ private:
+  Handle handle_;
 };
 
 
@@ -282,7 +236,7 @@ class KVStore {
 bool IsWorkerNode();
 
 /*! \brief Return true if this node is a server node. */
-bool IsWorkerNode();
+bool IsServerNode();
 
 /*! \brief Return true if this node is a scheduler node. */
 bool IsSchedulerNode();
