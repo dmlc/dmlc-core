@@ -97,7 +97,7 @@ HDFSFileSystem::~HDFSFileSystem(void) {
   }  
 }
 
-inline FileInfo ConvertPathInfo(const hdfsFileInfo &info) {
+inline FileInfo ConvertPathInfo(const URI &path, const hdfsFileInfo &info) {
   FileInfo ret;
   ret.size = info.mSize;
   switch (info.mKind) {
@@ -105,6 +105,8 @@ inline FileInfo ConvertPathInfo(const hdfsFileInfo &info) {
     case 'F': ret.type = kFile; break;
     default: LOG(FATAL) << "unknown file type" << info.mKind;
   }
+  ret.path = path;
+  ret.path.name = info.mName;
   return ret;
 }
 
@@ -112,7 +114,7 @@ FileInfo HDFSFileSystem::GetPathInfo(const URI &path) {
   CHECK(path.protocol == "hdfs://") << "HDFSFileSystem only works with hdfs";
   hdfsFileInfo *info = hdfsGetPathInfo(fs_, path.str().c_str());
   CHECK(info != NULL) << "Path do not exist:" << path.str();
-  FileInfo ret = ConvertPathInfo(*info);
+  FileInfo ret = ConvertPathInfo(path, *info);
   hdfsFreeFileInfo(info, 1);
   return ret;
 }
@@ -123,7 +125,7 @@ void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_l
   CHECK(files != NULL) << "Error when ListDirectory " << path.str();
   out_list->clear();
   for (int i = 0; i < nentry; ++i) {
-    out_list->push_back(ConvertPathInfo(files[i]));
+    out_list->push_back(ConvertPathInfo(path, files[i]));
   }
   hdfsFreeFileInfo(files, nentry);
 }
