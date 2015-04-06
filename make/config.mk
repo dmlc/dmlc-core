@@ -1,10 +1,10 @@
 #-----------------------------------------------------
-#  dmlc: the configuration compile script
+#  dmlc-core: the configuration compile script
 #
-#  This is the default configuration setup for rabit-learn
+#  This is the default configuration setup for
 #  If you want to change configuration, do the following steps:
 #
-#  - copy this file to the root of dmlc folder
+#  - copy this file to the root of dmlc-core folder
 #  - modify the configuration you want
 #  - type make or make -j n on each of the folder
 #----------------------------------------------------
