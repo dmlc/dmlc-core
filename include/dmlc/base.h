@@ -21,6 +21,17 @@
 #define DMLC_USE_S3 0
 #endif
 
+/*! \brief whether or not use parameter server */
+#ifndef DMLC_USE_PS
+#define DMLC_USE_PS 0
+#endif
+
+/*! \brief whether or not use eigen3 */
+#ifndef DMLC_USE_EIGEN
+#define DMLC_USE_EIGEN 0
+#endif
+
+
 ///
 /// code block to handle optionally loading
 ///
@@ -64,7 +75,7 @@ typedef long long int64_t;
 /*! \brief namespace for dmlc */
 namespace dmlc {
 /*!
- * \brief safely get the beginning address of a vector 
+ * \brief safely get the beginning address of a vector
  * \param vec input vector
  * \return beginning address of a vector
  */
