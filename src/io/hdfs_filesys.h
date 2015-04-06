@@ -52,7 +52,9 @@ class HDFSFileSystem : public IFileSystem {
   /*! \brief namenode address */
   std::string namenode_;
   /*! \brief hdfs handle */
-  hdfsFS fs_;
+  hdfsFS fs_;  
+  /*! \brief reference counter of fs */
+  int *ref_counter_;
 };
 }  // namespace io
 }  // namespace dmlc

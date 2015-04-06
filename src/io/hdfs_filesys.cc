@@ -6,11 +6,12 @@ namespace io {
 // implementation of HDFS stream
 class HDFSStream : public ISeekStream {
  public:
-  HDFSStream(const char *namenode,
+  HDFSStream(hdfsFS fs,
+             int *ref_counter,
              const char *fname,
              const char *mode)
-      : at_end_(false) {
-    fs_ = hdfsConnect(namenode, 0);
+      : fs_(fs), ref_counter_(ref_counter), 
+        at_end_(false) {
     int flag = 0;
     if (!strcmp(mode, "r")) {
       flag = O_RDONLY;
@@ -26,9 +27,13 @@ class HDFSStream : public ISeekStream {
   }
   virtual ~HDFSStream(void) {
     this->Close();
-    if (hdfsDisconnect(fs_) != 0) {
-      int errsv = errno;
-      LOG(FATAL) << "HDFSStream.hdfsDisconnect Error:" << strerror(errsv);
+    ref_counter_[0] -= 1;
+    if (ref_counter_[0] == 0) {
+      delete ref_counter_;
+      if (hdfsDisconnect(fs_) != 0) {
+        int errsv = errno;
+        LOG(FATAL) << "HDFSStream.hdfsDisconnect Error:" << strerror(errsv);
+      }
     }
   }
   virtual size_t Read(void *ptr, size_t size) {
@@ -80,8 +85,10 @@ class HDFSStream : public ISeekStream {
       fp_ = NULL;
     }
   }  
+
  private:
   hdfsFS fs_;
+  int *ref_counter_;
   hdfsFile fp_;
   bool at_end_;
 };
@@ -89,12 +96,18 @@ class HDFSStream : public ISeekStream {
 HDFSFileSystem::HDFSFileSystem(void) {
   namenode_ = "default";
   fs_ = hdfsConnect(namenode_.c_str(), 0);
+  ref_counter_ = new int();
+  ref_counter_[0] = 1;
 }
 HDFSFileSystem::~HDFSFileSystem(void) {
-  if (hdfsDisconnect(fs_) != 0) {
-    int errsv = errno;
-    LOG(FATAL) << "HDFSStream.hdfsDisconnect Error:" << strerror(errsv);
-  }  
+  ref_counter_[0] -= 1;
+  if (ref_counter_[0] == 0) {  
+    delete ref_counter_;
+    if (hdfsDisconnect(fs_) != 0) {
+      int errsv = errno;
+      LOG(FATAL) << "HDFSStream.hdfsDisconnect Error:" << strerror(errsv);
+    }
+  }
 }
 
 inline FileInfo ConvertPathInfo(const URI &path, const hdfsFileInfo &info) {
@@ -105,8 +118,13 @@ inline FileInfo ConvertPathInfo(const URI &path, const hdfsFileInfo &info) {
     case 'F': ret.type = kFile; break;
     default: LOG(FATAL) << "unknown file type" << info.mKind;
   }
-  ret.path = path;
-  ret.path.name = info.mName;
+  URI hpath(info.mName);
+  if (hpath.protocol == "hdfs://") {
+    ret.path = hpath;
+  } else {
+    ret.path = path;
+    ret.path.name = info.mName;
+  }
   return ret;
 }
 
@@ -131,11 +149,12 @@ void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_l
 }
 
 ISeekStream *HDFSFileSystem::Open(const URI &path, const char* const flag) {
-  return new HDFSStream(namenode_.c_str(), path.str().c_str(), flag);
+  ref_counter_[0] += 1;
+  return new HDFSStream(fs_, ref_counter_, path.str().c_str(), flag);
 }
 
 ISeekStream *HDFSFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
-  ISeekStream *stream = new HDFSStream(namenode_.c_str(), path.str().c_str(), "r");
+  ISeekStream *stream = Open(path, "r");
   stream->Seek(begin_bytes);
   return stream;
 }
