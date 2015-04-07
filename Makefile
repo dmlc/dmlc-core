@@ -13,7 +13,7 @@ include make/dmlc.mk
 export LDFLAGS= -pthread -lm
 export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude
 LDFLAGS+= $(DMLC_LDFLAGS)
-CFLAGS+= $(DMLC_CFLAGS)
+CFLAGS+= $(DMLC_CFLAGS) -std=c++11
 
 .PHONY: clean all test
 
@@ -24,13 +24,14 @@ ifeq ($(USE_HDFS), 1)
 endif
 
 ifeq ($(USE_S3), 1)
-	OBJ += s3_filesys.o	
+	OBJ += s3_filesys.o
 endif
 
-ALIB=libdmlc.a
-TEST=test/logging_test test/filesys_test test/dataiter_test
 
-all: $(ALIB) $(TEST)
+ALIB=libdmlc.a
+all: $(ALIB) test
+
+include test/dmlc_test.mk
 test: $(TEST)
 
 line_split.o: src/io/line_split.cc
@@ -40,14 +41,8 @@ local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
 data.o: src/data.cc
 
-test/logging_test: test/logging_test.cc
-test/filesys_test: test/filesys_test.cc src/io/*.h libdmlc.a
-test/dataiter_test: test/dataiter_test.cc  libdmlc.a
-
 libdmlc.a: $(OBJ)
 
-$(TEST) :
-	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
 
 $(BIN) :
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
@@ -59,4 +54,4 @@ $(ALIB):
 	ar cr $@ $+
 
 clean:
-	$(RM) $(OBJ) $(BIN) $(ALIB)  *~ src/*~ src/*/*~
+	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) *~ src/*~ src/*/*~

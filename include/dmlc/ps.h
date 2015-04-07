@@ -4,7 +4,6 @@
  */
 #ifndef DMLC_PS_H_
 #define DMLC_PS_H_
-#if DMLC_USE_PS
 #include "./base.h"
 #include "./blob.h"
 namespace dmlc {
@@ -13,9 +12,9 @@ namespace ps {
 /*! \brief The default type of a key */
 typedef uint64_t K;
 
-//////////////////////////
-///  Worker node APIs  ///
-//////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///                              Worker node APIs                           ///
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * \brief The main function for a worker node
@@ -119,7 +118,7 @@ class KVCache {
    */
   int Pull(const std::vector<K>& keys, std::vector<V>* values,
            const SyncOpts& opts = SyncOpts()) {
-    return Pull(CBlob<K>(keys), Blob(&values), opts);
+    return Pull(CBlob<K>(keys), Blob<V>(*values), opts);
   }
 
   /*!
@@ -136,8 +135,8 @@ class KVCache {
 
   /*! \brief Blob style Push and Pull */
 
-  int Push(CBlob<V> keys, CBlob<V> values, const SyncOpts& opts = SyncOpts());
-  int Pull(CBlob<V> keys, Blob<V> values, const SyncOpts& opts = SyncOpts());
+  int Push(CBlob<K> keys, CBlob<V> values, const SyncOpts& opts = SyncOpts());
+  int Pull(CBlob<K> keys, Blob<V> values, const SyncOpts& opts = SyncOpts());
 
   /*! \brief More advanced Push and Pull by using shared blob */
 
@@ -153,9 +152,9 @@ class KVCache {
  private:
 };
 
-//////////////////////////
-///  Worker node APIs  ///
-//////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///                             Server node APIs                            ///
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * \brief The main function for a server node
@@ -208,7 +207,7 @@ class IHandle {
 };
 
 
-static int kDynamicLen = -1;
+#define DYNAMIC_LEN -1
 
 /*!
  * \brief key-value store for server nodes
@@ -219,7 +218,7 @@ static int kDynamicLen = -1;
  * local. It could be a dynamic length DYNAMIC_LEN
  * @tparam sync_val_len the length of value will be synchronized
  */
-template <typename V, typename Handle = Handle<V>,
+template <typename V, typename Handle = IHandle<V>,
           int val_len = 1, int sync_val_len = 1>
 class KVStore {
  public:
@@ -250,38 +249,44 @@ class KVStore {
    *  initializer, see comments below
    * @param id the unique identity. Negative IDs is preserved by system.
    */
-  KVStore(int id = 0, Type type = ONLINE);
-  ~KVStore();
+  KVStore(int id = 0, Type type = ONLINE) { }
+  ~KVStore() { }
 
-  void Run();
+  Handle& handle() { return handle_; }
+  void Run() { }
  private:
   Handle handle_;
 };
 
 
-///  Scheduler Node API  ///
+///////////////////////////////////////////////////////////////////////////////
+///                            Scheduler Node APIs                          ///
+///////////////////////////////////////////////////////////////////////////////
 // TODO
 
-/// APIs to query my node information ///
+///////////////////////////////////////////////////////////////////////////////
+///                            More Advanced APIs                           ///
+///////////////////////////////////////////////////////////////////////////////
+/// ///
 
 /*! \brief Return true if this node is a worker node. */
-bool IsWorkerNode();
+bool IsWorkerNode() { return true; }
 
 /*! \brief Return true if this node is a server node. */
-bool IsServerNode();
+bool IsServerNode() { return true; }
 
 /*! \brief Return true if this node is a scheduler node. */
-bool IsSchedulerNode();
+bool IsSchedulerNode() {return true;  }
 
 /*! \brief The global unique string ID of this node */
-std::string MyNodeID()
+std::string MyNodeID() { return std::string(); }
 
 
 }  // namespace ps
 }  // namespace dmlc
 
 /// implementation
-#include "src/ps-inl.h"
 
-#endif  // DMLC_USE_PS
 #endif  /* DMLC_PS_H_ */
+
+#include "../../src/ps/ps-inl.h"

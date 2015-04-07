@@ -7,6 +7,8 @@
 #define DMLC_BLOB_H_
 #include <string>
 #include <vector>
+#include <memory>
+#include <string>
 #include "logging.h"
 #if DMLC_USE_EIGEN
 #include "Eigen/src/Core/Map.h"
@@ -56,6 +58,9 @@ struct Blob {
   }
 #endif  // DMLC_USE_EIGEN
 
+  std::string ShortDebugString() {
+    return std::string();
+  }
 };
 
 /**
@@ -78,6 +83,9 @@ class CBlob {
     return data[n];
   }
 
+  std::string ShortDebugString() {
+    return std::string();
+  }
 #if DMLC_USE_EIGEN
   typedef Eigen::Map<
     Eigen::Array<T, Eigen::Dynamic, 1> > EigenArrayMap;
@@ -106,27 +114,30 @@ class CBlob {
 template<class T>
 class SBlob {
  public:
-  SArray() { }
-  ~SArray() { }
+  SBlob() { }
+  ~SBlob() { }
 
   /*! @brief Create a blob with length n, values are initialized to 0 */
-  explicit SArray(size_t n) { resize(n); }
+  explicit SBlob(size_t n) { }
 
-  SBlob(V* data, size_t size, bool deletable = true) {
+  SBlob(T* data, size_t size, bool deletable = true) {
   }
 
   template <typename V>
-  expclit SBlob(const std::initializer_list<V>& list);
+  SBlob(const std::initializer_list<V>& list) { }
 
   void CopyFrom(const T* data, size_t size) { }
 
   T& operator[](size_t i) const { return data_.get()[i]; }
   T* data() const { return data_.get(); }
 
-
+size_t size() { return size_; }
+  std::string ShortDebugString() {
+    return std::string();
+  }
  private:
   size_t size_ = 0;
-  std::shared_ptr<T> data_(NULL);
+  std::shared_ptr<T> data_;
 };
 
 // TODO support string? i.e. construct from string, and ToString

@@ -1,4 +1,4 @@
-#include "dmlc/ps.h"
+#include <dmlc/ps.h>
 
 typedef float V;
 
@@ -20,7 +20,7 @@ int WorkerNodeMain(int argc, char *argv[]) {
 
   /// pull from server, but let the pull executed after push is done at the
   /// server
-  SyncOpts pull_opts; pull_opts.desp = {ts};
+  SyncOpts pull_opts; pull_opts.deps = {ts};
   std::vector<V> recv_val_1(val_1.size());
   ts = worker.Pull(key_1, &recv_val_1, pull_opts);
   worker.Wait(ts);
@@ -28,16 +28,23 @@ int WorkerNodeMain(int argc, char *argv[]) {
   LOG(ERROR) << CBlob<V>(recv_val_1).ShortDebugString();
 
   /// zero-copy push & pull
-  SBlob<V> key_2 = {2, 4, 5};
+  SBlob<K> key_2 = {2, 4, 5};
   SBlob<V> val_2 = {1, 1, 1};
   SBlob<V> recv_val_2(val_2.size());
 
   ts = worker.Push(key_2, val_2);
 
-  pull_opts.desp = {ts};
+  pull_opts.deps = {ts};
   worker.Wait(worker.Pull(key_2, &recv_val_2, pull_opts));
 
   LOG(ERROR) << recv_val_2.ShortDebugString();
 
+  return 0;
+}
+
+// TODO put it somewhere...
+int main(int argc, char *argv[]) {
+  CreateServerNode(argc, argv);
+  WorkerNodeMain(argc, argv);
   return 0;
 }
