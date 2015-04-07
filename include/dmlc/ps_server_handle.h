@@ -5,51 +5,11 @@
 #ifndef DMCL_PS_SERVER_HANDLE_
 #define DMCL_PS_SERVER_HANDLE_
 #include "./base.h"
-#include "./slice.h"
+#include "./ps.h"
 namespace dmlc {
 namespace ps {
 
-/**
- * \brief The default user-defineable handle.
- * \tparam V the value type
- */
-template <typename V>
-class Handle {
- public:
-  Handle() { }
-  virtual ~Handle() { }
-
-  /**
-   * \brief Initialize the handle using the main arguments
-   */
-  void Init(int argc, char *argv[]) { }
-
-  /**
-   * \brief Handle PUSH requests from worker nodes
-   *
-   */
-  inline void HandlePush(CBlob<V> recv_keys,
-                         CBlob<V> recv_vals,
-                         Blob<V> my_vals) {
-  }
-
-  /**
-   * \brief Handle PUSH requests from worker nodes
-   *
-   *
-   */
-  inline void HandlePull(CBlob<V> recv_keys,
-                         CBlob<V> my_vals,
-                         Blob<V> send_vals) {
-  }
-
-  /**
-   * \brief Initialize local values
-   */
-  inline void HandleInit(CBlob<V> keys,
-                         Blob<V> vals) {
-  }
-};
+// TODO
 
 // /**
 //  * \brief The default handle, which sums the data pushed from worker nodes.
@@ -85,29 +45,30 @@ class Handle {
 
 // #if DMLC_USE_EIGEN
 // /**
-//  * \brief A wrapper of the handle using Eigen3. One needs to implement the
-//  * virtual functions
-//  *
+//  * \brief A wrapper of the handle using Eigen3.
 //  * \tparam V the value type
 //  */
 // template <typename V>
-// class EigenHandle : public IHandle<V> {
+// class EigenHandle : public Handle<V> {
 //  public:
 //   EigenHandle() { }
 //   virtual ~EigenHandle() { }
-//   virtual void Init(int argc, char *argv[]) { }
 
 //   typedef Eigen::Map<Eigen::Array<V, Eigen::Dynamic, 1> > EigenArray;
 //   typedef Eigen::Map<
 //     const Eigen::Array<V, Eigen::Dynamic, 1> > EigenConstArray;
 
-//   virtual HandlePush(const EigenConstArray& recv_keys,
-//                      const EigenConstArray& recv_vals,
-//                      EigenArray& my_vals) = 0;
+//   void HandlePush(const EigenConstArray& recv_keys,
+//                   const EigenConstArray& recv_vals,
+//                   EigenArray& my_vals) {
+//     my_vals += recv_vals;
+//   }
 
-//   virtual HandlePull(const EigenConstArray& recv_keys,
-//                      const EigenConstArray& my_vals,
-//                      EigenArray& send_vals) = 0;
+//   void HandlePull(const EigenConstArray& recv_keys,
+//                   const EigenConstArray& my_vals,
+//                   EigenArray& send_vals) {
+
+//   }
 
 //   virtual HandleInit(const EigenConstArray& keys,
 //                      EigenArray& vals) = 0;

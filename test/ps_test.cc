@@ -4,7 +4,6 @@ typedef float V;
 
 int CreateServerNode(int argc, char *argv[]) {
   dmlc::ps::KVStore<V> server; server.Run();
-
   return 0;
 }
 

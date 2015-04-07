@@ -6,23 +6,27 @@
 #define DMLC_PS_H_
 #if DMLC_USE_PS
 #include "./base.h"
+#include "./blob.h"
 namespace dmlc {
 namespace ps {
 
 /*! \brief The default type of a key */
 typedef uint64_t K;
 
-}  // namespace ps
-}  // namespace dmlc
-
-#include "./slice.h"
-#include "./ps_server_handle.h"
-
-namespace dmlc {
-namespace ps {
+//////////////////////////
+///  Worker node APIs  ///
+//////////////////////////
 
 /**
- * \brief Opts for Push and Pull
+ * \brief The main function for a worker node
+ *
+ * All flags and their arguments (e.g. -logtostderr 1) has been parsed and removed
+ * from argc and argv, but commandline arguments are remained such as data=my_data.txt
+ */
+int WorkerNodeMain(int argc, char *argv[]);
+
+/**
+ * \brief Options for Push and Pull
  */
 struct SyncOpts {
   /**
@@ -36,7 +40,6 @@ struct SyncOpts {
    * response from the parameter server
    */
   std::function<void()> callback;
-
   /**
    * \brief zero-copy synchronization. Keys (and values) will not be copied to
    * reduce the communication delay. Therefore, it is the user's responsibility
@@ -47,7 +50,7 @@ struct SyncOpts {
 };
 
 /*!
- * \brief key-value cache for worker nodes
+ * \brief key-value cache for sending (receiving) key-value pairs to (from) servers
  *
  * @tparam V the type of value
  */
@@ -87,10 +90,9 @@ class KVCache {
    *
    * @return the timestamp of this request.
    */
-  int Push(const std::vector<K>& keys,
-           const std::vector<V>& values,
+  int Push(const std::vector<K>& keys, const std::vector<V>& values,
            const SyncOpts& opts = SyncOpts()) {
-    return Push(keys.data(), keys.size(), values.data(), values.size(), opts);
+    return Push(CBlob<K>(keys), CBlob<V>(values), opts);
   }
 
   /*!
@@ -115,10 +117,9 @@ class KVCache {
    \endcode
    * @return the timestamp of this request
    */
-  int Pull(const std::vector<K>& keys,
-           std::vector<V>* values,
+  int Pull(const std::vector<K>& keys, std::vector<V>* values,
            const SyncOpts& opts = SyncOpts()) {
-    return Pull(keys.data(), keys.size(), values->data(), values->size(), opts);
+    return Pull(CBlob<K>(keys), Blob(&values), opts);
   }
 
   /*!
@@ -135,27 +136,15 @@ class KVCache {
 
   /*! \brief Blob style Push and Pull */
 
-  int Push(CBlob<V> keys, CBlob<V> values,
-           const SyncOpts& opts = SyncOpts()) {
-  }
-
-  int Pull(CBlob<V> keys, Blob<V> values,
-           const SyncOpts& opts = SyncOpts()) {
-  }
-
+  int Push(CBlob<V> keys, CBlob<V> values, const SyncOpts& opts = SyncOpts());
+  int Pull(CBlob<V> keys, Blob<V> values, const SyncOpts& opts = SyncOpts());
 
   /*! \brief More advanced Push and Pull by using shared blob */
 
-  int Push(const SBlob<K>& keys,
-           const SBlob<V>& values,
-           const SyncOpts& opts = SyncOpts()) {
-
-  }
-
-  int Pull(const SBlob<K>& keys,
-           SBlob<V>* values,
-           const SyncOpts& opts = SyncOpts()) {
-  }
+  int Push(const SBlob<K>& keys, const SBlob<V>& values,
+           const SyncOpts& opts = SyncOpts());
+  int Pull(const SBlob<K>& keys, SBlob<V>* values,
+           const SyncOpts& opts = SyncOpts());
 
   /*!
    * \brief Increases the clock by delta
@@ -164,6 +153,59 @@ class KVCache {
  private:
 };
 
+//////////////////////////
+///  Worker node APIs  ///
+//////////////////////////
+
+/**
+ * \brief The main function for a server node
+ *
+ * All flags and their arguments (e.g. -logtostderr 1) has been parsed and removed
+ * from argc and argv, but commandline arguments are remained such as data=my_data.txt
+ */
+int CreateServerNode(int argc, char *argv[]);
+
+/**
+ * \brief An example of user-defineable handle. See more handle examples in
+ * ps_server_handle.h
+ * \tparam V the value type
+ */
+template <typename V>
+class IHandle {
+ public:
+  IHandle() { }
+  virtual ~IHandle() { }
+
+  /**
+   * \brief Handle PUSH requests from worker nodes
+   *
+   * @param recv_keys the keys received from a worker node
+   * @param recv_vals the corresponding values received from the worker node
+   * @param my_vals the corresponding local values
+   */
+  inline void HandlePush(CBlob<V> recv_keys, CBlob<V> recv_vals,
+                         Blob<V> my_vals) {
+    LOG(FATAL) << "implement this function";
+  }
+  /**
+   * \brief Handle PUSH requests from worker nod
+   *
+   * @param recv_keys the keys received from a worker node
+   * @param my_vals the corresponding local values
+   * @param sent_vals the corresponding values will send to the worker node
+   */
+  inline void HandlePull(CBlob<V> recv_keys, CBlob<V> my_vals,
+                         Blob<V> send_vals) {
+    LOG(FATAL) << "implement this function";
+  }
+
+  /**
+   * \brief Initialize local values
+   */
+  inline void HandleInit(CBlob<V> keys, Blob<V> vals) {
+    LOG(FATAL) << "implement this function";
+  }
+};
 
 
 static int kDynamicLen = -1;
@@ -177,7 +219,7 @@ static int kDynamicLen = -1;
  * local. It could be a dynamic length DYNAMIC_LEN
  * @tparam sync_val_len the length of value will be synchronized
  */
-template <typename V, typename Handle = DefaultHanle<V>,
+template <typename V, typename Handle = Handle<V>,
           int val_len = 1, int sync_val_len = 1>
 class KVStore {
  public:
@@ -217,7 +259,10 @@ class KVStore {
 };
 
 
-/// functions to query my node information ///
+///  Scheduler Node API  ///
+// TODO
+
+/// APIs to query my node information ///
 
 /*! \brief Return true if this node is a worker node. */
 bool IsWorkerNode();
@@ -234,6 +279,9 @@ std::string MyNodeID()
 
 }  // namespace ps
 }  // namespace dmlc
+
+/// implementation
+#include "src/ps-inl.h"
 
 #endif  // DMLC_USE_PS
 #endif  /* DMLC_PS_H_ */
