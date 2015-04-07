@@ -20,6 +20,32 @@ typedef uint64_t K;
 
 namespace dmlc {
 namespace ps {
+
+/**
+ * \brief Opts for Push and Pull
+ */
+struct SyncOpts {
+  /**
+   * \brief the timestamp of the depended requests. This request will be
+   * processed by the parameter servers only after the depended requests have
+   * been processed.
+   */
+  std::initializer_list<int> deps;
+  /**
+   * \brief the function will be executed after received the
+   * response from the parameter server
+   */
+  std::function<void()> callback;
+
+  /**
+   * \brief zero-copy synchronization. Keys (and values) will not be copied to
+   * reduce the communication delay. Therefore, it is the user's responsibility
+   * to keep the keys and values unchanged until the request is finished, namely
+   * Wait(ts) returns or the callback is called.
+   */
+  bool zero_copy = false;
+};
+
 /*!
  * \brief key-value cache for worker nodes
  *
@@ -35,18 +61,15 @@ class KVCache {
   explicit KVCache(int id = 0);
   ~KVCache();
 
-  /*! \brief Timestamp dependencies */
-  typedef std::initializer_list<int> Deps;
-
-  /*! \brief Callback function */
-  typedef std::function<void()> Call;
-
   /*!
    * \brief Pushes a list of key-value pairs into the parameter server
    *
    * It's a non-blocking call, which returns immediately once the message is
    * queued in the system's sending buffer. The actual push is finished only
    * after Wait(returned_timestamp) returns or the provided callback is called.
+   *
+   * Both keys and values will be copied, using the SArray version for zero-copy
+   * pushing.
    *
    * Sample usage: assume we have two key-value pairs {1, (1.1, 1.2)}, {3,
    * (3.1,3.2)}, where the value is a 2-length float vector. We then can push these
@@ -61,17 +84,13 @@ class KVCache {
    * @param keys a list of keys
    * @param values a list of values, whose size should be an integer multiple
    * the key size
-   * @param deps the timestamp of the depended requests. This request will be
-   * processed by the parameter servers only after the depended requests have
-   * been processed.
-   * @param callback the function will be executed after received the
-   * finish ack from the parameter server
    *
    * @return the timestamp of this request.
    */
-  int Push(const std::vector<K>& keys, const std::vector<V>& values,
-           const Deps& deps = {}, const Call& callback = Call()) {
-    return Push(Slice<K>(keys), Slice<K>(values), deps, callback);
+  int Push(const std::vector<K>& keys,
+           const std::vector<V>& values,
+           const SyncOpts& opts = SyncOpts()) {
+    return Push(keys.data(), keys.size(), values.data(), values.size(), opts);
   }
 
   /*!
@@ -81,13 +100,10 @@ class KVCache {
    * queued in the system's sending buffer. The actual push is finished only
    * after Wait(returned_timestamp) returns or the provided callback is called.
    *
+   * Keys will be copied, using the SArray version for zero-copy pushing.
+   *
    * @param keys a list of keys
    * @param values the buffer for the pulled values, which should be pre-allocated
-   * @param deps the timestamp of the depended requests. This request will be
-   * processed by the parameter servers only after the depended requests have
-   * been processed.
-   * @param callback the function will be executed after the pulled values are
-   * ready
    *
    * Sample usage: again assume each key is associated with a 2-length float
    * vector value. We then can pull the newest value from the parameter server:
@@ -99,10 +115,10 @@ class KVCache {
    \endcode
    * @return the timestamp of this request
    */
-  int Pull(const std::vector<K>& keys, std::vector<V>* values,
-           const Deps& deps = {}, const Call& callback = Call()) {
-    return Pull(Slice<K>(keys), values.data(), values.size(),
-                deps, callback);
+  int Pull(const std::vector<K>& keys,
+           std::vector<V>* values,
+           const SyncOpts& opts = SyncOpts()) {
+    return Pull(keys.data(), keys.size(), values->data(), values->size(), opts);
   }
 
   /*!
@@ -117,67 +133,40 @@ class KVCache {
    */
   void Wait(int timestamp);
 
-  /*! \brief another style Push and Pull */
+  /*! \brief Blob style Push and Pull */
 
-  int Push(const Slice<K>& keys, const Slice<V>& values,
-           const Deps& deps = {}, const Call& callback = Call()) {
-    return Push_(keys, values, false, deps, callback);
+  int Push(CBlob<V> keys, CBlob<V> values,
+           const SyncOpts& opts = SyncOpts()) {
   }
 
-  int Pull(const Slice<K>& keys, V* val_data, size_t val_size,
-           const Deps& deps = {}, const Call& callback = Call()) {
-    return Pull_(keys, val_data, val_size, false, deps, callback);
+  int Pull(CBlob<V> keys, Blob<V> values,
+           const SyncOpts& opts = SyncOpts()) {
   }
 
-  /*!
-   * \brief Zero-copy Push and Pull.
-   *
-   * Similar to the C-array style Push and Pull, but the data in key_ptr (also
-   * val_ptr in Push) will not be copied to reduce the communication delay.
-   * Therefore, it is the user's responsibility to keep the content of key_ptr
-   * (and val_ptr) unchanged until the request is finished, namely Wait(ts)
-   * returns or the callback is called.
-   */
-  int Push(const Slice<K>& keys, const Slice<V>& values,
-           const Deps& deps = {}, const Call& callback = Call()) {
-    return Push_(keys, values, true, deps, callback);
+
+  /*! \brief More advanced Push and Pull by using shared blob */
+
+  int Push(const SBlob<K>& keys,
+           const SBlob<V>& values,
+           const SyncOpts& opts = SyncOpts()) {
+
   }
 
-  int Pull(const Slice<K>& keys, V* val_data, size_t val_size,
-           const Deps& deps = {}, const Call& callback = Call()) {
-    return Pull_(keys, val_data, val_size, true, deps, callback);
+  int Pull(const SBlob<K>& keys,
+           SBlob<V>* values,
+           const SyncOpts& opts = SyncOpts()) {
   }
-
-  /*! \brief advanced APIs */
 
   /*!
    * \brief Increases the clock by delta
    */
   void IncrClock(int delta = 1);
-
-  /*! \brief Send a push message */
-  int Push(Message* msg);
-
-  /*! \brief Send a pull message */
-  int Pull(Message* msg);
-
  private:
-
-  int Push_(const Slice<K>& keys, const Slice<V>& values,
-            bool zero_copy, const Deps& deps, const Call& callback) {
-    // TODO
-    Message msg; return Push(&msg);
-  }
-
-  int Pull(const Slice<K>& keys, V* val_data, size_t val_size,
-           bool zero_copy, const Deps& deps, const Call& callback) {
-    // TODO
-    Message msg; return Push(&msg);
-  }
 };
 
 
-typedef -1 DYNAMIC_LEN;
+
+static int kDynamicLen = -1;
 
 /*!
  * \brief key-value store for server nodes
@@ -222,9 +211,7 @@ class KVStore {
   KVStore(int id = 0, Type type = ONLINE);
   ~KVStore();
 
-  void Init(int argc, char *argv[]) {
-    handle_.Init(argc, argv);
-  }
+  void Run();
  private:
   Handle handle_;
 };

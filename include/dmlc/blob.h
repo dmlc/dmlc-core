@@ -16,9 +16,10 @@
 namespace dmlc {
 
 /*!
- * \brief Blob is a simple structure containing a pointer into some external
- * storage and a size. The user of a Blob must ensure that the blob is not
- * used after the corresponding external storage has been deallocated.
+ * \brief Blob, Binary Large OBject, is a simple structure containing a pointer
+ * into some external storage and a size. The user of a Blob must ensure that
+ * the blob is not used after the corresponding external storage has been
+ * deallocated.
  *
  * \tparam T the date type
  */
