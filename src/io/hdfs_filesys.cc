@@ -4,7 +4,7 @@
 namespace dmlc {
 namespace io {
 // implementation of HDFS stream
-class HDFSStream : public ISeekStream {
+class HDFSStream : public SeekStream {
  public:
   HDFSStream(hdfsFS fs,
              int *ref_counter,
@@ -148,13 +148,13 @@ void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_l
   hdfsFreeFileInfo(files, nentry);
 }
 
-ISeekStream *HDFSFileSystem::Open(const URI &path, const char* const flag) {
+SeekStream *HDFSFileSystem::Open(const URI &path, const char* const flag) {
   ref_counter_[0] += 1;
   return new HDFSStream(fs_, ref_counter_, path.str().c_str(), flag);
 }
 
-ISeekStream *HDFSFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
-  ISeekStream *stream = Open(path, "r");
+SeekStream *HDFSFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
+  SeekStream *stream = Open(path, "r");
   stream->Seek(begin_bytes);
   return stream;
 }

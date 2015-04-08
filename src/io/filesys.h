@@ -71,7 +71,7 @@ struct FileInfo {
 };
 
 /*! \brief file system system interface */
-class IFileSystem {
+class FileSystem {
  public:
   /*!
    * \brief create filesystem according to protocol
@@ -80,9 +80,9 @@ class IFileSystem {
    * \return a corresponding filesystem, report error if
    *         we cannot find a matching system
    */
-  static IFileSystem* Create(const std::string &protocol);  
+  static FileSystem* Create(const std::string &protocol);  
   /*! \brief virtual destructor */
-  virtual ~IFileSystem() {}
+  virtual ~FileSystem() {}
   /*!
    * \brief get information about a path 
    * \param path the path to the file
@@ -101,13 +101,13 @@ class IFileSystem {
    * \param uri the uri of the input, can contain hdfs prefix
    * \param flag can be "w", "r", "a"   
    */
-  virtual IStream *Open(const URI &path, const char* const flag) = 0;  
+  virtual Stream *Open(const URI &path, const char* const flag) = 0;  
   /*!
    * \brief open a stream for read, with ability to specify starting location
    * \param path the path to the file
    * \parma begin_bytes the beginning bytes to start reading
    */
-  virtual IStream *OpenPartForRead(const URI &path, size_t begin_bytes) = 0;
+  virtual Stream *OpenPartForRead(const URI &path, size_t begin_bytes) = 0;
 };
 }  // namespace io
 }  // namespace dmlc

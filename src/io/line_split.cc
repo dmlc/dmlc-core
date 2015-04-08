@@ -5,7 +5,7 @@
 
 namespace dmlc {
 namespace io {
-LineSplitter::LineSplitter(IFileSystem *filesys,
+LineSplitter::LineSplitter(FileSystem *filesys,
                            const char *uri,
                            unsigned rank,
                            unsigned nsplit) 

@@ -12,7 +12,7 @@
 namespace dmlc {
 namespace io {
 /*! \brief AWS S3 filesystem */
-class S3FileSystem : public IFileSystem {
+class S3FileSystem : public FileSystem {
  public:
   /*! \brief constructor */
   S3FileSystem();
@@ -32,19 +32,19 @@ class S3FileSystem : public IFileSystem {
   virtual void ListDirectory(const URI &path, std::vector<FileInfo> *out_list);
   /*!
    * \brief open a stream, will report error and exit if bad thing happens
-   * NOTE: the IStream can continue to work even when filesystem was destructed
+   * NOTE: the Stream can continue to work even when filesystem was destructed
    * \param path path to file
    * \param uri the uri of the input, can contain hdfs prefix
    * \param flag can be "w", "r", "a"   
    */  
-  virtual IStream *Open(const URI &path, const char* const flag);
+  virtual Stream *Open(const URI &path, const char* const flag);
   /*!
    * \brief open a part of stream stream for read,
    *   with ability to specify starting location
    * \param path the path to the file
    * \parma begin_bytes the beginning bytes to start reading
    */
-  virtual IStream *OpenPartForRead(const URI &path, size_t begin_bytes);
+  virtual Stream *OpenPartForRead(const URI &path, size_t begin_bytes);
 
  private:
   /*! \brief AWS access id */

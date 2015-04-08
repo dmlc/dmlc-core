@@ -197,7 +197,7 @@ struct ReadStringStream {
 };
 
 /*! \brief reader stream that can be used to read */
-class ReadStream : public ISeekStream {
+class ReadStream : public SeekStream {
  public:
   ReadStream(const URI &path,
              const std::string &aws_id,
@@ -398,7 +398,7 @@ void ReadStream::Cleanup() {
   curr_bytes_ = 0; at_end_ = false;
 }
 // End of ReadStream functions
-class WriteStream : public IStream {
+class WriteStream : public Stream {
  public:
   WriteStream(const URI &path,
               const std::string &aws_id,
@@ -723,7 +723,7 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
   }  
 }
 
-IStream *S3FileSystem::Open(const URI &path, const char* const flag) {
+Stream *S3FileSystem::Open(const URI &path, const char* const flag) {
   using namespace std;
   if (!strcmp(flag, "r") || !strcmp(flag, "rb")) {
     return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
@@ -735,7 +735,7 @@ IStream *S3FileSystem::Open(const URI &path, const char* const flag) {
   }
 }
 
-IStream *S3FileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
+Stream *S3FileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
   s3::ReadStream *fs = new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
   fs->Seek(begin_bytes);
   return fs;

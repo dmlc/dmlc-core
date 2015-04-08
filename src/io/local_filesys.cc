@@ -17,7 +17,7 @@ extern "C" {
 namespace dmlc {
 namespace io {
 /*! \brief implementation of file i/o stream */
-class FileStream : public ISeekStream {
+class FileStream : public SeekStream {
  public:
   explicit FileStream(const char *fname, const char *mode)
       : use_stdio(false) {
@@ -135,10 +135,10 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
 #endif
 }
 
-ISeekStream *LocalFileSystem::Open(const URI &path, const char* const flag) {
+SeekStream *LocalFileSystem::Open(const URI &path, const char* const flag) {
   return new FileStream(path.name.c_str(), flag);
 }
-ISeekStream *LocalFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
+SeekStream *LocalFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
   FileStream *fp = new FileStream(path.name.c_str(), "r");
   fp->Seek(begin_bytes);
   return fp;

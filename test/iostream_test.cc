@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   {// output
-    dmlc::IStream *fs = dmlc::IStream::Create(argv[1], "w");
+    dmlc::Stream *fs = dmlc::Stream::Create(argv[1], "w");
     dmlc::ostream os(fs);
     os << "hello-world " << 1e-10<< std::endl;
     delete fs;
@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
   {// input
     std::string name;
     double data;
-    dmlc::IStream *fs = dmlc::IStream::Create(argv[1], "r");
+    dmlc::Stream *fs = dmlc::Stream::Create(argv[1], "r");
     dmlc::istream is(fs);
     is >> name >> data;
     std::cout << name << " " << data << std::endl;

@@ -20,7 +20,7 @@ namespace io {
 class LineSplitter : public InputSplit {
  public:
   // constructor
-  explicit LineSplitter(IFileSystem *fs,
+  explicit LineSplitter(FileSystem *fs,
                         const char *uri,
                         unsigned rank,
                         unsigned nsplit);
@@ -35,11 +35,11 @@ class LineSplitter : public InputSplit {
 
  private:
   /*! \brief FileSystem */
-  IFileSystem *filesys_;
+  FileSystem *filesys_;
   /*! \brief information about files */
   std::vector<FileInfo> files_;
   /*! \brief current input stream */
-  IStream *fs_;
+  Stream *fs_;
   /*! \brief file pointer of which file to read on */
   size_t file_ptr_;
   /*! \brief file pointer where the end of file lies */

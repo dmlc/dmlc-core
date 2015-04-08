@@ -18,7 +18,7 @@ namespace dmlc {
 /*!
  * \brief interface of stream I/O for serialization
  */
-class IStream {
+class Stream {
  public:
   /*!
    * \brief reads data from a stream
@@ -34,7 +34,7 @@ class IStream {
    */
   virtual void Write(const void *ptr, size_t size) = 0;
   /*! \brief virtual destructor */
-  virtual ~IStream(void) {}
+  virtual ~Stream(void) {}
   /*!
    * \brief generic factory function
    *    create an stream, the stream will close the underlying files
@@ -43,7 +43,7 @@ class IStream {
    *            hdfs://, s3://, and file:// by default file:// will be used
    * \param flag can be "w", "r", "a"
    */
-  static IStream *Create(const char *uri, const char* const flag);
+  static Stream *Create(const char *uri, const char* const flag);
   // helper functions to write/read different data structures
   /*!
    * \brief writes a vector
@@ -72,10 +72,10 @@ class IStream {
 };
 
 /*! \brief interface of i/o stream that support seek */
-class ISeekStream: public IStream {
+class SeekStream: public Stream {
  public:
   // virtual destructor
-  virtual ~ISeekStream(void) {}
+  virtual ~SeekStream(void) {}
   /*! \brief seek to certain position of the file */
   virtual void Seek(size_t pos) = 0;
   /*! \brief tell the position of the stream */
@@ -85,18 +85,18 @@ class ISeekStream: public IStream {
 };
 
 /*! \brief interface for serializable objects */
-class ISerializable {
+class Serializable {
  public:
   /*! 
   * \brief load the model from a stream
   * \param fi stream where to load the model from
   */
-  virtual void Load(IStream &fi) = 0;
+  virtual void Load(Stream &fi) = 0;
   /*! 
   * \brief saves the model to a stream
   * \param fo stream where to save the model to
   */
-  virtual void Save(IStream &fo) const = 0;
+  virtual void Save(Stream &fo) const = 0;
 };
 
 /*!
@@ -126,13 +126,13 @@ class InputSplit {
 };
 
 /*!
- * \brief a std::ostream class that can can wrap IStream objects,
- *  can use ostream with that output to underlying IStream
+ * \brief a std::ostream class that can can wrap Stream objects,
+ *  can use ostream with that output to underlying Stream
  *
  * Usage example:
  * \code
  *
- *   IStream *fs = IStream::Create("hdfs:///test.txt", "w");
+ *   Stream *fs = Stream::Create("hdfs:///test.txt", "w");
  *   dmlc::ostream os(fs);
  *   os << "hello world" << std::endl;
  *   delete fs;
@@ -142,10 +142,10 @@ class ostream : public std::basic_ostream<char> {
  public:
   /*!
    * \brief construct std::ostream type
-   * \param stream the IStream output to be used
+   * \param stream the Stream output to be used
    * \param buffer_size internal streambuf size
    */
-  explicit ostream(IStream *stream,
+  explicit ostream(Stream *stream,
                    size_t buffer_size = 1 << 10)
       : basic_ostream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
@@ -154,7 +154,7 @@ class ostream : public std::basic_ostream<char> {
    * \brief set internal stream to be stream, reset states
    * \param stream new stream as output
    */
-  inline void set_stream(IStream *stream) {
+  inline void set_stream(Stream *stream) {
     buf_.set_stream(stream);
     this->rdbuf(&buf_);
   }
@@ -168,11 +168,11 @@ class ostream : public std::basic_ostream<char> {
       assert(buffer_.size() > 0); 
     }
     // set stream to the buffer
-    inline void set_stream(IStream *stream);
+    inline void set_stream(Stream *stream);
     
    private:
     /*! \brief internal stream by StreamBuf */
-    IStream *stream_;
+    Stream *stream_;
     /*! \brief internal buffer */
     std::vector<char> buffer_;
     // override sync
@@ -185,13 +185,13 @@ class ostream : public std::basic_ostream<char> {
 };
 
 /*!
- * \brief a std::istream class that can can wrap IStream objects,
- *  can use istream with that output to underlying IStream
+ * \brief a std::istream class that can can wrap Stream objects,
+ *  can use istream with that output to underlying Stream
  *
  * Usage example:
  * \code
  *
- *   IStream *fs = IStream::Create("hdfs:///test.txt", "r");
+ *   Stream *fs = Stream::Create("hdfs:///test.txt", "r");
  *   dmlc::istream is(fs);
  *   is >> mydata;
  *   delete fs;
@@ -201,10 +201,10 @@ class istream : public std::basic_istream<char> {
  public:
   /*!
    * \brief construct std::ostream type
-   * \param stream the IStream output to be used
+   * \param stream the Stream output to be used
    * \param buffer_size internal buffer size
    */
-  explicit istream(IStream *stream,
+  explicit istream(Stream *stream,
                    size_t buffer_size = 1 << 10)                   
       : basic_istream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
@@ -213,7 +213,7 @@ class istream : public std::basic_istream<char> {
    * \brief set internal stream to be stream, reset states
    * \param stream new stream as output
    */
-  inline void set_stream(IStream *stream) {
+  inline void set_stream(Stream *stream) {
     buf_.set_stream(stream);
     this->rdbuf(&buf_);
   }
@@ -227,11 +227,11 @@ class istream : public std::basic_istream<char> {
       assert(buffer_.size() > 0);
     }
     // set stream to the buffer
-    inline void set_stream(IStream *stream);
+    inline void set_stream(Stream *stream);
     
    private:
     /*! \brief internal stream by StreamBuf */
-    IStream *stream_;
+    Stream *stream_;
     /*! \brief internal buffer */
     std::vector<char> buffer_;
     // override underflow
@@ -243,7 +243,7 @@ class istream : public std::basic_istream<char> {
 
 // implementations of inline functions
 template<typename T>
-inline void IStream::Write(const std::vector<T> &vec) {
+inline void Stream::Write(const std::vector<T> &vec) {
   size_t sz = vec.size();
   this->Write(&sz, sizeof(sz));
   if (sz != 0) {
@@ -251,7 +251,7 @@ inline void IStream::Write(const std::vector<T> &vec) {
   }
 }
 template<typename T>
-inline bool IStream::Read(std::vector<T> *out_vec) {
+inline bool Stream::Read(std::vector<T> *out_vec) {
   size_t sz;
   if (this->Read(&sz, sizeof(sz)) == 0) return false;
   out_vec->resize(sz);
@@ -260,14 +260,14 @@ inline bool IStream::Read(std::vector<T> *out_vec) {
   }
   return true;
 }
-inline void IStream::Write(const std::string &str) {
+inline void Stream::Write(const std::string &str) {
   size_t sz = str.length();
   this->Write(&sz, sizeof(sz));
   if (sz != 0) {
     this->Write(&str[0], sizeof(char) * sz);
   }
 }
-inline bool IStream::Read(std::string *out_str) {
+inline bool Stream::Read(std::string *out_str) {
   size_t sz;
   if (this->Read(&sz, sizeof(sz)) == 0) return false;
   out_str->resize(sz);
@@ -280,7 +280,7 @@ inline bool IStream::Read(std::string *out_str) {
 }
 
 // implementations for ostream
-inline void ostream::OutBuf::set_stream(IStream *stream) {
+inline void ostream::OutBuf::set_stream(Stream *stream) {
   this->stream_ = stream;
   this->setp(&buffer_[0], &buffer_[0] + buffer_.size() - 1);
 }
@@ -304,7 +304,7 @@ inline int ostream::OutBuf::overflow(int c) {
 }
 
 // implementations for istream
-inline void istream::InBuf::set_stream(IStream *stream) {
+inline void istream::InBuf::set_stream(Stream *stream) {
   stream_ = stream;
   this->setg(&buffer_[0], &buffer_[0], &buffer_[0]);  
 }

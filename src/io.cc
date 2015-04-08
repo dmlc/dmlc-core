@@ -18,7 +18,7 @@
 
 namespace dmlc {
 namespace io {
-IFileSystem *IFileSystem::Create(const std::string &protocol) {
+FileSystem *FileSystem::Create(const std::string &protocol) {
   if (protocol == "file://" || protocol.length() == 0) {
     return new LocalFileSystem();
   }
@@ -50,15 +50,15 @@ InputSplit* InputSplit::Create(const char *uri,
     return new SingleFileSplit(uri);
   }
   URI path(uri);
-  return new LineSplitter(IFileSystem::Create(path.protocol), uri, part, nsplit);
+  return new LineSplitter(FileSystem::Create(path.protocol), uri, part, nsplit);
 }
 
-IStream *IStream::Create(const char *uri, const char * const flag) {
+Stream *Stream::Create(const char *uri, const char * const flag) {
   using namespace std;
   using namespace dmlc::io;
   URI path(uri);
-  IFileSystem *fs = IFileSystem::Create(path.protocol);
-  IStream *ret = fs->Open(path, flag);
+  FileSystem *fs = FileSystem::Create(path.protocol);
+  Stream *ret = fs->Open(path, flag);
   delete fs;
   return ret;
 }

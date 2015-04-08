@@ -36,12 +36,12 @@ struct RowBlockContainer {
    * \brief write the row block to a binary stream
    * \param fo output stream   
    */
-  inline void Save(IStream *fo) const;
+  inline void Save(Stream *fo) const;
   /*!
    * \brief load row block from a binary stream
    * \param fi output stream   
    */
-  inline void Load(IStream *fi);
+  inline void Load(Stream *fi);
   /*! \brief clear the container */
   inline void Clear(void) {
     offset.clear(); offset.push_back(0);
@@ -90,7 +90,7 @@ RowBlockContainer<IndexType>::GetBlock(void) const {
 }
 template<typename IndexType>
 inline void
-RowBlockContainer<IndexType>::Save(IStream *fo) const {
+RowBlockContainer<IndexType>::Save(Stream *fo) const {
   fo->Write(offset);
   fo->Write(label);
   fo->Write(index);
@@ -98,7 +98,7 @@ RowBlockContainer<IndexType>::Save(IStream *fo) const {
 }
 template<typename IndexType>
 inline void
-RowBlockContainer<IndexType>::Load(IStream *fi) {
+RowBlockContainer<IndexType>::Load(Stream *fi) {
   CHECK(fi->Read(&offset)) << "Bad RowBlock format";
   CHECK(fi->Read(&label)) << "Bad RowBlock format"; 
   CHECK(fi->Read(&value)) << "Bad RowBlock format"; 

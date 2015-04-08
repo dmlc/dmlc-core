@@ -12,7 +12,7 @@
 namespace dmlc {
 namespace io {
 /*! \brief local file system */
-class LocalFileSystem : public IFileSystem {
+class LocalFileSystem : public FileSystem {
  public:
   /*! \brief constructor */
   LocalFileSystem() {}
@@ -37,14 +37,14 @@ class LocalFileSystem : public IFileSystem {
    * \param uri the uri of the input, can contain hdfs prefix
    * \param flag can be "w", "r", "a"   
    */  
-  virtual ISeekStream *Open(const URI &path, const char* const flag);
+  virtual SeekStream *Open(const URI &path, const char* const flag);
   /*!
    * \brief open a part of stream stream for read,
    *   with ability to specify starting location
    * \param path the path to the file
    * \parma begin_bytes the beginning bytes to start reading
    */
-  virtual ISeekStream *OpenPartForRead(const URI &path, size_t begin_bytes);
+  virtual SeekStream *OpenPartForRead(const URI &path, size_t begin_bytes);
 };
 }  // namespace io
 }  // namespace dmlc

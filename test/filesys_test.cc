@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   using namespace dmlc::io;
   if (!strcmp(argv[1], "ls")) {
     URI path(argv[2]);
-    IFileSystem *fs = IFileSystem::Create(path.protocol);
+    FileSystem *fs = FileSystem::Create(path.protocol);
     std::vector<FileInfo> info;
     fs->ListDirectory(path, &info);
     for (size_t i = 0; i < info.size(); ++i) {
@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
   }
   if (!strcmp(argv[1], "cat")) {
     URI path(argv[2]);
-    IFileSystem *fs = IFileSystem::Create(path.protocol);
-    dmlc::IStream *fp = fs->OpenPartForRead(path, 0);
+    FileSystem *fs = FileSystem::Create(path.protocol);
+    dmlc::Stream *fp = fs->OpenPartForRead(path, 0);
     char buf[32];
     while (true) {
       size_t nread = fp->Read(buf, 32);
@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) {
   }
   if (!strcmp(argv[1], "cp")) {
     CHECK(argc >= 4) << "cp requres source and dest";
-    IStream *src = IStream::Create(argv[2], "r");
-    IStream *dst = IStream::Create(argv[3], "w");
+    Stream *src = Stream::Create(argv[2], "r");
+    Stream *dst = Stream::Create(argv[3], "w");
     char buf[32];
     size_t nread;
     while ((nread = src->Read(buf, 32)) != 0) {
