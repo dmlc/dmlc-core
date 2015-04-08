@@ -10,7 +10,7 @@ LineSplitter::LineSplitter(IFileSystem *filesys,
                            unsigned rank,
                            unsigned nsplit) 
   : filesys_(filesys), fs_(NULL),
-    reader_(kBufferSize) {
+    reader_(NULL, kBufferSize) {
   // initialize the path
   this->InitInputFileInfo(uri);
   
@@ -37,8 +37,8 @@ LineSplitter::LineSplitter(IFileSystem *filesys,
   // try to set the starting position correctly
   if (file_offset_[file_ptr_] != offset_begin_) {
     while (true) {
-      char c = reader_.GetChar(); 
-      if (!reader_.AtEnd()) ++offset_curr_;
+      char c = reader_.get(); 
+      if (!reader_.eof()) ++offset_curr_;
       if (c == '\n' || c == '\r' || c == EOF) return;
     }
   }  
@@ -83,8 +83,8 @@ bool LineSplitter::ReadLine(std::string *out_data) {
       offset_curr_ >= offset_end_) return false;
   out_data->clear();
   while (true) {
-    char c = reader_.GetChar();
-    if (reader_.AtEnd()) {
+    char c = reader_.get();
+    if (reader_.eof()) {
       if (out_data->length() != 0) return true;
       file_ptr_ += 1;
       if (offset_curr_ >= offset_end_) return false;

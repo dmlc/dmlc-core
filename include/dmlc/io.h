@@ -8,8 +8,10 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <istream>
+#include <ostream>
 #include <streambuf>
-#include <assert.h>
+#include <cassert>
 
 /*! \brief namespace for dmlc */
 namespace dmlc {
@@ -124,51 +126,119 @@ class InputSplit {
 };
 
 /*!
- * \brief a stream_buf class that can can wrap IStream objects,
- *    which can be used to construct istream and ostream for the underlying
- *    input/output IStream supported
+ * \brief a std::ostream class that can can wrap IStream objects,
+ *  can use ostream with that output to underlying IStream
  *
  * Usage example:
  * \code
  *
  *   IStream *fs = IStream::Create("hdfs:///test.txt", "w");
- *   StreamBuf buf(fs);
- *   std::ostream os(&buf);
+ *   dmlc::ostream os(fs);
  *   os << "hello world" << std::endl;
  *   delete fs;
  * \endcode
  */
-class StreamBuf : public std::streambuf {
+class ostream : public std::basic_ostream<char> {
  public:
-  StreamBuf(IStream *stream) : stream_(stream) {
-    assert(pbase() == epptr());
+  /*!
+   * \brief construct std::ostream type
+   * \param stream the IStream output to be used
+   * \param buffer_size internal streambuf size
+   */
+  explicit ostream(IStream *stream,
+                   size_t buffer_size = 1 << 10)
+      : basic_ostream<char>(NULL), buf_(buffer_size) {
+    this->set_stream(stream);
+  }
+  /*!
+   * \brief set internal stream to be stream, reset states
+   * \param stream new stream as output
+   */
+  inline void set_stream(IStream *stream) {
+    buf_.set_stream(stream);
+    this->rdbuf(&buf_);
   }
   
- protected:
-  /*!
-   * \brief overwrite overflow 
-   * \param c the character to overflow
-   */
-  int_type overflow(int c) {
-    if (c != traits_type::eof()) {
-      char ch = static_cast<char>(c);
-      stream_->Write(&ch, sizeof(ch));
-    }
-    return c;
-  }
-  /*!
-   * \brief overwrite xsputn
-   * \param s the data to write
-   * \param n bytes to write
-   * \return size of successful write
-   */
-  std::streamsize xsputn(const char_type* s, std::streamsize n) {
-    stream_->Write(s, n);
-    return n;
-  }
  private:
-  /*! \brief internal stream by StreamBuf */
-  IStream *stream_;
+  // internal streambuf
+  class OutBuf : public std::streambuf {
+   public:
+    explicit OutBuf(size_t buffer_size)
+        : stream_(NULL), buffer_(buffer_size) {
+      assert(buffer_.size() > 0); 
+    }
+    // set stream to the buffer
+    inline void set_stream(IStream *stream);
+    
+   private:
+    /*! \brief internal stream by StreamBuf */
+    IStream *stream_;
+    /*! \brief internal buffer */
+    std::vector<char> buffer_;
+    // override sync
+    inline int_type sync(void);
+    // override overflow
+    inline int_type overflow(int c);
+  };
+  /*! \brief buffer of the stream */
+  OutBuf buf_;
+};
+
+/*!
+ * \brief a std::istream class that can can wrap IStream objects,
+ *  can use istream with that output to underlying IStream
+ *
+ * Usage example:
+ * \code
+ *
+ *   IStream *fs = IStream::Create("hdfs:///test.txt", "r");
+ *   dmlc::istream is(fs);
+ *   is >> mydata;
+ *   delete fs;
+ * \endcode
+ */
+class istream : public std::basic_istream<char> {
+ public:
+  /*!
+   * \brief construct std::ostream type
+   * \param stream the IStream output to be used
+   * \param buffer_size internal buffer size
+   */
+  explicit istream(IStream *stream,
+                   size_t buffer_size = 1 << 10)                   
+      : basic_istream<char>(NULL), buf_(buffer_size) {
+    this->set_stream(stream);
+  }
+  /*!
+   * \brief set internal stream to be stream, reset states
+   * \param stream new stream as output
+   */
+  inline void set_stream(IStream *stream) {
+    buf_.set_stream(stream);
+    this->rdbuf(&buf_);
+  }
+  
+ private:
+  // internal streambuf
+  class InBuf : public std::streambuf {
+   public:
+    explicit InBuf(size_t buffer_size)
+        : stream_(NULL), buffer_(buffer_size) {
+      assert(buffer_.size() > 0);
+    }
+    // set stream to the buffer
+    inline void set_stream(IStream *stream);
+    
+   private:
+    /*! \brief internal stream by StreamBuf */
+    IStream *stream_;
+    /*! \brief internal buffer */
+    std::vector<char> buffer_;
+    // override underflow
+    inline int_type underflow();
+  };
+  /*! \brief input buffer */
+  InBuf buf_;
 };
 
 // implementations of inline functions
@@ -209,5 +279,46 @@ inline bool IStream::Read(std::string *out_str) {
   return true;
 }
 
+// implementations for ostream
+inline void ostream::OutBuf::set_stream(IStream *stream) {
+  this->stream_ = stream;
+  this->setp(&buffer_[0], &buffer_[0] + buffer_.size() - 1);
+}
+inline int ostream::OutBuf::sync(void) {
+  if (stream_ == NULL) return -1;
+  std::ptrdiff_t n = pptr() - pbase();
+  stream_->Write(pbase(), n);
+  this->pbump(-n);
+  return 0;
+}
+inline int ostream::OutBuf::overflow(int c) {
+  *(this->pptr()) = c;
+  std::ptrdiff_t n = pptr() - pbase();
+  this->pbump(-n);
+  if (c == EOF) {
+    stream_->Write(pbase(), n);
+  } else {
+    stream_->Write(pbase(), n + 1);
+  }
+  return c;
+}
+
+// implementations for istream
+inline void istream::InBuf::set_stream(IStream *stream) {
+  stream_ = stream;
+  this->setg(&buffer_[0], &buffer_[0], &buffer_[0]);  
+}
+inline int istream::InBuf::underflow() {
+  char *bhead = &buffer_[0];
+  if (this->gptr() == this->egptr()) {
+    size_t sz = stream_->Read(bhead, buffer_.size());
+    this->setg(bhead, bhead, bhead + sz);
+  }
+  if (this->gptr() == this->egptr()) {
+    return traits_type::eof();
+  } else {
+    return traits_type::to_int_type(*gptr());
+  }
+}
 }  // namespace dmlc
 #endif  // DMLC_IO_H_

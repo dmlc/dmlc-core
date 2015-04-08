@@ -13,7 +13,6 @@
 #include <cstring>
 #include <dmlc/io.h>
 #include "./filesys.h"
-#include "./stream_buffer_reader.h"
 
 namespace dmlc {
 namespace io {
@@ -54,7 +53,7 @@ class LineSplitter : public InputSplit {
   /*! \brief byte-offset of each file */
   std::vector<size_t> file_offset_;
   /*! \brief buffer reader */
-  StreamBufferReader reader_;
+  dmlc::istream reader_;
   /*! \brief buffer size */
   const static size_t kBufferSize = 256;  
 };
