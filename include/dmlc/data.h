@@ -36,12 +36,14 @@ typedef unsigned index_t;
  *  from disk and pre-computation.
  *
  * Usage example:
+ * \code
+ *
  *   itr->BeforeFirst();
  *   while (itr->Next()) {
  *      const DType &batch = itr->Value();
  *      // some computations
  *   }
- *
+ * \endcode
  * \tparam DType the data type 
  */
 template<typename DType>

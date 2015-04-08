@@ -21,7 +21,7 @@ endif
 # setup S3
 ifeq ($(USE_S3),1)
 	DMLC_CFLAGS+= -DDMLC_USE_S3=1
-	DMLC_LDFLAGS+= -lcurl -lssl
+	DMLC_LDFLAGS+= -lcurl -lssl -lcrypto
 else
 	DMLC_CFLAGS+= -DDMLC_USE_S3=0
 endif

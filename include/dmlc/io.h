@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <streambuf>
+#include <assert.h>
 
 /*! \brief namespace for dmlc */
 namespace dmlc {
@@ -121,6 +123,54 @@ class InputSplit {
                             unsigned num_parts);
 };
 
+/*!
+ * \brief a stream_buf class that can can wrap IStream objects,
+ *    which can be used to construct istream and ostream for the underlying
+ *    input/output IStream supported
+ *
+ * Usage example:
+ * \code
+ *
+ *   IStream *fs = IStream::Create("hdfs:///test.txt", "w");
+ *   StreamBuf buf(fs);
+ *   std::ostream os(&buf);
+ *   os << "hello world" << std::endl;
+ *   delete fs;
+ * \endcode
+ */
+class StreamBuf : public std::streambuf {
+ public:
+  StreamBuf(IStream *stream) : stream_(stream) {
+    assert(pbase() == epptr());
+  }
+  
+ protected:
+  /*!
+   * \brief overwrite overflow 
+   * \param c the character to overflow
+   */
+  int_type overflow(int c) {
+    if (c != traits_type::eof()) {
+      char ch = static_cast<char>(c);
+      stream_->Write(&ch, sizeof(ch));
+    }
+    return c;
+  }
+  /*!
+   * \brief overwrite xsputn
+   * \param s the data to write
+   * \param n bytes to write
+   * \return size of successful write
+   */
+  std::streamsize xsputn(const char_type* s, std::streamsize n) {
+    stream_->Write(s, n);
+    return n;
+  }
+ private:
+  /*! \brief internal stream by StreamBuf */
+  IStream *stream_;
+};
+
 // implementations of inline functions
 template<typename T>
 inline void IStream::Write(const std::vector<T> &vec) {
@@ -158,5 +208,6 @@ inline bool IStream::Read(std::string *out_str) {
   }
   return true;
 }
+
 }  // namespace dmlc
 #endif  // DMLC_IO_H_
