@@ -13,7 +13,7 @@ include make/dmlc.mk
 export LDFLAGS= -pthread -lm
 export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude
 LDFLAGS+= $(DMLC_LDFLAGS)
-CFLAGS+= $(DMLC_CFLAGS) -std=c++11
+CFLAGS+= $(DMLC_CFLAGS) 
 
 .PHONY: clean all test
 

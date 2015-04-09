@@ -6,7 +6,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   using namespace dmlc;
-  IDataIter<RowBlock<index_t> > *iter
+  DataIter<RowBlock<index_t> > *iter
       = RowBlock<index_t>::CreateIter
       (InputSplit::Create(argv[1],
                           atoi(argv[2]),

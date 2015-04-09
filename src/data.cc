@@ -10,14 +10,14 @@ namespace dmlc {
 /*! \brief namespace for useful input data structure */
 namespace data {
 template<typename IndexType>
-static IDataIter<RowBlock<IndexType> > *
+static DataIter<RowBlock<IndexType> > *
 CreateIter_(InputSplit *source,
             const std::string &cfg) {
   return new BasicRowIter<IndexType>(new LibSVMParser(source));
 }
 }  // namespace data
 template<>
-IDataIter<RowBlock<unsigned> > *
+DataIter<RowBlock<unsigned> > *
 RowBlock<unsigned>::CreateIter(InputSplit *source,
                                const std::string &cfg) {
   return data::CreateIter_<unsigned>(source, cfg);

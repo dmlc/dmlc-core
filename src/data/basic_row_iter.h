@@ -19,9 +19,9 @@ namespace data {
  * \tparam IndexType the type of index we are using
  */
 template<typename IndexType>
-class BasicRowIter: public IDataIter<RowBlock<IndexType> > {
+class BasicRowIter: public DataIter<RowBlock<IndexType> > {
  public:
-  explicit BasicRowIter(IDataIter<Row<size_t> > *parser)
+  explicit BasicRowIter(DataIter<Row<size_t> > *parser)
       : at_head_(true) {
     this->Init(parser);
     delete parser;
@@ -41,7 +41,7 @@ class BasicRowIter: public IDataIter<RowBlock<IndexType> > {
   virtual const RowBlock<IndexType> &Value(void) const {
     return row_;
   }  
-  inline void Init(IDataIter<Row<size_t> > *parser) {
+  inline void Init(DataIter<Row<size_t> > *parser) {
     data_.Clear();
     while (parser->Next()) {
       data_.Push(parser->Value());

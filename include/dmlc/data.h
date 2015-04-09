@@ -47,10 +47,10 @@ typedef unsigned index_t;
  * \tparam DType the data type 
  */
 template<typename DType>
-class IDataIter {
+class DataIter {
  public:
   /*! \brief destructor */
-  virtual ~IDataIter(void) {}
+  virtual ~DataIter(void) {}
   /*! \brief set before first of the item */
   virtual void BeforeFirst(void) = 0;
   /*! \brief move to next item */
@@ -135,7 +135,7 @@ struct RowBlock {
    * \param cfg additional configs we like to pass, normally can be empty
    * \return the created data iterator
    */
-  static IDataIter<RowBlock<IndexType> > *
+  static DataIter<RowBlock<IndexType> > *
   CreateIter(InputSplit *source,
              const std::string &cfg = std::string());
 };

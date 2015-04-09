@@ -17,7 +17,7 @@ namespace data {
  * \brief libsvm parser that parses the input lines
  *  and returns rows 
  */
-class LibSVMParser : public IDataIter<Row<size_t> > {
+class LibSVMParser : public DataIter<Row<size_t> > {
  public:
   explicit LibSVMParser(InputSplit *source)
       : source_(source), at_head_(true) {
