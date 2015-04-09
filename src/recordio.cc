@@ -56,7 +56,9 @@ bool RecordIOReader::ReadRecord(std::string *out_rec) {
   while (true) {
     unsigned header[2];
     size_t nread = stream_->Read(header, sizeof(header));
-    if (nread == 0) return false;
+    if (nread == 0) {
+      end_of_stream_ = true; return false;
+    }
     CHECK(nread == sizeof(header)) << "Inavlid RecordIO File";
     CHECK(header[0] == RecordIOWriter::kMagic) << "Invalid RecordIO File";
     unsigned cflag = RecordIOWriter::DecodeFlag(header[1]);
