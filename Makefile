@@ -17,7 +17,7 @@ CFLAGS+= $(DMLC_CFLAGS)
 
 .PHONY: clean all test
 
-OBJ=line_split.o io.o local_filesys.o data.o
+OBJ=line_split.o io.o local_filesys.o data.o recordio.o
 
 ifeq ($(USE_HDFS), 1)
 	OBJ += hdfs_filesys.o
@@ -40,6 +40,7 @@ s3_filesys.o: src/io/s3_filesys.cc
 local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
 data.o: src/data.cc
+recordio.o: src/recordio.cc
 
 libdmlc.a: $(OBJ)
 

@@ -46,7 +46,8 @@ class FileStream : public SeekStream {
     return std::fread(ptr, 1, size, fp);
   }
   virtual void Write(const void *ptr, size_t size) {
-    std::fwrite(ptr, size, 1, fp);
+    CHECK(std::fwrite(ptr, 1, size, fp) == size)
+        << "FileStream.Write incomplete";
   }
   virtual void Seek(size_t pos) {
     std::fseek(fp, static_cast<long>(pos), SEEK_SET);
