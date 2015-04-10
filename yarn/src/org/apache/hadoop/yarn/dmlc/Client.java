@@ -153,6 +153,9 @@ public class Client {
             if (e.getKey().startsWith("DMLC_")) {
                 env.put(e.getKey(), e.getValue());
             }
+            if (e.getKey().startsWith("AWS_")) {
+                env.put(e.getKey(), e.getValue());
+            }
             if (e.getKey().startsWith("rabit_")) {
                 env.put(e.getKey(), e.getValue());
             }
@@ -222,7 +225,7 @@ public class Client {
         amContainer.setLocalResources(this.setupCacheFiles(appId));
         amContainer.setEnvironment(this.getEnvironment());
         String cmd = "$JAVA_HOME/bin/java"
-                + " -Xmx900M"
+                + " -Xmx1600M"
                 + " org.apache.hadoop.yarn.dmlc.ApplicationMaster"
                 + this.cacheFileArg + ' ' + this.appArgs + " 1>"
                 + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"
@@ -232,7 +235,7 @@ public class Client {
 
         // Set up resource type requirements for ApplicationMaster
         Resource capability = Records.newRecord(Resource.class);
-        capability.setMemory(1024);
+        capability.setMemory(2048);
         capability.setVirtualCores(1);
         LOG.info("jobname=" + this.jobName + ",username=" + this.userName);
         

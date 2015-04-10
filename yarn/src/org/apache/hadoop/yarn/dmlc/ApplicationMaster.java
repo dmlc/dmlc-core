@@ -356,6 +356,9 @@ public class ApplicationMaster {
             if (e.getKey().startsWith("rabit_")) {
                 env.put(e.getKey(), e.getValue());
             }
+            if (e.getKey().startsWith("AWS_")) {
+                env.put(e.getKey(), e.getValue());
+            }
             if (e.getKey() == "LIBHDFS_OPTS") {
                 env.put(e.getKey(), e.getValue());
             }
