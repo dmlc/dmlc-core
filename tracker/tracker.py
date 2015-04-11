@@ -130,7 +130,7 @@ class RabitTracker:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         for port in range(port, port_end):
             try:
-                sock.bind(('', port))
+                sock.bind((hostIP, port))
                 self.port = port
                 break
             except socket.error:
@@ -139,7 +139,7 @@ class RabitTracker:
         self.sock = sock
         self.verbose = verbose
         self.hostIP = hostIP
-        self.log_print('start listen on %s:%d' % (socket.gethostname(), self.port), 1)
+        self.log_print('start listen on %s:%d' % (hostIP, self.port), 1)
 
 
     def __del__(self):
@@ -368,7 +368,7 @@ def submit(nworker, nserver, fun_submit, verbose, hostIP = 'auto', pscmd = None)
     if hostIP == 'auto':
         hostIP = 'ip'
     if hostIP == 'dns':
-        hostIP = socket.gethostname()
+        hostIP = socket.getfqdn()
     elif hostIP == 'ip':
         hostIP = socket.gethostbyname(socket.getfqdn())
 
