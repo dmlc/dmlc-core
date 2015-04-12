@@ -49,6 +49,7 @@ InputSplit* InputSplit::Create(const char *uri,
   if (!strcmp(uri, "stdin")) {
     return new SingleFileSplit(uri);
   }
+  CHECK(part < nsplit) << "invalid input parameter for InputSplit::Create";
   URI path(uri);
   return new LineSplitter(FileSystem::Create(path.protocol), uri, part, nsplit);
 }

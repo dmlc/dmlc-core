@@ -139,7 +139,7 @@ struct RowBlock {
    * \param rowid the rowid in that row
    * \return the instance corresponding to the row
    */
-  inline Row<IndexType> operator[](size_t rowid) const;  
+  inline Row<IndexType> operator[](size_t rowid) const;
 };
 /*!
  * \brief row block iterator interface that gets RowBlocks
