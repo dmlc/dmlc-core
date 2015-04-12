@@ -30,6 +30,8 @@ struct RowBlockContainer {
   std::vector<IndexType> index;
   /*! \brief feature value */
   std::vector<real_t> value;
+  /*! \brief maximum value of index */
+  IndexType max_index;
   /*! \brief convert to a row block */
   inline RowBlock<IndexType> GetBlock(void) const;
   /*!
@@ -46,6 +48,7 @@ struct RowBlockContainer {
   inline void Clear(void) {
     offset.clear(); offset.push_back(0);
     label.clear(); index.clear(); value.clear();
+    max_index = 0;
   }
   /*! 
    * \brief push the row into container
@@ -58,7 +61,9 @@ struct RowBlockContainer {
     for (size_t i = 0; i < row.length; ++i) {
       CHECK(row.index[i] < std::numeric_limits<IndexType>::max())
           << "index exceed numeric bound of current type";
-      index.push_back(row.index[i]);
+      IndexType findex = static_cast<IndexType>(row.index[i]);
+      index.push_back(findex);
+      max_index = std::max(max_index, findex);
     }
     if (row.value != NULL) {
       for (size_t i = 0; i < row.length; ++i) {

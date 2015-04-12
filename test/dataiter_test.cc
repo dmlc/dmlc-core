@@ -6,11 +6,12 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   using namespace dmlc;
-  DataIter<RowBlock<index_t> > *iter
-      = RowBlock<index_t>::CreateIter
+  RowBlockIter<index_t> *iter
+      = RowBlockIter<index_t>::Create
       (InputSplit::Create(argv[1],
                           atoi(argv[2]),
                           atoi(argv[3])));
+  printf("%lu columns in the data\n", iter->NumCol());
   while (iter->Next()) {
     const RowBlock<index_t> &batch = iter->Value();
     for (size_t i = 0; i < batch.size; ++i) {

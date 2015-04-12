@@ -19,7 +19,7 @@ namespace data {
  * \tparam IndexType the type of index we are using
  */
 template<typename IndexType>
-class BasicRowIter: public DataIter<RowBlock<IndexType> > {
+class BasicRowIter: public RowBlockIter<IndexType> {
  public:
   explicit BasicRowIter(DataIter<Row<size_t> > *parser)
       : at_head_(true) {
@@ -40,7 +40,10 @@ class BasicRowIter: public DataIter<RowBlock<IndexType> > {
   }
   virtual const RowBlock<IndexType> &Value(void) const {
     return row_;
-  }  
+  }
+  virtual size_t NumCol(void) const {
+    return static_cast<size_t>(data_.max_index) + 1;
+  }
   inline void Init(DataIter<Row<size_t> > *parser) {
     data_.Clear();
     while (parser->Next()) {
@@ -52,6 +55,8 @@ class BasicRowIter: public DataIter<RowBlock<IndexType> > {
  private:
   // at head
   bool at_head_;
+  // maximum feature dimension
+  size_t num_col;
   // row block to store
   RowBlock<IndexType> row_;
   // back end data

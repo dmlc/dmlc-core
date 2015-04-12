@@ -64,18 +64,32 @@ class DataIter {
  * \tparam IndexType type of index
  */
 template<typename IndexType>
-struct Row {
+class Row {
+ public:
   /*! \brief label of the instance */
   real_t label;
   /*! \brief length of the sparse vector */
   size_t length;
-  /*! \brief index of each instance */
+  /*!
+   * \brief index of each instance    
+   */
   const IndexType *index;
   /*!
    * \brief array value of each instance, this can be NULL
    *  indicating every value is set to be 1
    */
   const real_t *value;
+  /*! \return i-th feature index */
+  inline IndexType get_index(size_t i) const {
+    return index[i];
+  }
+  /*!    
+   * \return i-th feature value, this function is always
+   *  safe even when value == NULL
+   */
+  inline real_t get_value(size_t i) const {
+    return value == NULL ? 1.0f : value[i];
+  }
   /*!
    * \brief helper function to compute dot product of current
    * \param weight the dense array of weight we want to product
@@ -125,7 +139,16 @@ struct RowBlock {
    * \param rowid the rowid in that row
    * \return the instance corresponding to the row
    */
-  inline Row<IndexType> operator[](size_t rowid) const;
+  inline Row<IndexType> operator[](size_t rowid) const;  
+};
+/*!
+ * \brief row block iterator interface that gets RowBlocks
+ * \sa DataIter
+ * \tparam IndexType type of index in RowBlock
+ */
+template<typename IndexType>
+class RowBlockIter : public DataIter<RowBlock<IndexType> > {
+ public:
   /*!
    * \brief create a new instance of iterator that returns rowbatch
    *  by default, a in-memory based iterator will be returned
@@ -135,9 +158,11 @@ struct RowBlock {
    * \param cfg additional configs we like to pass, normally can be empty
    * \return the created data iterator
    */
-  static DataIter<RowBlock<IndexType> > *
-  CreateIter(InputSplit *source,
-             const std::string &cfg = std::string());
+  static RowBlockIter<IndexType> *
+  Create(InputSplit *source,
+         const std::string &cfg = std::string());
+  /*! \return maximum feature dimension in the dataset */
+  virtual size_t NumCol() const = 0;
 };
 
 // implementation of operator[]
