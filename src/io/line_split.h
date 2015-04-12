@@ -27,7 +27,7 @@ class LineSplitter : public InputSplit {
   // destructor
   virtual ~LineSplitter(void);
   // get next line
-  virtual bool ReadLine(std::string *out_data);
+  virtual bool ReadRecord(std::string *out_data);
   
  protected:
   /*! \brief initialize information in files */

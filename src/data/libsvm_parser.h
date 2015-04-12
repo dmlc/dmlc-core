@@ -32,7 +32,7 @@ class LibSVMParser : public DataIter<Row<size_t> > {
     return row_;
   }
   virtual bool Next(void) {
-    if (source_->ReadLine(&temp_)) {
+    if (source_->ReadRecord(&temp_)) {
       std::istringstream ss(temp_);
       findex_.clear();
       fvalue_.clear();

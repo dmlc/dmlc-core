@@ -78,7 +78,7 @@ void LineSplitter::InitInputFileInfo(const char *uri) {
   }
 }
 
-bool LineSplitter::ReadLine(std::string *out_data) {
+bool LineSplitter::ReadRecord(std::string *out_data) {
   if (file_ptr_ >= file_ptr_end_ &&
       offset_curr_ >= offset_end_) return false;
   out_data->clear();

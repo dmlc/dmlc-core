@@ -33,7 +33,7 @@ class SingleFileSplit : public InputSplit {
   virtual ~SingleFileSplit(void) {
     if (!use_stdin_) std::fclose(fp_);
   }
-  virtual bool ReadLine(std::string *out_data) {
+  virtual bool ReadRecord(std::string *out_data) {
     if (end_of_file_) return false;
     out_data->clear();
     while (true) {
