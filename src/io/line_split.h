@@ -1,7 +1,7 @@
 /*!
  *  Copyright (c) 2015 by Contributors
  * \file line_split.h
- * \brief base implementation of line-spliter
+ * \brief base class implementation of input splitter
  * \author Tianqi Chen
  */
 #ifndef DMLC_IO_LINE_SPLIT_H_
@@ -12,50 +12,23 @@
 #include <string>
 #include <cstring>
 #include <dmlc/io.h>
-#include "./filesys.h"
+#include "./input_split_base.h"
 
 namespace dmlc {
 namespace io {
 /*! \brief class that split the files by line */
-class LineSplitter : public InputSplit {
+class LineSplitter : public InputSplitBase {
  public:
-  // constructor
-  explicit LineSplitter(FileSystem *fs,
-                        const char *uri,
-                        unsigned rank,
-                        unsigned nsplit);
-  // destructor
-  virtual ~LineSplitter(void);
-  // get next line
-  virtual bool ReadRecord(std::string *out_data);
-  
- protected:
-  /*! \brief initialize information in files */
-  void InitInputFileInfo(const char *uri);
+  LineSplitter(FileSystem *fs,
+               const char *uri,
+               unsigned rank,
+               unsigned nsplit) {
+    this->Init(fs, uri, rank, nsplit, 1);
+  }
 
- private:
-  /*! \brief FileSystem */
-  FileSystem *filesys_;
-  /*! \brief information about files */
-  std::vector<FileInfo> files_;
-  /*! \brief current input stream */
-  Stream *fs_;
-  /*! \brief file pointer of which file to read on */
-  size_t file_ptr_;
-  /*! \brief file pointer where the end of file lies */
-  size_t file_ptr_end_;
-  /*! \brief get the current offset */
-  size_t offset_curr_;
-  /*! \brief beginning of offset */
-  size_t offset_begin_;
-  /*! \brief end of the offset */
-  size_t offset_end_;
-  /*! \brief byte-offset of each file */
-  std::vector<size_t> file_offset_;
-  /*! \brief buffer reader */
-  dmlc::istream reader_;
-  /*! \brief buffer size */
-  const static size_t kBufferSize = 256;  
+ protected:
+  void SeekRecordBegin(void);
+  bool NextRecord(std::string *out_data);   
 };
 }  // namespace io
 }  // namespace dmlc
