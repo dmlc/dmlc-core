@@ -7,8 +7,8 @@
 namespace dmlc {
 // implemmentation
 void RecordIOWriter::WriteRecord(const void *buf, size_t size) {
-  CHECK(size < (1 << 30U))
-      << "RecordIO only accept record less than 2^30 bytes"; 
+  CHECK(size < (1 << 29U))
+      << "RecordIO only accept record less than 2^29 bytes"; 
   const unsigned umagic = kMagic;
   // initialize the magic number, in stack
   const char *magic = reinterpret_cast<const char*>(&umagic);

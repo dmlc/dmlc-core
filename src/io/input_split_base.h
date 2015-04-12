@@ -43,11 +43,14 @@ class InputSplitBase : public InputSplit {
             unsigned nsplit,
             size_t align_bytes);
   /*!
-   * \brief fill the buffer with current input stream 
+   * \brief fill the buffer with current input stream
+   * \param bytes_kept number of bytes that will be kept at buffer head
+   *   this should be bptr() - bend(), caller must give this to double
+   *   check the request is consistent
    * \return true if future bytes are loaded in,
    *    false if no future bytes are loaded
    */
-  bool FillBuffer(void);
+  bool FillBuffer(size_t bytes_kept = 0);
   /*! \return buffer current pointer */
   inline const char *bptr(void) const {
     return bptr_;

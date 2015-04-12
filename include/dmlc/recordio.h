@@ -19,8 +19,8 @@ namespace dmlc {
  *  - magic is magic number
  *  - pad is simply a padding space to make record align to 4 bytes
  *  - lrecord encodes length and continue bit
- *     - data.length() = (lrecord & (1U<<30U - 1));
- *     - cflag == (lrecord >> 30U) & 3;
+ *     - data.length() = (lrecord & (1U<<29U - 1));
+ *     - cflag == (lrecord >> 29U) & 7;
  *
  *  cflag was used to handle (rare) special case when magic number
  *  occured in the data sequence.
@@ -35,15 +35,19 @@ namespace dmlc {
  */
 class RecordIOWriter {  
  public:
-  /*! \brief magic number of recordio */
-  static const unsigned kMagic = 0x3ed7230a;
+  /*!
+   * \brief magic number of recordio
+   * note: (kMagic >> 29U) & 7 > 3
+   * this ensures lrec will not be kMagic
+   */
+  static const unsigned kMagic = 0xced7230a;
   /*!
    * \brief encode the lrecord
    * \param cflag cflag part of the lrecord
    * \param length length part of lrecord
    */
   inline static unsigned EncodeLRec(unsigned cflag, unsigned length) {
-    return (cflag << 30U) | length;
+    return (cflag << 29U) | length;
   }
   /*!
    * \brief decode the flag part of lrecord
@@ -51,7 +55,7 @@ class RecordIOWriter {
    * \return the flag
    */
   inline static unsigned DecodeFlag(unsigned rec) {
-    return (rec >> 30U) & 3U;
+    return (rec >> 29U) & 7U;
   }
   /*!
    * \brief decode the length part of lrecord
@@ -59,7 +63,7 @@ class RecordIOWriter {
    * \return the length
    */
   inline static unsigned DecodeLength(unsigned rec) {
-    return rec & ((1U << 30U) - 1U);
+    return rec & ((1U << 29U) - 1U);
   }
   /*!
    * \brief constructor

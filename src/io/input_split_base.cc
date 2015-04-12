@@ -93,13 +93,16 @@ bool InputSplitBase::ReadRecord(std::string *out_data) {
   return false;
 }
 
-bool InputSplitBase::FillBuffer(void) {
-  CHECK(bptr_ == bend_)
-      << "only call fillbuffer when buffer is already readed";
+bool InputSplitBase::FillBuffer(size_t bytes_kept) {
+  CHECK(bptr_ + bytes_kept == bend_)
+      << "inconsistent FillBuffer request";
+  if (bytes_kept != 0) {
+    std::memmove(BeginPtr(buffer_), bptr_, bytes_kept);    
+  }  
   bptr_ = reinterpret_cast<const char*>(BeginPtr(buffer_));
-  size_t n = fs_->Read(BeginPtr(buffer_),
-                       buffer_.size() * sizeof(size_t));
-  bend_ = bptr_ + n;
+  size_t nread = buffer_.size() * sizeof(size_t) - bytes_kept;
+  size_t n = fs_->Read(BeginPtr(buffer_) + bytes_kept, nread);
+  bend_ = bptr_ + n + bytes_kept;
   return n != 0;
 }
 }  // namespace io
