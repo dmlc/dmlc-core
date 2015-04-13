@@ -90,7 +90,7 @@ class RecordIOWriter {
    * \return number of exceptions(occurance of magic number)
    *   during the writing process
    */
-  inline unsigned except_counter(void) const {
+  inline size_t except_counter(void) const {
     return except_counter_;
   }
 
@@ -98,7 +98,7 @@ class RecordIOWriter {
   /*! \brief output stream */
   Stream *stream_;
   /*! \brief counts the number of exceptions */
-  unsigned except_counter_;
+  size_t except_counter_;
 };
 /*!
  * \brief reader of binary recordio to reads in record
