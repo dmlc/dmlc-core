@@ -70,8 +70,9 @@ class InputSplitBase : public InputSplit {
   /*!
    * \brief seek to the beginning of the first record
    * in current file pointer
+   * \param at_begin whether we are at beginning of the file
    */
-  virtual void SeekRecordBegin(void) = 0;
+  virtual void SeekRecordBegin(bool at_begin) = 0;
   /*!
    * \brief read next record in current stream 
    * \return whether end of stream is met

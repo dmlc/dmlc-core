@@ -36,9 +36,7 @@ void InputSplitBase::Init(FileSystem *filesys,
                                    offset_end_) - file_offset_.begin() - 1;
   fs_ = filesys_->OpenPartForRead(files_[file_ptr_].path,
                                   offset_begin_ - file_offset_[file_ptr_]);
-  if (offset_begin_ != file_offset_[file_ptr_]) {
-    this->SeekRecordBegin();
-  }
+  this->SeekRecordBegin(offset_begin_ == file_offset_[file_ptr_]);
 }
 
 InputSplitBase::~InputSplitBase(void) {
