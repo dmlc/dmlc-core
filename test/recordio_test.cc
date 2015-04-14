@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     writer.WriteRecord(bad, sizeof(bad));
     writer.WriteRecord(data);
     delete fs;
-    printf("finish writing with %u exceptions\n", writer.except_counter());
+    printf("finish writing with %lu exceptions\n", writer.except_counter());
   }
   {// input
     dmlc::Stream *fi = dmlc::Stream::Create(argv[1], "r");
