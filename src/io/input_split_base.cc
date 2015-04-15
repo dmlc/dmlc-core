@@ -94,12 +94,13 @@ bool InputSplitBase::ReadRecord(std::string *out_data) {
 bool InputSplitBase::FillBuffer(size_t bytes_kept) {
   CHECK(bptr_ + bytes_kept == bend_)
       << "inconsistent FillBuffer request";
+  char *bhead = reinterpret_cast<char*>(BeginPtr(buffer_));  
   if (bytes_kept != 0) {
-    std::memmove(BeginPtr(buffer_), bptr_, bytes_kept);    
+    std::memmove(bhead, bptr_, bytes_kept);    
   }  
-  bptr_ = reinterpret_cast<const char*>(BeginPtr(buffer_));
+  bptr_ = bhead;
   size_t nread = buffer_.size() * sizeof(size_t) - bytes_kept;
-  size_t n = fs_->Read(BeginPtr(buffer_) + bytes_kept, nread);
+  size_t n = fs_->Read(bhead + bytes_kept, nread);
   bend_ = bptr_ + n + bytes_kept;
   return n != 0;
 }

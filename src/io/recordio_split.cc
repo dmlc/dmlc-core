@@ -32,7 +32,7 @@ bool RecordIOSplitter::NextRecord(std::string *out_data) {
 
   while (true) {
     if (bptr() + 4 >= bend()) {
-      if (!this->FillBuffer(bend() - bptr())) return false;      
+      if (!this->FillBuffer(bend() - bptr())) return false;
     }
     // read in header
     const char *p = bptr();
@@ -59,7 +59,7 @@ bool RecordIOSplitter::NextRecord(std::string *out_data) {
     }
     // squeeze back to target size to ignore padding bytes
     out_data->resize(size = target_size);
-    if (cflag == 0U || cflag == 3U) return true;  
+    if (cflag == 0U || cflag == 3U) return true;
     out_data->resize(size + sizeof(kMagic));
     std::memcpy(BeginPtr(*out_data) + size, &kMagic, sizeof(kMagic));
     size += sizeof(kMagic);

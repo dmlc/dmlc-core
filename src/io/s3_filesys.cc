@@ -413,6 +413,7 @@ class WriteStream : public Stream {
       const size_t kDefaultBufferSize = 64 << 20UL;
       max_buffer_size_ = kDefaultBufferSize;
     }
+    max_error_retry_ = 3;
     ecurl_ = curl_easy_init();
     this->Init();
   }
@@ -431,6 +432,8 @@ class WriteStream : public Stream {
  private:
   // internal maximum buffer size
   size_t max_buffer_size_;
+  // maximum time of retry when error occurs
+  int max_error_retry_;
   // path we are reading
   URI path_;
   // aws access key and id
@@ -511,8 +514,6 @@ void WriteStream::Run(const std::string &method,
   surl << "http://" << path_.host << ".s3.amazonaws.com" << '/'
        << RemoveBeginSlash(path_.name) << args;
   scontent << "Content-Type: " << content_type;
-  // helper for read string
-  ReadStringStream ss(data);
   // list
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
@@ -522,25 +523,42 @@ void WriteStream::Run(const std::string &method,
     slist = curl_slist_append(slist, smd5.str().c_str());
   }
   slist = curl_slist_append(slist, sauth.str().c_str());
-  curl_easy_reset(ecurl_);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADER, 0L) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &rdata) == CURLE_OK);  
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEHEADER, WriteSStreamCallback) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
-  if (method == "POST") {
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_POST, 0L) == CURLE_OK);
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_POSTFIELDSIZE, data.length()) == CURLE_OK);
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_POSTFIELDS, BeginPtr(data)) == CURLE_OK);
-  } else if (method == "PUT") {
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_PUT, 1L) == CURLE_OK);
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_READDATA, &ss) == CURLE_OK);
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_INFILESIZE_LARGE, data.length()) == CURLE_OK);
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_READFUNCTION, ReadStringStream::Callback) == CURLE_OK);
+  
+  int num_retry = 0;
+  while (true) {
+    // helper for read string
+    ReadStringStream ss(data);
+    curl_easy_reset(ecurl_);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADER, 0L) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &rdata) == CURLE_OK);  
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEHEADER, WriteSStreamCallback) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
+    if (method == "POST") {
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_POST, 0L) == CURLE_OK);
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_POSTFIELDSIZE, data.length()) == CURLE_OK);
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_POSTFIELDS, BeginPtr(data)) == CURLE_OK);
+    } else if (method == "PUT") {
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_PUT, 1L) == CURLE_OK);
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_READDATA, &ss) == CURLE_OK);
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_INFILESIZE_LARGE, data.length()) == CURLE_OK);
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_READFUNCTION, ReadStringStream::Callback) == CURLE_OK);
+    }
+    CURLcode ret = curl_easy_perform(ecurl_);
+    if (ret != CURLE_OK) {
+      LOG(INFO) << "request " << surl.str() << "failed with error "
+                << curl_easy_strerror(ret) << " Progress " 
+                << etags_.size() << " uploaded " << " retry=" << num_retry;
+      num_retry += 1;
+      CHECK(num_retry < max_error_retry_) << " maximum retry time reached";
+      curl_easy_cleanup(ecurl_);
+      ecurl_ = curl_easy_init();      
+    } else {
+      break;
+    }   
   }
-  CHECK(curl_easy_perform(ecurl_) == CURLE_OK);
   curl_slist_free_all(slist);
   *out_header = rheader.str();
   *out_data = rdata.str();
@@ -686,7 +704,11 @@ S3FileSystem::S3FileSystem() {
   aws_secret_key_ = seckey;
 }
 
-FileInfo S3FileSystem::GetPathInfo(const URI &path) {
+FileInfo S3FileSystem::GetPathInfo(const URI &path_) {
+  URI path = path_;
+  while (*path.name.rbegin() == '/') {
+    path.name.resize(path.name.length() - 1);
+  }
   std::vector<FileInfo> files;
   s3::ListObjects(path,  aws_access_id_, aws_secret_key_, &files);
   std::string pdir = path.name + '/';
