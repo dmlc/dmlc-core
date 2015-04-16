@@ -47,8 +47,8 @@ InputSplitBase::~InputSplitBase(void) {
 }
 
 void InputSplitBase::InitInputFileInfo(const char *uri) {
-  // split by #
-  const char *dlm = "#";
+  // split by :
+  const char *dlm = ":";
   std::string uri_ = uri;
   char *p = std::strtok(BeginPtr(uri_), dlm);
   std::vector<URI> vec;
