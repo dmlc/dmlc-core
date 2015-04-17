@@ -99,7 +99,7 @@ class InputSplitBase : public InputSplit {
   /*! \brief byte-offset of each file */
   std::vector<size_t> file_offset_;
   /*! \brief buffer size */
-  const static size_t kBufferSize = 256;
+  const static size_t kBufferSize = 2048 * 10;
   /*! \brief internal buffer */
   std::vector<size_t> buffer_;
   /*! \brief internal buffer pointer */

@@ -18,15 +18,16 @@ namespace io {
  */
 class SingleFileSplit : public InputSplit {
  public:
-  explicit SingleFileSplit(const char *fname) {
+  explicit SingleFileSplit(const char *fname)
+      : use_stdin_(false) {
     if (!std::strcmp(fname, "stdin")) {
 #ifndef DMLC_STRICT_CXX98_
       use_stdin_ = true; fp_ = stdin;
 #endif
     }
     if (!use_stdin_) {
-      std::FILE *fp = fopen64(fname, "rb");
-      CHECK (fp != NULL) << "SingleFileSplit: fail to open " << fname;
+      fp_ = fopen64(fname, "rb");
+      CHECK (fp_ != NULL) << "SingleFileSplit: fail to open " << fname;
     }
     end_of_file_ = false;
   }
