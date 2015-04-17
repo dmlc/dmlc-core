@@ -20,9 +20,14 @@ namespace data {
 class LibSVMParser : public DataIter<Row<size_t> > {
  public:
   explicit LibSVMParser(InputSplit *source)
-      : source_(source), at_head_(true) {
+      : is_(source, kBufferSize),
+        source_(source), at_head_(true) {
+    if (!(is_ >> tmp_)) {
+      tmp_.resize(0);
+    }
   }
   virtual ~LibSVMParser() {
+    is_.set_stream(NULL);
     delete source_;
   }
   virtual void BeforeFirst(void) {
@@ -32,11 +37,36 @@ class LibSVMParser : public DataIter<Row<size_t> > {
     return row_;
   }
   virtual bool Next(void) {
-    // TODO
-    return false;
+    if (tmp_.length() == 0) return false;
+    size_t index;
+    float value;
+    CHECK(sscanf(tmp_.c_str(), "%f", &value) == 1)
+        << "bad libsvm format";
+    row_.label = static_cast<real_t>(value);
+    findex_.clear(); fvalue_.clear();
+    while (is_ >> tmp_) {
+      if (sscanf(tmp_.c_str(), "%lu:%f", &index, &value) == 2) {
+        findex_.push_back(index);
+        fvalue_.push_back(value);
+      } else {
+        break;
+      }
+    }
+    row_.index = BeginPtr(findex_);
+    row_.value = BeginPtr(fvalue_);
+    return true;
   }
-  
+  inline size_t bytes_read(void) const {
+    return is_.bytes_read();
+  }
+
  private:
+  // buffer size
+  static const int kBufferSize = 2 << 10;
+  // internal temp string
+  std::string tmp_;
+  // input stream
+  dmlc::istream is_;
   // source split that provides the data
   InputSplit *source_;
   // temporal string
