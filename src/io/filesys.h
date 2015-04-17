@@ -103,11 +103,11 @@ class FileSystem {
    */
   virtual Stream *Open(const URI &path, const char* const flag) = 0;  
   /*!
-   * \brief open a stream for read, with ability to specify starting location
+   * \brief open a seekable stream for read
    * \param path the path to the file
-   * \parma begin_bytes the beginning bytes to start reading
+   * \return the result stream
    */
-  virtual Stream *OpenPartForRead(const URI &path, size_t begin_bytes) = 0;
+  virtual SeekStream *OpenForRead(const URI &path) = 0;
 };
 }  // namespace io
 }  // namespace dmlc

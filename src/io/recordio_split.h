@@ -28,8 +28,7 @@ class RecordIOSplitter : public InputSplitBase {
   }
 
  protected:
-  void SeekRecordBegin(bool at_begin);
-  bool NextRecord(std::string *out_data);   
+  virtual size_t SeekRecordBegin(void);
 };
 }  // namespace io
 }  // namespace dmlc

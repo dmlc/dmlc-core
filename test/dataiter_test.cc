@@ -10,7 +10,8 @@ int main(int argc, char *argv[]) {
       = RowBlockIter<index_t>::Create
       (InputSplit::Create(argv[1],
                           atoi(argv[2]),
-                          atoi(argv[3])));
+                          atoi(argv[3]),
+                          "text"));
   printf("%lu columns in the data\n", iter->NumCol());
   while (iter->Next()) {
     const RowBlock<index_t> &batch = iter->Value();

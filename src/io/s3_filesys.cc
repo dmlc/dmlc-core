@@ -757,10 +757,8 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag) {
   }
 }
 
-Stream *S3FileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
-  s3::ReadStream *fs = new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
-  fs->Seek(begin_bytes);
-  return fs;
+SeekStream *S3FileSystem::OpenForRead(const URI &path) {
+  return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
 }
 }  // namespace io
 }  // namespace dmlc

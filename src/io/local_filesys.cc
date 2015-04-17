@@ -139,10 +139,8 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
 SeekStream *LocalFileSystem::Open(const URI &path, const char* const flag) {
   return new FileStream(path.name.c_str(), flag);
 }
-SeekStream *LocalFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
-  FileStream *fp = new FileStream(path.name.c_str(), "r");
-  fp->Seek(begin_bytes);
-  return fp;
+SeekStream *LocalFileSystem::OpenForRead(const URI &path) {
+  return Open(path, "r");
 }
 }  // namespace io
 }  // namespace dmlc

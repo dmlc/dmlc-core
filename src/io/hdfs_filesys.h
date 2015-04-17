@@ -41,12 +41,11 @@ class HDFSFileSystem : public FileSystem {
    */  
   virtual SeekStream *Open(const URI &path, const char* const flag);
   /*!
-   * \brief open a part of stream stream for read,
-   *   with ability to specify starting location
+   * \brief open a seekable stream for read
    * \param path the path to the file
-   * \parma begin_bytes the beginning bytes to start reading
+   * \return the result stream
    */
-  virtual SeekStream *OpenPartForRead(const URI &path, size_t begin_bytes);
+  virtual SeekStream *OpenForRead(const URI &path);
 
  private:
   /*! \brief namenode address */

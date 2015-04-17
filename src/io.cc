@@ -4,6 +4,7 @@
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include "io/line_split.h"
+#include "io/recordio_split.h"
 #include "io/single_file_split.h"
 #include "io/filesys.h"
 #include "io/local_filesys.h"
@@ -43,7 +44,8 @@ FileSystem *FileSystem::Create(const std::string &protocol) {
 
 InputSplit* InputSplit::Create(const char *uri,
                                unsigned part,
-                               unsigned nsplit) {
+                               unsigned nsplit,
+                               const char *type) {
   using namespace std;
   using namespace dmlc::io;
   if (!strcmp(uri, "stdin")) {
@@ -51,7 +53,14 @@ InputSplit* InputSplit::Create(const char *uri,
   }
   CHECK(part < nsplit) << "invalid input parameter for InputSplit::Create";
   URI path(uri);
-  return new LineSplitter(FileSystem::Create(path.protocol), uri, part, nsplit);
+  if (!strcmp(type, "text")) {
+    return new LineSplitter(FileSystem::Create(path.protocol), uri, part, nsplit);
+  }
+  if (!strcmp(type, "recordio")) {
+    return new RecordIOSplitter(FileSystem::Create(path.protocol), uri, part, nsplit);
+  }  
+  LOG(FATAL) << "unknown input split type " << type;
+  return NULL;  
 }
 
 Stream *Stream::Create(const char *uri, const char * const flag) {

@@ -27,14 +27,7 @@ class LineSplitter : public InputSplitBase {
   }
 
  protected:
-  void SeekRecordBegin(bool at_begin);
-  bool NextRecord(std::string *out_data);
-  /*!
-   * \brief skip consecutive end of line marks, until
-   *  only one end-of-line was left in bptr,
-   *  or stop if there is not end of line at all
-   */
-  void SkipEndOfLines(void);
+  virtual size_t SeekRecordBegin(void);
 };
 }  // namespace io
 }  // namespace dmlc

@@ -153,10 +153,8 @@ SeekStream *HDFSFileSystem::Open(const URI &path, const char* const flag) {
   return new HDFSStream(fs_, ref_counter_, path.str().c_str(), flag);
 }
 
-SeekStream *HDFSFileSystem::OpenPartForRead(const URI &path, size_t begin_bytes) {
-  SeekStream *stream = Open(path, "r");
-  stream->Seek(begin_bytes);
-  return stream;
+SeekStream *HDFSFileSystem::OpenForRead(const URI &path) {
+  return Open(path, "r");
 }
 }  // namespace io
 }  // namespace dmlc

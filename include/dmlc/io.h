@@ -100,32 +100,36 @@ class Serializable {
 };
 
 /*!
- * \brief input split header, used to create input split on input dataset
- * this class can be used to obtain filesystem invariant splits from input files
+ * \brief input split creates stream that reads
+ *  independent part that covers all the dataset
+ *  the stream is created such that each record
+ *  is in a single split and won't span multiple splits
+ * 
+ *  see InputSplit::Create for definition of record
  */
-class InputSplit {
+class InputSplit : public Stream {
  public:
-  /*!
-   * \brief read next record, store into out_data
-   *   the data in outcomming record depends on the input data format
-   *   if input is text data, each line is returned as a record (\n not included)
-   *   if input is recordio, each record is returned
-   * \param out_data the string that stores the line data, \n is not included
-   * \return true of next line was found, false if we read all the lines
-   */
-  virtual bool ReadRecord(std::string *out_data) = 0;
   /*! \brief destructor*/
-  virtual ~InputSplit(void) {}  
+  virtual ~InputSplit(void) {}
   /*!
    * \brief factory function:
    *  create input split given a uri
    * \param uri the uri of the input, can contain hdfs prefix
    * \param part_index the part id of current input
    * \param num_parts total number of splits
+   * \param type type of record
+   *   List of possible types: "text", "recordio"
+   *     - "text":
+   *         text file, each line is treated as a record
+   *         input split will split on \n or \r
+   *     - "recordio":
+   *         binary recordio file, see recordio.h
+   * \sa InputSplit::Type
    */
   static InputSplit* Create(const char *uri,
                             unsigned part_index,
-                            unsigned num_parts);
+                            unsigned num_parts,
+                            const char *type);
 };
 
 /*!

@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   if (!strcmp(argv[1], "cat")) {
     URI path(argv[2]);
     FileSystem *fs = FileSystem::Create(path.protocol);
-    dmlc::Stream *fp = fs->OpenPartForRead(path, 0);
+    dmlc::Stream *fp = fs->OpenForRead(path);
     char buf[32];
     while (true) {
       size_t nread = fp->Read(buf, 32);

@@ -25,8 +25,7 @@ void InputSplitBase::Init(FileSystem *filesys,
   // align the nstep to 4 bytes
   nstep = ((nstep + align_bytes - 1) / align_bytes) * align_bytes;
   offset_begin_ = std::min(nstep * rank, ntotal);
-  offset_end_ = std::min(nstep * (rank + 1), ntotal);    
-  offset_curr_ = offset_begin_;
+  offset_end_ = std::min(nstep * (rank + 1), ntotal);
   if (offset_begin_ == offset_end_) return;
   file_ptr_ = std::upper_bound(file_offset_.begin(),
                                file_offset_.end(),
@@ -34,9 +33,25 @@ void InputSplitBase::Init(FileSystem *filesys,
   file_ptr_end_ = std::upper_bound(file_offset_.begin(),
                                    file_offset_.end(),
                                    offset_end_) - file_offset_.begin() - 1;
-  fs_ = filesys_->OpenPartForRead(files_[file_ptr_].path,
-                                  offset_begin_ - file_offset_[file_ptr_]);
-  this->SeekRecordBegin(offset_begin_ == file_offset_[file_ptr_]);
+  
+  // find the exact ending position
+  if (offset_end_ != file_offset_[file_ptr_end_]) {
+    CHECK(offset_end_ >file_offset_[file_ptr_end_]);
+    CHECK(file_ptr_end_ < files_.size());
+    fs_ = filesys_->OpenForRead(files_[file_ptr_end_].path);
+    fs_->Seek(offset_end_ - file_offset_[file_ptr_end_]);
+    offset_end_ += SeekRecordBegin();
+    delete fs_;
+  }
+  fs_ = filesys_->OpenForRead(files_[file_ptr_].path); 
+  if (offset_begin_ != file_offset_[file_ptr_]) {
+    fs_->Seek(offset_begin_ - file_offset_[file_ptr_]);
+    offset_curr_ = offset_begin_ + SeekRecordBegin();
+    // seek to beginning of stream
+    fs_->Seek(offset_curr_ - file_offset_[file_ptr_]);
+  }
+  // reset buffer
+  bptr_ = bend_ = NULL;
 }
 
 InputSplitBase::~InputSplitBase(void) {
@@ -73,22 +88,27 @@ void InputSplitBase::InitInputFileInfo(const char *uri) {
   }
 }
 
-bool InputSplitBase::ReadRecord(std::string *out_data) {
-  if (file_ptr_ >= file_ptr_end_ &&
-      offset_curr_ >= offset_end_) return false;
-  while (true) {
-    if (this->NextRecord(out_data)) return true;
-    file_ptr_ += 1;
-    if (offset_curr_ >= offset_end_) return false;
-      if (offset_curr_ != file_offset_[file_ptr_]) {
-        LOG(FATAL) <<"FILE size not calculated correctly\n";
-        offset_curr_ = file_offset_[file_ptr_];
-      }
-      CHECK(file_ptr_ + 1 < file_offset_.size()) << "boundary check";
-      delete fs_;
-      fs_ = filesys_->OpenPartForRead(files_[file_ptr_].path, 0);
+size_t InputSplitBase::Read(void *ptr, size_t size) {
+  if (offset_curr_ +  size > offset_end_) {
+    size = offset_end_ - offset_curr_;
   }
-  return false;
+  if (size == 0) return 0;
+  size_t nleft = size;
+  char *buf = reinterpret_cast<char*>(ptr);
+  while (true) {
+    size_t n = fs_->Read(buf, nleft);
+    nleft -= n; buf += n;
+    offset_curr_ += n;
+    if (nleft == 0) break;
+    file_ptr_ += 1;
+    if (offset_curr_ != file_offset_[file_ptr_]) {
+      LOG(FATAL) << "FILE size not calculated correctly\n";
+    }
+    if (file_ptr_ >= files_.size()) break;
+    delete fs_;
+    fs_ = filesys_->OpenForRead(files_[file_ptr_].path);    
+  }
+  return size - nleft;
 }
 
 bool InputSplitBase::FillBuffer(size_t bytes_kept) {

@@ -18,11 +18,15 @@ namespace io {
 /*! \brief base class to construct input split from multiple files */
 class InputSplitBase : public InputSplit {
  public:
-  // get next line
-  virtual bool ReadRecord(std::string *out_data);
+  // disable write
+  virtual void Write(const void *buf, size_t size) {
+    LOG(FATAL) << "InputSplit do not support write";
+  }
+  // override read
+  virtual size_t Read(void *ptr, size_t size);  
   // destructor
   virtual ~InputSplitBase(void);
-
+  
  protected:
   // constructor 
   InputSplitBase()
@@ -60,24 +64,19 @@ class InputSplitBase : public InputSplit {
     return bend_;
   }
   /*!
-   * \brief increase bptr by n 
-   * \param n offset to add
+   * \brief set bptr
+   * \param bptr to set 
    */
-  inline void add_to_bptr(size_t n) {
-    bptr_ += n; offset_curr_ += n;
+  inline void set_bptr(const char *bptr) {
+    bptr_ = bptr;
   }
   // to be implemented by child class
   /*!
    * \brief seek to the beginning of the first record
    * in current file pointer
-   * \param at_begin whether we are at beginning of the file
+   * \return how many bytes we read past
    */
-  virtual void SeekRecordBegin(bool at_begin) = 0;
-  /*!
-   * \brief read next record in current stream 
-   * \return whether end of stream is met
-   */
-  virtual bool NextRecord(std::string *out_data) = 0;
+  virtual size_t SeekRecordBegin(void) = 0;
 
  private:
   /*! \brief FileSystem */
@@ -85,7 +84,7 @@ class InputSplitBase : public InputSplit {
   /*! \brief information about files */
   std::vector<FileInfo> files_;
   /*! \brief current input stream */
-  Stream *fs_;
+  SeekStream *fs_;
   /*! \brief file pointer of which file to read on */
   size_t file_ptr_;
   /*! \brief file pointer where the end of file lies */
@@ -99,7 +98,7 @@ class InputSplitBase : public InputSplit {
   /*! \brief byte-offset of each file */
   std::vector<size_t> file_offset_;
   /*! \brief buffer size */
-  const static size_t kBufferSize = 2048 * 10;
+  const static size_t kBufferSize = 1024;
   /*! \brief internal buffer */
   std::vector<size_t> buffer_;
   /*! \brief internal buffer pointer */

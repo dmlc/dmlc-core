@@ -29,33 +29,20 @@ class SingleFileSplit : public InputSplit {
       fp_ = fopen64(fname, "rb");
       CHECK (fp_ != NULL) << "SingleFileSplit: fail to open " << fname;
     }
-    end_of_file_ = false;
   }
   virtual ~SingleFileSplit(void) {
     if (!use_stdin_) std::fclose(fp_);
   }
-  virtual bool ReadRecord(std::string *out_data) {
-    if (end_of_file_) return false;
-    out_data->clear();
-    while (true) {
-      char c = std::fgetc(fp_);
-      if (c == EOF) {
-        end_of_file_ = true;
-      }
-      if (c != '\r' && c != '\n' && c != EOF) {
-        *out_data += c;
-      } else {
-        if (out_data->length() != 0) return true;
-        if (end_of_file_) return false;
-      }
-    }
-    return false;
+  virtual size_t Read(void *ptr, size_t size) {
+    return std::fread(ptr, 1, size, fp_);
+  }
+  virtual void Write(const void *ptr, size_t size) {
+    LOG(FATAL) << "InputSplit do not support write";
   }  
-    
+  
  private:
   std::FILE *fp_;
   bool use_stdin_;
-  bool end_of_file_;
 };
 }  // namespace io
 }  // namespace dmlc

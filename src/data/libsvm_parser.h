@@ -32,28 +32,8 @@ class LibSVMParser : public DataIter<Row<size_t> > {
     return row_;
   }
   virtual bool Next(void) {
-    if (source_->ReadRecord(&temp_)) {
-      std::istringstream ss(temp_);
-      findex_.clear();
-      fvalue_.clear();
-      CHECK(ss >> row_.label) << "invalid LIBSVM format";
-      size_t findex;
-      real_t fvalue;
-      while (!ss.eof()) {
-        if (!(ss >> findex)) break;
-        ss.ignore(32, ':');
-        if (!(ss >> fvalue)) break;
-        findex_.push_back(findex);
-        fvalue_.push_back(fvalue);
-      }
-      row_.index = BeginPtr(findex_);
-      row_.value = BeginPtr(fvalue_);
-      row_.length = findex_.size();
-      at_head_ = false;
-      return true;
-    } else {
-      return false;
-    }
+    // TODO
+    return false;
   }
   
  private:

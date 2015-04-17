@@ -13,7 +13,9 @@ template<typename IndexType>
 static RowBlockIter<IndexType> *
 CreateIter_(InputSplit *source,
             const std::string &cfg) {
-  return new BasicRowIter<IndexType>(new LibSVMParser(source));
+  // todo new parser
+  return NULL;
+  //return new BasicRowIter<IndexType>(new LibSVMParser(source));
 }
 }  // namespace data
 template<>
