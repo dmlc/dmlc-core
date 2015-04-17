@@ -20,12 +20,12 @@ size_t LineSplitter::SeekRecordBegin(void) {
   while (true) {
     const char *p;
     for (p = bptr(); p != bend(); ++p) {
-      if (*p != '\n' || *p != '\r') break;
+      if (*p != '\n' && *p != '\r') break;
     }
     nstep += p - bptr();
     this->set_bptr(p);
     if (p != bend()) break;
-    if (!this->FillBuffer()) return nstep;    
+    if (!this->FillBuffer()) break;
   }
   return nstep;
 }

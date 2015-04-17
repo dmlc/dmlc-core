@@ -26,6 +26,7 @@ void InputSplitBase::Init(FileSystem *filesys,
   nstep = ((nstep + align_bytes - 1) / align_bytes) * align_bytes;
   offset_begin_ = std::min(nstep * rank, ntotal);
   offset_end_ = std::min(nstep * (rank + 1), ntotal);
+  offset_curr_ = offset_begin_;
   if (offset_begin_ == offset_end_) return;
   file_ptr_ = std::upper_bound(file_offset_.begin(),
                                file_offset_.end(),
@@ -40,8 +41,10 @@ void InputSplitBase::Init(FileSystem *filesys,
     CHECK(file_ptr_end_ < files_.size());
     fs_ = filesys_->OpenForRead(files_[file_ptr_end_].path);
     fs_->Seek(offset_end_ - file_offset_[file_ptr_end_]);
-    offset_end_ += SeekRecordBegin();
+    offset_end_ += SeekRecordBegin();    
     delete fs_;
+    // reset buffer
+    bptr_ = bend_ = NULL;
   }
   fs_ = filesys_->OpenForRead(files_[file_ptr_].path); 
   if (offset_begin_ != file_offset_[file_ptr_]) {
@@ -49,9 +52,9 @@ void InputSplitBase::Init(FileSystem *filesys,
     offset_curr_ = offset_begin_ + SeekRecordBegin();
     // seek to beginning of stream
     fs_->Seek(offset_curr_ - file_offset_[file_ptr_]);
+    // reset buffer
+    bptr_ = bend_ = NULL;
   }
-  // reset buffer
-  bptr_ = bend_ = NULL;
 }
 
 InputSplitBase::~InputSplitBase(void) {
