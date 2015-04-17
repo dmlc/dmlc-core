@@ -10,7 +10,9 @@
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <dmlc/data.h>
+#include <dmlc/timer.h>
 #include "./row_block.h"
+#include "./libsvm_parser.h"
 
 namespace dmlc {
 namespace data {
@@ -21,7 +23,7 @@ namespace data {
 template<typename IndexType>
 class BasicRowIter: public RowBlockIter<IndexType> {
  public:
-  explicit BasicRowIter(DataIter<Row<size_t> > *parser)
+  explicit BasicRowIter(DataIter<RowBlock<size_t> > *parser)
       : at_head_(true) {
     this->Init(parser);
     delete parser;
@@ -44,12 +46,25 @@ class BasicRowIter: public RowBlockIter<IndexType> {
   virtual size_t NumCol(void) const {
     return static_cast<size_t>(data_.max_index) + 1;
   }
-  inline void Init(DataIter<Row<size_t> > *parser) {
+  inline void Init(DataIter<RowBlock<size_t> > *parser) {
     data_.Clear();
+    double tstart = GetTime();
+    size_t bytes_expect = 10UL << 20UL;
     while (parser->Next()) {
       data_.Push(parser->Value());
+      double tdiff = GetTime() - tstart;
+      size_t bytes_read  = ((LibSVMParser*)parser)->bytes_read();
+      if (bytes_read >= bytes_expect) {
+        bytes_read = bytes_read >> 20UL;
+        LOG(INFO) << bytes_read << "MB read,"
+                  << bytes_read / tdiff << " MB/sec";
+        bytes_expect += 10UL << 20UL;
+      }
     }
     row_ = data_.GetBlock();
+    double tdiff = GetTime() - tstart;
+    LOG(INFO) << "finish reading LIBSVM at %g MB/sec"
+              << (((LibSVMParser*)parser)->bytes_read() >> 20UL) / tdiff;
   }
   
  private:

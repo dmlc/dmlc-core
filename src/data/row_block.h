@@ -50,6 +50,10 @@ struct RowBlockContainer {
     label.clear(); index.clear(); value.clear();
     max_index = 0;
   }
+  /*! \brief size of the data */
+  inline size_t Size(void) const {
+    return offset.size() - 1;
+  }
   /*! 
    * \brief push the row into container
    * \param row the row to push back
@@ -72,6 +76,39 @@ struct RowBlockContainer {
     }
     offset.push_back(index.size());
    }
+  /*! 
+   * \brief push the row block into container
+   * \param row the row to push back
+   * \tparam I the index type of the row
+   */
+  template<typename I>
+  inline void Push(RowBlock<I> batch) {
+    size_t size = label.size();
+    label.resize(label.size() + batch.size);
+    std::memcpy(BeginPtr(label) + size, batch.label,
+                batch.size * sizeof(real_t));
+    size_t ndata = batch.offset[batch.size];
+    index.resize(index.size() + ndata);
+    IndexType *ihead = BeginPtr(index) + offset.back();
+    for (size_t i = 0; i < ndata; ++i) {
+      CHECK(batch.index[i] < std::numeric_limits<IndexType>::max())
+          << "index exceed numeric bound of current type";
+      IndexType findex = static_cast<IndexType>(batch.index[i]);
+      ihead[i] = findex;
+      max_index = std::max(max_index, findex);
+    }
+    if (batch.value != NULL) {
+      value.resize(value.size() + ndata);
+      std::memcpy(BeginPtr(value) + size, batch.value,
+                  ndata * sizeof(real_t));
+    }
+    size_t shift = offset[size];
+    offset.resize(offset.size() + batch.size);
+    size_t *ohead = BeginPtr(offset) + size + 1;
+    for (size_t i = 0; i < batch.size; ++i) {
+      ohead[i] = shift + batch.offset[i + 1];
+    }
+  }
 };
 
 template<typename IndexType>

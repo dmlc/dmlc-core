@@ -1,18 +1,17 @@
 #include <dmlc/data.h>
-
+#include "../src/data/libsvm_parser.h"
 int main(int argc, char *argv[]) {
   if (argc < 4) {
     printf("Usage: <libsvm> partid npart\n");
     return 0;
   }
   using namespace dmlc;
-  RowBlockIter<index_t> *iter
-      = RowBlockIter<index_t>::Create
-      (InputSplit::Create(argv[1],
-                          atoi(argv[2]),
-                          atoi(argv[3]),
-                          "text"));
-  printf("%lu columns in the data\n", iter->NumCol());
+  InputSplit *split = InputSplit::Create(argv[1],
+                                         atoi(argv[2]),
+                                         atoi(argv[3]),
+                                         "text");
+  RowBlockIter<index_t> *iter = 
+      RowBlockIter<index_t>::Create(split, "");
   while (iter->Next()) {
     const RowBlock<index_t> &batch = iter->Value();
     for (size_t i = 0; i < batch.size; ++i) {
@@ -24,6 +23,5 @@ int main(int argc, char *argv[]) {
       printf("\n");
     }
   }
-  delete iter;
   return 0;
 }
