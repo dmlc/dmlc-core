@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[]) {
   if (argc < 5) {
-    printf("Usage: <libsvm> partid npart buffer\n");
+    printf("Usage: <libsvm> partid npart\n");
     return 0;
   }
   using namespace dmlc;
@@ -15,11 +15,9 @@ int main(int argc, char *argv[]) {
                                          atoi(argv[2]),
                                          atoi(argv[3]),
                                          "text");
-  size_t sz = atol(argv[4]);
-  size_t size;
-  std::string buffer; buffer.resize(sz);
-  while ((size = split->Read(BeginPtr(buffer), sz)) != 0) {
-    std::cout << std::string(BeginPtr(buffer), size);
+  InputSplit::Blob blb;
+  while (split->NextRecord(&blb)) {
+    std::cout << std::string((char*)blb.dptr, blb.size);
   }
   delete split;
   return 0;

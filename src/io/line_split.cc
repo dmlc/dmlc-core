@@ -22,5 +22,24 @@ size_t LineSplitter::SeekRecordBegin(Stream *fi) {
   }
   return nstep;
 }
+const char* LineSplitter::FindLastRecordBegin(const char *begin,
+                                              const char *end) {
+  CHECK(begin != end);
+  for (const char *p = end - 1; p != begin; ++p) {
+    if (*p == '\n' || *p == '\r') return p + 1; 
+  }
+  return begin;
+}
+
+char* LineSplitter::FindNextRecord(char *begin, char *end) {
+  char *p;
+  for (p = begin; p != end; ++p) {
+    if (*p == '\n' || *p == '\r') break;
+  }
+  for (; p != end; ++p) {
+    if (*p != '\n' && *p != '\r') return p;
+  }
+  return end;
+}
 }  // namespace io
 }  // namespace dmlc

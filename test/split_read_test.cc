@@ -14,14 +14,14 @@ int main(int argc, char *argv[]) {
                                          atoi(argv[2]),
                                          atoi(argv[3]),
                                          "text");
+  InputSplit::Blob blb;
   size_t sz = atol(argv[4]);
-  size_t size;
   std::string buffer; buffer.resize(sz);
   double tstart = GetTime();
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;
-  while ((size = split->Read(BeginPtr(buffer), sz)) != 0) {
-    bytes_read += size;
+  while (split->NextChunk(&blb)) {
+    bytes_read += blb.size;
     double tdiff = GetTime() - tstart;
     if (bytes_read >= bytes_expect) {
       printf("%lu MB read, %g MB/sec\n",

@@ -15,11 +15,28 @@
 
 namespace dmlc {
 namespace io {
-/*! \brief base class to construct input split from multiple files */
+// TODO: add a thread to pull the chunks
+/*! \brief class to construct input split from multiple files */
 class InputSplitBase : public InputSplit {
  public:
+  /*! \brief helper struct to hold chunk data */
+  struct Chunk {
+    char *begin;
+    char *end;
+    std::vector<size_t> data;
+    Chunk(size_t buffer_size)
+        : begin(NULL), end(NULL),
+          data(buffer_size) {}
+    // load chunk from split
+    bool Load(InputSplitBase *split);
+  };
+  
   // destructor
-  virtual ~InputSplitBase(void);  
+  virtual ~InputSplitBase(void);
+  // implement next record
+  virtual bool NextRecord(Blob *out_rec);
+  // implement next chunk
+  virtual bool NextChunk(Blob *out_chunk);
   /*!
    * \brief read a chunk of data into buf
    *   the data can span multiple records,
@@ -32,11 +49,12 @@ class InputSplitBase : public InputSplit {
    * \return whether end of file was reached
    */
   bool ReadChunk(void *buf, size_t *size);
-  
+
  protected:
-  // constructor 
+  // constructor
   InputSplitBase()
-      : fs_(NULL) {}
+      : fs_(NULL),
+        tmp_chunk_(kBufferSize) {}
   /*!
    * \brief intialize the base before doing anything
    * \param fs the filesystem ptr
@@ -59,16 +77,27 @@ class InputSplitBase : public InputSplit {
    */
   virtual size_t SeekRecordBegin(Stream *fi) = 0;
   /*!
-   * \brief find the last occurance of record
-   *        in the dataset
+   * \brief find the last occurance of record header
    * \param begin beginning of the buffer
    * \param end end of the buffer
-   * \return how many bytes we read past
+   * \return the pointer between [begin, end] indicating the
+   *         last record head
    */
   virtual const char*
   FindLastRecordBegin(const char *begin, const char *end) = 0;
+  /*!
+   * \brief find the next record, begin is ensured to be
+   * head of current record
+   * \param begin beginning of the buffer
+   * \param end end of the bufffer
+   * \return the pointer between (begin, end]
+   *         indicating the head of next record
+   */
+  virtual char* FindNextRecord(char *begin, char *end) = 0;
 
  private:
+  // 2MB
+  static const size_t kBufferSize = 1UL << 18UL;
   /*! \brief FileSystem */
   FileSystem *filesys_;
   /*! \brief information about files */
@@ -85,6 +114,8 @@ class InputSplitBase : public InputSplit {
   size_t offset_begin_;
   /*! \brief end of the offset */
   size_t offset_end_;
+  /*! \brief temporal chunk */
+  Chunk tmp_chunk_;
   /*! \brief byte-offset of each file */
   std::vector<size_t> file_offset_;
   /*! \brief internal overflow buffer */

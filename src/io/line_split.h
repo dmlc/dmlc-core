@@ -28,6 +28,9 @@ class LineSplitter : public InputSplitBase {
 
  protected:
   virtual size_t SeekRecordBegin(Stream *fi);
+  virtual const char*
+  FindLastRecordBegin(const char *begin, const char *end);
+  virtual char* FindNextRecord(char *begin, char *end);
 };
 }  // namespace io
 }  // namespace dmlc

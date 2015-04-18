@@ -26,9 +26,8 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
                         size_t buffer_size,
                         int nthread)
       : nthread_(nthread), max_buffer_size_(buffer_size),
-        bytes_read_(0), at_head_(true), at_end_(false),
-        data_ptr_(0), data_end_(0), source_(source) {    
-    buffer_.reserve(kBufferSize);
+        bytes_read_(0), at_head_(true),
+        data_ptr_(0), data_end_(0), source_(source) {
   }
   virtual ~LibSVMParser() {
     delete source_;
@@ -48,7 +47,6 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
           return true;
         }
       }
-      if (at_end_) break;
       if (!FillData()) break;
       data_ptr_ = 0; data_end_ = data_.size();
     }
@@ -60,6 +58,8 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
 
  protected:
   inline bool FillData() {
+    InputSplit::Blob chunk;
+    if (!source_->NextChunk(&chunk)) return false;
     int nthread;
     #pragma omp parallel num_threads(nthread_)
     {
@@ -67,49 +67,26 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
     }
     // reserve space for data
     data_.resize(nthread);
-    // reserve space for 
-    size_t begin = buffer_.length();
-    if (begin * 2UL > max_buffer_size_) {
-      max_buffer_size_ *= 2;
-    }
-    buffer_.resize(max_buffer_size_);
-    size_t nread = source_->Read(BeginPtr(buffer_) + begin,
-                                 buffer_.length() - begin);
-    if (begin + nread != buffer_.length()) {
-      at_end_ = true;
-    }
-    bytes_read_ += nread;
-    buffer_.resize(begin + nread);
-    if (buffer_.length() == 0) return false;
-    size_t nparsed = 0;
-    char *head = BeginPtr(buffer_);
+    bytes_read_ += chunk.size;
+    CHECK(chunk.size != 0);
+    char *head = reinterpret_cast<char*>(chunk.dptr);        
     #pragma omp parallel num_threads(nthread_)
     {
       // threadid
       int tid = omp_get_thread_num();
-      size_t nstep = (buffer_.length() + nthread - 1) / nthread;
-      size_t sbegin = std::min(tid * nstep, buffer_.length());
-      size_t send = std::min((tid + 1) * nstep, buffer_.length());
+      size_t nstep = (chunk.size + nthread - 1) / nthread;
+      size_t sbegin = std::min(tid * nstep, chunk.size);
+      size_t send = std::min((tid + 1) * nstep, chunk.size);
       char *pbegin = BackFindEndLine(head + sbegin, head);
       char *pend;
       if (tid + 1 == nthread) {
-        if (at_end_) {
-          pend = head + send;
-        } else {
-          pend = BackFindEndLine(head + send - 1, head);
-        }
+        pend = head + send;
       } else {
         pend = BackFindEndLine(head + send, head);
       }
       ParseBlock(pbegin, pend, &data_[tid]);
-      if (tid + 1 == nthread) {
-        nparsed = pend - head;
-      }
     }
     data_ptr_ = 0;
-    size_t nleft = buffer_.length() - nparsed;
-    std::memmove(head, head + nparsed, nleft);
-    buffer_.resize(nleft);
     return true;
   }
   /*!
@@ -158,8 +135,6 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
   }
   
  private:
-  // buffer size, 1M
-  static const int kBufferSize = 1 << 20;
   // nthread
   int nthread_;
   // maximum buffer size
@@ -167,13 +142,11 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
   // number of bytes readed
   size_t bytes_read_;
   // at beginning, at end of stream
-  bool at_head_, at_end_;
+  bool at_head_;
   // pointer to begin and end of data
   size_t data_ptr_, data_end_;
   // source split that provides the data
   InputSplit *source_;
-  // internal buffer
-  std::string buffer_;
   // internal data
   std::vector<RowBlockContainer<size_t> > data_;
   // internal row block

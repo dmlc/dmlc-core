@@ -139,5 +139,42 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
     return true;
   }
 }
+
+bool InputSplitBase::Chunk::Load(InputSplitBase *split) {
+  while (true) {
+    size_t size = data.size() * sizeof(size_t);
+    if (!split->ReadChunk(BeginPtr(data), &size)) return false;
+    if (size == 0) {
+      data.resize(data.size() * 2);
+    } else {
+      begin = reinterpret_cast<char *>(BeginPtr(data));
+      end = begin + size;
+      break;
+    }
+  }
+  return true;
+}
+
+bool InputSplitBase::NextRecord(Blob *out_rec) {
+  if (tmp_chunk_.begin == tmp_chunk_.end) {
+    if (!tmp_chunk_.Load(this)) return false;
+  }
+  char *next = FindNextRecord(tmp_chunk_.begin,
+                              tmp_chunk_.end);
+  out_rec->dptr = tmp_chunk_.begin;
+  out_rec->size = next - tmp_chunk_.begin;
+  tmp_chunk_.begin = next;
+  return true;
+}
+
+bool InputSplitBase::NextChunk(Blob *out_chunk) {
+  if (tmp_chunk_.begin == tmp_chunk_.end) {
+    if (!tmp_chunk_.Load(this)) return false;
+  }
+  out_chunk->dptr = tmp_chunk_.begin;
+  out_chunk->size = tmp_chunk_.end - tmp_chunk_.begin;
+  tmp_chunk_.begin = tmp_chunk_.end;  
+  return true;
+}
 }  // namespace io
 }  // namespace dmlc
