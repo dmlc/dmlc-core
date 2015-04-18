@@ -5,27 +5,19 @@
 #include "./recordio_split.h"
 namespace dmlc {
 namespace io {
-size_t RecordIOSplitter::SeekRecordBegin(void) {
-  CHECK((reinterpret_cast<size_t>(bptr()) & 3) == 0)
-      << "address not aligned";
+size_t RecordIOSplitter::SeekRecordBegin(Stream *fi) {
   size_t nstep = 0;
+  unsigned v, lrec; 
   while (true) {
-    const char *p;
-    for (p = bptr(); p + 4 < bend(); p += 4) {
-      unsigned v = *reinterpret_cast<const unsigned*>(p);
-      if (v == RecordIOWriter::kMagic) {
-        unsigned lrec = *reinterpret_cast<const unsigned*>(p + 4);
-        unsigned cflag = RecordIOWriter::DecodeFlag(lrec);        
-        if (cflag == 0 || cflag == 1) {
-          nstep += p - bptr();
-          this->set_bptr(p);
-          return nstep;
-        }
-      }
+    if (fi->Read(&v, sizeof(v)) == 0) return nstep;
+    nstep += sizeof(v);
+    if (v == RecordIOWriter::kMagic) {
+      CHECK(fi->Read(&lrec, sizeof(lrec)) != 0)
+            << "invalid record io format";
+      nstep += sizeof(lrec);
+      unsigned cflag = RecordIOWriter::DecodeFlag(lrec);        
+      if (cflag == 0 || cflag == 1) break;
     }
-    nstep += p - bptr();
-    this->set_bptr(p);
-    if (!this->FillBuffer(bend() - p)) return nstep; 
   }
   return nstep;
 }

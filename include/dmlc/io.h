@@ -100,15 +100,50 @@ class Serializable {
 };
 
 /*!
- * \brief input split creates stream that reads
+ * \brief input split creates that allows reading
+ *  of records from split of data,
  *  independent part that covers all the dataset
- *  the stream is created such that each record
- *  is in a single split and won't span multiple splits
  * 
  *  see InputSplit::Create for definition of record
  */
-class InputSplit : public Stream {
+class InputSplit {
  public:
+  /*! \brief a blob of memory region */
+  struct Blob {
+    /*! \brief points to start of the memory region */
+    void *dptr;
+    /*! \brief size of the memory region */
+    size_t size;
+  };
+  /*!
+   * \brief get the next record, the returning value
+   *   is valid until next call to NextRecord or NextChunk
+   *   caller can modify the memory content of out_rec
+   * \param out_rec used to store the result
+   * \return true if we can successfully get next record
+   *     false if we reached end of split
+   * \sa InputSplit::Create for definition of record
+   */
+  virtual bool NextRecord(Blob *out_rec) = 0;
+  /*!
+   * \brief get a chunk of memory that can contain multiple records, 
+   *  the caller needs to parse the content of the resulting chunk,
+   *  for text file, out_chunk can contain data of multiple lines
+   *  for recordio, out_chunk can contain data of multiple records
+   *   
+   *  This function ensures there won't be partial record in the chunk
+   *  caller can modify the memory content of out_chunk,
+   *  the memory is valid until next call to NextRecord or NextChunk
+   *
+   *  Usually NextRecord is sufficient, NextChunk can be used by some
+   *  multi-threaded parsers to parse the input content
+   *
+   * \param out_chunk used to store the result
+   * \return true if we can successfully get next record
+   *     false if we reached end of split
+   * \sa InputSplit::Create for definition of record
+   */
+  virtual bool NextChunk(Blob *out_chunk) = 0;
   /*! \brief destructor*/
   virtual ~InputSplit(void) {}
   /*!

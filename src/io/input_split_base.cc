@@ -41,19 +41,15 @@ void InputSplitBase::Init(FileSystem *filesys,
     CHECK(file_ptr_end_ < files_.size());
     fs_ = filesys_->OpenForRead(files_[file_ptr_end_].path);
     fs_->Seek(offset_end_ - file_offset_[file_ptr_end_]);
-    offset_end_ += SeekRecordBegin();    
+    offset_end_ += SeekRecordBegin(fs_);
     delete fs_;
-    // reset buffer
-    bptr_ = bend_ = NULL;
   }
   fs_ = filesys_->OpenForRead(files_[file_ptr_].path); 
   if (offset_begin_ != file_offset_[file_ptr_]) {
     fs_->Seek(offset_begin_ - file_offset_[file_ptr_]);
-    offset_curr_ = offset_begin_ + SeekRecordBegin();
+    offset_curr_ = offset_begin_ + SeekRecordBegin(fs_);
     // seek to beginning of stream
     fs_->Seek(offset_curr_ - file_offset_[file_ptr_]);
-    // reset buffer
-    bptr_ = bend_ = NULL;
   }
 }
 
@@ -114,18 +110,34 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
   return size - nleft;
 }
 
-bool InputSplitBase::FillBuffer(size_t bytes_kept) {
-  CHECK(bptr_ + bytes_kept == bend_)
-      << "inconsistent FillBuffer request";
-  char *bhead = reinterpret_cast<char*>(BeginPtr(buffer_));  
-  if (bytes_kept != 0) {
-    std::memmove(bhead, bptr_, bytes_kept);    
-  }  
-  bptr_ = bhead;
-  size_t nread = buffer_.size() * sizeof(size_t) - bytes_kept;
-  size_t n = fs_->Read(bhead + bytes_kept, nread);
-  bend_ = bptr_ + n + bytes_kept;
-  return n != 0;
+bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
+  size_t max_size = *size;
+  if (max_size <= overflow_.length()) {
+    *size = 0; return true;
+  }
+  if (overflow_.length() != 0) { 
+    std::memcpy(buf, BeginPtr(overflow_), overflow_.length());  
+  }
+  size_t olen = overflow_.length();
+  overflow_.resize(0);
+  size_t nread = this->Read(reinterpret_cast<char*>(buf) + olen,
+                            max_size - olen);
+  nread += olen;
+  if (nread == 0) return false;
+  if (nread != max_size) {
+    *size = nread;
+    return true;
+  } else {
+    const char *bptr = reinterpret_cast<const char*>(buf);
+    // return the last position where a record starts
+    const char *bend = this->FindLastRecordBegin(bptr, bptr + max_size);
+    *size = bend - bptr;
+    overflow_.resize(max_size - *size);
+    if (overflow_.length() != 0) {
+      std::memcpy(BeginPtr(overflow_), bend, overflow_.length());
+    }
+    return true;
+  }
 }
 }  // namespace io
 }  // namespace dmlc

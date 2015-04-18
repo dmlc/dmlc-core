@@ -27,7 +27,7 @@ class LineSplitter : public InputSplitBase {
   }
 
  protected:
-  virtual size_t SeekRecordBegin(void);
+  virtual size_t SeekRecordBegin(Stream *fi);
 };
 }  // namespace io
 }  // namespace dmlc

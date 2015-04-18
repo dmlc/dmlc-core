@@ -18,20 +18,25 @@ namespace io {
 /*! \brief base class to construct input split from multiple files */
 class InputSplitBase : public InputSplit {
  public:
-  // disable write
-  virtual void Write(const void *buf, size_t size) {
-    LOG(FATAL) << "InputSplit do not support write";
-  }
-  // override read
-  virtual size_t Read(void *ptr, size_t size);  
   // destructor
-  virtual ~InputSplitBase(void);
+  virtual ~InputSplitBase(void);  
+  /*!
+   * \brief read a chunk of data into buf
+   *   the data can span multiple records,
+   *   but cannot contain partial records
+   *
+   * \param buf the memory region of the buffer,
+   *        should be properly aligned to 64 bits
+   * \param size the maximum size of memory,
+   *   after the function returns, it stores the size of the chunk
+   * \return whether end of file was reached
+   */
+  bool ReadChunk(void *buf, size_t *size);
   
  protected:
   // constructor 
   InputSplitBase()
-      : fs_(NULL), buffer_(kBufferSize),
-        bptr_(NULL), bend_(NULL) {}
+      : fs_(NULL) {}
   /*!
    * \brief intialize the base before doing anything
    * \param fs the filesystem ptr
@@ -46,37 +51,22 @@ class InputSplitBase : public InputSplit {
             unsigned rank,
             unsigned nsplit,
             size_t align_bytes);
-  /*!
-   * \brief fill the buffer with current input stream
-   * \param bytes_kept number of bytes that will be kept at buffer head
-   *   this should be bptr() - bend(), caller must give this to double
-   *   check the request is consistent
-   * \return true if future bytes are loaded in,
-   *    false if no future bytes are loaded
-   */
-  bool FillBuffer(size_t bytes_kept = 0);
-  /*! \return buffer current pointer */
-  inline const char *bptr(void) const {
-    return bptr_;
-  }
-  /*! \return buffer end pointer */
-  inline const char *bend(void) const {
-    return bend_;
-  }
-  /*!
-   * \brief set bptr
-   * \param bptr to set 
-   */
-  inline void set_bptr(const char *bptr) {
-    bptr_ = bptr;
-  }
   // to be implemented by child class
   /*!
    * \brief seek to the beginning of the first record
-   * in current file pointer
+   *        in current file pointer
    * \return how many bytes we read past
    */
-  virtual size_t SeekRecordBegin(void) = 0;
+  virtual size_t SeekRecordBegin(Stream *fi) = 0;
+  /*!
+   * \brief find the last occurance of record
+   *        in the dataset
+   * \param begin beginning of the buffer
+   * \param end end of the buffer
+   * \return how many bytes we read past
+   */
+  virtual const char*
+  FindLastRecordBegin(const char *begin, const char *end) = 0;
 
  private:
   /*! \brief FileSystem */
@@ -97,16 +87,12 @@ class InputSplitBase : public InputSplit {
   size_t offset_end_;
   /*! \brief byte-offset of each file */
   std::vector<size_t> file_offset_;
-  /*! \brief buffer size */
-  const static size_t kBufferSize = 1024;
-  /*! \brief internal buffer */
-  std::vector<size_t> buffer_;
-  /*! \brief internal buffer pointer */
-  const char *bptr_;
-  /*! \brief internal buffer end pointer */
-  const char *bend_;  
+  /*! \brief internal overflow buffer */
+  std::string overflow_;
   /*! \brief initialize information in files */
   void InitInputFileInfo(const char *uri);
+  /*! \brief same as stream.Read */
+  size_t Read(void *ptr, size_t size);  
 };
 }  // namespace io
 }  // namespace dmlc
