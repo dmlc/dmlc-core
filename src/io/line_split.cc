@@ -6,7 +6,7 @@
 namespace dmlc {
 namespace io {
 size_t LineSplitter::SeekRecordBegin(Stream *fi) {
-  char c;
+  char c = '\0';
   size_t nstep = 0;
   // search till fist end-of-line
   while (true) {
@@ -17,15 +17,16 @@ size_t LineSplitter::SeekRecordBegin(Stream *fi) {
   // search until first non-endofline
   while (true) {
     if (fi->Read(&c, sizeof(c)) == 0) return nstep;
+    if (c != '\n' && c != '\r') break;
+    // non-end-of-line should not count
     nstep += 1;
-    if (c != '\n' && c != '\r') break; 
   }
   return nstep;
 }
 const char* LineSplitter::FindLastRecordBegin(const char *begin,
                                               const char *end) {
   CHECK(begin != end);
-  for (const char *p = end - 1; p != begin; ++p) {
+  for (const char *p = end - 1; p != begin; --p) {
     if (*p == '\n' || *p == '\r') return p + 1; 
   }
   return begin;

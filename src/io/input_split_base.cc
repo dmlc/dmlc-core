@@ -34,7 +34,6 @@ void InputSplitBase::Init(FileSystem *filesys,
   file_ptr_end_ = std::upper_bound(file_offset_.begin(),
                                    file_offset_.end(),
                                    offset_end_) - file_offset_.begin() - 1;
-  
   // find the exact ending position
   if (offset_end_ != file_offset_[file_ptr_end_]) {
     CHECK(offset_end_ >file_offset_[file_ptr_end_]);

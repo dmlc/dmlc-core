@@ -23,11 +23,16 @@ namespace data {
 class LibSVMParser : public DataIter<RowBlock<size_t> > {
  public:
   explicit LibSVMParser(InputSplit *source,
-                        size_t buffer_size,
                         int nthread)
-      : nthread_(nthread), max_buffer_size_(buffer_size),
-        bytes_read_(0), at_head_(true),
+      : bytes_read_(0), at_head_(true),
         data_ptr_(0), data_end_(0), source_(source) {
+    int maxthread;
+    #pragma omp parallel
+    {
+      maxthread = omp_get_num_threads();
+    }
+    maxthread = std::max(maxthread / 2, 1);
+    nthread_ = std::min(maxthread, nthread);
   }
   virtual ~LibSVMParser() {
     delete source_;
@@ -137,8 +142,6 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
  private:
   // nthread
   int nthread_;
-  // maximum buffer size
-  size_t max_buffer_size_;
   // number of bytes readed
   size_t bytes_read_;
   // at beginning, at end of stream

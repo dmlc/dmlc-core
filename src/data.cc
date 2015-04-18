@@ -11,15 +11,26 @@ namespace dmlc {
 namespace data {
 template<typename IndexType>
 static RowBlockIter<IndexType> *
-CreateIter_(InputSplit *source,
-            const std::string &cfg) {
-  return new BasicRowIter<IndexType>(new LibSVMParser(source, 1UL << 18UL, 4));
+CreateIter_(const char *uri,
+            unsigned part_index,
+            unsigned num_parts,
+            const char *type) {
+  using namespace std;
+  if (!strcmp(type, "libsvm")) {
+    return new BasicRowIter<IndexType>(
+        new LibSVMParser(InputSplit::Create(uri, part_index, num_parts,
+                                            "text"), 4));
+  }
+  LOG(FATAL) << "unknown dataset type " << type;
+  return NULL;
 }
 }  // namespace data
 template<>
 RowBlockIter<unsigned> *
-RowBlockIter<unsigned>::Create(InputSplit *source,
-                               const std::string &cfg) {
-  return data::CreateIter_<unsigned>(source, cfg);
+RowBlockIter<unsigned>::Create(const char *uri,
+                               unsigned part_index,
+                               unsigned num_parts,
+                               const char *type) {
+  return data::CreateIter_<unsigned>(uri, part_index, num_parts, type);
 }
 }  // dmlc

@@ -19,7 +19,8 @@ size_t RecordIOSplitter::SeekRecordBegin(Stream *fi) {
       if (cflag == 0 || cflag == 1) break;
     }
   }
-  return nstep;
+  // should point at head of record
+  return nstep - 2 * sizeof(unsigned);
 }
 const char* RecordIOSplitter::FindLastRecordBegin(const char *begin,
                                                   const char *end) {
@@ -46,7 +47,7 @@ char* RecordIOSplitter::FindNextRecord(char *begin, char *end) {
     unsigned *p = reinterpret_cast<unsigned *>(begin);
     unsigned cflag = RecordIOWriter::DecodeFlag(p[1]);
     unsigned clen = RecordIOWriter::DecodeLength(p[1]);
-    begin += 4 + ((clen + 3U) >> 2U) >> 2U;
+    begin += 4 + (((clen + 3U) >> 2U) >> 2U);
     if (cflag == 0 || cflag == 2) return begin;
     CHECK(begin <= end) << "invalid chunk";
   }

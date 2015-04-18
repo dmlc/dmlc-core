@@ -6,12 +6,11 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   using namespace dmlc;
-  InputSplit *split = InputSplit::Create(argv[1],
-                                         atoi(argv[2]),
-                                         atoi(argv[3]),
-                                         "text");
   RowBlockIter<index_t> *iter = 
-      RowBlockIter<index_t>::Create(split, "");
+      RowBlockIter<index_t>::Create(argv[1],
+                                    atoi(argv[2]),
+                                    atoi(argv[3]),
+                                    "libsvm");
   while (iter->Next()) {
     const RowBlock<index_t> &batch = iter->Value();
     for (size_t i = 0; i < batch.size; ++i) {

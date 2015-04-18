@@ -11,7 +11,6 @@
 #include <istream>
 #include <ostream>
 #include <streambuf>
-#include <cassert>
 
 /*! \brief namespace for dmlc */
 namespace dmlc {
@@ -211,7 +210,7 @@ class ostream : public std::basic_ostream<char> {
    public:
     explicit OutBuf(size_t buffer_size)
         : stream_(NULL), buffer_(buffer_size) {
-      assert(buffer_.size() > 0); 
+      if (buffer_size == 0) buffer_.resize(2);
     }
     // set stream to the buffer
     inline void set_stream(Stream *stream);
@@ -276,7 +275,7 @@ class istream : public std::basic_istream<char> {
     explicit InBuf(size_t buffer_size)
         : stream_(NULL), bytes_read_(0),
           buffer_(buffer_size) {
-      assert(buffer_.size() > 0);
+      if (buffer_size == 0) buffer_.resize(2);
     }
     // set stream to the buffer
     inline void set_stream(Stream *stream);

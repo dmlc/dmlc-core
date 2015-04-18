@@ -6,8 +6,8 @@
 #include "../src/data/libsvm_parser.h"
 
 int main(int argc, char *argv[]) {
-  if (argc < 6) {
-    printf("Usage: <libsvm> partid npart buffer\n");
+  if (argc < 5) {
+    printf("Usage: <libsvm> partid npart nthread\n");
     return 0;
   }
   using namespace dmlc;
@@ -15,9 +15,8 @@ int main(int argc, char *argv[]) {
                                          atoi(argv[2]),
                                          atoi(argv[3]),
                                          "text");
-  size_t sz = atol(argv[4]);
-  int nthread = atoi(argv[5]);
-  data::LibSVMParser parser(split, sz, nthread);
+  int nthread = atoi(argv[4]);
+  data::LibSVMParser parser(split, nthread);
   double tstart = GetTime();
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;

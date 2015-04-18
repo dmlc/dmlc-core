@@ -97,7 +97,7 @@ class InputSplitBase : public InputSplit {
 
  private:
   // 2MB
-  static const size_t kBufferSize = 1UL << 18UL;
+  static const size_t kBufferSize = 1UL << 15UL;
   /*! \brief FileSystem */
   FileSystem *filesys_;
   /*! \brief information about files */

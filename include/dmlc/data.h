@@ -153,14 +153,18 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
    * \brief create a new instance of iterator that returns rowbatch
    *  by default, a in-memory based iterator will be returned
    *
-   * \param source data source from which we get the data,
-   the iterator will takes the ownership of source and caller do not need to free it
-   * \param cfg additional configs we like to pass, normally can be empty
+   * \param uri the uri of the input, can contain hdfs prefix
+   * \param part_index the part id of current input
+   * \param num_parts total number of splits
+   * \param type type of dataset can be: "libsvm", ...
+   *
    * \return the created data iterator
    */
   static RowBlockIter<IndexType> *
-  Create(InputSplit *source,
-         const std::string &cfg = std::string());
+  Create(const char *uri,
+         unsigned part_index,
+         unsigned num_parts,
+         const char *type);
   /*! \return maximum feature dimension in the dataset */
   virtual size_t NumCol() const = 0;
 };

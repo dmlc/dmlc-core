@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
                                          atoi(argv[3]),
                                          "text");
   InputSplit::Blob blb;
-  while (split->NextRecord(&blb)) {
+  while (split->NextChunk(&blb)) {
     std::cout << std::string((char*)blb.dptr, blb.size);
   }
   delete split;
