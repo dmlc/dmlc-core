@@ -10,6 +10,11 @@ ifndef LIBJVM
 	LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 endif
 
+ifndef NO_OPENMP
+	DMLC_CFLAGS += -fopenmp 	
+	DMLC_LDFLAGS += -fopenmp
+endif
+
 # setup HDFS
 ifeq ($(USE_HDFS),1)
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=1 -I$(HADOOP_HDFS_HOME)/include -I$(JAVA_HOME)/include
