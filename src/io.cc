@@ -48,9 +48,9 @@ InputSplit* InputSplit::Create(const char *uri,
                                const char *type) {
   using namespace std;
   using namespace dmlc::io;
-  //  if (!strcmp(uri, "stdin")) {
+  if (!strcmp(uri, "stdin")) {
     return new SingleFileSplit(uri);
-    //}
+  }
   CHECK(part < nsplit) << "invalid input parameter for InputSplit::Create";
   URI path(uri);
   if (!strcmp(type, "text")) {
