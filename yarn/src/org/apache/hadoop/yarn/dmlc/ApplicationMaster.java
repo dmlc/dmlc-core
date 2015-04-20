@@ -181,6 +181,7 @@ public class ApplicationMaster {
         numTasks = numWorker + numServer;
         maxNumAttempt = this.getEnvInteger("DMLC_MAX_ATTEMPT", false,
                                            maxNumAttempt);
+        LOG.info("Try to start " + numServer + " Servers and " + numWorker + " Workers");	
     }
 
     /**
@@ -300,7 +301,8 @@ public class ApplicationMaster {
             + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
             + "/stderr";
         ctx.setCommands(Collections.singletonList(cmd));
-        ctx.setTokens(this.securityTokens);
+	// TODO: token was not right
+        //ctx.setTokens(this.securityTokens);
         LOG.info(workerResources);
         ctx.setLocalResources(this.workerResources);
         // setup environment variables
@@ -374,7 +376,15 @@ public class ApplicationMaster {
             this.nmClient.startContainerAsync(container, ctx);
         }
     }
-
+    /**
+     * free the containers that have not yet been launched
+     * 
+     * @param containers
+     */
+    private synchronized void onStartContainerError(ContainerId cid) {
+	ApplicationMaster.this
+	    .handleFailure(Collections.singletonList(cid));
+    }
     /**
      * free the containers that have not yet been launched
      * 
@@ -550,32 +560,32 @@ public class ApplicationMaster {
         @Override
         public void onContainerStarted(ContainerId cid,
                 Map<String, ByteBuffer> services) {
-            LOG.debug("onContainerStarted Invoked");
+            LOG.info("onContainerStarted Invoked");
         }
 
         @Override
         public void onContainerStatusReceived(ContainerId cid,
                 ContainerStatus status) {
-            LOG.debug("onContainerStatusReceived Invoked");
+            LOG.info("onContainerStatusReceived Invoked");
         }
 
         @Override
         public void onContainerStopped(ContainerId cid) {
-            LOG.debug("onContainerStopped Invoked");
+            LOG.info("onContainerStopped Invoked");
         }
 
         @Override
         public void onGetContainerStatusError(ContainerId cid, Throwable ex) {
-            LOG.debug("onGetContainerStatusError Invoked: " + ex.toString());
+            LOG.info("onGetContainerStatusError Invoked: " + ex.toString());
             ApplicationMaster.this
                     .handleFailure(Collections.singletonList(cid));
         }
 
         @Override
         public void onStartContainerError(ContainerId cid, Throwable ex) {
-            LOG.debug("onStartContainerError Invoked: " + ex.toString());
+            LOG.info("onStartContainerError Invoked: " + ex.getMessage());
             ApplicationMaster.this
-                    .handleFailure(Collections.singletonList(cid));
+		.onStartContainerError(cid);
         }
 
         @Override
