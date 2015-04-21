@@ -15,10 +15,14 @@ ifndef NO_OPENMP
 	DMLC_LDFLAGS += -fopenmp
 endif
 
-# setup HDFS
+ifndef HADOOP_HDFS_HOME
+	#Using default hadoop_home
+	HADOOP_HDFS_HOME=$(HADOOP_HOME)
+endif
+
 ifeq ($(USE_HDFS),1)
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=1 -I$(HADOOP_HDFS_HOME)/include -I$(JAVA_HOME)/include
-	DMLC_LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm
+	DMLC_LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm -Wl,-rpath=$(LIBJVM) 
 else
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=0
 endif
