@@ -22,7 +22,11 @@ endif
 
 ifeq ($(USE_HDFS),1)
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=1 -I$(HADOOP_HDFS_HOME)/include -I$(JAVA_HOME)/include
-	DMLC_LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm -Wl,-rpath=$(LIBJVM) 
+	ifeq ($(HADOOP_CDH_BINARY), 1)
+		DMLC_LDFLAGS+= -L$(LIBJVM) -ljvm -Wl,-rpath=$(LIBJVM)
+	else
+		DMLC_LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm -Wl,-rpath=$(LIBJVM) 
+	endif
 else
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=0
 endif
