@@ -287,7 +287,6 @@ inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
   bool notify = nwait_producer_ != 0 && !produce_end_;
   lock.unlock();
   if (notify) {
-    printf("notify\n");
     producer_cond_.notify_one();
   }
 }
