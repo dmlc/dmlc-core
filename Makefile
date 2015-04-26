@@ -11,7 +11,7 @@ include make/dmlc.mk
 
 # this is the common build script for dmlc lib
 export LDFLAGS= -pthread -lm
-export CFLAGS = -Wall  -msse2  -Wno-unknown-pragmas -fPIC -Iinclude 
+export CFLAGS = -Wall -msse2  -Wno-unknown-pragmas -fPIC -Iinclude -std=c++0x
 LDFLAGS+= $(DMLC_LDFLAGS)
 CFLAGS+= $(DMLC_CFLAGS) 
 
@@ -57,4 +57,4 @@ $(ALIB):
 	ar cr $@ $+
 
 clean:
-	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) *~ src/*~ src/*/*~
+	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) *~ src/*~ src/*/*~ include/dmlc/*~

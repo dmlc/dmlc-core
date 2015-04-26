@@ -15,8 +15,8 @@ ifndef NO_OPENMP
 	DMLC_LDFLAGS += -fopenmp
 endif
 
+#Using default hadoop_home
 ifndef HADOOP_HDFS_HOME
-	#Using default hadoop_home
 	HADOOP_HDFS_HOME=$(HADOOP_HOME)
 endif
 

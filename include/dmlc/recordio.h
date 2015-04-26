@@ -1,7 +1,9 @@
 /*!
  *  Copyright (c) 2015 by Contributors
  * \file recordio.h
- * \brief recordio at 
+ * \brief recordio that is able to pack binary data into a splittable
+ *   format, useful to exchange data in binary serialization,
+ *   such as binary raw data or protobuf
  */
 #ifndef DMLC_RECORDIO_H_
 #define DMLC_RECORDIO_H_
@@ -40,13 +42,13 @@ class RecordIOWriter {
    * note: (kMagic >> 29U) & 7 > 3
    * this ensures lrec will not be kMagic
    */
-  static const unsigned kMagic = 0xced7230a;
+  static const uint32_t kMagic = 0xced7230a;
   /*!
    * \brief encode the lrecord
    * \param cflag cflag part of the lrecord
    * \param length length part of lrecord
    */
-  inline static unsigned EncodeLRec(unsigned cflag, unsigned length) {
+  inline static uint32_t EncodeLRec(uint32_t cflag, uint32_t length) {
     return (cflag << 29U) | length;
   }
   /*!
@@ -54,7 +56,7 @@ class RecordIOWriter {
    * \param rec the lrecord
    * \return the flag
    */
-  inline static unsigned DecodeFlag(unsigned rec) {
+  inline static uint32_t DecodeFlag(uint32_t rec) {
     return (rec >> 29U) & 7U;
   }
   /*!
@@ -62,7 +64,7 @@ class RecordIOWriter {
    * \param rec the lrecord
    * \return the length
    */
-  inline static unsigned DecodeLength(unsigned rec) {
+  inline static uint32_t DecodeLength(uint32_t rec) {
     return rec & ((1U << 29U) - 1U);
   }
   /*!
@@ -71,7 +73,7 @@ class RecordIOWriter {
    */
   explicit RecordIOWriter(Stream *stream)
       : stream_(stream), except_counter_(0) { 
-    CHECK(sizeof(unsigned) == 4) << "unsigned needs to be 4 bytes";
+    CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
    * \brief write record to the stream
@@ -112,7 +114,7 @@ class RecordIOReader {
    */
   explicit RecordIOReader(Stream *stream)
       : stream_(stream), end_of_stream_(false) {
-    CHECK(sizeof(unsigned) == 4) << "unsigned needs to be 4 bytes";
+    CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
    * \brief read next complete record from stream   
