@@ -303,16 +303,17 @@ inline void Stream::Write(const std::vector<T> &vec) {
   uint64_t sz = static_cast<uint64_t>(vec.size());
   this->Write(&sz, sizeof(sz));
   if (sz != 0) {
-    this->Write(&vec[0], sizeof(T) * sz);
+    this->Write(&vec[0], sizeof(T) * vec.size());
   }
 }
 template<typename T>
 inline bool Stream::Read(std::vector<T> *out_vec) {
   uint64_t sz;
   if (this->Read(&sz, sizeof(sz)) == 0) return false;
-  out_vec->resize(static_cast<size_t>(sz));
+  size_t size = static_cast<size_t>(sz);
+  out_vec->resize(size);
   if (sz != 0) {
-    if (this->Read(&(*out_vec)[0], sizeof(T) * sz) == 0) return false;
+    if (this->Read(&(*out_vec)[0], sizeof(T) * size) == 0) return false;
   }
   return true;
 }
@@ -320,15 +321,16 @@ inline void Stream::Write(const std::string &str) {
   uint64_t sz = static_cast<uint64_t>(str.length());
   this->Write(&sz, sizeof(sz));
   if (sz != 0) {
-    this->Write(&str[0], sizeof(char) * sz);
+    this->Write(&str[0], sizeof(char) * str.length());
   }
 }
 inline bool Stream::Read(std::string *out_str) {
   uint64_t sz;
   if (this->Read(&sz, sizeof(sz)) == 0) return false;
-  out_str->resize(static_cast<size_t>(sz));
+  size_t size = static_cast<size_t>(sz);
+  out_str->resize(size);
   if (sz != 0) {
-    if (this->Read(&(*out_str)[0], sizeof(char) * sz) == 0) {
+    if (this->Read(&(*out_str)[0], sizeof(char) * size) == 0) {
       return false;
     }
   }
