@@ -26,6 +26,7 @@ class ThreadInputSplit : public InputSplit {
    */
   explicit ThreadInputSplit(InputSplitBase *base)
       : base_(base), tmp_chunk_(NULL) {
+    iter_.set_max_capacity(8);
     // initalize the iterator
     iter_.Init([base](InputSplitBase::Chunk **dptr) {
         if (*dptr == NULL) {
