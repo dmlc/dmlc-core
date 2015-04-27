@@ -33,13 +33,16 @@ class ThreadedInputSplit : public InputSplit {
           *dptr = new InputSplitBase::Chunk(InputSplitBase::kBufferSize);
         }
         return (*dptr)->Load(base);
-      });
+      }, [base]() { base->BeforeFirst(); });
   }
   // destructor
   virtual ~ThreadedInputSplit(void) {
     iter_.Destroy();
     if (tmp_chunk_ != NULL) delete tmp_chunk_;
     delete base_;
+  }
+  virtual void BeforeFirst() {
+    iter_.BeforeFirst();
   }
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {

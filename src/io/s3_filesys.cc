@@ -129,7 +129,7 @@ std::string ComputeMD5(const std::string &buf) {
 }
 // remove the beginning slash at name
 inline const char *RemoveBeginSlash(const std::string &name) {
-  const char *s = BeginPtr(name);
+  const char *s = name.c_str();
   while (*s == '/') {
     ++s;
   }
@@ -704,20 +704,31 @@ S3FileSystem::S3FileSystem() {
   aws_secret_key_ = seckey;
 }
 
-FileInfo S3FileSystem::GetPathInfo(const URI &path_) {
+bool S3FileSystem::TryGetPathInfo(const URI &path_, FileInfo *out_info) {
   URI path = path_;
-  while (*path.name.rbegin() == '/') {
+  while (path.name.length() > 1 &&
+         *path.name.rbegin() == '/') {
     path.name.resize(path.name.length() - 1);
   }
   std::vector<FileInfo> files;
   s3::ListObjects(path,  aws_access_id_, aws_secret_key_, &files);
   std::string pdir = path.name + '/';
   for (size_t i = 0; i < files.size(); ++i) {
-    if (files[i].path.name == path.name) return files[i];
-    if (files[i].path.name == pdir) return files[i];
+    if (files[i].path.name == path.name) {
+      *out_info = files[i]; return true;
+    }
+    if (files[i].path.name == pdir) {
+      *out_info = files[i]; return true;
+    }
   }
-  LOG(FATAL) << "S3FileSytem.GetPathInfo cannot find information about " + path.str();
-  return files[0];
+  return false;
+}
+
+FileInfo S3FileSystem::GetPathInfo(const URI &path) {
+  FileInfo info;
+  CHECK(TryGetPathInfo(path, &info))
+      << "S3FileSytem.GetPathInfo cannot find information about " + path.str();
+  return info;
 }
 void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_list) {
   if (path.name[path.name.length() - 1] == '/') {
@@ -745,20 +756,26 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
   }  
 }
 
-Stream *S3FileSystem::Open(const URI &path, const char* const flag) {
+Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_null) {
   using namespace std;
   if (!strcmp(flag, "r") || !strcmp(flag, "rb")) {
-    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
+    return OpenForRead(path, allow_null);
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
     return new s3::WriteStream(path, aws_access_id_, aws_secret_key_);
   }else {
-    CHECK(false) << "S3FileSytem.Open do not support flag " << flag;    
+    LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;    
     return NULL;
   }
 }
 
-SeekStream *S3FileSystem::OpenForRead(const URI &path) {
-  return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
+SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
+  FileInfo info;
+  if (TryGetPathInfo(path, &info) && info.type == kFile) { 
+    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
+  } else {    
+    CHECK(allow_null) << " S3FileSystem: fail to open " << path.str();
+    return NULL;
+  }
 }
 }  // namespace io
 }  // namespace dmlc

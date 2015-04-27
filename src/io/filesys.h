@@ -96,18 +96,24 @@ class FileSystem {
    */
   virtual void ListDirectory(const URI &path, std::vector<FileInfo> *out_list) = 0;
   /*!
-   * \brief open a stream, will report error and exit if bad thing happens   
+   * \brief open a stream
    * \param path path to file
    * \param uri the uri of the input, can contain hdfs prefix
-   * \param flag can be "w", "r", "a"   
+   * \param flag can be "w", "r", "a
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual Stream *Open(const URI &path, const char* const flag) = 0;  
+  virtual Stream *Open(const URI &path,
+                       const char* const flag,
+                       bool allow_null = false) = 0;
   /*!
    * \brief open a seekable stream for read
    * \param path the path to the file
-   * \return the result stream
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual SeekStream *OpenForRead(const URI &path) = 0;
+  virtual SeekStream *OpenForRead(const URI &path,
+                                  bool allow_null = false) = 0;
 };
 }  // namespace io
 }  // namespace dmlc

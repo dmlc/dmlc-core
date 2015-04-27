@@ -34,22 +34,32 @@ class S3FileSystem : public FileSystem {
    * \brief open a stream, will report error and exit if bad thing happens
    * NOTE: the Stream can continue to work even when filesystem was destructed
    * \param path path to file
-   * \param uri the uri of the input, can contain hdfs prefix
-   * \param flag can be "w", "r", "a"   
+   * \param uri the uri of the input
+   * \param flag can be "w", "r", "a"
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
    */  
-  virtual Stream *Open(const URI &path, const char* const flag);
+  virtual Stream *Open(const URI &path, const char* const flag, bool allow_null);
   /*!
    * \brief open a seekable stream for read
    * \param path the path to the file
-   * \return the result stream
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual SeekStream *OpenForRead(const URI &path);
+  virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
 
  private:
   /*! \brief AWS access id */
   std::string aws_access_id_;
   /*! \brief AWS secret key */
   std::string aws_secret_key_;
+  /*!
+   * \brief try to get information about a path 
+   * \param path the path to the file
+   * \param out_info holds the path info
+   * \return return false when path do not exist
+   */
+  bool TryGetPathInfo(const URI &path, FileInfo *info);
 };
 }  // namespace io
 }  // namespace dmlc

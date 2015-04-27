@@ -46,10 +46,24 @@ void InputSplitBase::Init(FileSystem *filesys,
   fs_ = filesys_->OpenForRead(files_[file_ptr_].path); 
   if (offset_begin_ != file_offset_[file_ptr_]) {
     fs_->Seek(offset_begin_ - file_offset_[file_ptr_]);
-    offset_curr_ = offset_begin_ + SeekRecordBegin(fs_);
-    // seek to beginning of stream
-    fs_->Seek(offset_curr_ - file_offset_[file_ptr_]);
+    offset_begin_ += SeekRecordBegin(fs_);
   }
+  this->BeforeFirst();
+}
+
+void InputSplitBase::BeforeFirst(void) {
+  if (offset_begin_ >= offset_end_) return;
+  size_t fp = std::upper_bound(file_offset_.begin(),
+                               file_offset_.end(),
+                               offset_begin_) - file_offset_.begin() - 1;
+  if (file_ptr_ != fp) {
+    delete fs_;
+    file_ptr_ = fp;
+    fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
+  }
+  // seek to beginning of stream
+  fs_->Seek(offset_begin_ - file_offset_[file_ptr_]);
+  offset_curr_ = offset_begin_;
 }
 
 InputSplitBase::~InputSplitBase(void) {
@@ -98,11 +112,11 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     nleft -= n; buf += n;
     offset_curr_ += n;
     if (nleft == 0) break;
-    file_ptr_ += 1;
-    if (offset_curr_ != file_offset_[file_ptr_]) {
-      LOG(FATAL) << "FILE size not calculated correctly\n";
+    if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
+      LOG(FATAL) << "FILE size not calculated correctly";
     }
-    if (file_ptr_ >= files_.size()) break;
+    if (file_ptr_ + 1 >= files_.size()) break;
+    file_ptr_ += 1;
     delete fs_;
     fs_ = filesys_->OpenForRead(files_[file_ptr_].path);    
   }

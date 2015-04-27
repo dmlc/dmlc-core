@@ -36,6 +36,8 @@ class InputSplitBase : public InputSplit {
   static const size_t kBufferSize = 1UL << 15UL;
   // destructor
   virtual ~InputSplitBase(void);
+  // implement BeforeFirst
+  virtual void BeforeFirst(void);
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
     while (!NextRecord(out_rec, &tmp_chunk_)) {

@@ -31,7 +31,11 @@ struct RowBlockContainer {
   /*! \brief feature value */
   std::vector<real_t> value;  
   /*! \brief maximum value of index */
-  IndexType max_index;  
+  IndexType max_index;
+  // constructor
+  RowBlockContainer(void) {
+    this->Clear();
+  }
   /*! \brief convert to a row block */
   inline RowBlock<IndexType> GetBlock(void) const;
   /*!
@@ -41,9 +45,10 @@ struct RowBlockContainer {
   inline void Save(Stream *fo) const;
   /*!
    * \brief load row block from a binary stream
-   * \param fi output stream   
+   * \param fi output stream
+   * \return false if at end of file
    */
-  inline void Load(Stream *fi);
+  inline bool Load(Stream *fi);
   /*! \brief clear the container */
   inline void Clear(void) {
     offset.clear(); offset.push_back(0);
@@ -146,12 +151,13 @@ RowBlockContainer<IndexType>::Save(Stream *fo) const {
   fo->Write(value);
 }
 template<typename IndexType>
-inline void
+inline bool
 RowBlockContainer<IndexType>::Load(Stream *fi) {
-  CHECK(fi->Read(&offset)) << "Bad RowBlock format";
+  if (!fi->Read(&offset)) return false;
   CHECK(fi->Read(&label)) << "Bad RowBlock format"; 
   CHECK(fi->Read(&value)) << "Bad RowBlock format"; 
   CHECK(fi->Read(&index)) << "Bad RowBlock format";
+  return true;
 }
 }  // namespace data
 }  // namespace dmlc

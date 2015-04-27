@@ -71,12 +71,20 @@ InputSplit* InputSplit::Create(const char *uri,
 #endif
 }
 
-Stream *Stream::Create(const char *uri, const char * const flag) {
-  using namespace std;
-  using namespace dmlc::io;
-  URI path(uri);
-  FileSystem *fs = FileSystem::Create(path.protocol);
-  Stream *ret = fs->Open(path, flag);
+Stream *Stream::Create(const char *uri,
+                       const char * const flag,
+                       bool try_create) {
+  io::URI path(uri);
+  io::FileSystem *fs = io::FileSystem::Create(path.protocol);
+  Stream *ret = fs->Open(path, flag, try_create);
+  delete fs;
+  return ret;
+}
+
+SeekStream *SeekStream::CreateForRead(const char *uri, bool try_create) {
+  io::URI path(uri);
+  io::FileSystem *fs =io:: FileSystem::Create(path.protocol);
+  SeekStream *ret = fs->OpenForRead(path, try_create);
   delete fs;
   return ret;
 }

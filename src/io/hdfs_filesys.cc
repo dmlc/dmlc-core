@@ -8,22 +8,9 @@ class HDFSStream : public SeekStream {
  public:
   HDFSStream(hdfsFS fs,
              int *ref_counter,
-             const char *fname,
-             const char *mode)
-      : fs_(fs), ref_counter_(ref_counter), 
-        at_end_(false) {
-    int flag = 0;
-    if (!strcmp(mode, "r")) {
-      flag = O_RDONLY;
-    } else if (!strcmp(mode, "w"))  {
-      flag = O_WRONLY;
-    } else if (!strcmp(mode, "a"))  {
-      flag = O_WRONLY | O_APPEND;
-    } else {
-      LOG(FATAL) << "HDFSStream: unknown flag %s" << mode;
-    }
-    fp_ = hdfsOpenFile(fs_, fname, flag, 0, 0, 0);
-    CHECK(fp_ != NULL) << "HDFSStream: fail to open " << fname;
+             hdfsFile fp)
+      : fs_(fs), ref_counter_(ref_counter),
+        fp_(fp), at_end_(false) {
   }
   virtual ~HDFSStream(void) {
     this->Close();
@@ -148,13 +135,32 @@ void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_l
   hdfsFreeFileInfo(files, nentry);
 }
 
-SeekStream *HDFSFileSystem::Open(const URI &path, const char* const flag) {
-  ref_counter_[0] += 1;
-  return new HDFSStream(fs_, ref_counter_, path.str().c_str(), flag);
+SeekStream *HDFSFileSystem::Open(const URI &path,
+                                 const char* const flag,
+                                 bool allow_null) {
+  using namespace std;
+  int flag = 0;
+  if (!strcmp(mode, "r")) {
+    flag = O_RDONLY;
+  } else if (!strcmp(mode, "w"))  {
+    flag = O_WRONLY;
+  } else if (!strcmp(mode, "a"))  {
+    flag = O_WRONLY | O_APPEND;
+  } else {
+    LOG(FATAL) << "HDFSStream: unknown flag %s" << mode;
+  }
+  fp_ = hdfsOpenFile(fs_, path.str().c_str(), flag, 0, 0, 0);
+  if (fp != NULL) {
+    ref_counter_[0] += 1;
+    return new HDFSStream(fs_, ref_counter_, fp_);  
+  } else {
+    CHECK(allow_null) << " HDFSFileSystem: fail to open " << path.str();
+    return NULL;
+  }
 }
 
-SeekStream *HDFSFileSystem::OpenForRead(const URI &path) {
-  return Open(path, "r");
+SeekStream *HDFSFileSystem::OpenForRead(const URI &path, bool allow_null) {
+  return Open(path, "r", allow_null);
 }
 }  // namespace io
 }  // namespace dmlc

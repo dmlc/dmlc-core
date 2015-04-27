@@ -34,16 +34,20 @@ class LocalFileSystem : public FileSystem {
    * \brief open a stream, will report error and exit if bad thing happens
    * NOTE: the IStream can continue to work even when filesystem was destructed
    * \param path path to file
-   * \param uri the uri of the input, can contain hdfs prefix
-   * \param flag can be "w", "r", "a"   
-   */  
-  virtual SeekStream *Open(const URI &path, const char* const flag);
+   * \param uri the uri of the input
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
+   */
+  virtual SeekStream *Open(const URI &path,
+                           const char* const flag,
+                           bool allow_null);
   /*!
    * \brief open a seekable stream for read
    * \param path the path to the file
-   * \return the result stream
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual SeekStream *OpenForRead(const URI &path);
+  virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
 };
 }  // namespace io
 }  // namespace dmlc

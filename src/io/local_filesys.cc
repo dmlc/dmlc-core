@@ -19,54 +19,36 @@ namespace io {
 /*! \brief implementation of file i/o stream */
 class FileStream : public SeekStream {
  public:
-  explicit FileStream(const char *fname, const char *mode)
-      : use_stdio(false) {
-    using namespace std;
-#ifndef DMLC_STRICT_CXX98_
-    if (!strcmp(fname, "stdin")) {
-      use_stdio = true; fp = stdin;
-    }
-    if (!strcmp(fname, "stdout")) {
-      use_stdio = true; fp = stdout;
-    }
-#endif
-    if (!strncmp(fname, "file://", 7)) fname += 7;
-    if (!use_stdio) {
-      std::string flag = mode;
-      if (flag == "w") flag = "wb";
-      if (flag == "r") flag = "rb";
-      fp = fopen64(fname, flag.c_str());
-      CHECK(fp != NULL) << "FileStream: fail to open " << fname;
-    }
-  }
+  explicit FileStream(FILE *fp, bool use_stdio)
+      : fp_(fp), use_stdio_(use_stdio) {}
   virtual ~FileStream(void) {
     this->Close();
   }
   virtual size_t Read(void *ptr, size_t size) {
-    return std::fread(ptr, 1, size, fp);
+    return std::fread(ptr, 1, size, fp_);
   }
   virtual void Write(const void *ptr, size_t size) {
-    CHECK(std::fwrite(ptr, 1, size, fp) == size)
+    CHECK(std::fwrite(ptr, 1, size, fp_) == size)
         << "FileStream.Write incomplete";
   }
   virtual void Seek(size_t pos) {
-    std::fseek(fp, static_cast<long>(pos), SEEK_SET);
+    std::fseek(fp_, static_cast<long>(pos), SEEK_SET);
   }
   virtual size_t Tell(void) {
-    return std::ftell(fp);
+    return std::ftell(fp_);
   }
   virtual bool AtEnd(void) const {
-    return std::feof(fp) != 0;
+    return std::feof(fp_) != 0;
   }
   inline void Close(void) {
-    if (fp != NULL && !use_stdio) {
-      std::fclose(fp); fp = NULL;
+    if (fp_ != NULL && !use_stdio_) {
+      std::fclose(fp_); fp_ = NULL;
     }
   }
 
  private:
-  std::FILE *fp;
-  bool use_stdio;
+  std::FILE *fp_;
+  bool use_stdio_;
 };
 
 FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
@@ -136,11 +118,37 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
 #endif
 }
 
-SeekStream *LocalFileSystem::Open(const URI &path, const char* const flag) {
-  return new FileStream(path.name.c_str(), flag);
+SeekStream *LocalFileSystem::Open(const URI &path,
+                                  const char* const mode,
+                                  bool allow_null) {
+  bool use_stdio  =false;
+  FILE *fp = NULL;
+  const char *fname = path.name.c_str();
+  using namespace std;
+#ifndef DMLC_STRICT_CXX98_
+  if (!strcmp(fname, "stdin")) {
+    use_stdio = true; fp = stdin;
+  }
+  if (!strcmp(fname, "stdout")) {
+    use_stdio = true; fp = stdout;
+  }
+#endif
+  if (!strncmp(fname, "file://", 7)) fname += 7;
+  if (!use_stdio) {
+    std::string flag = mode;
+    if (flag == "w") flag = "wb";
+    if (flag == "r") flag = "rb";
+    fp = fopen64(fname, flag.c_str());
+  }
+  if (fp != NULL) {
+    return new FileStream(fp, use_stdio);
+  } else {
+    CHECK(allow_null) << " LocalFileSystem: fail to open " << path.str();
+    return NULL;
+  }
 }
-SeekStream *LocalFileSystem::OpenForRead(const URI &path) {
-  return Open(path, "r");
+SeekStream *LocalFileSystem::OpenForRead(const URI &path, bool allow_null) {
+  return Open(path, "r", allow_null);
 }
 }  // namespace io
 }  // namespace dmlc

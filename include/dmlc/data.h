@@ -140,6 +140,13 @@ struct RowBlock {
    * \return the instance corresponding to the row
    */
   inline Row<IndexType> operator[](size_t rowid) const;
+  /*! \return memory cost of the block in bytes */
+  inline size_t MemCostBytes(void) const {
+    size_t cost = size * (sizeof(size_t) + sizeof(real_t));
+    if (index != NULL) cost += offset[size] * sizeof(IndexType);
+    if (value != NULL) cost += offset[size] * sizeof(real_t);
+    return cost;
+  }
 };
 /*!
  * \brief row block iterator interface that gets RowBlocks

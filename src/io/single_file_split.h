@@ -35,6 +35,9 @@ class SingleFileSplit : public InputSplit {
   virtual ~SingleFileSplit(void) {
     if (!use_stdin_) std::fclose(fp_);
   }
+  virtual void BeforeFirst(void) {
+    fseek(fp_, 0, SEEK_SET);
+  }
   virtual size_t Read(void *ptr, size_t size) {
     return std::fread(ptr, 1, size, fp_);
   }  

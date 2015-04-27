@@ -46,37 +46,39 @@ class BasicRowIter: public RowBlockIter<IndexType> {
   virtual size_t NumCol(void) const {
     return static_cast<size_t>(data_.max_index) + 1;
   }
-  inline void Init(Parser *parser) {
-    data_.Clear();
-    double tstart = GetTime();
-    size_t bytes_expect = 10UL << 20UL;
-    while (parser->Next()) {
-      data_.Push(parser->Value());
-      double tdiff = GetTime() - tstart;
-      size_t bytes_read  = parser->BytesRead();
-      if (bytes_read >= bytes_expect) {
-        bytes_read = bytes_read >> 20UL;
-        LOG(INFO) << bytes_read << "MB read,"
-                  << bytes_read / tdiff << " MB/sec";
-        bytes_expect += 10UL << 20UL;
-      }
-    }
-    row_ = data_.GetBlock();
-    double tdiff = GetTime() - tstart;
-    LOG(INFO) << "finish reading LIBSVM at %g MB/sec"
-              << (parser->BytesRead() >> 20UL) / tdiff;
-  }
   
  private:
   // at head
   bool at_head_;
-  // maximum feature dimension
-  size_t num_col;
   // row block to store
   RowBlock<IndexType> row_;
   // back end data
   RowBlockContainer<IndexType> data_;
+  // initialize
+  inline void Init(Parser *parser);
 };
+
+template<typename IndexType>
+inline void BasicRowIter<IndexType>::Init(Parser *parser) {
+  data_.Clear();
+  double tstart = GetTime();
+  size_t bytes_expect = 10UL << 20UL;
+  while (parser->Next()) {
+    data_.Push(parser->Value());
+    double tdiff = GetTime() - tstart;
+    size_t bytes_read  = parser->BytesRead();
+    if (bytes_read >= bytes_expect) {
+      bytes_read = bytes_read >> 20UL;
+      LOG(INFO) << bytes_read << "MB read,"
+                << bytes_read / tdiff << " MB/sec";
+      bytes_expect += 10UL << 20UL;
+    }
+  }
+  row_ = data_.GetBlock();
+  double tdiff = GetTime() - tstart;
+  LOG(INFO) << "finish reading at %g MB/sec"
+            << (parser->BytesRead() >> 20UL) / tdiff;
+}
 }  // namespace data
 }  // namespace dmlc
 #endif  // DMLC_DATA_BASIC_ROW_ITER_H__

@@ -16,7 +16,8 @@ int main(int argc, char *argv[]) {
   size_t sz = atol(argv[2]);
   std::string buffer; buffer.resize(sz);
   using namespace dmlc;
-  Stream *fi = Stream::Create(argv[1], "r");
+  Stream *fi = Stream::Create(argv[1], "r", true);
+  CHECK(fi != NULL) << "cannot open " << argv[1];
   double tstart = GetTime();
   size_t size;
   size_t bytes_read = 0;

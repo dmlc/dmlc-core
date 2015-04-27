@@ -37,15 +37,20 @@ class HDFSFileSystem : public FileSystem {
    * NOTE: the Stream can continue to work even when filesystem was destructed
    * \param path path to file
    * \param uri the uri of the input, can contain hdfs prefix
-   * \param flag can be "w", "r", "a"   
-   */  
-  virtual SeekStream *Open(const URI &path, const char* const flag);
+   * \param flag can be "w", "r", "a"
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
+   */
+  virtual SeekStream *Open(const URI &path,
+                           const char* const flag,
+                           bool allow_null);
   /*!
    * \brief open a seekable stream for read
    * \param path the path to the file
-   * \return the result stream
+   * \param allow_null whether NULL can be returned, or directly report error
+   * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual SeekStream *OpenForRead(const URI &path);
+  virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
 
  private:
   /*! \brief namenode address */
