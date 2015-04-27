@@ -8,7 +8,7 @@
 #include "io/single_file_split.h"
 #include "io/filesys.h"
 #include "io/local_filesys.h"
-#include "io/thread_input_split.h"
+#include "io/threaded_input_split.h"
 
 #if DMLC_USE_HDFS
 #include "io/hdfs_filesys.h"
@@ -65,7 +65,7 @@ InputSplit* InputSplit::Create(const char *uri,
     LOG(FATAL) << "unknown input split type " << type;
   }
 #if DMLC_USE_CXX11
-  return new ThreadInputSplit(split);
+  return new ThreadedInputSplit(split);
 #else
   return split;
 #endif

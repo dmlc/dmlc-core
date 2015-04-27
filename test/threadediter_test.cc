@@ -1,7 +1,7 @@
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <chrono>
-#include "../src/thread/threaditer.h"
+#include <dmlc/threadediter.h>
 
 using namespace dmlc;
 
@@ -16,7 +16,7 @@ inline void delay(int sleep) {
 
 // int was only used as example, in real life
 // use big data blob
-struct IntProducer : public thread::ThreadedIter<int>::Producer {
+struct IntProducer : public ThreadedIter<int>::Producer {
   int counter;
   int maxcap;
   int sleep;
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     printf("Usage: maxcap delay-producer delay-consumer\n");
     return 0;
   }  
-  thread::ThreadedIter<int> iter;
+  ThreadedIter<int> iter;
   iter.set_max_capacity(10);
   IntProducer prod(atoi(argv[1]), atoi(argv[2]));
   int d = atoi(argv[3]);

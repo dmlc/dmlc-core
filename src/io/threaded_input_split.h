@@ -9,8 +9,8 @@
 #include <dmlc/base.h>
 // this code depends on c++11
 #if DMLC_USE_CXX11
+#include <dmlc/threadediter.h>
 #include "./input_split_base.h"
-#include "../thread/threaditer.h"
 
 namespace dmlc {
 namespace io {
@@ -18,13 +18,13 @@ namespace io {
  * \brief a threaded version of InputSplit 
  *  wraps an InputSplitBase to use an thread to prefetch the data
  */
-class ThreadInputSplit : public InputSplit {
+class ThreadedInputSplit : public InputSplit {
  public:
   /*!
    * \brief constructor
    * \param base an base object to define how to read data
    */
-  explicit ThreadInputSplit(InputSplitBase *base)
+  explicit ThreadedInputSplit(InputSplitBase *base)
       : base_(base), tmp_chunk_(NULL) {
     iter_.set_max_capacity(8);
     // initalize the iterator
@@ -36,7 +36,7 @@ class ThreadInputSplit : public InputSplit {
       });
   }
   // destructor
-  virtual ~ThreadInputSplit(void) {
+  virtual ~ThreadedInputSplit(void) {
     iter_.Destroy();
     if (tmp_chunk_ != NULL) delete tmp_chunk_;
     delete base_;
@@ -68,7 +68,7 @@ class ThreadInputSplit : public InputSplit {
   /*! \brief the place where we get the data */
   InputSplitBase *base_;
   /*! \brief backend thread iterator */
-  thread::ThreadedIter<InputSplitBase::Chunk> iter_;
+  ThreadedIter<InputSplitBase::Chunk> iter_;
   /*! \brief current chunk of data */
   InputSplitBase::Chunk *tmp_chunk_;
 };

@@ -57,4 +57,5 @@ $(ALIB):
 	ar cr $@ $+
 
 clean:
-	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) *~ src/*~ src/*/*~ include/dmlc/*~
+	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) *~ src/*~ src/*/*~ include/dmlc/*~ test/*~
+

@@ -29,9 +29,9 @@ struct RowBlockContainer {
   /*! \brief feature index */
   std::vector<IndexType> index;
   /*! \brief feature value */
-  std::vector<real_t> value;
+  std::vector<real_t> value;  
   /*! \brief maximum value of index */
-  IndexType max_index;
+  IndexType max_index;  
   /*! \brief convert to a row block */
   inline RowBlock<IndexType> GetBlock(void) const;
   /*!
@@ -53,6 +53,13 @@ struct RowBlockContainer {
   /*! \brief size of the data */
   inline size_t Size(void) const {
     return offset.size() - 1;
+  }
+  /*! \return estimation of memory cost of this container */
+  inline size_t MemCostBytes(void) const {
+    return offset.size() * sizeof(size_t) +
+        label.size() * sizeof(real_t) +
+        index.size() * sizeof(IndexType) +
+        value.size() * sizeof(real_t);
   }
   /*! 
    * \brief push the row into container

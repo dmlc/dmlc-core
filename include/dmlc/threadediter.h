@@ -1,14 +1,15 @@
 /*!
  *  Copyright (c) 2015 by Contributors
- * \file threaditer.h
- * \brief the producer 
+ * \file threadediter.h
+ * \brief thread backed iterator that can be used to implement
+ *   general thread-based pipeline such as prefetch and pre-computation
+ * To use the functions in this header, C++11 is required
  * \author Tianqi Chen
  */
-#ifndef DMLC_THREAD_THREADITER_H_
-#define DMLC_THREAD_THREADITER_H_
-#include <dmlc/base.h>
-#include <dmlc/data.h>
-#include <dmlc/logging.h>
+#ifndef DMLC_THREADEDITER_H_
+#define DMLC_THREADEDITER_H_
+// defines DMLC_USE_CXX11
+#include "./base.h"
 // this code depends on c++11
 #if DMLC_USE_CXX11
 #include <functional>
@@ -16,16 +17,17 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include "./data.h"
+#include "./logging.h"
 
 namespace dmlc {
-namespace thread {
 /*!
  * \brief a iterator that was backed by a thread
  *  to pull data eagerly from a single producer into a bounded buffer
  *  the consumer can pull the data at its own rate
- *  
- * NOTE: thread concurrency cost time, make sure we store big blob of data in DType
- * 
+ *
+ * NOTE: thread concurrency cost time, make sure to store big blob of data in DType
+ *
  * Usage example:
  * \code
  * ThreadedIter<DType> iter;
@@ -38,7 +40,7 @@ namespace thread {
  *   iter.Recycle(&dptr);
  * }
  * \endcode
- * \tparam DType the type of data
+ * \tparam DType the type of data blob we support
  */
 template<typename DType>
 class ThreadedIter : public DataIter<DType> {
@@ -54,7 +56,7 @@ class ThreadedIter : public DataIter<DType> {
     virtual ~Producer() {}
     /*! \brief reset the producer to beginning */
     virtual void BeforeFirst(void) {
-      LOG(FATAL) << "not implemented";
+      NotImplemented();
     }
     /*!
      * \brief load the data content into DType,
@@ -71,11 +73,14 @@ class ThreadedIter : public DataIter<DType> {
      */
     virtual bool Next(DType **inout_dptr) = 0;
   };
-  /*! \brief constructor */
-  ThreadedIter(void)
+  /*!
+   * \brief constructor 
+   * \param max_capacity maximum capacity of the queue
+   */
+  explicit ThreadedIter(size_t max_capacity = 8)
       : producer_owned_(NULL),
         producer_thread_(NULL),
-        max_capacity_(8),
+        max_capacity_(max_capacity),
         nwait_consumer_(0),
         nwait_producer_(0),
         out_data_(NULL) {}
@@ -83,7 +88,12 @@ class ThreadedIter : public DataIter<DType> {
   virtual ~ThreadedIter(void) {
     this->Destroy();
   }
-  /*! \brief destroy all the related resources */
+  /*!
+   * \brief destroy all the related resources 
+   *  this is equivalent to destructor, can be used
+   *  to destroy the threaditer when user think it is
+   *  appropriate, it is safe to call this multiple times
+   */
   inline void Destroy(void);
   /*!
    * \brief set maximum capacity of the queue 
@@ -104,6 +114,7 @@ class ThreadedIter : public DataIter<DType> {
   /*!
    * \brief initialize the producer and start the thread
    *  pass in two function(closure) of producer to represent the producer
+   *  the beforefirst function is optional, and defaults to not implemented
    *   NOTE: the closure must remain valid until the ThreadedIter destructs
    * \param next the function called to get next element, see Producer.Next
    * \param beforefirst the function to call to reset the producer, see Producer.BeforeFirst
@@ -373,7 +384,6 @@ inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
     producer_cond_.notify_one();
   }
 }
-}  // namespace thread
 }  // namespace dmlc
 #endif  // DMLC_USE_CXX11
-#endif  // DMLC_THREADITER_H_
+#endif  // DMLC_THREADEDITER_H_
