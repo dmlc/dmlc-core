@@ -29,9 +29,8 @@ class LibSVMParser : public DataIter<RowBlock<size_t> > {
     int maxthread;
     #pragma omp parallel
     {
-      maxthread = omp_get_num_threads();
+      maxthread = std::max(omp_get_num_procs() / 2 - 2, 1);
     }
-    maxthread = std::max(maxthread / 2, 1);
     nthread_ = std::min(maxthread, nthread);
   }
   virtual ~LibSVMParser() {

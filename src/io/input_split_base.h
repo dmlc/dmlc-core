@@ -45,7 +45,7 @@ class InputSplitBase : public InputSplit {
   }
   // implement next chunk
   virtual bool NextChunk(Blob *out_chunk) {
-    while (!NextRecord(out_chunk, &tmp_chunk_)) {
+    while (!NextChunk(out_chunk, &tmp_chunk_)) {
       if (!tmp_chunk_.Load(this)) return false;
     }
     return true;

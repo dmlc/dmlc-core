@@ -19,7 +19,7 @@ CreateIter_(const char *uri,
   if (!strcmp(type, "libsvm")) {
     return new BasicRowIter<IndexType>(
         new LibSVMParser(InputSplit::Create(uri, part_index, num_parts,
-                                            "text"), 4));
+                                            "text"), 16));
   }
   LOG(FATAL) << "unknown dataset type " << type;
   return NULL;
