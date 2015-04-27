@@ -154,25 +154,21 @@ bool InputSplitBase::Chunk::Load(InputSplitBase *split) {
   return true;
 }
 
-bool InputSplitBase::NextRecord(Blob *out_rec) {
-  if (tmp_chunk_.begin == tmp_chunk_.end) {
-    if (!tmp_chunk_.Load(this)) return false;
-  }
-  char *next = FindNextRecord(tmp_chunk_.begin,
-                              tmp_chunk_.end);
-  out_rec->dptr = tmp_chunk_.begin;
-  out_rec->size = next - tmp_chunk_.begin;
-  tmp_chunk_.begin = next;
+bool InputSplitBase::NextRecord(Blob *out_rec, Chunk *chunk) {
+  if (chunk->begin == chunk->end) return false;
+  char *next = FindNextRecord(chunk->begin,
+                              chunk->end);
+  out_rec->dptr = chunk->begin;
+  out_rec->size = next - chunk->begin;
+  chunk->begin = next;
   return true;
 }
 
-bool InputSplitBase::NextChunk(Blob *out_chunk) {
-  if (tmp_chunk_.begin == tmp_chunk_.end) {
-    if (!tmp_chunk_.Load(this)) return false;
-  }
-  out_chunk->dptr = tmp_chunk_.begin;
-  out_chunk->size = tmp_chunk_.end - tmp_chunk_.begin;
-  tmp_chunk_.begin = tmp_chunk_.end;  
+bool InputSplitBase::NextChunk(Blob *out_chunk, Chunk *chunk) {
+  if (chunk->begin == chunk->end) return false;
+  out_chunk->dptr = chunk->begin;
+  out_chunk->size = chunk->end - chunk->begin;
+  chunk->begin = chunk->end;  
   return true;
 }
 }  // namespace io

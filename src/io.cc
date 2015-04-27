@@ -8,6 +8,7 @@
 #include "io/single_file_split.h"
 #include "io/filesys.h"
 #include "io/local_filesys.h"
+#include "io/thread_input_split.h"
 
 #if DMLC_USE_HDFS
 #include "io/hdfs_filesys.h"
@@ -53,14 +54,21 @@ InputSplit* InputSplit::Create(const char *uri,
   }
   CHECK(part < nsplit) << "invalid input parameter for InputSplit::Create";
   URI path(uri);
+  InputSplitBase *split = NULL;
   if (!strcmp(type, "text")) {
-    return new LineSplitter(FileSystem::Create(path.protocol), uri, part, nsplit);
+    split =  new LineSplitter(FileSystem::Create(path.protocol),
+                            uri, part, nsplit);
+  } else if (!strcmp(type, "recordio")) {
+    split =  new RecordIOSplitter(FileSystem::Create(path.protocol),
+                                uri, part, nsplit);
+  } else {
+    LOG(FATAL) << "unknown input split type " << type;
   }
-  if (!strcmp(type, "recordio")) {
-    return new RecordIOSplitter(FileSystem::Create(path.protocol), uri, part, nsplit);
-  }  
-  LOG(FATAL) << "unknown input split type " << type;
-  return NULL;  
+#if DMLC_USE_CXX11
+  return new ThreadInputSplit(split);
+#else
+  return split;
+#endif
 }
 
 Stream *Stream::Create(const char *uri, const char * const flag) {

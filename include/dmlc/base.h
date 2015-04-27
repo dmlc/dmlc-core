@@ -26,11 +26,10 @@
 #define DMLC_USE_PS 0
 #endif
 
-/*! \brief whether or not use eigen3 */
-#ifndef DMLC_USE_EIGEN
-#define DMLC_USE_EIGEN 0
+/*! \brief whether or not use c++11 support */
+#ifndef DMLC_USE_CXX11
+#define DMLC_USE_CXX11 defined(__GXX_EXPERIMENTAL_CXX0X) || __cplusplus >= 201103L
 #endif
-
 
 ///
 /// code block to handle optionally loading

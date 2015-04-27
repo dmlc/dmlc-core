@@ -6,10 +6,11 @@
  */
 #ifndef DMLC_THREAD_THREADITER_H_
 #define DMLC_THREAD_THREADITER_H_
-// this code depends on c++11
-#if defined(__GXX_EXPERIMENTAL_CXX0X) || __cplusplus >= 201103L
+#include <dmlc/base.h>
 #include <dmlc/data.h>
 #include <dmlc/logging.h>
+// this code depends on c++11
+#if DMLC_USE_CXX11
 #include <functional>
 #include <thread>
 #include <mutex>
@@ -72,8 +73,7 @@ class ThreadedIter : public DataIter<DType> {
   };
   /*! \brief constructor */
   ThreadedIter(void)
-      : producer_(NULL),
-        own_producer_(false),
+      : producer_owned_(NULL),
         producer_thread_(NULL),
         max_capacity_(8),
         nwait_consumer_(0),
@@ -81,35 +81,10 @@ class ThreadedIter : public DataIter<DType> {
         out_data_(NULL) {}
   /*! \brief destructor */
   virtual ~ThreadedIter(void) {
-    if (producer_thread_ != NULL) {
-      // lock the mutex
-      std::unique_lock<std::mutex> lock(mutex_);
-      // send destroy signal
-      producer_sig_ = kDestroy;
-      if (nwait_producer_ != 0) {
-        producer_cond_.notify_one();
-      }
-      lock.unlock();
-      producer_thread_->join();
-      delete producer_thread_;
-    }
-    // end of critical region
-    // now the slave thread should exit
-    while (free_cells_.size() != 0) {
-      delete free_cells_.front();
-      free_cells_.pop();
-    }
-    while (queue_.size() != 0) {
-      delete queue_.front();
-      queue_.pop();
-    }
-    if (own_producer_ && producer_ != NULL) {
-      delete producer_;
-    }
-    if (out_data_ != NULL) {
-      delete out_data_;
-    }  
+    this->Destroy();
   }
+  /*! \brief destroy all the related resources */
+  inline void Destroy(void);
   /*!
    * \brief set maximum capacity of the queue 
    * \param max_capacity maximum capacity of the queue
@@ -126,6 +101,15 @@ class ThreadedIter : public DataIter<DType> {
    *    when destructed
    */
   inline void Init(Producer *producer, bool pass_ownership = false);
+  /*!
+   * \brief initialize the producer and start the thread
+   *  pass in two function(closure) of producer to represent the producer
+   *   NOTE: the closure must remain valid until the ThreadedIter destructs
+   * \param next the function called to get next element, see Producer.Next
+   * \param beforefirst the function to call to reset the producer, see Producer.BeforeFirst
+   */
+  inline void Init(std::function<bool(DType **)> next,
+                   std::function<void()> beforefirst = NotImplemented);
   /*!
    * \brief get the next data, this function is threadsafe
    * \param out_dptr used to hold the pointer to the record
@@ -196,18 +180,18 @@ class ThreadedIter : public DataIter<DType> {
   }
   
  private:
+  /*! \brief not support BeforeFirst */
+  inline static void NotImplemented(void) {
+    LOG(FATAL) << "BeforeFirst is not supported";
+  }
   /*! \brief signals send to producer */
   enum Signal {
     kProduce,
     kBeforeFirst,
     kDestroy
   };
-  /*! \brief running thread of producer */
-  inline void RunProducer(void);
   /*! \brief producer class */
-  Producer *producer_;
-  /*! \brief whether the threaditer owns the producer */
-  bool own_producer_;
+  Producer *producer_owned_;
   /*! \brief signal to producer */
   Signal producer_sig_;
   /*! \brief whether the special signal other than kProduce is procssed */
@@ -238,24 +222,123 @@ class ThreadedIter : public DataIter<DType> {
 
 // implementation of functions
 template<typename DType>
+inline void ThreadedIter<DType>::Destroy(void) {
+  if (producer_thread_ != NULL) {
+    // lock the mutex
+    std::unique_lock<std::mutex> lock(mutex_);
+    // send destroy signal
+    producer_sig_ = kDestroy;
+    if (nwait_producer_ != 0) {
+      producer_cond_.notify_one();
+    }
+    lock.unlock();
+    producer_thread_->join();
+    delete producer_thread_;
+    producer_thread_ = NULL;
+  }
+  // end of critical region
+  // now the slave thread should exit
+  while (free_cells_.size() != 0) {
+    delete free_cells_.front();
+    free_cells_.pop();
+  }
+  while (queue_.size() != 0) {
+    delete queue_.front();
+    queue_.pop();
+  }
+  if (producer_owned_ != NULL) {
+    delete producer_owned_;
+  }
+  if (out_data_ != NULL) {
+    delete out_data_; out_data_ = NULL;
+  }
+}
+
+template<typename DType>
 inline void ThreadedIter<DType>::
 Init(Producer *producer, bool pass_ownership) {
-  CHECK(producer_ == NULL) << "can only call Init once";
-  producer_ = producer;
-  own_producer_ = pass_ownership;  
+  CHECK(producer_owned_ == NULL) << "can only call Init once";
+  if (pass_ownership) producer_owned_ = producer;
+  auto next = [producer](DType **dptr) {
+      return producer->Next(dptr);
+  };
+  auto beforefirst = [producer]() {
+    producer->BeforeFirst();
+  };
+  this->Init(next, beforefirst);    
+}
+template<typename DType>
+inline void ThreadedIter<DType>::
+Init(std::function<bool(DType **)> next,
+     std::function<void()> beforefirst) {
   producer_sig_= kProduce;
   producer_sig_processed_ = false;
   produce_end_ = false;
-  producer_thread_ = new std::thread([this]() {
-      this->RunProducer();
-    });
-  CHECK(!producer_sig_processed_);
+  // procedure running in prodcuer
+  // run producer thread
+  auto producer_fun = [this, next, beforefirst] () {
+    while (true) {
+      CHECK(!producer_sig_processed_);    
+      std::unique_lock<std::mutex> lock(mutex_);
+      ++nwait_producer_;
+      producer_cond_.wait(lock, [this]() {
+          if (producer_sig_ == kProduce) {
+            return !produce_end_ &&
+                (queue_.size() < max_capacity_ || free_cells_.size() != 0);
+          } else {
+            return true;
+          }
+        });
+      --nwait_producer_;
+      DType *cell = NULL;
+      if (producer_sig_ == kProduce) {
+        if (free_cells_.size() != 0) {
+          cell = free_cells_.front();
+          free_cells_.pop();
+        }
+        lock.unlock();
+      } else if (producer_sig_ == kBeforeFirst) {
+        // finish the job
+        beforefirst();
+        producer_sig_processed_ = true;
+        consumer_cond_.notify_all();
+        ++nwait_producer_;
+        producer_cond_.wait(lock, [this]() {
+            return producer_sig_ != kBeforeFirst;
+          });
+        --nwait_producer_;
+        lock.unlock();
+        continue;
+      } else {
+          // destroy the thread
+        CHECK(producer_sig_ == kDestroy);
+        producer_sig_processed_ = true;
+        produce_end_ = true;
+        lock.unlock();
+        consumer_cond_.notify_all();
+        return;
+      }
+      // now without lock    
+      produce_end_ = !next(&cell);
+      CHECK(cell != NULL || produce_end_);
+      // put things into queue
+      lock.lock();
+      bool notify = nwait_consumer_ != 0;
+      if (!produce_end_) {
+        queue_.push(cell);
+      } else {
+        if (cell != NULL) free_cells_.push(cell);
+      }
+      lock.unlock();
+      if (notify) consumer_cond_.notify_all();
+    }
+  };
+  producer_thread_ = new std::thread(producer_fun);
 }
 
 template<typename DType>
 inline bool ThreadedIter<DType>::
 Next(DType **out_dptr) {
-  CHECK(producer_ != NULL) << "call Init first";
   if (producer_sig_ == kDestroy) return false;
   std::unique_lock<std::mutex> lock(mutex_);
   CHECK(producer_sig_ == kProduce)
@@ -290,62 +373,7 @@ inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
     producer_cond_.notify_one();
   }
 }
-
-template<typename DType>
-inline void ThreadedIter<DType>::RunProducer(void) {
-  while (true) {
-    CHECK(!producer_sig_processed_);    
-    std::unique_lock<std::mutex> lock(mutex_);
-    ++nwait_producer_;
-    producer_cond_.wait(lock, [this]() {
-        if (producer_sig_ == kProduce) {
-          return !produce_end_ &&
-              (queue_.size() < max_capacity_ || free_cells_.size() != 0);
-        } else {
-          return true;
-        }
-      });
-    --nwait_producer_;
-    DType *cell = NULL;
-    if (producer_sig_ == kProduce) {
-      if (free_cells_.size() != 0) {
-        cell = free_cells_.front();
-        free_cells_.pop();
-      }
-      lock.unlock();
-    } else if (producer_sig_ == kBeforeFirst) {
-      // finish the job
-      producer_->BeforeFirst();
-      producer_sig_processed_ = true;
-      consumer_cond_.notify_all();
-      ++nwait_producer_;
-      producer_cond_.wait(lock, [this]() {
-          return producer_sig_ != kBeforeFirst;
-        });
-      --nwait_producer_;
-      lock.unlock();
-      continue;
-    } else {
-      // destroy the thread
-      CHECK(producer_sig_ == kDestroy);
-      producer_sig_processed_ = true;
-      produce_end_ = true;
-      lock.unlock();
-      consumer_cond_.notify_all();
-      return;
-    }
-    // now without lock    
-    produce_end_ = !producer_->Next(&cell);
-    CHECK(cell != NULL || produce_end_);
-    // put things into queue
-    lock.lock();
-    bool notify = nwait_consumer_ != 0;
-    if (!produce_end_) queue_.push(cell);
-    lock.unlock();
-    if (notify) consumer_cond_.notify_all();
-  }
-}
 }  // namespace thread
 }  // namespace dmlc
-#endif  // C++11
+#endif  // DMLC_USE_CXX11
 #endif  // DMLC_THREADITER_H_

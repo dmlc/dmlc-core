@@ -15,11 +15,13 @@
 
 namespace dmlc {
 namespace io {
-// TODO: add a thread to pull the chunks
 /*! \brief class to construct input split from multiple files */
 class InputSplitBase : public InputSplit {
  public:
-  /*! \brief helper struct to hold chunk data */
+  /*!
+   * \brief helper struct to hold chunk data
+   *  with internal pointer to move along the record
+   */
   struct Chunk {
     char *begin;
     char *end;
@@ -30,13 +32,24 @@ class InputSplitBase : public InputSplit {
     // load chunk from split
     bool Load(InputSplitBase *split);
   };
-  
+  // 2MB
+  static const size_t kBufferSize = 1UL << 15UL;
   // destructor
   virtual ~InputSplitBase(void);
   // implement next record
-  virtual bool NextRecord(Blob *out_rec);
+  virtual bool NextRecord(Blob *out_rec) {
+    while (!NextRecord(out_rec, &tmp_chunk_)) {
+      if (!tmp_chunk_.Load(this)) return false;
+    }
+    return true;
+  }
   // implement next chunk
-  virtual bool NextChunk(Blob *out_chunk);
+  virtual bool NextChunk(Blob *out_chunk) {
+    while (!NextRecord(out_chunk, &tmp_chunk_)) {
+      if (!tmp_chunk_.Load(this)) return false;
+    }
+    return true;
+  }
   /*!
    * \brief read a chunk of data into buf
    *   the data can span multiple records,
@@ -48,8 +61,24 @@ class InputSplitBase : public InputSplit {
    *   after the function returns, it stores the size of the chunk
    * \return whether end of file was reached
    */
-  bool ReadChunk(void *buf, size_t *size);
-
+  bool ReadChunk(void *buf, size_t *size);  
+  /*!
+   * \brief extract next record from the chunk 
+   * \param out_rec the output record
+   * \param chunk the chunk information
+   * \return true if non-empty record is extracted
+   *    false if the chunk is already finishes its life
+   */
+  bool NextRecord(Blob *out_rec, Chunk *chunk);
+  /*!
+   * \brief extract next chunk from the chunk 
+   * \param out_chunk the output record
+   * \param chunk the chunk information
+   * \return true if non-empty record is extracted
+   *    false if the chunk is already finishes its life
+   */
+  bool NextChunk(Blob *out_rchunk, Chunk *chunk);
+  
  protected:
   // constructor
   InputSplitBase()
@@ -96,8 +125,6 @@ class InputSplitBase : public InputSplit {
   virtual char* FindNextRecord(char *begin, char *end) = 0;
 
  private:
-  // 2MB
-  static const size_t kBufferSize = 1UL << 15UL;
   /*! \brief FileSystem */
   FileSystem *filesys_;
   /*! \brief information about files */
