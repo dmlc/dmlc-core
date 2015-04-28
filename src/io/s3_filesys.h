@@ -1,7 +1,7 @@
 /*!
  *  Copyright (c) 2015 by Contributors
- * \file hdfs_filesys.h
- * \brief HDFS access module
+ * \file s3_filesys.h
+ * \brief S3 access module
  * \author Tianqi Chen
  */
 #ifndef DMLC_IO_S3_FILESYS_H_

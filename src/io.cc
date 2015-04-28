@@ -31,11 +31,11 @@ FileSystem *FileSystem::Create(const std::string &protocol) {
     LOG(FATAL) << "Please compile with DMLC_USE_HDFS=1 to use hdfs";
 #endif
   }
-  if (protocol == "s3://") {
+  if (protocol == "s3://" || protocol == "http://" || protocol == "https://") {
 #if DMLC_USE_S3
     return new S3FileSystem();
 #else
-    LOG(FATAL) << "Please compile with DMLC_USE_HDFS=1 to use hdfs";
+    LOG(FATAL) << "Please compile with DMLC_USE_S3=1 to use S3";
 #endif
   }
   LOG(FATAL) << "unknown filesystem protocol " + protocol;

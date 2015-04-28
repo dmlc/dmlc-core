@@ -196,21 +196,22 @@ struct ReadStringStream {
   }
 };
 
-/*! \brief reader stream that can be used to read */
-class ReadStream : public SeekStream {
+/*!
+ * \brief reader stream that can be used to read from CURL
+ */
+class CURLReadStreamBase : public SeekStream {
  public:
-  ReadStream(const URI &path,
-             const std::string &aws_id,
-             const std::string &aws_key)
-      : path_(path), aws_id_(aws_id), aws_key_(aws_key),
-        mcurl_(NULL), ecurl_(NULL), slist_(NULL),
-        read_ptr_(0), curr_bytes_(0), at_end_(false) {
-  }
-  virtual ~ReadStream(void) {
+  virtual ~CURLReadStreamBase() {
     this->Cleanup();
   }
+  virtual size_t Tell(void) {
+    return curr_bytes_;
+  }
+  virtual bool AtEnd(void) const {
+    return at_end_;
+  }
   virtual void Write(const void *ptr, size_t size) {
-    CHECK(false) << "S3.ReadStream cannot be used for write";
+    LOG(FATAL) << "CURL.ReadStream cannot be used for write";
   }
   // lazy seek function
   virtual void Seek(size_t pos) {
@@ -218,43 +219,32 @@ class ReadStream : public SeekStream {
       this->Cleanup();    
       curr_bytes_ = pos;
     }
-  }
-  virtual size_t Tell(void) {
-    return curr_bytes_;
-  }
-  virtual bool AtEnd(void) const {
-    return at_end_;
   }  
   virtual size_t Read(void *ptr, size_t size);
+  
+ protected:
+  CURLReadStreamBase()
+      : mcurl_(NULL), ecurl_(NULL), slist_(NULL),
+        read_ptr_(0), curr_bytes_(0), at_end_(false) {
+  }
   /*!
-   * \brief initialize the stream at begin_bytes
-   * this is the true seek function
+   * \brief initialize the ecurl request,
+   * \param begin_bytes the beginning bytes of the stream
+   * \param ecurl a curl easy handle that can be used to set request
+   * \param slist a curl slist handle that can be used to set headers
+   */
+  virtual void InitRequest(size_t begin_bytes,
+                           CURL *ecurl,
+                           curl_slist **slist) = 0;
+
+ private:
+  /*!
+   * \brief called by child class to initialize read
    * \param begin_bytes the beginning bytes of the stream
    */
   void Init(size_t begin_bytes);
-
- private:
-  // path we are reading
-  URI path_;
-  // aws access key and id
-  std::string aws_id_, aws_key_;
-  // multi and easy curl handle
-  CURL *mcurl_, *ecurl_;
-  // slist needed by the program
-  curl_slist *slist_;
-  // data buffer
-  std::string buffer_;
-  // header buffer
-  std::string header_;
-  // data pointer to read position
-  size_t read_ptr_;
-  // current position in the stream
-  size_t curr_bytes_;
-  // mark end of stream
-  bool at_end_;
   /*!
-   * \brief initialize the stream at begin_bytes
-   * \param begin_bytes the beginning bytes of the stream
+   * \brief cleanup the previous session for restart
    */
   void Cleanup(void);
   /*!
@@ -263,56 +253,24 @@ class ReadStream : public SeekStream {
    * \return number of remainning running curl handles
    */
   int FillBuffer(size_t want_bytes);
+  // multi and easy curl handle
+  CURL *mcurl_, *ecurl_;
+  // slist needed by the program
+  curl_slist *slist_;
+  // data buffer 
+  std::string buffer_;
+  // header buffer
+  std::string header_;
+  // data pointer to read position
+  size_t read_ptr_;
+  // current position in the stream
+  size_t curr_bytes_;
+  // mark end of stream
+  bool at_end_;  
 };
 
-// initialize the reader at begin bytes
-void ReadStream::Init(size_t begin_bytes) {
-  CHECK(mcurl_ == NULL && ecurl_ == NULL &&
-        slist_ == NULL) << "must call init in clean state";
-  // initialize the curl request
-  std::vector<std::string> amz;
-  std::string date = GetDateString();
-  std::string signature = Sign(aws_key_, "GET", "", "", date, amz,
-                               std::string("/") + path_.host + '/' + RemoveBeginSlash(path_.name));
-  // generate headers
-  std::ostringstream sauth, sdate, surl, srange;
-  std::ostringstream result;
-  sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
-  sdate << "Date: " << date;
-  surl << "http://" << path_.host << ".s3.amazonaws.com" << '/'
-       << RemoveBeginSlash(path_.name);
-  srange << "Range: bytes=" << begin_bytes << "-";
-  // make request
-  ecurl_ = curl_easy_init();
-  slist_ = curl_slist_append(slist_, sdate.str().c_str());
-  slist_ = curl_slist_append(slist_, srange.str().c_str());
-  slist_ = curl_slist_append(slist_, sauth.str().c_str());
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HTTPHEADER, slist_) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HTTPGET, 1L) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADER, 0L) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteStringCallback) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &buffer_) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERFUNCTION, WriteStringCallback) == CURLE_OK);
-  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &header_) == CURLE_OK);
-  mcurl_ = curl_multi_init();
-  CHECK(curl_multi_add_handle(mcurl_, ecurl_) == CURLM_OK);
-  int nrun;
-  curl_multi_perform(mcurl_, &nrun);
-  CHECK(nrun != 0 || header_.length() != 0 || buffer_.length() != 0);
-  // start running and check header
-  this->FillBuffer(1);
-  if (FindHttpError(header_)) {
-    while (this->FillBuffer(buffer_.length() + 256) != 0);
-    LOG(FATAL) << "AWS S3 Error:\n" << header_ << buffer_;
-  }
-  // setup the variables
-  at_end_ = false;
-  curr_bytes_ = begin_bytes;
-  read_ptr_ = 0;
-}
 // read data in
-size_t ReadStream::Read(void *ptr, size_t size) {
+size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
   // lazy initialize
   if (mcurl_ == NULL) Init(curr_bytes_);
   // check at end
@@ -336,8 +294,53 @@ size_t ReadStream::Read(void *ptr, size_t size) {
   curr_bytes_ += read_bytes;
   return read_bytes;
 }
+
+// cleanup the previous sessions for restart
+void CURLReadStreamBase::Cleanup() {  
+  if (mcurl_ != NULL) {
+    curl_multi_remove_handle(mcurl_, ecurl_);
+    curl_easy_cleanup(ecurl_);
+    curl_multi_cleanup(mcurl_);
+    mcurl_ = NULL;
+    ecurl_ = NULL;
+  }
+  if (slist_ != NULL) {
+    curl_slist_free_all(slist_);
+    slist_ = NULL;
+  }
+  buffer_.clear(); header_.clear();
+  curr_bytes_ = 0; at_end_ = false;
+}
+
+void CURLReadStreamBase::Init(size_t begin_bytes) {
+  CHECK(mcurl_ == NULL && ecurl_ == NULL &&
+        slist_ == NULL) << "must call init in clean state";
+  // make request
+  ecurl_ = curl_easy_init();
+  this->InitRequest(begin_bytes, ecurl_, &slist_);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteStringCallback) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &buffer_) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERFUNCTION, WriteStringCallback) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &header_) == CURLE_OK);
+  mcurl_ = curl_multi_init();
+  CHECK(curl_multi_add_handle(mcurl_, ecurl_) == CURLM_OK);
+  int nrun;
+  curl_multi_perform(mcurl_, &nrun);
+  CHECK(nrun != 0 || header_.length() != 0 || buffer_.length() != 0);
+  // start running and check header
+  this->FillBuffer(1);
+  if (FindHttpError(header_)) {
+    while (this->FillBuffer(buffer_.length() + 256) != 0);
+    LOG(FATAL) << "Request Error:\n" << header_ << buffer_;
+  }
+  // setup the variables
+  at_end_ = false;
+  curr_bytes_ = begin_bytes;
+  read_ptr_ = 0;  
+}
+
 // fill the buffer with wanted bytes
-int ReadStream::FillBuffer(size_t nwant) {
+int CURLReadStreamBase::FillBuffer(size_t nwant) {
   int nrun = 0;
   while (buffer_.length() < nwant) {
     // wait for the event of read ready
@@ -383,21 +386,88 @@ int ReadStream::FillBuffer(size_t nwant) {
   }
   return nrun;
 }
-// cleanup the previous sessions for restart
-void ReadStream::Cleanup() {  
-  if (mcurl_ != NULL) {
-    curl_multi_remove_handle(mcurl_, ecurl_);
-    curl_easy_cleanup(ecurl_);
-    curl_multi_cleanup(mcurl_);
-    curl_slist_free_all(slist_);
-    mcurl_ = NULL;
-    ecurl_ = NULL;
-    slist_ = NULL;
+// End of CURLReadStreamBase functions
+
+// singleton class for global initialization
+struct CURLGlobal {
+  CURLGlobal() {
+    CHECK(curl_global_init(CURL_GLOBAL_DEFAULT) == CURLE_OK);
   }
-  buffer_.clear(); header_.clear();
-  curr_bytes_ = 0; at_end_ = false;
+  ~CURLGlobal() {
+    curl_global_cleanup();
+  }
+};
+
+// used for global initialization
+static CURLGlobal curl_global;
+
+/*! \brief reader stream that can be used to read */
+class ReadStream : public CURLReadStreamBase {
+ public:
+  ReadStream(const URI &path,
+             const std::string &aws_id,
+             const std::string &aws_key)
+      : path_(path), aws_id_(aws_id), aws_key_(aws_key) {
+  }
+  virtual ~ReadStream(void) {}
+
+ protected:
+  // implement InitRequest
+  virtual void InitRequest(size_t begin_bytes,
+                           CURL *ecurl,
+                           curl_slist **slist);
+  
+ private:
+  // path we are reading
+  URI path_;
+  // aws access key and id
+  std::string aws_id_, aws_key_;
+};
+
+// initialize the reader at begin bytes
+void ReadStream::InitRequest(size_t begin_bytes,
+                             CURL *ecurl,
+                             curl_slist **slist) {
+  // initialize the curl request
+  std::vector<std::string> amz;
+  std::string date = GetDateString();
+  std::string signature = Sign(aws_key_, "GET", "", "", date, amz,
+                               std::string("/") + path_.host + '/' + RemoveBeginSlash(path_.name));
+  // generate headers
+  std::ostringstream sauth, sdate, surl, srange;
+  std::ostringstream result;
+  sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
+  sdate << "Date: " << date;
+  surl << "http://" << path_.host << ".s3.amazonaws.com" << '/'
+       << RemoveBeginSlash(path_.name);
+  srange << "Range: bytes=" << begin_bytes << "-";
+  *slist = curl_slist_append(*slist, sdate.str().c_str());
+  *slist = curl_slist_append(*slist, srange.str().c_str());
+  *slist = curl_slist_append(*slist, sauth.str().c_str());
+  CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPHEADER, *slist) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl, CURLOPT_HEADER, 0L) == CURLE_OK);
 }
-// End of ReadStream functions
+
+/*! \brief simple http read stream to check */
+class HttpReadStream : public CURLReadStreamBase {
+ public:
+  HttpReadStream(const URI &path)
+      : path_(path) {}
+  // implement InitRequest
+  virtual void InitRequest(size_t begin_bytes,
+                           CURL *ecurl,
+                           curl_slist **slist) {
+    CHECK(begin_bytes == 0)
+        << " HttpReadStream: do not support Seek";
+    CHECK(curl_easy_setopt(ecurl, CURLOPT_URL, path_.str().c_str()) == CURLE_OK);
+  }
+  
+ private:
+  URI path_;
+};
+
 class WriteStream : public Stream {
  public:
   WriteStream(const URI &path,
@@ -418,7 +488,7 @@ class WriteStream : public Stream {
     this->Init();
   }
   virtual size_t Read(void *ptr, size_t size) {
-    CHECK(false) << "S3.WriteStream cannot be used for read";
+    LOG(FATAL) << "S3.WriteStream cannot be used for read";
     return 0;
   }
   virtual void Write(const void *ptr, size_t size);
@@ -725,12 +795,16 @@ bool S3FileSystem::TryGetPathInfo(const URI &path_, FileInfo *out_info) {
 }
 
 FileInfo S3FileSystem::GetPathInfo(const URI &path) {
+  CHECK(path.protocol == "s3://")
+      << " S3FileSystem.ListDirectory";
   FileInfo info;
   CHECK(TryGetPathInfo(path, &info))
       << "S3FileSytem.GetPathInfo cannot find information about " + path.str();
   return info;
 }
 void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_list) {
+  CHECK(path.protocol == "s3://")
+      << " S3FileSystem.ListDirectory";
   if (path.name[path.name.length() - 1] == '/') {
     s3::ListObjects(path, aws_access_id_,
                     aws_secret_key_, out_list);
@@ -761,6 +835,7 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
   if (!strcmp(flag, "r") || !strcmp(flag, "rb")) {
     return OpenForRead(path, allow_null);
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
+    CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
     return new s3::WriteStream(path, aws_access_id_, aws_secret_key_);
   }else {
     LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;    
@@ -769,8 +844,13 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
 }
 
 SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
+  // simple http read stream  
+  if (!allow_null && (path.protocol == "http://"|| path.protocol == "https://")) {
+    return new s3::HttpReadStream(path);
+  }
+  CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
   FileInfo info;
-  if (TryGetPathInfo(path, &info) && info.type == kFile) { 
+  if (TryGetPathInfo(path, &info) && info.type == kFile) {
     return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
   } else {    
     CHECK(allow_null) << " S3FileSystem: fail to open " << path.str();

@@ -10,7 +10,7 @@ class HDFSStream : public SeekStream {
              int *ref_counter,
              hdfsFile fp)
       : fs_(fs), ref_counter_(ref_counter),
-        fp_(fp), at_end_(false) {
+        fp_(fp) {
   }
   virtual ~HDFSStream(void) {
     this->Close();
@@ -28,9 +28,6 @@ class HDFSStream : public SeekStream {
     if (nread == -1) {
       int errsv = errno;
       LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);
-    }
-    if (nread == 0) {
-      at_end_ = true;
     }
     return static_cast<size_t>(nread);
   }
@@ -60,9 +57,6 @@ class HDFSStream : public SeekStream {
     }
     return static_cast<size_t>(offset);
   }
-  virtual bool AtEnd(void) const {
-    return at_end_;
-  }
   inline void Close(void) {
     if (fp_ != NULL) {
       if (hdfsCloseFile(fs_, fp_) == -1) {
@@ -77,7 +71,6 @@ class HDFSStream : public SeekStream {
   hdfsFS fs_;
   int *ref_counter_;
   hdfsFile fp_;
-  bool at_end_;
 };
 
 HDFSFileSystem::HDFSFileSystem(void) {
