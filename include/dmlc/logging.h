@@ -102,7 +102,7 @@ class DateLogger {
     _tzset();
 #endif
   }
-  char* const HumanDate() {
+  const char* HumanDate() {
 #if defined(_MSC_VER)
     _strtime_s(buffer_, sizeof(buffer_));
 #else
