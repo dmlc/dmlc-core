@@ -83,9 +83,13 @@ class HDFSStream : public SeekStream {
 HDFSFileSystem::HDFSFileSystem(void) {
   namenode_ = "default";
   fs_ = hdfsConnect(namenode_.c_str(), 0);
+  if(fs_ == NULL) {
+    LOG(FATAL) << "Failed to load HDFS-configuration:";
+  }
   ref_counter_ = new int();
   ref_counter_[0] = 1;
 }
+
 HDFSFileSystem::~HDFSFileSystem(void) {
   ref_counter_[0] -= 1;
   if (ref_counter_[0] == 0) {  
@@ -136,7 +140,7 @@ void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_l
 }
 
 SeekStream *HDFSFileSystem::Open(const URI &path,
-                                 const char* const flag,
+                                 const char* const mode,
                                  bool allow_null) {
   using namespace std;
   int flag = 0;
@@ -149,14 +153,13 @@ SeekStream *HDFSFileSystem::Open(const URI &path,
   } else {
     LOG(FATAL) << "HDFSStream: unknown flag %s" << mode;
   }
-  fp_ = hdfsOpenFile(fs_, path.str().c_str(), flag, 0, 0, 0);
-  if (fp != NULL) {
+  hdfsFile fp_ = hdfsOpenFile(fs_, path.str().c_str(), flag, 0, 0, 0);
+  if (fp_ != NULL) {
     ref_counter_[0] += 1;
-    return new HDFSStream(fs_, ref_counter_, fp_);  
-  } else {
-    CHECK(allow_null) << " HDFSFileSystem: fail to open " << path.str();
-    return NULL;
+    return new HDFSStream(fs_, ref_counter_, fp_);
   }
+  CHECK(allow_null) << " HDFSFileSystem: fail to open " << path.str();
+  return NULL;
 }
 
 SeekStream *HDFSFileSystem::OpenForRead(const URI &path, bool allow_null) {
