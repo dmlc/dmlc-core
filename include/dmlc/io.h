@@ -11,6 +11,7 @@
 #include <istream>
 #include <ostream>
 #include <streambuf>
+#include "./base.h"
 
 /*! \brief namespace for dmlc */
 namespace dmlc {

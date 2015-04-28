@@ -7,3 +7,5 @@ ipch
 *.filters
 *.user
 *sdf
+Release
+Debug

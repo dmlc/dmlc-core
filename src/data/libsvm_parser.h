@@ -131,12 +131,12 @@ ParseBlock(char *begin,
     while (isdigit(*p) && p != end) ++p;
     if (*p == ':') {
       out->index.push_back(atol(head));
-      out->value.push_back(atof(p + 1));        
+      out->value.push_back(static_cast<real_t>(atof(p + 1)));        
     } else {
       if (out->label.size() != 0) {
         out->offset.push_back(out->index.size());
       }
-      out->label.push_back(atof(head));
+      out->label.push_back(static_cast<real_t>(atof(head)));
     }
     while (!isspace(*p) && p != end) ++p;
   }

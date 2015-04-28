@@ -2,6 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <cstring>
 #include <string>
+#include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include "data/parser.h"
@@ -39,8 +40,8 @@ CreateIter_(const char *uri,
     LOG(FATAL) << "unknown datatype " << type;
   }
   if (cache_file != NULL) {
-    parser = new ThreadedParser(parser);
 #if DMLC_USE_CXX11
+	parser = new ThreadedParser(parser);
     return new DiskRowIter<IndexType>(parser, cache_file, true);
 #else
     LOG(FATAL) << "compile with c++0x or c++11 to enable cache file";
