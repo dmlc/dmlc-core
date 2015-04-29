@@ -47,7 +47,7 @@ char* RecordIOSplitter::FindNextRecord(char *begin, char *end) {
     uint32_t *p = reinterpret_cast<uint32_t *>(begin);
     uint32_t cflag = RecordIOWriter::DecodeFlag(p[1]);
     uint32_t clen = RecordIOWriter::DecodeLength(p[1]);
-    begin += 4 + (((clen + 3U) >> 2U) >> 2U);
+    begin += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) >> 2U);
     if (cflag == 0 || cflag == 2) return begin;
     CHECK(begin <= end) << "invalid chunk";
   }

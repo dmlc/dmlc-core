@@ -135,6 +135,10 @@ class InputSplit {
    * \brief get the next record, the returning value
    *   is valid until next call to NextRecord or NextChunk
    *   caller can modify the memory content of out_rec
+   *   
+   *   For text, out_rec contains a single line
+   *   For recordio, out_rec contains on record, including the header
+   *
    * \param out_rec used to store the result
    * \return true if we can successfully get next record
    *     false if we reached end of split
@@ -158,6 +162,7 @@ class InputSplit {
    * \return true if we can successfully get next record
    *     false if we reached end of split
    * \sa InputSplit::Create for definition of record
+   * \sa RecordIOSplitter to parse recordio content from out_chunk
    */
   virtual bool NextChunk(Blob *out_chunk) = 0;
   /*! \brief destructor*/

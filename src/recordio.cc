@@ -78,4 +78,79 @@ bool RecordIOReader::ReadRecord(std::string *out_rec) {
   }
   return true;
 }
+
+// helper function to find next recordio head
+inline char *FindNextRecordIOHead(char *begin, char *end) {
+  CHECK((reinterpret_cast<size_t>(begin) & 3UL) == 0); 
+  CHECK((reinterpret_cast<size_t>(end) & 3UL) == 0);
+  uint32_t *p = reinterpret_cast<uint32_t *>(begin);
+  uint32_t *pend = reinterpret_cast<uint32_t *>(end);
+  for (; p + 1 < pend; ++p) {
+    if (p[0] == RecordIOWriter::kMagic) {
+      uint32_t cflag = RecordIOWriter::DecodeFlag(p[1]);
+      if (cflag == 0 || cflag == 1) {
+        return reinterpret_cast<char*>(p);
+      }
+    }
+  }
+  return end;
+}
+
+RecordIOSplitReader::RecordIOSplitReader
+(InputSplit::Blob chunk,
+ unsigned part_index,
+ unsigned num_parts) {
+  size_t nstep = (chunk.size + num_parts - 1) / num_parts;
+  // align
+  nstep = ((nstep + 3UL) >> 2UL) << 2UL;
+  size_t begin = std::min(chunk.size, nstep * part_index);
+  size_t end = std::min(chunk.size, nstep * (part_index + 1));
+  char *head = reinterpret_cast<char*>(chunk.dptr);
+  pbegin_ = FindNextRecordIOHead(head + begin, head + chunk.size);
+  pend_ = FindNextRecordIOHead(head + end, head + chunk.size);  
+}
+
+bool RecordIOSplitReader::ReadRecord(InputSplit::Blob *out_rec) {
+  if (pbegin_ >= pend_) return false;
+  uint32_t *p = reinterpret_cast<uint32_t *>(pbegin_);
+  CHECK(p[0] == RecordIOWriter::kMagic);
+  uint32_t cflag = RecordIOWriter::DecodeFlag(p[1]);
+  uint32_t clen = RecordIOWriter::DecodeLength(p[1]);
+  if (cflag == 0) {
+    // skip header
+    out_rec->dptr = pbegin_ + 2 * sizeof(uint32_t);;
+    // move pbegin
+    pbegin_ += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) >> 2U);
+    CHECK(pbegin_ <= pend_) << "Invalid RecordIO Format";
+    out_rec->size = clen;
+    return true;
+  } else {
+    const uint32_t kMagic = RecordIOWriter::kMagic;
+    // abnormal path, read into string
+    CHECK(cflag == 1U) << "Invalid RecordIO Format";
+    temp_.resize(0);
+    while (true) {
+      CHECK(pbegin_ + 2 * sizeof(uint32_t) <= pend_);
+      p = reinterpret_cast<uint32_t *>(pbegin_);
+      CHECK(p[0] == RecordIOWriter::kMagic);      
+      cflag = RecordIOWriter::DecodeFlag(p[1]);
+      clen = RecordIOWriter::DecodeLength(p[1]);
+      size_t tsize = temp_.length();
+      temp_.resize(tsize + clen);
+      if (clen != 0) {
+        std::memcpy(BeginPtr(temp_) + tsize,
+                    pbegin_ + 2 * sizeof(uint32_t),
+                    clen);
+        tsize += clen;
+      }
+      pbegin_ += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) >> 2U);
+      if (cflag == 3U) break;
+      temp_.resize(tsize + sizeof(kMagic));
+      std::memcpy(BeginPtr(temp_) + tsize, &kMagic, sizeof(kMagic));
+    }
+    out_rec->dptr = BeginPtr(temp_);
+    out_rec->size = temp_.length();
+    return true;
+  }
+}
 }  // namespace dmlc

@@ -26,7 +26,7 @@ class RecordIOSplitter : public InputSplitBase {
                    unsigned nsplit) {
     this->Init(fs, uri, rank, nsplit, 4);
   }
-
+     
  protected:
   virtual size_t SeekRecordBegin(Stream *fi);
   virtual const char*
