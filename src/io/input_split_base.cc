@@ -67,10 +67,8 @@ void InputSplitBase::BeforeFirst(void) {
 }
 
 InputSplitBase::~InputSplitBase(void) {
-  if (fs_ != NULL) {
-    delete fs_; fs_ = NULL;
-  }
-  delete filesys_;  
+  if (fs_ != NULL) delete fs_;
+  // no need to delete filesystem, it was singleton
 }
 
 void InputSplitBase::InitInputFileInfo(const char *uri) {

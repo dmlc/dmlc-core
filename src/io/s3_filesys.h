@@ -14,8 +14,6 @@ namespace io {
 /*! \brief AWS S3 filesystem */
 class S3FileSystem : public FileSystem {
  public:
-  /*! \brief constructor */
-  S3FileSystem();
   /*! \brief destructor */
   virtual ~S3FileSystem() {}
   /*!
@@ -47,8 +45,18 @@ class S3FileSystem : public FileSystem {
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
   virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
+  /*!
+   * \brief get a singleton of S3FileSystem when needed 
+   * \return a singleton instance
+   */
+  inline static S3FileSystem *GetInstance(void) {
+    static S3FileSystem instance;
+    return &instance;
+  }
 
  private:
+  /*! \brief constructor */
+  S3FileSystem();
   /*! \brief AWS access id */
   std::string aws_access_id_;
   /*! \brief AWS secret key */

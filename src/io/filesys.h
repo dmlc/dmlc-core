@@ -74,13 +74,13 @@ struct FileInfo {
 class FileSystem {
  public:
   /*!
-   * \brief create filesystem according to protocol
+   * \brief get singleton of filesystem instance according to protocol
    * \param protocol can be s3://, hdfs://, file://,
    *            empty string(will return local)
    * \return a corresponding filesystem, report error if
    *         we cannot find a matching system
    */
-  static FileSystem* Create(const std::string &protocol);  
+  static FileSystem *GetInstance(const std::string &protocol);  
   /*! \brief virtual destructor */
   virtual ~FileSystem() {}
   /*!
