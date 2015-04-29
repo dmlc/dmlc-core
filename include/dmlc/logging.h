@@ -30,7 +30,7 @@
 #define CHECK(x)                                           \
   if (!(x))                                                \
   LogMessageFatal(__FILE__, __LINE__).stream() << "Check " \
-                                                  "failed: " #x
+      "failed: " #x << ' '
 #define CHECK_LT(x, y) CHECK((x) < (y))
 #define CHECK_GT(x, y) CHECK((x) > (y))
 #define CHECK_LE(x, y) CHECK((x) <= (y))
