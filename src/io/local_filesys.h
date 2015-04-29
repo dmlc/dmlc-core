@@ -14,8 +14,6 @@ namespace io {
 /*! \brief local file system */
 class LocalFileSystem : public FileSystem {
  public:
-  /*! \brief constructor */
-  LocalFileSystem() {}
   /*! \brief destructor */
   virtual ~LocalFileSystem() {}
   /*!
@@ -48,7 +46,18 @@ class LocalFileSystem : public FileSystem {
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
   virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
+  /*!
+   * \brief get a singleton of LocalFileSystem when needed 
+   * \return a singleton instance
+   */
+  inline static LocalFileSystem *GetInstance(void) {
+    static LocalFileSystem instance;
+    return &instance;
+  }
+
+ private:
+  LocalFileSystem() {}
 };
 }  // namespace io
 }  // namespace dmlc
-#endif  // DMLC_IO_HDFS_FILESYS_H_
+#endif  // DMLC_IO_LOCAL_FILESYS_H_

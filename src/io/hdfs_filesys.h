@@ -16,8 +16,6 @@ namespace io {
 /*! \brief HDFS file system */
 class HDFSFileSystem : public FileSystem {
  public:
-  /*! \brief constructor */
-  HDFSFileSystem();
   /*! \brief destructor */
   virtual ~HDFSFileSystem();
   /*!
@@ -51,8 +49,18 @@ class HDFSFileSystem : public FileSystem {
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
   virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
+  /*!
+   * \brief get a singleton of HDFSFileSystem when needed 
+   * \return a singleton instance
+   */
+  inline static HDFSFileSystem *GetInstance(void) {
+    static HDFSFileSystem instance;
+    return &instance;
+  }
 
  private:
+  /*! \brief constructor */
+  HDFSFileSystem();
   /*! \brief namenode address */
   std::string namenode_;
   /*! \brief hdfs handle */

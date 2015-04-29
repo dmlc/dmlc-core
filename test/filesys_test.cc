@@ -17,19 +17,18 @@ int main(int argc, char *argv[]) {
   using namespace dmlc::io;
   if (!strcmp(argv[1], "ls")) {
     URI path(argv[2]);
-    FileSystem *fs = FileSystem::Create(path.protocol);
+    FileSystem *fs = FileSystem::GetInstance(path.protocol);
     std::vector<FileInfo> info;
     fs->ListDirectory(path, &info);
     for (size_t i = 0; i < info.size(); ++i) {
       printf("%s\t%lu\tis_dir=%d\n", info[i].path.name.c_str(), info[i].size,
              info[i].type == kDirectory);
     }
-    delete fs;
     return 0;
   }
   if (!strcmp(argv[1], "cat")) {
     URI path(argv[2]);
-    FileSystem *fs = FileSystem::Create(path.protocol);
+    FileSystem *fs = FileSystem::GetInstance(path.protocol);
     dmlc::Stream *fp = fs->OpenForRead(path);
     char buf[32];
     while (true) {
@@ -39,7 +38,6 @@ int main(int argc, char *argv[]) {
     }
     fflush(stdout);
     delete fp;
-    delete fs;
     return 0;
   }
   if (!strcmp(argv[1], "cp")) {

@@ -20,20 +20,20 @@
 
 namespace dmlc {
 namespace io {
-FileSystem *FileSystem::Create(const std::string &protocol) {
+FileSystem *FileSystem::GetInstance(const std::string &protocol) {
   if (protocol == "file://" || protocol.length() == 0) {
-    return new LocalFileSystem();
+    return LocalFileSystem::GetInstance();
   }
   if (protocol == "hdfs://") {
 #if DMLC_USE_HDFS
-    return new HDFSFileSystem();
+    return HDFSFileSystem::GetInstance();
 #else
     LOG(FATAL) << "Please compile with DMLC_USE_HDFS=1 to use hdfs";
 #endif
   }
   if (protocol == "s3://" || protocol == "http://" || protocol == "https://") {
 #if DMLC_USE_S3
-    return new S3FileSystem();
+    return S3FileSystem::GetInstance();
 #else
     LOG(FATAL) << "Please compile with DMLC_USE_S3=1 to use S3";
 #endif
@@ -56,11 +56,11 @@ InputSplit* InputSplit::Create(const char *uri,
   URI path(uri);
   InputSplitBase *split = NULL;
   if (!strcmp(type, "text")) {
-    split =  new LineSplitter(FileSystem::Create(path.protocol),
+    split =  new LineSplitter(FileSystem::GetInstance(path.protocol),
                             uri, part, nsplit);
   } else if (!strcmp(type, "recordio")) {
-    split =  new RecordIOSplitter(FileSystem::Create(path.protocol),
-                                uri, part, nsplit);
+    split =  new RecordIOSplitter(FileSystem::GetInstance(path.protocol),
+                                  uri, part, nsplit);
   } else {
     LOG(FATAL) << "unknown input split type " << type;
   }
@@ -75,17 +75,13 @@ Stream *Stream::Create(const char *uri,
                        const char * const flag,
                        bool try_create) {
   io::URI path(uri);
-  io::FileSystem *fs = io::FileSystem::Create(path.protocol);
-  Stream *ret = fs->Open(path, flag, try_create);
-  delete fs;
-  return ret;
+  return io::FileSystem::
+      GetInstance(path.protocol)->Open(path, flag, try_create);
 }
 
 SeekStream *SeekStream::CreateForRead(const char *uri, bool try_create) {
   io::URI path(uri);
-  io::FileSystem *fs =io:: FileSystem::Create(path.protocol);
-  SeekStream *ret = fs->OpenForRead(path, try_create);
-  delete fs;
-  return ret;
+  return io::FileSystem::
+      GetInstance(path.protocol)->OpenForRead(path, try_create);
 }
 }  // namespace dmlc

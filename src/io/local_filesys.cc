@@ -121,7 +121,7 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
 SeekStream *LocalFileSystem::Open(const URI &path,
                                   const char* const mode,
                                   bool allow_null) {
-  bool use_stdio  =false;
+  bool use_stdio = false;
   FILE *fp = NULL;
   const char *fname = path.name.c_str();
   using namespace std;
