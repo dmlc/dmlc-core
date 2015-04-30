@@ -41,6 +41,12 @@ bool LineSplitter::ExtractNextRecord(Blob *out_rec, Chunk *chunk) {
   for (; p != chunk->end; ++p) {
     if (*p != '\n' && *p != '\r') break;
   }
+  // set the string end sign for safety
+  if (p == chunk->end) {
+    *p = '\0'; 
+  } else {
+    *(p - 1) = '\0';
+  }
   out_rec->dptr = chunk->begin;
   out_rec->size = p - chunk->begin;
   chunk->begin = p;

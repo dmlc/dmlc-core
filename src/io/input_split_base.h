@@ -28,7 +28,7 @@ class InputSplitBase : public InputSplit {
     std::vector<size_t> data;
     Chunk(size_t buffer_size)
         : begin(NULL), end(NULL),
-          data(buffer_size) {}
+          data(buffer_size + 1) {}
     // load chunk from split
     bool Load(InputSplitBase *split, size_t buffer_size);
   };
@@ -39,7 +39,7 @@ class InputSplitBase : public InputSplit {
   // implement BeforeFirst
   virtual void BeforeFirst(void);
   virtual void HintChunkSize(size_t chunk_size) {
-    buffer_size_ = std::max(chunk_size, buffer_size_);
+    buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
   }
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
