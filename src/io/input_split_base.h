@@ -30,7 +30,7 @@ class InputSplitBase : public InputSplit {
         : begin(NULL), end(NULL),
           data(buffer_size) {}
     // load chunk from split
-    bool Load(InputSplitBase *split);
+    bool Load(InputSplitBase *split, size_t buffer_size);
   };
   // 2MB
   static const size_t kBufferSize = 1UL << 15UL;
@@ -38,17 +38,20 @@ class InputSplitBase : public InputSplit {
   virtual ~InputSplitBase(void);
   // implement BeforeFirst
   virtual void BeforeFirst(void);
+  virtual void HintChunkSize(size_t chunk_size) {
+    buffer_size_ = std::max(chunk_size, buffer_size_);
+  }
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
-    while (!NextRecord(out_rec, &tmp_chunk_)) {
-      if (!tmp_chunk_.Load(this)) return false;
+    while (!ExtractNextRecord(out_rec, &tmp_chunk_)) {
+      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
     }
     return true;
   }
   // implement next chunk
   virtual bool NextChunk(Blob *out_chunk) {
-    while (!NextChunk(out_chunk, &tmp_chunk_)) {
-      if (!tmp_chunk_.Load(this)) return false;
+    while (!ExtractNextChunk(out_chunk, &tmp_chunk_)) {
+      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
     }
     return true;
   }
@@ -65,27 +68,28 @@ class InputSplitBase : public InputSplit {
    */
   bool ReadChunk(void *buf, size_t *size);  
   /*!
-   * \brief extract next record from the chunk 
-   * \param out_rec the output record
-   * \param chunk the chunk information
-   * \return true if non-empty record is extracted
-   *    false if the chunk is already finishes its life
-   */
-  bool NextRecord(Blob *out_rec, Chunk *chunk);
-  /*!
    * \brief extract next chunk from the chunk 
    * \param out_chunk the output record
    * \param chunk the chunk information
    * \return true if non-empty record is extracted
    *    false if the chunk is already finishes its life
    */
-  bool NextChunk(Blob *out_rchunk, Chunk *chunk);
+  bool ExtractNextChunk(Blob *out_rchunk, Chunk *chunk);
+  /*!
+   * \brief extract next record from the chunk 
+   * \param out_rec the output record
+   * \param chunk the chunk information
+   * \return true if non-empty record is extracted
+   *    false if the chunk is already finishes its life
+   */
+  virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) = 0;
   
  protected:
   // constructor
   InputSplitBase()
       : fs_(NULL),
-        tmp_chunk_(kBufferSize) {}
+        tmp_chunk_(kBufferSize),
+        buffer_size_(kBufferSize) {}
   /*!
    * \brief intialize the base before doing anything
    * \param fs the filesystem ptr
@@ -116,15 +120,6 @@ class InputSplitBase : public InputSplit {
    */
   virtual const char*
   FindLastRecordBegin(const char *begin, const char *end) = 0;
-  /*!
-   * \brief find the next record, begin is ensured to be
-   * head of current record
-   * \param begin beginning of the buffer
-   * \param end end of the bufffer
-   * \return the pointer between (begin, end]
-   *         indicating the head of next record
-   */
-  virtual char* FindNextRecord(char *begin, char *end) = 0;
 
  private:
   /*! \brief FileSystem */
@@ -145,6 +140,8 @@ class InputSplitBase : public InputSplit {
   size_t offset_end_;
   /*! \brief temporal chunk */
   Chunk tmp_chunk_;
+  /*! \brief buffer size */  
+  size_t buffer_size_;
   /*! \brief byte-offset of each file */
   std::vector<size_t> file_offset_;
   /*! \brief internal overflow buffer */

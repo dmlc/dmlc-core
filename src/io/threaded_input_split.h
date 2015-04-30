@@ -28,11 +28,11 @@ class ThreadedInputSplit : public InputSplit {
       : base_(base), tmp_chunk_(NULL) {
     iter_.set_max_capacity(8);
     // initalize the iterator
-    iter_.Init([base](InputSplitBase::Chunk **dptr) {
+    iter_.Init([this](InputSplitBase::Chunk **dptr) {
         if (*dptr == NULL) {
           *dptr = new InputSplitBase::Chunk(InputSplitBase::kBufferSize);
         }
-        return (*dptr)->Load(base);
+        return (*dptr)->Load(base_, buffer_size_);
       }, [base]() { base->BeforeFirst(); });
   }
   // destructor
@@ -44,12 +44,15 @@ class ThreadedInputSplit : public InputSplit {
   virtual void BeforeFirst() {
     iter_.BeforeFirst();
   }
+  virtual void HintChunkSize(size_t chunk_size) {
+    buffer_size_ = std::max(chunk_size, buffer_size_);
+  }
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
     if (tmp_chunk_ == NULL) {
       if (!iter_.Next(&tmp_chunk_)) return false;
     }
-    while (!base_->NextRecord(out_rec, tmp_chunk_)) {
+    while (!base_->ExtractNextRecord(out_rec, tmp_chunk_)) {
       iter_.Recycle(&tmp_chunk_);
       if (!iter_.Next(&tmp_chunk_)) return false;      
     }
@@ -60,7 +63,7 @@ class ThreadedInputSplit : public InputSplit {
     if (tmp_chunk_ == NULL) {
       if (!iter_.Next(&tmp_chunk_)) return false;
     }
-    while (!base_->NextChunk(out_chunk, tmp_chunk_)) {
+    while (!base_->ExtractNextChunk(out_chunk, tmp_chunk_)) {
       iter_.Recycle(&tmp_chunk_);
       if (!iter_.Next(&tmp_chunk_)) return false;      
     }
@@ -68,6 +71,8 @@ class ThreadedInputSplit : public InputSplit {
   }  
   
  private:
+  /*! \brief internal buffer size */
+  size_t buffer_size_;
   /*! \brief the place where we get the data */
   InputSplitBase *base_;
   /*! \brief backend thread iterator */

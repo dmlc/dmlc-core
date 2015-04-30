@@ -48,7 +48,7 @@ void RecordIOWriter::WriteRecord(const void *buf, size_t size) {
   }
 }
 
-bool RecordIOReader::ReadRecord(std::string *out_rec) {
+bool RecordIOReader::NextRecord(std::string *out_rec) {
   if (end_of_stream_) return false;
   const uint32_t kMagic = RecordIOWriter::kMagic;
   out_rec->clear();
@@ -96,7 +96,7 @@ inline char *FindNextRecordIOHead(char *begin, char *end) {
   return end;
 }
 
-RecordIOSplitReader::RecordIOSplitReader
+RecordIOChunkReader::RecordIOChunkReader
 (InputSplit::Blob chunk,
  unsigned part_index,
  unsigned num_parts) {
@@ -110,7 +110,7 @@ RecordIOSplitReader::RecordIOSplitReader
   pend_ = FindNextRecordIOHead(head + end, head + chunk.size);  
 }
 
-bool RecordIOSplitReader::ReadRecord(InputSplit::Blob *out_rec) {
+bool RecordIOChunkReader::NextRecord(InputSplit::Blob *out_rec) {
   if (pbegin_ >= pend_) return false;
   uint32_t *p = reinterpret_cast<uint32_t *>(pbegin_);
   CHECK(p[0] == RecordIOWriter::kMagic);
@@ -118,9 +118,9 @@ bool RecordIOSplitReader::ReadRecord(InputSplit::Blob *out_rec) {
   uint32_t clen = RecordIOWriter::DecodeLength(p[1]);
   if (cflag == 0) {
     // skip header
-    out_rec->dptr = pbegin_ + 2 * sizeof(uint32_t);;
+    out_rec->dptr = pbegin_ + 2 * sizeof(uint32_t);
     // move pbegin
-    pbegin_ += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) >> 2U);
+    pbegin_ += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) << 2U);
     CHECK(pbegin_ <= pend_) << "Invalid RecordIO Format";
     out_rec->size = clen;
     return true;
@@ -143,7 +143,7 @@ bool RecordIOSplitReader::ReadRecord(InputSplit::Blob *out_rec) {
                     clen);
         tsize += clen;
       }
-      pbegin_ += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) >> 2U);
+      pbegin_ += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) << 2U);
       if (cflag == 3U) break;
       temp_.resize(tsize + sizeof(kMagic));
       std::memcpy(BeginPtr(temp_) + tsize, &kMagic, sizeof(kMagic));

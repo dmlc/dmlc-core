@@ -151,7 +151,10 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
   }
 }
 
-bool InputSplitBase::Chunk::Load(InputSplitBase *split) {
+bool InputSplitBase::Chunk::Load(InputSplitBase *split, size_t buffer_size) {
+  if (buffer_size > data.size()) {
+    data.resize(buffer_size);
+  }  
   while (true) {
     size_t size = data.size() * sizeof(size_t);
     if (!split->ReadChunk(BeginPtr(data), &size)) return false;
@@ -166,17 +169,7 @@ bool InputSplitBase::Chunk::Load(InputSplitBase *split) {
   return true;
 }
 
-bool InputSplitBase::NextRecord(Blob *out_rec, Chunk *chunk) {
-  if (chunk->begin == chunk->end) return false;
-  char *next = FindNextRecord(chunk->begin,
-                              chunk->end);
-  out_rec->dptr = chunk->begin;
-  out_rec->size = next - chunk->begin;
-  chunk->begin = next;
-  return true;
-}
-
-bool InputSplitBase::NextChunk(Blob *out_chunk, Chunk *chunk) {
+bool InputSplitBase::ExtractNextChunk(Blob *out_chunk, Chunk *chunk) {
   if (chunk->begin == chunk->end) return false;
   out_chunk->dptr = chunk->begin;
   out_chunk->size = chunk->end - chunk->begin;

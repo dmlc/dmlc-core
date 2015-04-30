@@ -121,7 +121,7 @@ class RecordIOReader {
    * \param out_rec used to store output record in string
    * \return true of read was successful, false if end of stream was reached
    */
-  bool ReadRecord(std::string *out_rec);
+  bool NextRecord(std::string *out_rec);
 
  private:
   /*! \brief output stream */
@@ -135,11 +135,11 @@ class RecordIOReader {
  *  This class divides the blob into several independent parts specified by caller,
  *  and read from one segment.
  *  The part reading can be used together with InputSplit::NextChunk for
- *  multi-threaded parsing(each thread take a RecordIOSplitReader)
+ *  multi-threaded parsing(each thread take a RecordIOChunkReader)
  *
  * \sa RecordIOWriter, InputSplit
  */
-class RecordIOSplitReader {
+class RecordIOChunkReader {
  public:
   /*!
    * \brief constructor
@@ -147,19 +147,19 @@ class RecordIOSplitReader {
    * \param part_index which part we want to reado
    * \param num_parts number of total segments
    */
-  explicit RecordIOSplitReader(InputSplit::Blob chunk,
+  explicit RecordIOChunkReader(InputSplit::Blob chunk,
                                unsigned part_index = 0,
                                unsigned num_parts = 1);
   /*!
    * \brief read next complete record from stream
    *   the blob contains the memory content
    *   NOTE: this function is not threadsafe, use one
-   *   RecordIOSplitReader per thread
+   *   RecordIOChunkReader per thread
    * \param out_rec used to store output blob, the header is already
    *        removed and out_rec only contains the memory content
    * \return true of read was successful, false if end was reached
    */
-  bool ReadRecord(InputSplit::Blob *out_rec);
+  bool NextRecord(InputSplit::Blob *out_rec);
   
  private:
   /*! \brief internal temporal data */
