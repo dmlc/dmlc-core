@@ -137,7 +137,7 @@ class CachedInputSplit : public InputSplit {
 inline void CachedInputSplit:: InitPreprocIter(void) {
   fo_ = dmlc::Stream::Create(cache_file_.c_str(), "w");  
   iter_preproc_ = new ThreadedIter<InputSplitBase::Chunk>();    
-  iter_preproc_->set_max_capacity(8);
+  iter_preproc_->set_max_capacity(16);
   iter_preproc_->Init([this](InputSplitBase::Chunk **dptr) {
       if (*dptr == NULL) {
         *dptr = new InputSplitBase::Chunk(buffer_size_);

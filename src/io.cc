@@ -3,6 +3,7 @@
 #include <cstring>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include "io/uri_spec.h"
 #include "io/line_split.h"
 #include "io/recordio_split.h"
 #include "io/single_file_split.h"
@@ -44,44 +45,34 @@ FileSystem *FileSystem::GetInstance(const std::string &protocol) {
 }
 } // namespace io
 
-InputSplit* InputSplit::Create(const char *uri,
+InputSplit* InputSplit::Create(const char *uri_,
                                unsigned part,
                                unsigned nsplit,
                                const char *type) {
   using namespace std;
   using namespace dmlc::io; 
   // allow cachefile in format path#cachefile
-  std::string fname_;
-  const char *cache_file = NULL;
-  const char *dlm = strchr(uri, '#');
-  if (dlm != NULL) {
-    CHECK(strchr(dlm + 1, '#') == NULL)
-        << "only one `#` is allowed in file path for cachefile specification";
-    fname_ = std::string(uri, dlm - uri);
-    uri = fname_.c_str();
-    cache_file = dlm + 1;
-  }
-
-  if (!strcmp(uri, "stdin")) {
-    return new SingleFileSplit(uri);
+  io::URISpec spec(uri_, part, nsplit);
+  if (!strcmp(spec.uri.c_str(), "stdin")) {
+    return new SingleFileSplit(spec.uri.c_str());
   }
   CHECK(part < nsplit) << "invalid input parameter for InputSplit::Create";
-  URI path(uri);
+  URI path(spec.uri.c_str());
   InputSplitBase *split = NULL;
   if (!strcmp(type, "text")) {
     split =  new LineSplitter(FileSystem::GetInstance(path.protocol),
-                            uri, part, nsplit);
+                              spec.uri.c_str(), part, nsplit);
   } else if (!strcmp(type, "recordio")) {
     split =  new RecordIOSplitter(FileSystem::GetInstance(path.protocol),
-                                  uri, part, nsplit);
+                                  spec.uri.c_str(), part, nsplit);
   } else {
     LOG(FATAL) << "unknown input split type " << type;
   }
 #if DMLC_USE_CXX11
-  if (cache_file == NULL) {
+  if (spec.cache_file.length() == 0) {
     return new ThreadedInputSplit(split);
   } else {
-    return new CachedInputSplit(split, cache_file);
+    return new CachedInputSplit(split, spec.cache_file.c_str());
   }
 #else
   CHECK(cache_file == NULL)
