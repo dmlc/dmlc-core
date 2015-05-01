@@ -76,7 +76,6 @@ InputSplit* InputSplit::Create(const char *uri_,
     return new CachedInputSplit(split, spec.cache_file.c_str());
   }
 #else
-#error "C++XX"
   CHECK(spec.cache_file.length() == 0)
       << "to enable cached file, compile with c++11";
   return split;
