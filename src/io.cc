@@ -1,6 +1,7 @@
 // use direct path for to save compile flags
 #define _CRT_SECURE_NO_WARNINGS
 #include <cstring>
+#include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include "io/uri_spec.h"
@@ -75,7 +76,8 @@ InputSplit* InputSplit::Create(const char *uri_,
     return new CachedInputSplit(split, spec.cache_file.c_str());
   }
 #else
-  CHECK(cache_file == NULL)
+#error "C++XX"
+  CHECK(spec.cache_file.length() == 0)
       << "to enable cached file, compile with c++11";
   return split;
 #endif

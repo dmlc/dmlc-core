@@ -36,10 +36,12 @@ CreateIter_(const char *uri_,
 	parser = new ThreadedParser(parser);
     return new DiskRowIter<IndexType>(parser, spec.cache_file.c_str(), true);
 #else
+#error "C++XX"
     LOG(FATAL) << "compile with c++0x or c++11 to enable cache file";
+    return parser;
 #endif
   } else {
-    return new BasicRowIter<IndexType>(parser);    
+    return new BasicRowIter<IndexType>(parser); 
   }
 }
 }  // namespace data

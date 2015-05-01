@@ -28,7 +28,7 @@
 
 /*! \brief whether or not use c++11 support */
 #ifndef DMLC_USE_CXX11
-#define DMLC_USE_CXX11 defined(__GXX_EXPERIMENTAL_CXX0X) || __cplusplus >= 201103L || defined(_MSC_VER)
+#define DMLC_USE_CXX11 defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L || defined(_MSC_VER)
 #endif
 
 ///
