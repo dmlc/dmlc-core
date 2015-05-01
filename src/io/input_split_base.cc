@@ -64,6 +64,7 @@ void InputSplitBase::BeforeFirst(void) {
   // seek to beginning of stream
   fs_->Seek(offset_begin_ - file_offset_[file_ptr_]);
   offset_curr_ = offset_begin_;
+  tmp_chunk_.begin = tmp_chunk_.end = NULL;
 }
 
 InputSplitBase::~InputSplitBase(void) {

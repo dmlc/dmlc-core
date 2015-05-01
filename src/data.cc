@@ -29,7 +29,7 @@ CreateIter_(const char *uri,
         << "only one `#` is allowed in file path for cachefile specification";
     fname_ = std::string(uri, dlm - uri);
     uri = fname_.c_str();
-    cache_file = dlm +1;
+    cache_file = dlm + 1;
   }
   // create parser
   Parser *parser = NULL;

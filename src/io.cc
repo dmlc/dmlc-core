@@ -9,6 +9,7 @@
 #include "io/filesys.h"
 #include "io/local_filesys.h"
 #include "io/threaded_input_split.h"
+#include "io/cached_input_split.h"
 
 #if DMLC_USE_HDFS
 #include "io/hdfs_filesys.h"
@@ -48,7 +49,19 @@ InputSplit* InputSplit::Create(const char *uri,
                                unsigned nsplit,
                                const char *type) {
   using namespace std;
-  using namespace dmlc::io;
+  using namespace dmlc::io; 
+  // allow cachefile in format path#cachefile
+  std::string fname_;
+  const char *cache_file = NULL;
+  const char *dlm = strchr(uri, '#');
+  if (dlm != NULL) {
+    CHECK(strchr(dlm + 1, '#') == NULL)
+        << "only one `#` is allowed in file path for cachefile specification";
+    fname_ = std::string(uri, dlm - uri);
+    uri = fname_.c_str();
+    cache_file = dlm + 1;
+  }
+
   if (!strcmp(uri, "stdin")) {
     return new SingleFileSplit(uri);
   }
@@ -65,8 +78,14 @@ InputSplit* InputSplit::Create(const char *uri,
     LOG(FATAL) << "unknown input split type " << type;
   }
 #if DMLC_USE_CXX11
-  return new ThreadedInputSplit(split);
+  if (cache_file == NULL) {
+    return new ThreadedInputSplit(split);
+  } else {
+    return new CachedInputSplit(split, cache_file);
+  }
 #else
+  CHECK(cache_file == NULL)
+      << "to enable cached file, compile with c++11";
   return split;
 #endif
 }

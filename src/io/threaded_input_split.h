@@ -1,11 +1,11 @@
 /*!
  *  Copyright (c) 2015 by Contributors
- * \file thread_input_split.h
+ * \file threaded_input_split.h
  * \brief a threaded version of InputSplit with a prefetch thread
  * \author Tianqi Chen
  */
-#ifndef DMLC_IO_THREAD_INPUT_SPLIT_H_
-#define DMLC_IO_THREAD_INPUT_SPLIT_H_
+#ifndef DMLC_IO_THREADED_INPUT_SPLIT_H_
+#define DMLC_IO_THREADED_INPUT_SPLIT_H_
 #include <dmlc/base.h>
 // this code depends on c++11
 #if DMLC_USE_CXX11
@@ -25,15 +25,17 @@ class ThreadedInputSplit : public InputSplit {
    * \param base an base object to define how to read data
    */
   explicit ThreadedInputSplit(InputSplitBase *base)
-      : base_(base), tmp_chunk_(NULL) {
+      : buffer_size_(InputSplitBase::kBufferSize),
+        base_(base), tmp_chunk_(NULL) {
     iter_.set_max_capacity(8);
     // initalize the iterator
     iter_.Init([this](InputSplitBase::Chunk **dptr) {
         if (*dptr == NULL) {
-          *dptr = new InputSplitBase::Chunk(InputSplitBase::kBufferSize);
+          *dptr = new InputSplitBase::Chunk(buffer_size_);
         }
         return (*dptr)->Load(base_, buffer_size_);
-      }, [base]() { base->BeforeFirst(); });
+      },
+      [base]() { base->BeforeFirst(); });
   }
   // destructor
   virtual ~ThreadedInputSplit(void) {
@@ -43,6 +45,9 @@ class ThreadedInputSplit : public InputSplit {
   }
   virtual void BeforeFirst() {
     iter_.BeforeFirst();
+    if (tmp_chunk_ != NULL) {
+      iter_.Recycle(&tmp_chunk_);
+    }   
   }
   virtual void HintChunkSize(size_t chunk_size) {
     buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
