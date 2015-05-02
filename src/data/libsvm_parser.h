@@ -37,7 +37,7 @@ class LibSVMParser : public Parser {
     delete source_;
   }
   virtual void BeforeFirst(void) {
-    source_.BeforeFirst();
+    source_->BeforeFirst();
   }
   virtual size_t BytesRead(void) const {
     return bytes_read_;
@@ -47,9 +47,9 @@ class LibSVMParser : public Parser {
   }
  protected:
   /*!
-   * \brief read in next several blocks of data 
+   * \brief read in next several blocks of data
    * \param data vector of data to be returned
-   * \return true if the data is loaded, false if reach end    
+   * \return true if the data is loaded, false if reach end
    */
   inline bool FillData(std::vector<RowBlockContainer<size_t> > *data);
   /*!
@@ -73,7 +73,7 @@ class LibSVMParser : public Parser {
     }
     return begin;
   }
-  
+
  private:
   // nthread
   int nthread_;
@@ -97,7 +97,7 @@ FillData(std::vector<RowBlockContainer<size_t> > *data) {
   data->resize(nthread);
   bytes_read_ += chunk.size;
   CHECK(chunk.size != 0);
-  char *head = reinterpret_cast<char*>(chunk.dptr);        
+  char *head = reinterpret_cast<char*>(chunk.dptr);
   #pragma omp parallel num_threads(nthread_)
   {
     // threadid
@@ -131,7 +131,7 @@ ParseBlock(char *begin,
     while (isdigit(*p) && p != end) ++p;
     if (*p == ':') {
       out->index.push_back(atol(head));
-      out->value.push_back(static_cast<real_t>(atof(p + 1)));        
+      out->value.push_back(static_cast<real_t>(atof(p + 1)));
     } else {
       if (out->label.size() != 0) {
         out->offset.push_back(out->index.size());
