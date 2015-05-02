@@ -37,7 +37,7 @@ class LibSVMParser : public Parser {
     delete source_;
   }
   virtual void BeforeFirst(void) {
-    LOG(FATAL) << "cannot call BeforeFirst on LibSVMIter";
+    source_.BeforeFirst();
   }
   virtual size_t BytesRead(void) const {
     return bytes_read_;
