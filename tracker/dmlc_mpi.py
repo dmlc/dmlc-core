@@ -14,13 +14,13 @@ parser.add_argument('-n', '--nworker', required=True, type=int,
                     help = 'number of worker proccess to be launched')
 parser.add_argument('-s', '--server-nodes', default = 0, type=int,
                     help = 'number of server nodes to be launched')
-parser.add_argument('-v', '--verbose', default=0, choices=[0, 1], type=int,
+parser.add_argument('--verbose', default=0, choices=[0, 1], type=int,
                     help = 'print more messages into the console')
 parser.add_argument('-H', '--hostfile', type=str,
                     help = 'the hostfile of mpi server')
 parser.add_argument('command', nargs='+',
                     help = 'command for dmlc program')
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 #
 # submission script using MPI
 #
@@ -49,8 +49,10 @@ def mpi_submit(nworker, nserver, pass_envs):
         # cmd += ' -x %s' % k
     cmd += ' '
     cmd += ' '.join(args.command)
+    cmd += ' '
+    cmd += ' '.join(unknown)
 
-    print '%s' % cmd
+    # print '%s' % cmd
     # known issue: results do not show in emacs eshell
     def run():
         subprocess.check_call(cmd, shell = True, env = env)
@@ -60,4 +62,4 @@ def mpi_submit(nworker, nserver, pass_envs):
 
 # call submit, with nslave, the commands to run each job and submit function
 tracker.submit(args.nworker, args.server_nodes, fun_submit = mpi_submit,
-               verbose = args.verbose, pscmd= (' '.join(args.command)))
+               verbose = args.verbose, pscmd=(' '.join(args.command) + ' ' + ' '.join(unknown)))
