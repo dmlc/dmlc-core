@@ -7,6 +7,7 @@
  */
 #ifndef DMLC_DATA_ROW_BLOCK_H_
 #define DMLC_DATA_ROW_BLOCK_H_
+#include <cstring>
 #include <vector>
 #include <limits>
 #include <dmlc/io.h>
@@ -24,12 +25,12 @@ template<typename IndexType>
 struct RowBlockContainer {
   /*! \brief array[size+1], row pointer to beginning of each rows */
   std::vector<size_t> offset;
-  /*! \brief array[size] label of each instance */  
+  /*! \brief array[size] label of each instance */
   std::vector<real_t> label;
   /*! \brief feature index */
   std::vector<IndexType> index;
   /*! \brief feature value */
-  std::vector<real_t> value;  
+  std::vector<real_t> value;
   /*! \brief maximum value of index */
   IndexType max_index;
   // constructor
@@ -40,7 +41,7 @@ struct RowBlockContainer {
   inline RowBlock<IndexType> GetBlock(void) const;
   /*!
    * \brief write the row block to a binary stream
-   * \param fo output stream   
+   * \param fo output stream
    */
   inline void Save(Stream *fo) const;
   /*!
@@ -66,7 +67,7 @@ struct RowBlockContainer {
         index.size() * sizeof(IndexType) +
         value.size() * sizeof(real_t);
   }
-  /*! 
+  /*!
    * \brief push the row into container
    * \param row the row to push back
    * \tparam I the index type of the row
@@ -88,7 +89,7 @@ struct RowBlockContainer {
     }
     offset.push_back(index.size());
    }
-  /*! 
+  /*!
    * \brief push the row block into container
    * \param row the row to push back
    * \tparam I the index type of the row
@@ -154,8 +155,8 @@ template<typename IndexType>
 inline bool
 RowBlockContainer<IndexType>::Load(Stream *fi) {
   if (!fi->Read(&offset)) return false;
-  CHECK(fi->Read(&label)) << "Bad RowBlock format"; 
-  CHECK(fi->Read(&value)) << "Bad RowBlock format"; 
+  CHECK(fi->Read(&label)) << "Bad RowBlock format";
+  CHECK(fi->Read(&value)) << "Bad RowBlock format";
   CHECK(fi->Read(&index)) << "Bad RowBlock format";
   return true;
 }
