@@ -12,7 +12,7 @@ test/split_read_test: test/split_read_test.cc libdmlc.a
 test/split_repeat_read_test: test/split_repeat_read_test.cc libdmlc.a
 test/stream_read_test: test/stream_read_test.cc libdmlc.a
 test/split_test: test/split_test.cc libdmlc.a
-test/libsvm_parser_test: test/libsvm_parser_test.cc libdmlc.a
+test/libsvm_parser_test: test/libsvm_parser_test.cc src/data/libsvm_parser.h libdmlc.a
 test/threadediter_test: test/threadediter_test.cc libdmlc.a
 
 $(TEST) :
