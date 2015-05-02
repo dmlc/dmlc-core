@@ -40,18 +40,44 @@ const char* RecordIOSplitter::FindLastRecordBegin(const char *begin,
   return begin;
 }
 
-char* RecordIOSplitter::FindNextRecord(char *begin, char *end) {
-  CHECK((reinterpret_cast<size_t>(begin) & 3UL) == 0); 
-  CHECK((reinterpret_cast<size_t>(end) & 3UL) == 0);
-  while (true) {
-    uint32_t *p = reinterpret_cast<uint32_t *>(begin);
-    uint32_t cflag = RecordIOWriter::DecodeFlag(p[1]);
-    uint32_t clen = RecordIOWriter::DecodeLength(p[1]);
-    begin += 4 + (((clen + 3U) >> 2U) >> 2U);
-    if (cflag == 0 || cflag == 2) return begin;
-    CHECK(begin <= end) << "invalid chunk";
+bool RecordIOSplitter::ExtractNextRecord(Blob *out_rec, Chunk *chunk) {
+  if (chunk->begin == chunk->end) return false;
+  CHECK(chunk->begin + 2 * sizeof(uint32_t) <= chunk->end)
+      << "Invalid RecordIO Format";
+  CHECK((reinterpret_cast<size_t>(chunk->begin) & 3UL) == 0); 
+  CHECK((reinterpret_cast<size_t>(chunk->end) & 3UL) == 0);
+  uint32_t *p = reinterpret_cast<uint32_t *>(chunk->begin);
+  uint32_t cflag = RecordIOWriter::DecodeFlag(p[1]);
+  uint32_t clen = RecordIOWriter::DecodeLength(p[1]);
+  // skip header
+  out_rec->dptr = chunk->begin + 2 * sizeof(uint32_t);
+  // move pbegin
+  chunk->begin += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) << 2U);
+  CHECK(chunk->begin <= chunk->end) << "Invalid RecordIO Format";
+  out_rec->size = clen;
+  if (cflag == 0) return true;
+  const uint32_t kMagic = RecordIOWriter::kMagic;
+  // abnormal path, move data around to make a full part
+  CHECK(cflag == 1U) << "Invalid RecordIO Format";
+  while (cflag != 3U) {
+    CHECK(chunk->begin + 2 * sizeof(uint32_t) <= chunk->end);
+    p = reinterpret_cast<uint32_t *>(chunk->begin);
+    CHECK(p[0] == RecordIOWriter::kMagic);
+    cflag = RecordIOWriter::DecodeFlag(p[1]);
+    clen = RecordIOWriter::DecodeLength(p[1]);
+    // pad kmagic in between
+    std::memcpy(reinterpret_cast<char*>(out_rec->dptr) + out_rec->size,
+                &kMagic, sizeof(kMagic));
+    out_rec->size += sizeof(kMagic);
+    // move the rest of the blobs
+    if (clen != 0) {
+      std::memmove(reinterpret_cast<char*>(out_rec->dptr) + out_rec->size,
+                   chunk->begin + 2 * sizeof(uint32_t), clen);
+      out_rec->size += clen;
+    }
+    chunk->begin += 2 * sizeof(uint32_t) + (((clen + 3U) >> 2U) << 2U);
   }
-  return end;
+  return true;
 }
 }  // namespace io
 }  // namespace dmlc

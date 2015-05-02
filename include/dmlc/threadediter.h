@@ -291,16 +291,17 @@ Init(std::function<bool(DType **)> next,
     while (true) {
       CHECK(!producer_sig_processed_);    
       std::unique_lock<std::mutex> lock(mutex_);
-      ++nwait_producer_;
+      ++this->nwait_producer_;
       producer_cond_.wait(lock, [this]() {
           if (producer_sig_ == kProduce) {
-            return !produce_end_ &&
+            bool ret = !produce_end_ &&
                 (queue_.size() < max_capacity_ || free_cells_.size() != 0);
+            return ret;
           } else {
             return true;
           }
         });
-      --nwait_producer_;
+      --this->nwait_producer_;
       DType *cell = NULL;
       if (producer_sig_ == kProduce) {
         if (free_cells_.size() != 0) {
@@ -313,11 +314,11 @@ Init(std::function<bool(DType **)> next,
         beforefirst();
         producer_sig_processed_ = true;
         consumer_cond_.notify_all();
-        ++nwait_producer_;
+        ++this->nwait_producer_;
         producer_cond_.wait(lock, [this]() {
             return producer_sig_ != kBeforeFirst;
           });
-        --nwait_producer_;
+        --this->nwait_producer_;
         lock.unlock();
         continue;
       } else {

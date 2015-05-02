@@ -19,7 +19,7 @@ namespace io {
 class SingleFileSplit : public InputSplit {
  public:
   explicit SingleFileSplit(const char *fname)
-      : use_stdin_(false),
+      : use_stdin_(false), buffer_size_(kBufferSize),
         chunk_begin_(NULL), chunk_end_(NULL) {
     if (!std::strcmp(fname, "stdin")) {
 #ifndef DMLC_STRICT_CXX98_
@@ -37,6 +37,9 @@ class SingleFileSplit : public InputSplit {
   }
   virtual void BeforeFirst(void) {
     fseek(fp_, 0, SEEK_SET);
+  }
+  virtual void HintChunkSize(size_t chunk_size) {
+    buffer_size_ = std::max(chunk_size, buffer_size_);
   }
   virtual size_t Read(void *ptr, size_t size) {
     return std::fread(ptr, 1, size, fp_);
@@ -114,6 +117,9 @@ class SingleFileSplit : public InputSplit {
     return end;
   }
   inline bool LoadChunk(void) {
+    if (buffer_.length() < buffer_size_) {
+      buffer_.resize(buffer_size_);
+    }
     while (true) {
       size_t size = buffer_.length();
       if (!ReadChunk(BeginPtr(buffer_), &size)) return false;
@@ -138,6 +144,8 @@ class SingleFileSplit : public InputSplit {
   std::string overflow_;
   // internal buffer
   std::string buffer_;
+  // internal buffer size
+  size_t buffer_size_;
   // beginning of chunk
   char *chunk_begin_;
   // end of chunk

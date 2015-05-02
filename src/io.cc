@@ -1,14 +1,17 @@
 // use direct path for to save compile flags
 #define _CRT_SECURE_NO_WARNINGS
 #include <cstring>
+#include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include "io/uri_spec.h"
 #include "io/line_split.h"
 #include "io/recordio_split.h"
 #include "io/single_file_split.h"
 #include "io/filesys.h"
 #include "io/local_filesys.h"
 #include "io/threaded_input_split.h"
+#include "io/cached_input_split.h"
 
 #if DMLC_USE_HDFS
 #include "io/hdfs_filesys.h"
@@ -43,30 +46,38 @@ FileSystem *FileSystem::GetInstance(const std::string &protocol) {
 }
 } // namespace io
 
-InputSplit* InputSplit::Create(const char *uri,
+InputSplit* InputSplit::Create(const char *uri_,
                                unsigned part,
                                unsigned nsplit,
                                const char *type) {
   using namespace std;
-  using namespace dmlc::io;
-  if (!strcmp(uri, "stdin")) {
-    return new SingleFileSplit(uri);
+  using namespace dmlc::io; 
+  // allow cachefile in format path#cachefile
+  io::URISpec spec(uri_, part, nsplit);
+  if (!strcmp(spec.uri.c_str(), "stdin")) {
+    return new SingleFileSplit(spec.uri.c_str());
   }
   CHECK(part < nsplit) << "invalid input parameter for InputSplit::Create";
-  URI path(uri);
+  URI path(spec.uri.c_str());
   InputSplitBase *split = NULL;
   if (!strcmp(type, "text")) {
     split =  new LineSplitter(FileSystem::GetInstance(path.protocol),
-                            uri, part, nsplit);
+                              spec.uri.c_str(), part, nsplit);
   } else if (!strcmp(type, "recordio")) {
     split =  new RecordIOSplitter(FileSystem::GetInstance(path.protocol),
-                                  uri, part, nsplit);
+                                  spec.uri.c_str(), part, nsplit);
   } else {
     LOG(FATAL) << "unknown input split type " << type;
   }
 #if DMLC_USE_CXX11
-  return new ThreadedInputSplit(split);
+  if (spec.cache_file.length() == 0) {
+    return new ThreadedInputSplit(split);
+  } else {
+    return new CachedInputSplit(split, spec.cache_file.c_str());
+  }
 #else
+  CHECK(spec.cache_file.length() == 0)
+      << "to enable cached file, compile with c++11";
   return split;
 #endif
 }

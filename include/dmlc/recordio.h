@@ -103,7 +103,7 @@ class RecordIOWriter {
   size_t except_counter_;
 };
 /*!
- * \brief reader of binary recordio to reads in record
+ * \brief reader of binary recordio to reads in record from stream
  * \sa RecordIOWriter
  */
 class RecordIOReader {
@@ -121,7 +121,7 @@ class RecordIOReader {
    * \param out_rec used to store output record in string
    * \return true of read was successful, false if end of stream was reached
    */
-  bool ReadRecord(std::string *out_rec);
+  bool NextRecord(std::string *out_rec);
 
  private:
   /*! \brief output stream */
@@ -129,5 +129,44 @@ class RecordIOReader {
   /*! \brief whether we are at end of stream */
   bool end_of_stream_;
 };
+
+/*!
+ * \brief reader of binary recordio from Blob returned by InputSplit
+ *  This class divides the blob into several independent parts specified by caller,
+ *  and read from one segment.
+ *  The part reading can be used together with InputSplit::NextChunk for
+ *  multi-threaded parsing(each thread take a RecordIOChunkReader)
+ *
+ * \sa RecordIOWriter, InputSplit
+ */
+class RecordIOChunkReader {
+ public:
+  /*!
+   * \brief constructor
+   * \param chunk source data returned by InputSplit
+   * \param part_index which part we want to reado
+   * \param num_parts number of total segments
+   */
+  explicit RecordIOChunkReader(InputSplit::Blob chunk,
+                               unsigned part_index = 0,
+                               unsigned num_parts = 1);
+  /*!
+   * \brief read next complete record from stream
+   *   the blob contains the memory content
+   *   NOTE: this function is not threadsafe, use one
+   *   RecordIOChunkReader per thread
+   * \param out_rec used to store output blob, the header is already
+   *        removed and out_rec only contains the memory content
+   * \return true of read was successful, false if end was reached
+   */
+  bool NextRecord(InputSplit::Blob *out_rec);
+  
+ private:
+  /*! \brief internal temporal data */
+  std::string temp_;
+  /*! \brief internal data pointer */
+  char *pbegin_, *pend_;
+};
+
 }  // namespace dmlc
 #endif  // DMLC_RECORDIO_H_

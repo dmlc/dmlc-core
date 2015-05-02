@@ -5,8 +5,8 @@
 #include <dmlc/timer.h>
 
 int main(int argc, char *argv[]) {
-  if (argc < 5) {
-    printf("Usage: <libsvm> partid npart buffer\n");
+  if (argc < 4) {
+    printf("Usage: <libsvm> partid npart\n");
     return 0;
   }
   using namespace dmlc;
@@ -14,13 +14,15 @@ int main(int argc, char *argv[]) {
                                          atoi(argv[2]),
                                          atoi(argv[3]),
                                          "text");
+  std::vector<std::string> data;
   InputSplit::Blob blb;
-  size_t sz = atol(argv[4]);
-  std::string buffer; buffer.resize(sz);
   double tstart = GetTime();
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;
-  while (split->NextChunk(&blb)) {
+  while (split->NextRecord(&blb)) {
+    std::string dat = std::string((char*)blb.dptr, 
+                                  blb.size);
+    data.push_back(dat);
     bytes_read += blb.size;
     double tdiff = GetTime() - tstart;
     if (bytes_read >= bytes_expect) {
