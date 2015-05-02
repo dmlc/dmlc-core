@@ -20,12 +20,14 @@ int main(int argc, char *argv[]) {
   double tstart = GetTime();
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;
+  size_t num_ex = 0;
   while (parser.Next()) {
     bytes_read  = parser.BytesRead();
+    num_ex += parser.Value().size;
     double tdiff = GetTime() - tstart;
     if (bytes_read >= bytes_expect) {
-      printf("%lu MB read, %g MB/sec\n",
-             bytes_read >> 20UL,
+      printf("%lu examples, %lu MB read, %g MB/sec\n",
+             num_ex, bytes_read >> 20UL,
              (bytes_read >> 20UL) / tdiff);
       bytes_expect += 10UL << 20UL;
     }
