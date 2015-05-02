@@ -9,11 +9,12 @@
 
 #include <vector>
 #include <cstring>
-#include <cctype>
+// #include <cctype>
 #include <dmlc/data.h>
 #include <dmlc/omp.h>
 #include "./row_block.h"
 #include "./parser.h"
+#include "./strtonum.h"
 
 namespace dmlc {
 namespace data {
@@ -74,75 +75,6 @@ class LibSVMParser : public Parser {
     return begin;
   }
 
-  inline bool isspace(char c) {
-    return (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f');
-  }
-  inline bool isdigit(char c) {
-    return (c >= '0' && c <= '9');
-  }
-  inline double atof (const char *p) {
-    // Skip leading white space, if any. Not necessary
-    // while (isspace(*p) ) ++ p;
-
-    // Get sign, if any.
-    double sign = 1.0;
-    if (*p == '-') {
-      sign = -1.0; ++ p;
-    } else if (*p == '+') {
-      ++ p;
-    }
-
-    // Get digits before decimal point or exponent, if any.
-    double value;
-    for (value = 0.0; isdigit(*p); ++p) {
-      value = value * 10.0 + (*p - '0');
-    }
-
-    // Get digits after decimal point, if any.
-    if (*p == '.') {
-      double pow10 = 10.0;
-      ++ p;
-      while (isdigit(*p)) {
-        value += (*p - '0') / pow10;
-        pow10 *= 10.0;
-        ++ p;
-      }
-    }
-    // Handle exponent, if any.
-    int frac = 0;
-    double scale = 1.0;
-    if ((*p == 'e') || (*p == 'E')) {
-      unsigned int expon;
-      // Get sign of exponent, if any.
-      p += 1;
-      if (*p == '-') {
-        frac = 1;
-        p += 1;
-      } else if (*p == '+') {
-        p += 1;
-      }
-      // Get digits of exponent, if any.
-      for (expon = 0; isdigit(*p); p += 1) {
-        expon = expon * 10 + (*p - '0');
-      }
-      if (expon > 308) expon = 308;
-      // Calculate scaling factor.
-      while (expon >= 50) { scale *= 1E50; expon -= 50; }
-      while (expon >=  8) { scale *= 1E8;  expon -=  8; }
-      while (expon >   0) { scale *= 10.0; expon -=  1; }
-    }
-    // Return signed and scaled floating point result.
-    return sign * (frac ? (value / scale) : (value * scale));
-  }
-  inline long atol(const char* p) {
-    // Skip the sign, if any
-    if (*p == '+') ++ p;
-    long value;
-    for (value = 0; isdigit(*p); ++p) {
-      value = value * 10 + (*p - '0');
-    }
-    return value;
-  }
  private:
   // nthread
   int nthread_;
@@ -201,8 +133,6 @@ ParseBlock(char *begin,
     if (*p == ':') {
       out->index.push_back(atol(head));
       out->value.push_back(static_cast<real_t>(atof(p + 1)));
-      // out->index.push_back(1);
-      // out->value.push_back(1.1);
     } else {
       if (out->label.size() != 0) {
         out->offset.push_back(out->index.size());
