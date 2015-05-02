@@ -30,7 +30,7 @@ inline double atof (const char *p) {
   }
 
   // Get digits before decimal point or exponent, if any.
-  size_t val1;
+  unsigned long long val1;
   for (val1 = 0; isdigit(*p); ++p) {
     val1 = val1 * 10 + (*p - '0');
   }
@@ -38,8 +38,8 @@ inline double atof (const char *p) {
 
   // Get digits after decimal point, if any.
   if (*p == '.') {
-    size_t pow10 = 10;
-    size_t val2 = 0;
+    unsigned long long pow10 = 10;
+    unsigned long long val2 = 0;
     ++ p;
     while (isdigit(*p)) {
       val2 = val2 * 10 + (*p - '0');
@@ -79,13 +79,19 @@ inline double atof (const char *p) {
 }
 
 inline long atol(const char* p) {
-  // Skip the sign, if any
-  if (*p == '+') ++ p;
+  // Get sign if any
+  bool sign = true;
+  if (*p == '-') {
+    sign = false; ++ p;
+  } else if (*p == '+') {
+    ++ p;
+  }
+
   long value;
   for (value = 0; isdigit(*p); ++p) {
     value = value * 10 + (*p - '0');
   }
-  return value;
+  return sign ? value : - value;
 }
 
 
