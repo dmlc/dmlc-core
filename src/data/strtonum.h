@@ -1,11 +1,11 @@
 /*!
  *  Copyright (c) 2015 by Contributors
  * \file strtonum.h
- * \brief A faster implementation
+ * \brief A faster implementation of strtod, ...
  */
 #ifndef DMLC_DATA_STRTONUM_H_
 #define DMLC_DATA_STRTONUM_H_
-
+#include <iostream>
 namespace dmlc {
 namespace data {
 
@@ -17,68 +17,82 @@ inline bool isdigit(char c) {
   return (c >= '0' && c <= '9');
 }
 
-inline double atof (const char *p) {
+/*!
+ * \brief A faster version of strtof
+ * TODO the current version does not support INF, NAN, and hex number
+ */
+inline float strtof(const char *nptr, char **endptr) {
+  const char *p = nptr;
   // Skip leading white space, if any. Not necessary
-  // while (isspace(*p) ) ++ p;
+  while (isspace(*p) ) ++ p;
 
   // Get sign, if any.
-  double sign = 1.0;
+  bool sign = true;
   if (*p == '-') {
-    sign = -1.0; ++ p;
+    sign = false; ++ p;
   } else if (*p == '+') {
     ++ p;
   }
 
   // Get digits before decimal point or exponent, if any.
-  unsigned long long val1;
-  for (val1 = 0; isdigit(*p); ++p) {
-    val1 = val1 * 10 + (*p - '0');
+  float value;
+  for (value = 0; isdigit(*p); ++p) {
+    value = value * 10.0 + (*p - '0');
   }
-  double value = (double)val1;
 
   // Get digits after decimal point, if any.
   if (*p == '.') {
-    unsigned long long pow10 = 10;
-    unsigned long long val2 = 0;
+    unsigned pow10 = 1;
+    unsigned val2 = 0;
     ++ p;
     while (isdigit(*p)) {
       val2 = val2 * 10 + (*p - '0');
       pow10 *= 10;
       ++ p;
     }
-    value += (double)val2 / (double)pow10;
+    // std::cout << val2 << "  " << pow10 << std::endl;
+    value += (float)val2 / (float)pow10;
   }
 
   // Handle exponent, if any.
   if ((*p == 'e') || (*p == 'E')) {
-    int frac = 0;
-    double scale = 1.0;
-    unsigned int expon;
+    ++ p;
+    bool frac = false;
+    float scale = 1.0;
+    unsigned expon;
     // Get sign of exponent, if any.
-    p += 1;
     if (*p == '-') {
-      frac = 1;
-      p += 1;
+      frac = true;
+      ++ p;
     } else if (*p == '+') {
-      p += 1;
+      ++ p;
     }
     // Get digits of exponent, if any.
     for (expon = 0; isdigit(*p); p += 1) {
       expon = expon * 10 + (*p - '0');
     }
-    if (expon > 308) expon = 308;
+    if (expon > 38) expon = 38;
     // Calculate scaling factor.
-    while (expon >= 50) { scale *= 1E50; expon -= 50; }
     while (expon >=  8) { scale *= 1E8;  expon -=  8; }
     while (expon >   0) { scale *= 10.0; expon -=  1; }
     // Return signed and scaled floating point result.
-    return sign * (frac ? (value / scale) : (value * scale));
-  } else {
-    return sign > 0 ? value : - value;
+    value = frac ? (value / scale) : (value * scale);
   }
+
+  if (endptr) *endptr = (char*) p;
+  return sign > 0 ? value : - value;
 }
 
-inline long atol(const char* p) {
+/**
+ * \brief A faster string to integer convertor
+ * TODO only support base <=10
+ */
+template <typename V>
+inline V strtoint(const char* nptr, char **endptr, int base) {
+  const char *p = nptr;
+  // Skip leading white space, if any. Not necessary
+  while (isspace(*p) ) ++ p;
+
   // Get sign if any
   bool sign = true;
   if (*p == '-') {
@@ -87,11 +101,26 @@ inline long atol(const char* p) {
     ++ p;
   }
 
-  long value;
+  V value;
   for (value = 0; isdigit(*p); ++p) {
-    value = value * 10 + (*p - '0');
+    value = value * base + (*p - '0');
   }
+
+  if (endptr) *endptr = (char*) p;
   return sign ? value : - value;
+}
+
+inline unsigned long long int
+strtoull(const char* nptr, char **endptr, int base) {
+  return strtoint<unsigned long long int>(nptr, endptr, base);
+};
+
+inline long atol(const char* p) {
+  return strtoint<long>(p, 0, 10);
+}
+
+inline double atof(const char *nptr) {
+  return strtof(nptr, 0);
 }
 
 

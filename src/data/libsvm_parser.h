@@ -128,6 +128,7 @@ ParseBlock(char *begin,
   while (p != end) {
     while (isspace(*p) && p != end) ++p;
     if (p == end) break;
+
     char *head = p;
     while (isdigit(*p) && p != end) ++p;
     if (*p == ':') {
