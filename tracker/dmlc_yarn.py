@@ -10,6 +10,7 @@ import time
 import subprocess
 import warnings
 import tracker
+import logging
 from threading import Thread
 
 YARN_JAR_PATH = os.path.dirname(__file__) + '/../yarn/dmlc-yarn.jar'
@@ -39,8 +40,11 @@ parser.add_argument('-hip', '--host_ip', default='auto', type=str,
                     help = 'host IP address if cannot be automatically guessed, specify the IP of submission machine')
 parser.add_argument('-s', '--server-nodes', default = 0, type=int,
                     help = 'number of server nodes to be launched')
-parser.add_argument('-v', '--verbose', default=0, choices=[0, 1], type=int,
-                    help = 'print more messages into the console')
+parser.add_argument('--log-level', default='INFO', type=str,
+                    choices=['INFO', 'DEBUG'],
+                    help = 'logging level')
+parser.add_argument('--log-file', type=str,
+                    help = 'output log to the specific log file')
 parser.add_argument('-q', '--queue', default='default', type=str,
                     help = 'the queue we want to submit the job to')
 parser.add_argument('-ac', '--auto_file_cache', default=1, choices=[0, 1], type=int,
@@ -122,8 +126,13 @@ def yarn_submit(nworker, nserver, pass_env):
         for f in flst:
             if os.path.exists(f):
                 fset.add(f)            
-    
-    cmd = 'java -cp `%s classpath`:%s org.apache.hadoop.yarn.dmlc.Client ' % (args.hadoop_binary, YARN_JAR_PATH)
+    JAVA_HOME = os.getenv('JAVA_HOME')
+    if JAVA_HOME is None:
+        JAVA = 'java'
+    else:
+        JAVA = JAVA_HOME + '/bin/java'        
+    cmd = '%s -cp `%s classpath`:%s org.apache.hadoop.yarn.dmlc.Client '\
+          % (JAVA, args.hadoop_binary, YARN_JAR_PATH)
     env = os.environ.copy()
     for k, v in pass_env.items():
         env[k] = str(v)
@@ -145,13 +154,12 @@ def yarn_submit(nworker, nserver, pass_env):
     cmd += ' -queue %s ' % args.queue
     cmd += (' '.join(['./run_hdfs_prog.py'] + args.command))
     def run():
-        if args.verbose != 0:
-            print cmd    
+        logging.debug(cmd)
         subprocess.check_call(cmd, shell = True, env = env)
     thread = Thread(target = run, args=())
     thread.setDaemon(True)
     thread.start()    
 
-
+tracker.config_logger(args)
 tracker.submit(args.nworker, args.server_nodes, fun_submit = yarn_submit,
-               verbose = args.verbose, pscmd= (' '.join(args.command)))
+               pscmd= (' '.join(args.command)))

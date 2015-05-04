@@ -10,17 +10,22 @@ import subprocess
 from threading import Thread
 import tracker
 import signal
+import logging
 
 parser = argparse.ArgumentParser(description='Submit wormhole job locally as python subprocess')
 parser.add_argument('-n', '--nworker', required=True, type=int,
                     help = 'number of worker nodes to be launched')
 parser.add_argument('-s', '--server-nodes', default = 0, type=int,
                     help = 'number of server nodes to be launched')
-parser.add_argument('-v', '--verbose', default=0, choices=[0, 1], type=int,
-                    help = 'print more messages into the console')
+parser.add_argument('--log-level', default='INFO', type=str,
+                    choices=['INFO', 'DEBUG'],
+                    help = 'logging level')
+parser.add_argument('--log-file', type=str,
+                    help = 'output log to the specific log file')
 parser.add_argument('command', nargs='+',
                     help = 'command for launching the program')
 args = parser.parse_args()
+
 
 keepalive = """
 nrep=0
@@ -57,8 +62,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
             bash = keepalive % (cmd)
             ret = subprocess.call(bash, shell=True, executable='bash', env = env)
         if ret == 0:
-            if args.verbose != 0:
-                print 'Thread %d exit with 0' % taskid
+            logging.debug('Thread %d exit with 0')
             return
         else:
             if os.name == 'nt':
@@ -89,6 +93,7 @@ def mthread_submit(nworker, nserver, envs):
         procs[i].setDaemon(True)
         procs[i].start()
 
+tracker.config_logger(args)
 # call submit, with nslave, the commands to run each job and submit function
 tracker.submit(args.nworker, args.server_nodes, fun_submit = mthread_submit,
-               verbose = args.verbose, pscmd= (' '.join(args.command)))
+               pscmd= (' '.join(args.command)))

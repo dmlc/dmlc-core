@@ -14,6 +14,7 @@ import socket
 import struct
 import subprocess
 import time
+import logging
 from threading import Thread
 
 """
@@ -126,7 +127,7 @@ class RabitTracker:
     """
     tracker for rabit
     """
-    def __init__(self, hostIP, nslave, port = 9091, port_end = 9999, verbose = True):
+    def __init__(self, hostIP, nslave, port = 9091, port_end = 9999):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         for port in range(port, port_end):
             try:
@@ -137,10 +138,8 @@ class RabitTracker:
                 continue
         sock.listen(16)
         self.sock = sock
-        self.verbose = verbose
         self.hostIP = hostIP
-        self.log_print('start listen on %s:%d' % (hostIP, self.port), 1)
-
+        logging.info('start listen on %s:%d' % (hostIP, self.port))
 
     def __del__(self):
         self.sock.close()
@@ -234,14 +233,9 @@ class RabitTracker:
         return tree_map_, parent_map_, ring_map_
 
     def handle_print(self,slave, msg):
+        logging.info(msg.strip())
         sys.stdout.write(msg)
-
-    def log_print(self, msg, level):
-        if level == 1:
-            if self.verbose:
-                sys.stderr.write(msg + '\n')
-        else:
-            sys.stderr.write(msg + '\n')
+        sys.stdout.flush(msg)
 
     def accept_slaves(self, nslave):
         # set of nodes that finishs the job
@@ -266,7 +260,7 @@ class RabitTracker:
                 assert s.rank >= 0 and s.rank not in shutdown
                 assert s.rank not in wait_conn
                 shutdown[s.rank] = s
-                self.log_print('Recieve %s signal from %d' % (s.cmd, s.rank), 1)
+                logging.debug('Recieve %s signal from %d' % (s.cmd, s.rank))
                 continue
             assert s.cmd == 'start' or s.cmd == 'recover'
             # lazily initialize the slaves
@@ -296,18 +290,18 @@ class RabitTracker:
                         s.assign_rank(rank, wait_conn, tree_map, parent_map, ring_map)
                         if s.wait_accept > 0:
                             wait_conn[rank] = s
-                        self.log_print('Recieve %s signal from %s; assign rank %d' % (s.cmd, s.host, s.rank), 1)
+                        logging.debug('Recieve %s signal from %s; assign rank %d' % (s.cmd, s.host, s.rank))
                 if len(todo_nodes) == 0:
-                    self.log_print('@tracker All of %d nodes getting started' % nslave, 2)
+                    logging.info('@tracker All of %d nodes getting started' % nslave)
                     self.start_time = time.time()
             else:
                 s.assign_rank(rank, wait_conn, tree_map, parent_map, ring_map)
-                self.log_print('Recieve %s signal from %d' % (s.cmd, s.rank), 1)
+                logging.debug('Recieve %s signal from %d' % (s.cmd, s.rank))
                 if s.wait_accept > 0:
                     wait_conn[rank] = s
-        self.log_print('@tracker All nodes finishes job', 2)
+        logging.info('@tracker All nodes finishes job')
         self.end_time = time.time()
-        self.log_print('@tracker %s secs between node start and job finish' % str(self.end_time - self.start_time), 2)
+        logging.info('@tracker %s secs between node start and job finish' % str(self.end_time - self.start_time))
 
     def start(self, nslave):
         def run():
@@ -364,7 +358,7 @@ class PSTracker:
             return {'DMLC_PS_ROOT_URI': self.hostIP,
                     'DMLC_PS_ROOT_PORT': self.port}
 
-def submit(nworker, nserver, fun_submit, verbose, hostIP = 'auto', pscmd = None):
+def submit(nworker, nserver, fun_submit, hostIP = 'auto', pscmd = None):
     if hostIP == 'auto':
         hostIP = 'ip'
     if hostIP == 'dns':
@@ -378,7 +372,7 @@ def submit(nworker, nserver, fun_submit, verbose, hostIP = 'auto', pscmd = None)
     envs = {'DMLC_NUM_WORKER' : nworker,
             'DMLC_NUM_SERVER' : nserver}
 
-    rabit = RabitTracker(verbose = verbose, hostIP = hostIP, nslave = nworker)
+    rabit = RabitTracker(hostIP = hostIP, nslave = nworker)
     pserver = PSTracker(hostIP = hostIP, cmd = pscmd, envs = envs)
 
     envs.update(rabit.slave_envs())
@@ -390,3 +384,18 @@ def submit(nworker, nserver, fun_submit, verbose, hostIP = 'auto', pscmd = None)
     # start rabit tracker in another thread
     if nserver == 0:
         rabit.join()
+
+def config_logger(args):
+    FORMAT = '%(asctime)s %(levelname)s %(message)s'
+    level = eval('logging.' + args.log_level)
+    if args.log_file is None:
+        logging.basicConfig(format=FORMAT, level = level)
+    else:
+        logging.basicConfig(format=FORMAT, level = level, filename = args.log_file)
+        console = logging.StreamHandler()
+        console.setFormatter(logging.Formatter(FORMAT))
+        console.setLevel(level)
+        logging.getLogger('').addHandler(console)
+
+
+
