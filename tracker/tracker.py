@@ -235,7 +235,7 @@ class RabitTracker:
     def handle_print(self,slave, msg):
         logging.info(msg.strip())
         sys.stdout.write(msg)
-        sys.stdout.flush(msg)
+        sys.stdout.flush()
 
     def accept_slaves(self, nslave):
         # set of nodes that finishs the job
