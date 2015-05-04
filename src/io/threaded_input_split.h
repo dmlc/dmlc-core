@@ -47,7 +47,7 @@ class ThreadedInputSplit : public InputSplit {
     iter_.BeforeFirst();
     if (tmp_chunk_ != NULL) {
       iter_.Recycle(&tmp_chunk_);
-    }   
+    }
   }
   virtual void HintChunkSize(size_t chunk_size) {
     buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
