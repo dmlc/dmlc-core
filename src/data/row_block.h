@@ -100,7 +100,7 @@ struct RowBlockContainer {
     label.resize(label.size() + batch.size);
     std::memcpy(BeginPtr(label) + size, batch.label,
                 batch.size * sizeof(real_t));
-    size_t ndata = batch.offset[batch.size];
+    size_t ndata = batch.offset[batch.size] - batch.offset[0];
     index.resize(index.size() + ndata);
     IndexType *ihead = BeginPtr(index) + offset.back();
     for (size_t i = 0; i < ndata; ++i) {
@@ -119,7 +119,7 @@ struct RowBlockContainer {
     offset.resize(offset.size() + batch.size);
     size_t *ohead = BeginPtr(offset) + size + 1;
     for (size_t i = 0; i < batch.size; ++i) {
-      ohead[i] = shift + batch.offset[i + 1];
+      ohead[i] = shift + batch.offset[i + 1] - batch.offset[0];
     }
   }
 };
