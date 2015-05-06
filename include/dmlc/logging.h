@@ -18,7 +18,7 @@
 #else
 // use a light version of glog
 #include <assert.h>
-#include <iostream> 
+#include <iostream>
 #include <cstdio>
 #include <ctime>
 
@@ -26,6 +26,7 @@
 #pragma warning(disable : 4722)
 #endif
 
+namespace dmlc {
 // Always-on checking
 #define CHECK(x)                                           \
   if (!(x))                                                \
@@ -166,5 +167,8 @@ class LogMessageVoidify {
   // higher than "?:". See its usage.
   void operator&(std::ostream&) {}
 };
+
+}  // namespace dmlc
+
 #endif
 #endif  // DMLC_LOGGING_H_
