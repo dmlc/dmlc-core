@@ -143,9 +143,26 @@ struct RowBlock {
   /*! \return memory cost of the block in bytes */
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(real_t));
-    if (index != NULL) cost += offset[size] * sizeof(IndexType);
-    if (value != NULL) cost += offset[size] * sizeof(real_t);
+    size_t ndata = offset[size] - offset[0];
+    if (index != NULL) cost += ndata * sizeof(IndexType);
+    if (value != NULL) cost += ndata * sizeof(real_t);
     return cost;
+  }
+  /*!
+   * \brief slice a RowBlock to get rows in [begin, end)
+   * \param begin the begin row index
+   * \param end the end row index
+   * \return the sliced RowBlock
+   */
+  inline RowBlock Slice(size_t begin, size_t end) const {
+    CHECK(begin <= end && end < size);
+    RowBlock ret;
+    ret.size = end - begin;
+    ret.label = label + begin;
+    ret.offset = offset + begin;
+    ret.index = index;
+    ret.value = value;
+    return ret;
   }
 };
 /*!
