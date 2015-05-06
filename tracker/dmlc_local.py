@@ -12,7 +12,7 @@ import tracker
 import signal
 import logging
 
-parser = argparse.ArgumentParser(description='Submit wormhole job locally as python subprocess')
+parser = argparse.ArgumentParser(description='DMLC script to submit dmlc jobs as local process')
 parser.add_argument('-n', '--nworker', required=True, type=int,
                     help = 'number of worker nodes to be launched')
 parser.add_argument('-s', '--server-nodes', default = 0, type=int,
