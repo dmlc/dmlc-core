@@ -155,6 +155,7 @@ struct RowBlock {
    * \return the sliced RowBlock
    */
   inline RowBlock Slice(size_t begin, size_t end) const {
+    CHECK(begin <= end && end < size);
     RowBlock ret;
     ret.size = end - begin;
     ret.label = label + begin;
