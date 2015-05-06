@@ -5,7 +5,6 @@
  */
 #ifndef DMLC_DATA_STRTONUM_H_
 #define DMLC_DATA_STRTONUM_H_
-#include <iostream>
 namespace dmlc {
 namespace data {
 
