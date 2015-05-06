@@ -112,7 +112,7 @@ struct RowBlockContainer {
     }
     if (batch.value != NULL) {
       value.resize(value.size() + ndata);
-      std::memcpy(BeginPtr(value) + size, batch.value,
+      std::memcpy(BeginPtr(value) + value.size() - ndata, batch.value,
                   ndata * sizeof(real_t));
     }
     size_t shift = offset[size];
