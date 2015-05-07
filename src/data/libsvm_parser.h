@@ -22,7 +22,8 @@ namespace data {
  * \brief libsvm parser that parses the input lines
  * and returns rows in input data
  */
-class LibSVMParser : public Parser {
+template <typename IndexType>
+class LibSVMParser : public Parser<IndexType> {
  public:
   explicit LibSVMParser(InputSplit *source,
                         int nthread)
@@ -43,7 +44,7 @@ class LibSVMParser : public Parser {
   virtual size_t BytesRead(void) const {
     return bytes_read_;
   }
-  virtual bool ParseNext(std::vector<RowBlockContainer<size_t> > *data) {
+  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType> > *data) {
     return FillData(data);
   }
  protected:
@@ -52,7 +53,7 @@ class LibSVMParser : public Parser {
    * \param data vector of data to be returned
    * \return true if the data is loaded, false if reach end
    */
-  inline bool FillData(std::vector<RowBlockContainer<size_t> > *data);
+  inline bool FillData(std::vector<RowBlockContainer<IndexType> > *data);
   /*!
    * \brief parse data into out
    * \param begin beginning of buffer
@@ -60,7 +61,7 @@ class LibSVMParser : public Parser {
    */
   inline void ParseBlock(char *begin,
                          char *end,
-                         RowBlockContainer<size_t> *out);
+                         RowBlockContainer<IndexType> *out);
   /*!
    * \brief start from bptr, go backward and find first endof line
    * \param bptr end position to go backward
@@ -85,8 +86,9 @@ class LibSVMParser : public Parser {
 };
 
 // implementation
-inline bool LibSVMParser::
-FillData(std::vector<RowBlockContainer<size_t> > *data) {
+template <typename IndexType>
+inline bool LibSVMParser<IndexType>::
+FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   InputSplit::Blob chunk;
   if (!source_->NextChunk(&chunk)) return false;
   int nthread;
@@ -115,14 +117,16 @@ FillData(std::vector<RowBlockContainer<size_t> > *data) {
     }
     ParseBlock(pbegin, pend, &(*data)[tid]);
   }
-  data_ptr_ = 0;
+  this->data_ptr_ = 0;
   return true;
 }
 
-inline void LibSVMParser::
+
+template <typename IndexType>
+inline void LibSVMParser<IndexType>::
 ParseBlock(char *begin,
            char *end,
-           RowBlockContainer<size_t> *out) {
+           RowBlockContainer<IndexType> *out) {
   out->Clear();
   char *p = begin;
   while (p != end) {
