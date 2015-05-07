@@ -28,11 +28,11 @@ class DiskRowIter: public RowBlockIter<IndexType> {
   // page size 64MB
   static const size_t kPageSize = 64UL << 20UL;
   /*!
-   * \brief disk row iterator constructor 
+   * \brief disk row iterator constructor
    * \param parser parser used to generate this
 
    */
-  explicit DiskRowIter(Parser *parser,
+  explicit DiskRowIter(Parser<IndexType> *parser,
                        const char *cache_file,
                        bool reuse_cache)
       : cache_file_(cache_file), fi_(NULL) {
@@ -70,7 +70,7 @@ class DiskRowIter: public RowBlockIter<IndexType> {
   virtual size_t NumCol(void) const {
     return num_col_;
   }
-  
+
  private:
   // file place
   std::string cache_file_;
@@ -85,7 +85,7 @@ class DiskRowIter: public RowBlockIter<IndexType> {
   // load disk cache file
   inline bool TryLoadCache(void);
   // build disk cache
-  inline void BuildCache(Parser *parser);
+  inline void BuildCache(Parser<IndexType> *parser);
 };
 
 // build disk cache
@@ -100,13 +100,13 @@ inline bool DiskRowIter<IndexType>::TryLoadCache(void) {
       }
       return (*dptr)->Load(fi);
     },
-    [fi]() { fi->Seek(0); });  
+    [fi]() { fi->Seek(0); });
   return true;
 }
 
 template<typename IndexType>
 inline void DiskRowIter<IndexType>::
-BuildCache(Parser *parser) {
+BuildCache(Parser<IndexType> *parser) {
   Stream *fo = Stream::Create(cache_file_.c_str(), "w");
   // back end data
   RowBlockContainer<IndexType> data;
@@ -115,7 +115,7 @@ BuildCache(Parser *parser) {
   while (parser->Next()) {
     data.Push(parser->Value());
     double tdiff = GetTime() - tstart;
-    if (data.MemCostBytes() >= kPageSize) {          
+    if (data.MemCostBytes() >= kPageSize) {
       size_t bytes_read = parser->BytesRead();
       bytes_read = bytes_read >> 20UL;
       LOG(INFO) << bytes_read << "MB read,"

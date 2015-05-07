@@ -2,7 +2,7 @@
  *  Copyright (c) 2015 by Contributors
  * \file basic_row_iter.h
  * \brief row based iterator that
- *   loads in everything into memory and returns 
+ *   loads in everything into memory and returns
  * \author Tianqi Chen
  */
 #ifndef DMLC_DATA_BASIC_ROW_ITER_H_
@@ -23,7 +23,7 @@ namespace data {
 template<typename IndexType>
 class BasicRowIter: public RowBlockIter<IndexType> {
  public:
-  explicit BasicRowIter(Parser *parser)
+  explicit BasicRowIter(Parser<IndexType> *parser)
       : at_head_(true) {
     this->Init(parser);
     delete parser;
@@ -46,7 +46,7 @@ class BasicRowIter: public RowBlockIter<IndexType> {
   virtual size_t NumCol(void) const {
     return static_cast<size_t>(data_.max_index) + 1;
   }
-  
+
  private:
   // at head
   bool at_head_;
@@ -55,11 +55,11 @@ class BasicRowIter: public RowBlockIter<IndexType> {
   // back end data
   RowBlockContainer<IndexType> data_;
   // initialize
-  inline void Init(Parser *parser);
+  inline void Init(Parser<IndexType> *parser);
 };
 
 template<typename IndexType>
-inline void BasicRowIter<IndexType>::Init(Parser *parser) {
+inline void BasicRowIter<IndexType>::Init(Parser<IndexType> *parser) {
   data_.Clear();
   double tstart = GetTime();
   size_t bytes_expect = 10UL << 20UL;
