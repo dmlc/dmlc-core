@@ -1,3 +1,8 @@
+/*!
+ * Copyright (c) 2015 by Contributors
+ * \file config.h
+ * \brief defines config parser class
+ */
 #ifndef DMLC_CONFIG_H_
 #define DMLC_CONFIG_H_
 
