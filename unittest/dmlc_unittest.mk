@@ -1,16 +1,12 @@
 UNITTEST=unittest/dmlc_unittest
 UNITTEST_SRC=unittest/unittest_config.cc
-UNITTEST_OBJ=$(patsubst %.cc,%.o,$(UNITTEST_SRC))
+UNITTEST_OBJ=$(patsubst %.cc,%.o,$(UNITTEST_SRC)) unittest/unittest_main.o
 
-DEP=libdmlc.a
 GTEST_LIB=$(GTEST_PATH)/lib/
 GTEST_INC=$(GTEST_PATH)/include
 
-unittest/unittest_main.o: unittest/unittest_main.cc
-	$(CXX) -L$(GTEST_LIB) -I$(GTEST_INC) -o unittest_main.o -c unittest/unittest_main.cc -lgtest
-
-unittest/unittest_config.o : unittest/unittest_config.cc
+unittest/%.o : unittest/%.cc libdmlc.a
 	$(CXX) $(CFLAGS) -I$(GTEST_INC) -o $@ -c $<
 
-$(UNITTEST) : unittest/unittest_main.o $(UNITTEST_OBJ)
-	$(CXX) $(CFLAGS) -L$(GTEST_LIB) -o $@ $^ $(LDFLAGS) -lgtest 
+$(UNITTEST) : $(UNITTEST_OBJ)
+	$(CXX) $(CFLAGS) -L$(GTEST_LIB) -o $@ $^ libdmlc.a $(LDFLAGS) -lgtest 

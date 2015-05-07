@@ -24,7 +24,7 @@ void Config::LoadFromStream(istream& is) {
     ++lnum;
     size_t pos = line.find_first_of('=');
     if(pos == 0 || pos == string::npos) {
-      LOG(WARNING) << "config parsing error on line(" << lnum << "): " << line;
+      LOG(WARNING) << "config parsing error on line(" << lnum << "): \"" << line << "\"";
       continue;
     }
     size_t key_st = 0, key_len = pos;
