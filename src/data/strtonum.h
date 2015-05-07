@@ -5,6 +5,7 @@
  */
 #ifndef DMLC_DATA_STRTONUM_H_
 #define DMLC_DATA_STRTONUM_H_
+#include "dmlc/base.h"
 namespace dmlc {
 namespace data {
 
@@ -109,16 +110,16 @@ inline V strtoint(const char* nptr, char **endptr, int base) {
   return sign ? value : - value;
 }
 
-inline unsigned long long int
+inline uint64_t
 strtoull(const char* nptr, char **endptr, int base) {
-  return strtoint<unsigned long long int>(nptr, endptr, base);
+  return strtoint<uint64_t>(nptr, endptr, base);
 };
 
 inline long atol(const char* p) {
   return strtoint<long>(p, 0, 10);
 }
 
-inline double atof(const char *nptr) {
+inline float atof(const char *nptr) {
   return strtof(nptr, 0);
 }
 
