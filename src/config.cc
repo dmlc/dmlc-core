@@ -44,7 +44,8 @@ const string& Config::GetParam(const string& key) const {
 
 string Config::ToProtoString(void) const {
   ostringstream oss;
-  for(const auto& entry : *this) {
+  for(ConfigIterator iter = begin(); iter != end(); ++iter) {
+    const ConfigEntry& entry = *iter;
     oss << entry.first << " : " << entry.second << "\n";
   }
   return oss.str();
