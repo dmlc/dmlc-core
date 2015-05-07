@@ -6,7 +6,7 @@ GTEST_LIB=$(GTEST_PATH)/lib/
 GTEST_INC=$(GTEST_PATH)/include
 
 unittest/%.o : unittest/%.cc libdmlc.a
-	$(CXX) $(CFLAGS) -I$(GTEST_INC) -o $@ -c $<
+	$(CXX) -std=c++11 $(CFLAGS) -I$(GTEST_INC) -o $@ -c $<
 
 $(UNITTEST) : $(UNITTEST_OBJ)
-	$(CXX) $(CFLAGS) -L$(GTEST_LIB) -o $@ $^ libdmlc.a $(LDFLAGS) -lgtest 
+	$(CXX) -std=c++11 $(CFLAGS) -L$(GTEST_LIB) -o $@ $^ libdmlc.a $(LDFLAGS) -lgtest 
