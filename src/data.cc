@@ -31,7 +31,6 @@ CreateIter_(const char *uri_,
 parser = new LibSVMParser<IndexType>(source, 2);
   } if (!strcmp(type, "criteo")) {
     parser = new CriteoParser<IndexType>(source);
-
   } else {
     LOG(FATAL) << "unknown datatype " << type;
   }
@@ -41,7 +40,7 @@ parser = new LibSVMParser<IndexType>(source, 2);
     return new DiskRowIter<IndexType>(parser, spec.cache_file.c_str(), true);
 #else
     LOG(FATAL) << "compile with c++0x or c++11 to enable cache file";
-    return parser;
+    return NULL;
 #endif
   } else {
     return new BasicRowIter<IndexType>(parser);
