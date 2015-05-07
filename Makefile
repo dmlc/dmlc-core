@@ -29,7 +29,7 @@ endif
 
 
 ALIB=libdmlc.a
-all: $(ALIB) test
+all: $(ALIB)
 
 include test/dmlc_test.mk
 test: $(TEST)
