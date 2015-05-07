@@ -29,3 +29,8 @@
 *~
 config.mk
 *.pyc
+
+# Vim
+*.swp
+*.swo
+*.swn

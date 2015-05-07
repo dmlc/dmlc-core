@@ -17,7 +17,7 @@ CFLAGS+= $(DMLC_CFLAGS)
 
 .PHONY: clean all test
 
-OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o
+OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o
 
 ifeq ($(USE_HDFS), 1)
 	OBJ += hdfs_filesys.o
@@ -31,8 +31,11 @@ endif
 ALIB=libdmlc.a
 all: $(ALIB) test
 
+ifeq ($(BUILD_TEST), 1)
 include test/dmlc_test.mk
-test: $(TEST)
+include unittest/dmlc_unittest.mk
+test: $(TEST) $(UNITTEST)
+endif
 
 line_split.o: src/io/line_split.cc
 recordio_split.o: src/io/recordio_split.cc
@@ -43,6 +46,7 @@ local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
 data.o: src/data.cc
 recordio.o: src/recordio.cc
+config.o: src/config.cc
 
 libdmlc.a: $(OBJ)
 
@@ -57,5 +61,4 @@ $(ALIB):
 	ar cr $@ $+
 
 clean:
-	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) *~ src/*~ src/*/*~ include/dmlc/*~ test/*~
-
+	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) $(UNITTEST) $(UNITTEST_OBJ) *~ src/*~ src/*/*~ include/dmlc/*~ test/*~
