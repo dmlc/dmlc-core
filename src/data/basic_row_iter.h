@@ -76,8 +76,9 @@ inline void BasicRowIter<IndexType>::Init(Parser<IndexType> *parser) {
   }
   row_ = data_.GetBlock();
   double tdiff = GetTime() - tstart;
-  LOG(INFO) << "finish reading at %g MB/sec"
-            << (parser->BytesRead() >> 20UL) / tdiff;
+  LOG(INFO) << "finish reading at "
+            << (parser->BytesRead() >> 20UL) / tdiff
+            << " MB/sec";
 }
 }  // namespace data
 }  // namespace dmlc

@@ -10,7 +10,6 @@
 #include "data/basic_row_iter.h"
 #include "data/disk_row_iter.h"
 #include "data/libsvm_parser.h"
-#include "data/criteo_parser.h"
 
 namespace dmlc {
 /*! \brief namespace for useful input data structure */
@@ -28,10 +27,7 @@ CreateIter_(const char *uri_,
   InputSplit* source = InputSplit::Create(
       spec.uri.c_str(), part_index, num_parts, "text");
   if (!strcmp(type, "libsvm")) {
-parser = new LibSVMParser<IndexType>(source, 2);
-  } if (!strcmp(type, "criteo")) {
-    parser = new CriteoParser<IndexType>(source);
-
+    parser = new LibSVMParser<IndexType>(source, 2);
   } else {
     LOG(FATAL) << "unknown datatype " << type;
   }

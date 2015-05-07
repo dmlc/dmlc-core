@@ -104,8 +104,8 @@ struct RowBlockContainer {
     index.resize(index.size() + ndata);
     IndexType *ihead = BeginPtr(index) + offset.back();
     for (size_t i = 0; i < ndata; ++i) {
-      CHECK(batch.index[i] < std::numeric_limits<IndexType>::max())
-          << "index exceed numeric bound of current type";
+      CHECK_LE(batch.index[i], std::numeric_limits<IndexType>::max())
+          << "index  exceed numeric bound of current type";
       IndexType findex = static_cast<IndexType>(batch.index[i]);
       ihead[i] = findex;
       max_index = std::max(max_index, findex);
