@@ -37,7 +37,7 @@ CreateIter_(const char *uri_,
     return new DiskRowIter<IndexType>(parser, spec.cache_file.c_str(), true);
 #else
     LOG(FATAL) << "compile with c++0x or c++11 to enable cache file";
-    return parser;
+    return NULL;
 #endif
   } else {
     return new BasicRowIter<IndexType>(parser);
