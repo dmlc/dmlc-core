@@ -38,7 +38,7 @@ void Config::SetParam(const string& key, const string& value) {
 }
 
 const string& Config::GetParam(const string& key) const {
-  CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
+  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second;
 }
 
@@ -50,7 +50,7 @@ string Config::ToProtoString(void) const {
   }
   return oss.str();
 }
-  
+
 Config::ConfigIterator Config::begin() const {
   return config_map_.begin();
 }
