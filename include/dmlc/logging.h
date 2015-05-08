@@ -30,7 +30,7 @@ namespace dmlc {
 // Always-on checking
 #define CHECK(x)                                           \
   if (!(x))                                                \
-  LogMessageFatal(__FILE__, __LINE__).stream() << "Check " \
+    dmlc::LogMessageFatal(__FILE__, __LINE__).stream() << "Check "  \
       "failed: " #x << ' '
 #define CHECK_LT(x, y) CHECK((x) < (y))
 #define CHECK_GT(x, y) CHECK((x) > (y))
@@ -66,10 +66,10 @@ namespace dmlc {
 #define DCHECK_NE(x, y) CHECK((x) != (y))
 #endif  // NDEBUG
 
-#define LOG_INFO LogMessage(__FILE__, __LINE__)
+#define LOG_INFO dmlc::LogMessage(__FILE__, __LINE__)
 #define LOG_ERROR LOG_INFO
 #define LOG_WARNING LOG_INFO
-#define LOG_FATAL LogMessageFatal(__FILE__, __LINE__)
+#define LOG_FATAL dmlc::LogMessageFatal(__FILE__, __LINE__)
 #define LOG_QFATAL LOG_FATAL
 
 // Poor man version of VLOG
@@ -78,14 +78,14 @@ namespace dmlc {
 #define LOG(severity) LOG_##severity.stream()
 #define LG LOG_INFO.stream()
 #define LOG_IF(severity, condition) \
-  !(condition) ? (void)0 : LogMessageVoidify() & LOG(severity)
+  !(condition) ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
 
 #ifdef NDEBUG
 #define LOG_DFATAL LOG_ERROR
 #define DFATAL ERROR
-#define DLOG(severity) true ? (void)0 : LogMessageVoidify() & LOG(severity)
+#define DLOG(severity) true ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
 #define DLOG_IF(severity, condition) \
-  (true || !(condition)) ? (void)0 : LogMessageVoidify() & LOG(severity)
+  (true || !(condition)) ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
 #else
 #define LOG_DFATAL LOG_FATAL
 #define DFATAL FATAL
