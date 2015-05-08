@@ -18,3 +18,8 @@ test/strtonum_test: test/strtonum_test.cc src/data/strtonum.h
 
 $(TEST) :
 	$(CXX) -std=c++11 $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
+
+include test/unittest/dmlc_unittest.mk
+
+ALL_TEST=$(TEST) $(UNITTEST)
+ALL_TEST_OBJ=$(UNITTEST_OBJ)

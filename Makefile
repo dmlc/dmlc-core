@@ -33,8 +33,7 @@ all: $(ALIB) test
 
 ifeq ($(BUILD_TEST), 1)
 include test/dmlc_test.mk
-include unittest/dmlc_unittest.mk
-test: $(TEST) $(UNITTEST)
+test: $(ALL_TEST)
 endif
 
 line_split.o: src/io/line_split.cc
@@ -61,4 +60,4 @@ $(ALIB):
 	ar cr $@ $+
 
 clean:
-	$(RM) $(OBJ) $(BIN) $(ALIB) $(TEST) $(UNITTEST) $(UNITTEST_OBJ) *~ src/*~ src/*/*~ include/dmlc/*~ test/*~
+	$(RM) $(OBJ) $(BIN) $(ALIB) $(ALL_TEST) $(ALL_TEST_OBJ) *~ src/*~ src/*/*~ include/dmlc/*~ test/*~
