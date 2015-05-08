@@ -10,10 +10,10 @@ ifndef LIBJVM
 	LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 endif
 
-DMLC_LDFLAGS = -lrt
+DMLC_LDFLAGS = # -lrt
 
 ifndef NO_OPENMP
-	DMLC_CFLAGS += -fopenmp 	
+	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
 endif
 
@@ -24,7 +24,7 @@ endif
 
 ifeq ($(USE_HDFS),1)
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=1 -I$(HADOOP_HDFS_HOME)/include -I$(JAVA_HOME)/include
-	DMLC_LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm -Wl,-rpath=$(LIBJVM) 
+	DMLC_LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm -Wl,-rpath=$(LIBJVM)
 else
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=0
 endif
@@ -35,4 +35,9 @@ ifeq ($(USE_S3),1)
 	DMLC_LDFLAGS+= -lcurl -lssl -lcrypto
 else
 	DMLC_CFLAGS+= -DDMLC_USE_S3=0
+endif
+
+ifeq ($(USE_GLOG), 1)
+	DMLC_CFLAGS+=-DDMLCUSE_GLOG=1
+	DMLC_LDFLAGS+= -lglog
 endif
