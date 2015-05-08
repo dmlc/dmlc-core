@@ -1,14 +1,14 @@
 #include <dmlc/logging.h>
+#include <gtest/gtest.h>
 
-int main(int argc, char *argv[]) {
+using namespace std;
 
-  using namespace dmlc;
+TEST(Logging, basics) {
   LOG(INFO) << "hello";
   LOG(ERROR) << "error";
 
   int x = 1, y = 1;
   CHECK_EQ(x, y);
   CHECK_GE(x, y);
-  CHECK_NE(x, y);
-  return 0;
+  ASSERT_DEATH(CHECK_NE(x, y), ".*");
 }
