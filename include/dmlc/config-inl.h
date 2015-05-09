@@ -8,13 +8,7 @@ using namespace std;
 
 namespace dmlc {
 
-Config::Config(istream& is) {
-  LoadFromStream(is);
-}
-
-void Config::Clear() {
-  config_map_.clear();
-}
+namespace details {
 
 struct Token {
   std::string buf;
@@ -130,7 +124,34 @@ class Tokenizer {
   ParseState state_;
 };
 
-void Config::LoadFromStream(istream& is) {
+inline string MakeProtoStringValue(const std::string& str) {
+  string rst = "\"";
+  for(size_t i = 0; i < str.length(); ++i) {
+    if(str[i] != '\"') {
+      rst += str[i];
+    } else {
+      rst += "\\\"";
+    }
+  }
+  rst += "\"";
+  return rst;
+}
+
+} // namespace details
+
+template< template<class, class, class, class> class M>
+Config<M>::Config(istream& is) {
+  LoadFromStream(is);
+}
+
+template< template<class, class, class, class> class M>
+void Config<M>::Clear() {
+  config_map_.clear();
+}
+
+template< template<class, class, class, class> class M>
+void Config<M>::LoadFromStream(istream& is) {
+  using namespace details;
   Tokenizer tokenizer(is);
   Token key, eqop, value;
   try {
@@ -153,29 +174,20 @@ void Config::LoadFromStream(istream& is) {
   }
 }
 
-void Config::SetParam(const string& key, const string& value) {
+template< template<class, class, class, class> class M>
+void Config<M>::SetParam(const string& key, const string& value) {
   config_map_.insert(make_pair(key, value));
 }
 
-const string& Config::GetParam(const string& key) const {
+template< template<class, class, class, class> class M>
+const string& Config<M>::GetParam(const string& key) const {
   CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second;
 }
 
-string MakeProtoStringValue(const std::string& str) {
-  string rst = "\"";
-  for(size_t i = 0; i < str.length(); ++i) {
-    if(str[i] != '\"') {
-      rst += str[i];
-    } else {
-      rst += "\\\"";
-    }
-  }
-  rst += "\"";
-  return rst;
-}
-
-string Config::ToProtoString(void) const {
+template< template<class, class, class, class> class M>
+string Config<M>::ToProtoString(void) const {
+  using namespace details;
   ostringstream oss;
   for(ConfigIterator iter = begin(); iter != end(); ++iter) {
     const ConfigEntry& entry = *iter;
@@ -187,12 +199,4 @@ string Config::ToProtoString(void) const {
   return oss.str();
 }
   
-Config::ConfigIterator Config::begin() const {
-  return config_map_.begin();
-}
-
-Config::ConfigIterator Config::end() const {
-  return config_map_.end();
-}
-
 } // namespace dmlc
