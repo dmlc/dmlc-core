@@ -72,6 +72,7 @@ class Config {
   ConfigIterator end() const;
 
  private:
+  std::map<std::string, bool> is_string_map_;
   std::map<std::string, std::string> config_map_;
 };
 

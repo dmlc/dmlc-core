@@ -18,6 +18,11 @@ void Config::Clear() {
   config_map_.clear();
 }
 
+struct Token {
+  std::string buf;
+  bool is_string;
+};
+
 class TokenizeError : public exception {
  public:
   TokenizeError(const string& msg = "tokenize error"): msg_(msg) {
@@ -32,13 +37,14 @@ class TokenizeError : public exception {
 class Tokenizer {
  public:
   Tokenizer(istream& is): is_(is), state_(ParseState::kNone) {}
-  bool GetNextToken(string& tok) {
+  bool GetNextToken(Token& tok) {
     // token is defined as
     // 1. [^\s=]+
     // 2. "[(^"|\\")]*"
     // 3. =
     state_ = ParseState::kNone;
-    tok.clear();
+    tok.buf.clear();
+    tok.is_string = false;
     char ch;
     while( (ch = PeekChar()) != EOF && state_ != ParseState::kFinish ) {
       switch(ch) {
@@ -50,12 +56,13 @@ class Tokenizer {
         }
         break;
       case '\"':
-        ParseString(tok);
+        ParseString(tok.buf);
         state_ = ParseState::kFinish;
+        tok.is_string = true;
         break;
       case '=':
         if(state_ != ParseState::kToken) {
-          tok = '=';
+          tok.buf = '=';
           EatChar();
         }
         state_ = ParseState::kFinish;
@@ -65,7 +72,7 @@ class Tokenizer {
         break;
       default:
         state_ = ParseState::kToken;
-        tok += ch;
+        tok.buf += ch;
         EatChar();
         break;
       };
@@ -127,37 +134,25 @@ class Tokenizer {
 
 void Config::LoadFromStream(istream& is) {
   Tokenizer tokenizer(is);
-  string kstr, eqstr, vstr;
+  Token key, eqop, value;
   try {
     while( true ) {
-      tokenizer.GetNextToken(kstr);
-      if(kstr.length() == 0) {
+      tokenizer.GetNextToken(key);
+      if(key.buf.length() == 0) {
         break; // no content left
       }
-      tokenizer.GetNextToken(eqstr);
-      tokenizer.GetNextToken(vstr);
-      if(eqstr != "=") {
+      tokenizer.GetNextToken(eqop);
+      tokenizer.GetNextToken(value);
+      if(eqop.buf != "=") {
         LOG(ERROR) << "Parsing error: expect format \"k = v\"; but got \""
-          << kstr << eqstr << vstr << "\"";
+          << key.buf << eqop.buf << value.buf << "\"";
       }
-      cout << kstr << " " << eqstr << " " << vstr << endl;
+      config_map_[key.buf] = value.buf;
+      is_string_map_[key.buf] = value.is_string;
     }
   } catch(TokenizeError& err) {
     LOG(ERROR) << "Tokenize error: " << err.what();
   }
-  /*string line;
-  int lnum = 0;
-  while(getline(is, line)) {
-    ++lnum;
-    size_t pos = line.find_first_of('=');
-    if(pos == 0 || pos == string::npos) {
-      LOG(WARNING) << "config parsing error on line(" << lnum << "): \"" << line << "\"";
-      continue;
-    }
-    size_t key_st = 0, key_len = pos;
-    size_t val_st = pos + 1, val_len = line.length() - pos - 1;
-    config_map_[line.substr(key_st, key_len)] = line.substr(val_st, val_len);
-  }*/
 }
 
 void Config::SetParam(const string& key, const string& value) {
@@ -169,11 +164,27 @@ const string& Config::GetParam(const string& key) const {
   return config_map_.find(key)->second;
 }
 
+string MakeProtoStringValue(const std::string& str) {
+  string rst = "\"";
+  for(size_t i = 0; i < str.length(); ++i) {
+    if(str[i] != '\"') {
+      rst += str[i];
+    } else {
+      rst += "\\\"";
+    }
+  }
+  rst += "\"";
+  return rst;
+}
+
 string Config::ToProtoString(void) const {
   ostringstream oss;
   for(ConfigIterator iter = begin(); iter != end(); ++iter) {
     const ConfigEntry& entry = *iter;
-    oss << entry.first << " : " << entry.second << "\n";
+    bool is_string = is_string_map_.find(entry.first)->second;
+    oss << entry.first << " : " <<
+      (is_string? MakeProtoStringValue(entry.second) : entry.second)
+      << "\n";
   }
   return oss.str();
 }
