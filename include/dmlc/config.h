@@ -13,12 +13,20 @@
 /*! \brief namespace for dmlc */
 namespace dmlc {
 
+struct MultiMapInserter;
+struct MapInserter;
+
 /*!
  * \brief class for config parser
  */
+template< template< class K,
+                    class V,
+                    class Compare = std::less<K>,
+                    class Alloc = std::allocator<std::pair<const K, V>> > class M,
+          class Inserter>
 class Config {
  public:
-  typedef std::map<std::string, std::string>::const_iterator ConfigIterator;
+  typedef typename M<std::string, std::string>::const_iterator ConfigIterator;
   typedef std::pair<std::string, std::string> ConfigEntry;
 
  public:
@@ -44,13 +52,15 @@ class Config {
    * \brief set a key-value pair into the config
    * \param key key
    * \param value value
+   * \param is_string whether the value should be wrapped by quotation mark when converting to proto string.
    */
-  void SetParam(const std::string& key, const std::string& value);
+  template<class T>
+  void SetParam(const std::string& key, const T& value, bool is_string = false);
 
   /*!
    * \brief get the config under the key
    * \param key key
-   * \return config value
+   * \return config value represneted by string
    */
   const std::string& GetParam(const std::string& key) const;
   /*!
@@ -63,18 +73,27 @@ class Config {
    * \brief get begin iterator
    * \return begin iterator
    */
-  ConfigIterator begin() const;
+  ConfigIterator begin() const { return config_map_.begin(); }
 
   /*!
    * \brief get end iterator
    * \return end iterator
    */
-  ConfigIterator end() const;
+  ConfigIterator end() const { return config_map_.end(); }
 
  private:
-  std::map<std::string, std::string> config_map_;
+  void Insert(const std::string& key, const std::string& value, bool is_string);
+
+ private:
+  M<std::string, bool> is_string_map_;
+  M<std::string, std::string> config_map_;
 };
 
+typedef Config<std::map, MapInserter> SimpleConfig;
+typedef Config<std::multimap, MultiMapInserter> MultiConfig;
+
 } // namespace dmlc
+
+#include "./config-inl.h"
 
 #endif // DMLC_CONFIG_H_

@@ -16,7 +16,7 @@ test/threadediter_test: test/threadediter_test.cc libdmlc.a
 test/strtonum_test: test/strtonum_test.cc src/data/strtonum.h
 
 $(TEST) :
-	$(CXX) -std=c++11 $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
+	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
 
 include test/unittest/dmlc_unittest.mk
 
