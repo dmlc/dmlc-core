@@ -1,9 +1,10 @@
 #include <sstream>
 #include <exception>
-#include <type_traits>
 
 #include "dmlc/config.h"
 #include "dmlc/logging.h"
+
+using namespace std;
 
 namespace dmlc {
 
@@ -14,20 +15,20 @@ struct Token {
   bool is_string;
 };
 
-class TokenizeError : public std::exception {
+class TokenizeError : public exception {
  public:
-  TokenizeError(const std::string& msg = "tokenize error"): msg_(msg) {
+  TokenizeError(const string& msg = "tokenize error"): msg_(msg) {
   }
   virtual const char* what() const throw() {
     return msg_.c_str();
   }
  private:
-  std::string msg_;
+  string msg_;
 };
 
 class Tokenizer {
  public:
-  Tokenizer(std::istream& is): is_(is), state_(ParseState::kNone) {}
+  Tokenizer(istream& is): is_(is), state_(ParseState::kNone) {}
   bool GetNextToken(Token& tok) {
     // token is defined as
     // 1. [^\s=]+
@@ -71,7 +72,7 @@ class Tokenizer {
     return PeekChar() != EOF;
   }
 
-  void ParseString(std::string& tok) {
+  void ParseString(string& tok) {
     EatChar(); // eat the first quotation mark
     char ch;
     while( (ch = PeekChar()) != '\"' ) {
@@ -119,12 +120,12 @@ class Tokenizer {
     kToken,
     kFinish,
   };
-  std::istream& is_;
+  istream& is_;
   ParseState state_;
 };
 
-inline std::string MakeProtoStringValue(const std::string& str) {
-  std::string rst = "\"";
+inline string MakeProtoStringValue(const std::string& str) {
+  string rst = "\"";
   for(size_t i = 0; i < str.length(); ++i) {
     if(str[i] != '\"') {
       rst += str[i];
@@ -138,36 +139,18 @@ inline std::string MakeProtoStringValue(const std::string& str) {
 
 } // namespace details
 
-struct MapInserter {
-  template<class K, class V>
-  static void Insert(std::map<K, V>& m, const std::pair<K, V>& p) {
-    m[p.first] = p.second;
-  }
-};
-
-struct MultiMapInserter {
-  template<class K, class V>
-  static void Insert(std::multimap<K, V>& m, const std::pair<K, V>& p) {
-    m.insert(p);
-  }
-};
-
-template< template<class, class, class, class> class M, class I>
-Config<M, I>::Config() {
-}
-
-template< template<class, class, class, class> class M, class I>
-Config<M, I>::Config(std::istream& is) {
+template< template<class, class, class, class> class M>
+Config<M>::Config(istream& is) {
   LoadFromStream(is);
 }
 
-template< template<class, class, class, class> class M, class I>
-void Config<M, I>::Clear() {
+template< template<class, class, class, class> class M>
+void Config<M>::Clear() {
   config_map_.clear();
 }
 
-template< template<class, class, class, class> class M, class I>
-void Config<M, I>::LoadFromStream(std::istream& is) {
+template< template<class, class, class, class> class M>
+void Config<M>::LoadFromStream(istream& is) {
   using namespace details;
   Tokenizer tokenizer(is);
   Token key, eqop, value;
@@ -183,37 +166,29 @@ void Config<M, I>::LoadFromStream(std::istream& is) {
         LOG(ERROR) << "Parsing error: expect format \"k = v\"; but got \""
           << key.buf << eqop.buf << value.buf << "\"";
       }
-      Insert(key.buf, value.buf, value.is_string);
+      config_map_.insert(make_pair(key.buf, value.buf));
+      is_string_map_.insert(make_pair(key.buf, value.is_string));
     }
   } catch(TokenizeError& err) {
     LOG(ERROR) << "Tokenize error: " << err.what();
   }
 }
 
-template< template<class, class, class, class> class M, class I>
-template< class T>
-void Config<M, I>::SetParam(const std::string& key, const T& value, bool is_string) {
-  std::ostringstream oss;
-  oss << value;
-  Insert(key, oss.str(), is_string);
+template< template<class, class, class, class> class M>
+void Config<M>::SetParam(const string& key, const string& value) {
+  config_map_.insert(make_pair(key, value));
 }
 
-template< template<class, class, class, class> class M, class I>
-void Config<M, I>::Insert(const std::string& key, const std::string& value, bool is_string) {
-  I::Insert(config_map_, make_pair(key, value));
-  I::Insert(is_string_map_, make_pair(key, is_string));
-}
-
-template< template<class, class, class, class> class M, class I>
-const std::string& Config<M, I>::GetParam(const std::string& key) const {
+template< template<class, class, class, class> class M>
+const string& Config<M>::GetParam(const string& key) const {
   CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second;
 }
 
-template< template<class, class, class, class> class M, class I>
-std::string Config<M, I>::ToProtoString(void) const {
+template< template<class, class, class, class> class M>
+string Config<M>::ToProtoString(void) const {
   using namespace details;
-  std::ostringstream oss;
+  ostringstream oss;
   for(ConfigIterator iter = begin(); iter != end(); ++iter) {
     const ConfigEntry& entry = *iter;
     bool is_string = is_string_map_.find(entry.first)->second;
