@@ -62,3 +62,11 @@ TEST(Config, duplicate_keys) {
     cout << cfg.ToProtoString() << endl;
   }
 }
+
+TEST(Config, set_params) {
+  using namespace dmlc;
+  SimpleConfig cfg;
+  cfg.SetParam("k1", 1);
+  cfg.SetParam("k2", "123", true);
+  cout << cfg.ToProtoString() << endl;
+}
