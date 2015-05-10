@@ -25,40 +25,10 @@ TEST(Config, basics) {
     ;
   istringstream iss(cfg_str);
   using namespace dmlc;
-  SimpleConfig cfg(iss);
+  Config cfg(iss);
   for(const auto& entry : cfg) {
     cout << "k: " << entry.first << "\tv: " << entry.second << endl;
   }
   cout << "Proto string:" << endl;
   cout << cfg.ToProtoString() << endl;
-}
-
-TEST(Config, duplicate_keys) {
-  string cfg_str = 
-    "k = 0.1\n"
-    "k = 0.3\n"
-    "k = 0.5\n"
-    ;
-  {
-    cout << ">>>> multi map " << endl;
-    istringstream iss(cfg_str);
-    using namespace dmlc;
-    MultiConfig cfg(iss);
-    for(const auto& entry : cfg) {
-      cout << "k: " << entry.first << "\tv: " << entry.second << endl;
-    }
-    cout << "Proto string:" << endl;
-    cout << cfg.ToProtoString() << endl;
-  }
-  {
-    cout << ">>>> simple map " << endl;
-    istringstream iss(cfg_str);
-    using namespace dmlc;
-    SimpleConfig cfg(iss);
-    for(const auto& entry : cfg) {
-      cout << "k: " << entry.first << "\tv: " << entry.second << endl;
-    }
-    cout << "Proto string:" << endl;
-    cout << cfg.ToProtoString() << endl;
-  }
 }

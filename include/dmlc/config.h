@@ -16,14 +16,9 @@ namespace dmlc {
 /*!
  * \brief class for config parser
  */
-template< template< class K,
-                    class V,
-                    class Compare = std::less<K>,
-                    class Alloc = std::allocator<std::pair<const K, V>> >
-          class M>
 class Config {
  public:
-  typedef typename M<std::string, std::string>::const_iterator ConfigIterator;
+  typedef std::map<std::string, std::string>::const_iterator ConfigIterator;
   typedef std::pair<std::string, std::string> ConfigEntry;
 
  public:
@@ -68,24 +63,19 @@ class Config {
    * \brief get begin iterator
    * \return begin iterator
    */
-  ConfigIterator begin() const { return config_map_.begin(); }
+  ConfigIterator begin() const;
 
   /*!
    * \brief get end iterator
    * \return end iterator
    */
-  ConfigIterator end() const { return config_map_.end(); }
+  ConfigIterator end() const;
 
  private:
-  M<std::string, bool> is_string_map_;
-  M<std::string, std::string> config_map_;
+  std::map<std::string, bool> is_string_map_;
+  std::map<std::string, std::string> config_map_;
 };
 
-typedef Config<std::map> SimpleConfig;
-typedef Config<std::multimap> MultiConfig;
-
 } // namespace dmlc
-
-#include "./config-inl.h"
 
 #endif // DMLC_CONFIG_H_

@@ -8,6 +8,8 @@ using namespace std;
 
 namespace dmlc {
 
+
+
 Config::Config(istream& is) {
   LoadFromStream(is);
 }
@@ -145,8 +147,8 @@ void Config::LoadFromStream(istream& is) {
         LOG(ERROR) << "Parsing error: expect format \"k = v\"; but got \""
           << key.buf << eqop.buf << value.buf << "\"";
       }
-      config_map_.insert(make_pair(key.buf, value.buf));
-      is_string_map_.insert(make_pair(key.buf, value.is_string));
+      config_map_[key.buf] = value.buf;
+      is_string_map_[key.buf] = value.is_string;
     }
   } catch(TokenizeError& err) {
     LOG(ERROR) << "Tokenize error: " << err.what();
@@ -154,7 +156,7 @@ void Config::LoadFromStream(istream& is) {
 }
 
 void Config::SetParam(const string& key, const string& value) {
-  config_map_.insert(make_pair(key, value));
+  config_map_[key] = value;
 }
 
 const string& Config::GetParam(const string& key) const {
