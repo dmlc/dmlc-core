@@ -10,5 +10,9 @@ TEST(Logging, basics) {
   int x = 1, y = 1;
   CHECK_EQ(x, y);
   CHECK_GE(x, y);
+
+  int *z = &x;
+  CHECK_EQ(*CHECK_NOTNULL(z), x);
+
   ASSERT_DEATH(CHECK_NE(x, y), ".*");
 }
