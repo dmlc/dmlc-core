@@ -8,14 +8,6 @@ using namespace std;
 
 namespace dmlc {
 
-Config::Config(istream& is) {
-  LoadFromStream(is);
-}
-
-void Config::Clear() {
-  config_map_.clear();
-}
-
 struct Token {
   std::string buf;
   bool is_string;
@@ -130,6 +122,18 @@ class Tokenizer {
   ParseState state_;
 };
 
+//////////////////////// Config /////////////////////////////
+Config::Config(bool m): multi_value_(m) {
+}
+
+Config::Config(istream& is, bool m): multi_value_(m) {
+  LoadFromStream(is);
+}
+
+void Config::Clear() {
+  config_map_.clear();
+}
+
 void Config::LoadFromStream(istream& is) {
   Tokenizer tokenizer(is);
   Token key, eqop, value;
@@ -145,21 +149,16 @@ void Config::LoadFromStream(istream& is) {
         LOG(ERROR) << "Parsing error: expect format \"k = v\"; but got \""
           << key.buf << eqop.buf << value.buf << "\"";
       }
-      config_map_.insert(make_pair(key.buf, value.buf));
-      is_string_map_.insert(make_pair(key.buf, value.is_string));
+      Insert(key.buf, value.buf, value.is_string);
     }
   } catch(TokenizeError& err) {
     LOG(ERROR) << "Tokenize error: " << err.what();
   }
 }
 
-void Config::SetParam(const string& key, const string& value) {
-  config_map_.insert(make_pair(key, value));
-}
-
 const string& Config::GetParam(const string& key) const {
-  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
-  return config_map_.find(key)->second;
+  CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
+  return config_map_.find(key)->second[0].val; // only get the first appearence
 }
 
 string MakeProtoStringValue(const std::string& str) {
@@ -177,22 +176,64 @@ string MakeProtoStringValue(const std::string& str) {
 
 string Config::ToProtoString(void) const {
   ostringstream oss;
-  for(ConfigIterator iter = begin(); iter != end(); ++iter) {
-    const ConfigEntry& entry = *iter;
-    bool is_string = is_string_map_.find(entry.first)->second;
-    oss << entry.first << " : " <<
-      (is_string? MakeProtoStringValue(entry.second) : entry.second)
-      << "\n";
+  for(const auto& pair : config_map_) {
+    for(const ConfigValue& v : pair.second) {
+      oss << pair.first << " : " <<
+        (v.is_string? MakeProtoStringValue(v.val) : v.val)
+        << "\n";
+    }
   }
   return oss.str();
 }
 
 Config::ConfigIterator Config::begin() const {
-  return config_map_.begin();
+  return ConfigIterator(config_map_.begin(), 0);
 }
 
 Config::ConfigIterator Config::end() const {
-  return config_map_.end();
+  return ConfigIterator(config_map_.end(), 0);
+}
+
+void Config::Insert(const std::string& key, const std::string& value, bool is_string) {
+  if(!multi_value_) {
+    config_map_[key] = std::vector<ConfigValue>();
+  }
+  config_map_[key].push_back({value, is_string});
+}
+
+////////////////////// ConfigIterator //////////////////////
+
+Config::ConfigIterator::ConfigIterator(InternalMapIterator ki, size_t vi): key_iter_(ki), value_index_(vi) {
+}
+
+Config::ConfigIterator::ConfigIterator(const Config::ConfigIterator& other): key_iter_(other.key_iter_), value_index_(other.value_index_) {
+}
+
+Config::ConfigIterator& Config::ConfigIterator::operator ++ () {
+  ++value_index_;
+  if(value_index_ == key_iter_->second.size()) {
+    ++key_iter_;
+    value_index_ = 0;
+  }
+  return *this;
+}
+
+Config::ConfigIterator Config::ConfigIterator::operator ++ (int) {
+  ConfigIterator tmp(*this);
+  operator++();
+  return tmp;
+}
+
+bool Config::ConfigIterator::operator == (const Config::ConfigIterator& rhs) const {
+  return key_iter_ == rhs.key_iter_ && value_index_ == rhs.value_index_;
+}
+
+bool Config::ConfigIterator::operator != (const Config::ConfigIterator& rhs) const {
+  return ! (operator == (rhs));
+}
+
+Config::ConfigEntry Config::ConfigIterator::operator * () {
+  return make_pair(key_iter_->first, key_iter_->second[value_index_].val);
 }
 
 } // namespace dmlc

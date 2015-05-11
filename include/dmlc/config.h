@@ -8,51 +8,48 @@
 
 #include <iostream>
 #include <cstring>
+#include <iterator>
 #include <map>
+#include <vector>
+#include <sstream>
 
 /*! \brief namespace for dmlc */
 namespace dmlc {
 
-struct MultiMapInserter;
-struct MapInserter;
-
 /*!
  * \brief class for config parser
  */
-template< template< class K,
-                    class V,
-                    class Compare = std::less<K>,
-                    class Alloc = std::allocator<std::pair<const K, V>> > class M,
-          class Inserter>
 class Config {
- public:
-  typedef typename M<std::string, std::string>::const_iterator ConfigIterator;
-  typedef std::pair<std::string, std::string> ConfigEntry;
 
  public:
+  typedef std::pair<std::string, std::string> ConfigEntry;
+  class ConfigIterator;
+
   /*!
    * \brief create empty config
+   * \param whether the config supports multi value
    */
-  Config();
+  Config(bool multi_value = false);
   /*!
    * \brief create config and load content from the given stream
    * \param input stream
+   * \param whether the config supports multi value
    */
-  explicit Config(std::istream& is);
+  explicit Config(std::istream& is, bool multi_value = false);
   /*!
    * \brief clear all the values
    */
   void Clear(void);
   /*!
    * \brief load the contents from the stream
-   * \param the stream as input
+   * \param is the stream as input
    */
   void LoadFromStream(std::istream& is);
   /*!
    * \brief set a key-value pair into the config
    * \param key key
    * \param value value
-   * \param is_string whether the value should be wrapped by quotation mark when converting to proto string.
+   * \param is_string whether the value should be wrapped by quotes in proto string
    */
   template<class T>
   void SetParam(const std::string& key, const T& value, bool is_string = false);
@@ -60,7 +57,7 @@ class Config {
   /*!
    * \brief get the config under the key
    * \param key key
-   * \return config value represneted by string
+   * \return config value
    */
   const std::string& GetParam(const std::string& key) const;
   /*!
@@ -73,27 +70,52 @@ class Config {
    * \brief get begin iterator
    * \return begin iterator
    */
-  ConfigIterator begin() const { return config_map_.begin(); }
+  ConfigIterator begin() const;
 
   /*!
    * \brief get end iterator
    * \return end iterator
    */
-  ConfigIterator end() const { return config_map_.end(); }
+  ConfigIterator end() const;
 
  private:
+  struct ConfigValue {
+    std::string val;
+    bool is_string;
+  };
+  typedef std::map<std::string, std::vector<ConfigValue>> InternalMap;
+  typedef typename InternalMap::const_iterator InternalMapIterator;
   void Insert(const std::string& key, const std::string& value, bool is_string);
 
+ public:
+
+  class ConfigIterator : public std::iterator< std::input_iterator_tag, ConfigEntry > {
+   public:
+    ConfigIterator(InternalMapIterator ki, size_t val_index);
+    ConfigIterator(const ConfigIterator& other);
+    ConfigIterator& operator ++ ();
+    ConfigIterator operator ++ (int);
+    bool operator == (const ConfigIterator& rhs) const;
+    bool operator != (const ConfigIterator& rhs) const;
+    ConfigEntry operator * ();
+   private:
+    InternalMapIterator key_iter_;
+    size_t value_index_;
+  };
+
  private:
-  M<std::string, bool> is_string_map_;
-  M<std::string, std::string> config_map_;
+  InternalMap config_map_;
+  bool multi_value_;
+
 };
 
-typedef Config<std::map, MapInserter> SimpleConfig;
-typedef Config<std::multimap, MultiMapInserter> MultiConfig;
+template<class T>
+void Config::SetParam(const std::string& key, const T& value, bool is_string) {
+  std::ostringstream oss;
+  oss << value;
+  Insert(key, oss.str(), is_string);
+}
 
 } // namespace dmlc
-
-#include "./config-inl.h"
 
 #endif // DMLC_CONFIG_H_
