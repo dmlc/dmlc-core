@@ -38,8 +38,8 @@ namespace dmlc {
 #define CHECK_GE(x, y) CHECK((x) >= (y))
 #define CHECK_EQ(x, y) CHECK((x) == (y))
 #define CHECK_NE(x, y) CHECK((x) != (y))
-#define CHECK_NOTNULL(x) CHECK((x) != NULL); x
-
+#define CHECK_NOTNULL(x) \
+  ((x) == NULL ? dmlc::LogMessageFatal(__FILE__, __LINE__).stream() << "Check  notnull: "  #x << ' ', (x) : (x))
 // Debug-only checking.
 #ifdef NDEBUG
 #define DCHECK(x) \
