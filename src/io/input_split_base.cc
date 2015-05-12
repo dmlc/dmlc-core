@@ -113,13 +113,21 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     nleft -= n; buf += n;
     offset_curr_ += n;
     if (nleft == 0) break;
-    if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
-      LOG(FATAL) << "FILE size not calculated correctly";
+    if (n == 0) {
+      if (offset_curr_ != file_offset_[file_ptr_ + 1]) { 
+        LOG(ERROR) << "curr=" << offset_curr_
+                   << ",fileptr=" << file_ptr_
+                   << ",fileoffset=" << file_offset_[file_ptr_ + 1];
+        for (size_t i = 0; i < file_ptr_; ++i) {
+          LOG(ERROR) << "offset[" << i << "]=" << file_offset_[i];
+        }
+        LOG(FATAL) << "file offset not calculated correctly";
+      }
+      if (file_ptr_ + 1 >= files_.size()) break;
+      file_ptr_ += 1;
+      delete fs_;
+      fs_ = filesys_->OpenForRead(files_[file_ptr_].path);    
     }
-    if (file_ptr_ + 1 >= files_.size()) break;
-    file_ptr_ += 1;
-    delete fs_;
-    fs_ = filesys_->OpenForRead(files_[file_ptr_].path);    
   }
   return size - nleft;
 }

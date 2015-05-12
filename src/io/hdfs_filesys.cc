@@ -12,6 +12,7 @@ class HDFSStream : public SeekStream {
       : fs_(fs), ref_counter_(ref_counter),
         fp_(fp) {
   }
+
   virtual ~HDFSStream(void) {
     this->Close();
     ref_counter_[0] -= 1;
@@ -23,14 +24,25 @@ class HDFSStream : public SeekStream {
       }
     }
   }
+
   virtual size_t Read(void *ptr, size_t size) {
-    tSize nread = hdfsRead(fs_, fp_, ptr, size);
-    if (nread == -1) {
-      int errsv = errno;
-      LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);
+    char *buf = static_cast<char*>(ptr);
+    size_t nleft = size;
+    while (nleft != 0) {      
+      tSize ret = hdfsRead(fs_, fp_, buf, nleft);
+      if (ret > 0) {
+        size_t n = static_cast<size_t>(ret);
+        nleft -= n; buf += n;
+      } else if(ret == 0) {
+        break;
+      } else {
+        int errsv = errno;
+        LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);        
+      }
     }
-    return static_cast<size_t>(nread);
+    return size - nleft;
   }
+
   virtual void Write(const void *ptr, size_t size) {
     const char *buf = reinterpret_cast<const char*>(ptr);
     while (size != 0) {
