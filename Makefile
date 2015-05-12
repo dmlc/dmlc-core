@@ -31,8 +31,9 @@ endif
 ALIB=libdmlc.a
 all: $(ALIB) test
 
-ifeq ($(BUILD_TEST), 1)
 include test/dmlc_test.mk
+
+ifeq ($(BUILD_TEST), 1)
 test: $(ALL_TEST)
 endif
 
