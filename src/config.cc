@@ -105,7 +105,7 @@ class Tokenizer {
       EatChar(); // ignore all others
     }
   }
-  
+
  private:
   char PeekChar() {
     return is_.peek();
@@ -158,12 +158,12 @@ void Config::LoadFromStream(istream& is) {
 }
 
 const string& Config::GetParam(const string& key) const {
-  CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
+  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second[0].val; // only get the first appearence
 }
-  
+
 bool Config::IsGenuineString(const std::string& key) const {
-  CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
+  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second[0].is_string;
 }
 
