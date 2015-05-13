@@ -24,7 +24,7 @@ parser.add_argument('--log-file', type=str,
                     help = 'output log to the specific log file')
 parser.add_argument('command', nargs='+',
                     help = 'command for launching the program')
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 
 keepalive = """
@@ -93,7 +93,8 @@ def mthread_submit(nworker, nserver, envs):
         procs[i].setDaemon(True)
         procs[i].start()
 
+
 tracker.config_logger(args)
 # call submit, with nslave, the commands to run each job and submit function
 tracker.submit(args.nworker, args.server_nodes, fun_submit = mthread_submit,
-               pscmd= (' '.join(args.command)))
+               pscmd= (' '.join(args.command) + ' ' + ' '.join(unknown)))
