@@ -15,6 +15,10 @@ export CFLAGS = -O3 -Wall -msse2  -Wno-unknown-pragmas -Iinclude -std=c++0x
 LDFLAGS+= $(DMLC_LDFLAGS)
 CFLAGS+= $(DMLC_CFLAGS)
 
+ifdef DEPS_PATH
+CFLAGS+= $(DEPS_PATH)/include
+endif
+
 .PHONY: clean all test
 
 OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o

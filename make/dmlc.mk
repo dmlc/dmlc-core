@@ -10,11 +10,11 @@ ifndef LIBJVM
 	LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 endif
 
-DMLC_LDFLAGS = # -lrt
-
 ifndef NO_OPENMP
 	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
+else
+    DMLC_LDFLAGS += -lrt 		# there is no -lrt on mac os x
 endif
 
 # handle fpic options
@@ -23,7 +23,7 @@ ifndef WITH_FPIC
 endif
 
 ifeq ($(WITH_FPIC), 1)
-	DMLC_CFLAGS += -fPIC	
+	DMLC_CFLAGS += -fPIC
 endif
 
 # Using default hadoop_home
@@ -47,6 +47,5 @@ else
 endif
 
 ifeq ($(USE_GLOG), 1)
-	DMLC_CFLAGS+=-DDMLC_USE_GLOG=1
-	DMLC_LDFLAGS+= -lglog
+	DMLC_CFLAGS += -DDMLC_USE_GLOG=1
 endif
