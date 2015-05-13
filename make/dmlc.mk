@@ -17,7 +17,16 @@ ifndef NO_OPENMP
 	DMLC_LDFLAGS += -fopenmp
 endif
 
-#Using default hadoop_home
+# handle fpic options
+ifndef WITH_FPIC
+	WITH_FPIC = 1
+endif
+
+ifeq ($(WITH_FPIC), 1)
+	DMLC_CFLAGS += -fPIC	
+endif
+
+# Using default hadoop_home
 ifndef HADOOP_HDFS_HOME
 	HADOOP_HDFS_HOME=$(HADOOP_HOME)
 endif

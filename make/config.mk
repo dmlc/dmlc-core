@@ -14,6 +14,10 @@ export CC = gcc
 export CXX = g++
 export MPICXX = mpicxx
 
+# whether to compile with -fPIC option
+# Note: to build shared library(so files), fPIC is required
+WITH_FPIC = 1
+
 # whether use HDFS support during compile
 USE_HDFS = 1
 
