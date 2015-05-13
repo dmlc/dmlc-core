@@ -16,7 +16,7 @@ LDFLAGS+= $(DMLC_LDFLAGS)
 CFLAGS+= $(DMLC_CFLAGS)
 
 ifdef DEPS_PATH
-CFLAGS+= $(DEPS_PATH)/include
+CFLAGS+= -I$(DEPS_PATH)/include
 endif
 
 .PHONY: clean all test
