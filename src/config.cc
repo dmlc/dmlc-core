@@ -17,6 +17,7 @@ class TokenizeError : public exception {
  public:
   TokenizeError(const string& msg = "tokenize error"): msg_(msg) {
   }
+  ~TokenizeError() throw() {}
   virtual const char* what() const throw() {
     return msg_.c_str();
   }
@@ -26,42 +27,42 @@ class TokenizeError : public exception {
 
 class Tokenizer {
  public:
-  Tokenizer(istream& is): is_(is), state_(ParseState::kNone) {}
+  Tokenizer(istream& is): is_(is), state_(kNone) {}
   bool GetNextToken(Token& tok) {
     // token is defined as
     // 1. [^\s=]+
     // 2. "[(^"|\\")]*"
     // 3. =
-    state_ = ParseState::kNone;
+    state_ = kNone;
     tok.buf.clear();
     tok.is_string = false;
     char ch;
-    while( (ch = PeekChar()) != EOF && state_ != ParseState::kFinish ) {
+    while( (ch = PeekChar()) != EOF && state_ != kFinish ) {
       switch(ch) {
       case ' ': case '\t': case '\n': case '\r':
-        if(state_ == ParseState::kToken) {
-          state_ = ParseState::kFinish;
+        if(state_ == kToken) {
+          state_ = kFinish;
         } else {
           EatChar(); // ignore
         }
         break;
       case '\"':
         ParseString(tok.buf);
-        state_ = ParseState::kFinish;
+        state_ = kFinish;
         tok.is_string = true;
         break;
       case '=':
-        if(state_ != ParseState::kToken) {
+        if(state_ != kToken) {
           tok.buf = '=';
           EatChar();
         }
-        state_ = ParseState::kFinish;
+        state_ = kFinish;
         break;
       case '#':
         ParseComments();
         break;
       default:
-        state_ = ParseState::kToken;
+        state_ = kToken;
         tok.buf += ch;
         EatChar();
         break;
@@ -113,7 +114,7 @@ class Tokenizer {
     is_.get();
   }
  private:
-  enum class ParseState {
+  enum ParseState {
     kNone = 0,
     kToken,
     kFinish,
@@ -160,6 +161,11 @@ const string& Config::GetParam(const string& key) const {
   CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second[0].val; // only get the first appearence
 }
+  
+bool Config::IsGenuineString(const std::string& key) const {
+  CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
+  return config_map_.find(key)->second[0].is_string;
+}
 
 string MakeProtoStringValue(const std::string& str) {
   string rst = "\"";
@@ -176,12 +182,12 @@ string MakeProtoStringValue(const std::string& str) {
 
 string Config::ToProtoString(void) const {
   ostringstream oss;
-  for(const auto& pair : config_map_) {
-    for(const ConfigValue& v : pair.second) {
-      oss << pair.first << " : " <<
-        (v.is_string? MakeProtoStringValue(v.val) : v.val)
-        << "\n";
-    }
+  for(ConfigIterator iter = begin(); iter != end(); ++iter) {
+    const ConfigEntry& entry = *iter;
+    bool is_string = IsGenuineString(entry.first);
+    oss << entry.first << " : " <<
+      (is_string? MakeProtoStringValue(entry.second) : entry.second)
+      << "\n";
   }
   return oss.str();
 }
@@ -198,7 +204,10 @@ void Config::Insert(const std::string& key, const std::string& value, bool is_st
   if(!multi_value_) {
     config_map_[key] = std::vector<ConfigValue>();
   }
-  config_map_[key].push_back({value, is_string});
+  ConfigValue cv;
+  cv.val = value;
+  cv.is_string = is_string;
+  config_map_[key].push_back(cv);
 }
 
 ////////////////////// ConfigIterator //////////////////////

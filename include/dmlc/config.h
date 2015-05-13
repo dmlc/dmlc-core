@@ -60,6 +60,14 @@ class Config {
    * \return config value
    */
   const std::string& GetParam(const std::string& key) const;
+
+  /*!
+   * \brief check whether the configure value given by the key should be wrapped by quotes
+   * \param key key
+   * \return whether the configure value is represented by string
+   */
+  bool IsGenuineString(const std::string& key) const;
+
   /*!
    * \brief transform all the configuration into string recognizable to protobuf
    * \return string that could be parsed directly by protobuf
@@ -83,7 +91,7 @@ class Config {
     std::string val;
     bool is_string;
   };
-  typedef std::map<std::string, std::vector<ConfigValue>> InternalMap;
+  typedef std::map<std::string, std::vector<ConfigValue> > InternalMap;
   typedef typename InternalMap::const_iterator InternalMapIterator;
   void Insert(const std::string& key, const std::string& value, bool is_string);
 
