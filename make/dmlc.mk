@@ -10,11 +10,11 @@ ifndef LIBJVM
 	LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 endif
 
-DMLC_LDFLAGS = # -lrt
-
 ifndef NO_OPENMP
 	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
+else
+    DMLC_LDFLAGS += -lrt 		# there is no -lrt on mac os x
 endif
 
 # handle fpic options
@@ -23,7 +23,7 @@ ifndef WITH_FPIC
 endif
 
 ifeq ($(WITH_FPIC), 1)
-	DMLC_CFLAGS += -fPIC	
+	DMLC_CFLAGS += -fPIC
 endif
 
 # Using default hadoop_home
@@ -33,7 +33,13 @@ endif
 
 ifeq ($(USE_HDFS),1)
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=1 -I$(HADOOP_HDFS_HOME)/include -I$(JAVA_HOME)/include
-	DMLC_LDFLAGS+= -L$(HADOOP_HDFS_HOME)/lib/native -L$(LIBJVM) -lhdfs -ljvm -Wl,-rpath=$(LIBJVM)
+	HDFS_LIB_PATH=$(HADOOP_HDFS_HOME)/lib/native
+	ifneq ("$(wildcard $(HDFS_LIB_PATH)/libhdfs.so)","")
+		DMLC_LDFLAGS+= -L$(HDFS_LIB_PATH) -lhdfs
+	else
+		DMLC_LDFLAGS+= $(HDFS_LIB_PATH)/libhdfs.a
+	endif
+	DMLC_LDFLAGS += -L$(LIBJVM) -ljvm -Wl,-rpath=$(LIBJVM)
 else
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=0
 endif
@@ -47,6 +53,5 @@ else
 endif
 
 ifeq ($(USE_GLOG), 1)
-	DMLC_CFLAGS+=-DDMLC_USE_GLOG=1
-	DMLC_LDFLAGS+= -lglog
+	DMLC_CFLAGS += -DDMLC_USE_GLOG=1
 endif
