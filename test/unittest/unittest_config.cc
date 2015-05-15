@@ -76,3 +76,38 @@ TEST(Config, set_param) {
   cout << "Proto string:" << endl;
   cout << cfg.ToProtoString() << endl;
 }
+
+TEST(Config, order) {
+  string cfg_str =
+    "k1 = 0.1\n"
+    "k2 = -0.1\n"
+    "k1 = 0.2\n"
+    "k2 = -0.2\n"
+    "k1 = 0.3\n"
+    "k3 = 0\n"
+    ;
+  {
+    cout << "<<<<<< No multi-value <<<<<<<" << endl;
+    istringstream iss(cfg_str);
+    using namespace dmlc;
+    Config cfg(iss);
+    for(const auto& entry : cfg) {
+      cout << "k: " << entry.first << "\tv: " << entry.second << endl;
+    }
+    cout << "Proto string:" << endl;
+    cout << cfg.ToProtoString() << endl;
+  }
+
+  {
+    cout << "<<<<<< With multi-value <<<<<<<" << endl;
+    istringstream iss(cfg_str);
+    using namespace dmlc;
+    Config cfg(iss, true);
+    for(const auto& entry : cfg) {
+      cout << "k: " << entry.first << "\tv: " << entry.second << endl;
+    }
+    cout << "Proto string:" << endl;
+    cout << cfg.ToProtoString() << endl;
+  }
+
+}

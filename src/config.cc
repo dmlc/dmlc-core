@@ -125,14 +125,17 @@ class Tokenizer {
 
 //////////////////////// Config /////////////////////////////
 Config::Config(bool m): multi_value_(m) {
+  Clear();
 }
 
 Config::Config(istream& is, bool m): multi_value_(m) {
+  Clear();
   LoadFromStream(is);
 }
 
 void Config::Clear() {
   config_map_.clear();
+  order_.clear();
 }
 
 void Config::LoadFromStream(istream& is) {
@@ -159,12 +162,13 @@ void Config::LoadFromStream(istream& is) {
 
 const string& Config::GetParam(const string& key) const {
   CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
-  return config_map_.find(key)->second[0].val; // only get the first appearence
+  const std::vector<std::string>& vals = config_map_.find(key)->second.val;
+  return vals[vals.size() - 1]; // return tne latest inserted one
 }
   
 bool Config::IsGenuineString(const std::string& key) const {
   CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
-  return config_map_.find(key)->second[0].is_string;
+  return config_map_.find(key)->second.is_string;
 }
 
 string MakeProtoStringValue(const std::string& str) {
@@ -193,37 +197,41 @@ string Config::ToProtoString(void) const {
 }
 
 Config::ConfigIterator Config::begin() const {
-  return ConfigIterator(config_map_.begin(), 0);
+  return ConfigIterator(0, this);
 }
 
 Config::ConfigIterator Config::end() const {
-  return ConfigIterator(config_map_.end(), 0);
+  return ConfigIterator(order_.size(), this);
 }
 
 void Config::Insert(const std::string& key, const std::string& value, bool is_string) {
+  size_t insert_index = order_.size();
   if(!multi_value_) {
-    config_map_[key] = std::vector<ConfigValue>();
+    config_map_[key] = ConfigValue();
   }
-  ConfigValue cv;
-  cv.val = value;
+  ConfigValue& cv = config_map_[key];
+  size_t val_index = cv.val.size();
+  cv.val.push_back(value);
+  cv.insert_index.push_back(insert_index);
   cv.is_string = is_string;
-  config_map_[key].push_back(cv);
+
+  order_.push_back(make_pair(key, val_index));
 }
 
 ////////////////////// ConfigIterator //////////////////////
 
-Config::ConfigIterator::ConfigIterator(InternalMapIterator ki, size_t vi): key_iter_(ki), value_index_(vi) {
+Config::ConfigIterator::ConfigIterator(size_t i, const Config* c): index_(i), config_(c) {
+  FindNextIndex();
 }
 
-Config::ConfigIterator::ConfigIterator(const Config::ConfigIterator& other): key_iter_(other.key_iter_), value_index_(other.value_index_) {
+Config::ConfigIterator::ConfigIterator(const Config::ConfigIterator& other): index_(other.index_), config_(other.config_) {
 }
 
 Config::ConfigIterator& Config::ConfigIterator::operator ++ () {
-  ++value_index_;
-  if(value_index_ == key_iter_->second.size()) {
-    ++key_iter_;
-    value_index_ = 0;
+  if(index_ < config_->order_.size()) {
+    ++index_;
   }
+  FindNextIndex();
   return *this;
 }
 
@@ -234,15 +242,32 @@ Config::ConfigIterator Config::ConfigIterator::operator ++ (int) {
 }
 
 bool Config::ConfigIterator::operator == (const Config::ConfigIterator& rhs) const {
-  return key_iter_ == rhs.key_iter_ && value_index_ == rhs.value_index_;
+  return index_ == rhs.index_ && config_ == rhs.config_;
 }
 
 bool Config::ConfigIterator::operator != (const Config::ConfigIterator& rhs) const {
   return ! (operator == (rhs));
 }
 
-Config::ConfigEntry Config::ConfigIterator::operator * () {
-  return make_pair(key_iter_->first, key_iter_->second[value_index_].val);
+Config::ConfigEntry Config::ConfigIterator::operator * () const {
+  const std::string& key = config_->order_[index_].first;
+  size_t val_index = config_->order_[index_].second;
+  const std::string& val = config_->config_map_.find(key)->second.val[val_index];
+  return make_pair(key, val);
+}
+
+void Config::ConfigIterator::FindNextIndex() {
+  bool found = false;
+  while(!found && index_ < config_->order_.size()) {
+    const std::string& key = config_->order_[index_].first;
+    size_t val_index = config_->order_[index_].second;
+    size_t val_insert_index = config_->config_map_.find(key)->second.insert_index[val_index];
+    if(val_insert_index == index_) {
+      found = true;
+    } else {
+      ++index_;
+    }
+  }
 }
 
 } // namespace dmlc

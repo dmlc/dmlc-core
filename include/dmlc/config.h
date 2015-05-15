@@ -18,11 +18,34 @@ namespace dmlc {
 
 /*!
  * \brief class for config parser
+ * 
+ * Two modes are supported:
+ * 1. non-multi value mode: if two same keys in the configure file, the later one will replace the 
+ *      ealier one; when using iterator, the order will be the "last effective insersion" order
+ * 2. multi value mode: multiple values with the same key could co-exist; when using iterator, the
+ *      order will be the insersion order.
+ *
+ * [Basic usage]
+ *
+ * Config cfg(file_input_stream);
+ * for(Config::ConfigIterator iter = cfg.begin(); iter != cfg.end(); ++iter) {
+ *     ConfigEntry ent = *iter;
+ *     std::string key = ent.first;
+ *     std::string value = ent.second;
+ *     do_something_with(key, value);
+ * }
  */
 class Config {
 
  public:
+  /*!
+   * \brief type when extracting from iterator
+   */
   typedef std::pair<std::string, std::string> ConfigEntry;
+
+  /*!
+   * \brief iterator class
+   */
   class ConfigIterator;
 
   /*!
@@ -46,7 +69,9 @@ class Config {
    */
   void LoadFromStream(std::istream& is);
   /*!
-   * \brief set a key-value pair into the config
+   * \brief set a key-value pair into the config; if the key already exists in the configure file,
+   *        it will either replace the old value with the given one (in non-multi value mode) or
+   *        store it directly (in multi-value mode);
    * \param key key
    * \param value value
    * \param is_string whether the value should be wrapped by quotes in proto string
@@ -55,7 +80,8 @@ class Config {
   void SetParam(const std::string& key, const T& value, bool is_string = false);
 
   /*!
-   * \brief get the config under the key
+   * \brief get the config under the key; if multiple values exist for the same key,
+   *        return the last inserted one.
    * \param key key
    * \return config value
    */
@@ -86,35 +112,54 @@ class Config {
    */
   ConfigIterator end() const;
 
- private:
-  struct ConfigValue {
-    std::string val;
-    bool is_string;
-  };
-  typedef std::map<std::string, std::vector<ConfigValue> > InternalMap;
-  typedef typename InternalMap::const_iterator InternalMapIterator;
-  void Insert(const std::string& key, const std::string& value, bool is_string);
-
  public:
 
+  /*!
+   * \brief iterator class
+   */
   class ConfigIterator : public std::iterator< std::input_iterator_tag, ConfigEntry > {
+    friend class Config;
    public:
-    ConfigIterator(InternalMapIterator ki, size_t val_index);
+    /*!
+     * \brief copy constructor
+     */
     ConfigIterator(const ConfigIterator& other);
+    /*!
+     * \brief uni-increment operators
+     */
     ConfigIterator& operator ++ ();
     ConfigIterator operator ++ (int);
+    /*!
+     * \brief compare operators
+     */
     bool operator == (const ConfigIterator& rhs) const;
     bool operator != (const ConfigIterator& rhs) const;
-    ConfigEntry operator * ();
+    /*!
+     * \brief retrieve value from operator
+     */
+    ConfigEntry operator * () const;
+
    private:
-    InternalMapIterator key_iter_;
-    size_t value_index_;
+    ConfigIterator(size_t index, const Config* config);
+    void FindNextIndex();
+
+   private:
+    size_t index_;
+    const Config* config_;
   };
+  
+ private:
+  struct ConfigValue {
+    std::vector<std::string> val;
+    std::vector<size_t> insert_index;
+    bool is_string;
+  };
+  void Insert(const std::string& key, const std::string& value, bool is_string);
 
  private:
-  InternalMap config_map_;
-  bool multi_value_;
-
+  std::map<std::string, ConfigValue> config_map_;
+  std::vector<std::pair<std::string, size_t> > order_;
+  const bool multi_value_;
 };
 
 template<class T>
