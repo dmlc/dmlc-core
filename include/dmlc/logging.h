@@ -22,7 +22,6 @@ inline void InitLogging(const char* argv0) {
 }
 }  // namespace dmcl
 
-inline InitL
 #else
 // use a light version of glog
 #include <assert.h>
