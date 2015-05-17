@@ -15,6 +15,14 @@
 
 #if DMLC_USE_GLOG
 #include <glog/logging.h>
+
+namespace dmlc {
+inline void InitLogging(const char* argv0) {
+  google::InitGoogleLogging(argv0);
+}
+}  // namespace dmcl
+
+inline InitL
 #else
 // use a light version of glog
 #include <assert.h>
@@ -27,6 +35,11 @@
 #endif
 
 namespace dmlc {
+
+inline void InitLogging(const char* argv0) {
+  // DO NOTHING
+}
+
 // Always-on checking
 #define CHECK(x)                                           \
   if (!(x))                                                \
