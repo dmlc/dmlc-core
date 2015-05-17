@@ -161,13 +161,13 @@ void Config::LoadFromStream(istream& is) {
 }
 
 const string& Config::GetParam(const string& key) const {
-  CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
+  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
   const std::vector<std::string>& vals = config_map_.find(key)->second.val;
   return vals[vals.size() - 1]; // return tne latest inserted one
 }
 
 bool Config::IsGenuineString(const std::string& key) const {
-  CHECK_NE(config_map_.find(key), config_map_.end()) << "key \"" << key << "\" not found in configure";
+  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second.is_string;
 }
 
