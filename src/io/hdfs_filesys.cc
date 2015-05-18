@@ -37,6 +37,7 @@ class HDFSStream : public SeekStream {
         break;
       } else {
         int errsv = errno;
+        if (errno == EINTR) continue;
         LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);        
       }
     }

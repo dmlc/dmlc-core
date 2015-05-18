@@ -116,6 +116,7 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     if (n == 0) {
       if (offset_curr_ != file_offset_[file_ptr_ + 1]) { 
         LOG(ERROR) << "curr=" << offset_curr_
+                   << ",begin=" << offset_begin_
                    << ",fileptr=" << file_ptr_
                    << ",fileoffset=" << file_offset_[file_ptr_ + 1];
         for (size_t i = 0; i < file_ptr_; ++i) {
