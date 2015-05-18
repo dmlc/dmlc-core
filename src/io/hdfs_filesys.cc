@@ -1,3 +1,4 @@
+#include <limits>
 #include <dmlc/logging.h>
 #include "./hdfs_filesys.h"
 
@@ -28,8 +29,9 @@ class HDFSStream : public SeekStream {
   virtual size_t Read(void *ptr, size_t size) {
     char *buf = static_cast<char*>(ptr);
     size_t nleft = size;
-    while (nleft != 0) {      
-      tSize ret = hdfsRead(fs_, fp_, buf, nleft);
+    while (nleft != 0) {
+      size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max());
+      tSize ret = hdfsRead(fs_, fp_, buf, std::min(nleft, nmax));
       if (ret > 0) {
         size_t n = static_cast<size_t>(ret);
         nleft -= n; buf += n;
