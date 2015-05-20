@@ -80,7 +80,7 @@ inline float strtof(const char *nptr, char **endptr) {
   }
 
   if (endptr) *endptr = (char*) p;
-  return sign > 0 ? value : - value;
+  return sign ? value : - value;
 }
 
 /**

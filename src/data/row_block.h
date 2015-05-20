@@ -27,6 +27,8 @@ struct RowBlockContainer {
   std::vector<size_t> offset;
   /*! \brief array[size] label of each instance */
   std::vector<real_t> label;
+  /*! \brief array[size] importance of each instance */
+  std::vector<real_t> importance;
   /*! \brief feature index */
   std::vector<IndexType> index;
   /*! \brief feature value */

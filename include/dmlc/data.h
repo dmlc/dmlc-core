@@ -68,6 +68,8 @@ class Row {
  public:
   /*! \brief label of the instance */
   real_t label;
+  /*! \brief importance of the instance */
+  real_t importance;
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
@@ -130,6 +132,8 @@ struct RowBlock {
   const size_t *offset;
   /*! \brief array[size] label of each instance */
   const real_t *label;
+  /*! \brief WithImportance: array[size] label of each instance, otherwise nullptr */
+  const real_t *importance;
   /*! \brief feature index */
   const IndexType *index;
   /*! \brief feature value, can be NULL, indicating all values are 1 */
@@ -143,6 +147,7 @@ struct RowBlock {
   /*! \return memory cost of the block in bytes */
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(real_t));
+	if (importance != NULL) cost += size * sizeof(real_t);
     size_t ndata = offset[size] - offset[0];
     if (index != NULL) cost += ndata * sizeof(IndexType);
     if (value != NULL) cost += ndata * sizeof(real_t);
@@ -159,6 +164,10 @@ struct RowBlock {
     RowBlock ret;
     ret.size = end - begin;
     ret.label = label + begin;
+	if (imporrtance != NULL)
+		ret.importance = importance + begin;
+	else
+		ret.importance = NULL;
     ret.offset = offset + begin;
     ret.index = index;
     ret.value = value;
@@ -200,6 +209,10 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType> inst;
   inst.label = label[rowid];
+  if (importance != NULL)
+	  inst.importance = importance[rowid];
+  else
+	  inst.importance = 1.0f;
   inst.length = offset[rowid + 1] - offset[rowid];
   inst.index = index + offset[rowid];
   if (value == NULL) {
