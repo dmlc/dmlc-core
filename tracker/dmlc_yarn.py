@@ -75,7 +75,7 @@ parser.add_argument('command', nargs='+',
 args = parser.parse_args()
 
 if args.jobname == 'auto':
-    args.jobname = ('Dmlc[nworker=%d]:' % args.nworker) + args.command[0].split('/')[-1];
+    args.jobname = ('DMLC[nworker=%d]:' % args.nworker) + args.command[0].split('/')[-1];
 
 if hadoop_binary == None:
     parser.add_argument('-hb', '--hadoop_binary', required = True,
@@ -162,4 +162,4 @@ def yarn_submit(nworker, nserver, pass_env):
 
 tracker.config_logger(args)
 tracker.submit(args.nworker, args.server_nodes, fun_submit = yarn_submit,
-               pscmd= (' '.join(args.command)))
+               pscmd= (' '.join(['../yarn/run_hdfs_prog.py'] + args.command)))
