@@ -162,4 +162,4 @@ def yarn_submit(nworker, nserver, pass_env):
 
 tracker.config_logger(args)
 tracker.submit(args.nworker, args.server_nodes, fun_submit = yarn_submit,
-               pscmd= (' '.join(['../yarn/run_hdfs_prog.py'] + args.command)))
+               pscmd= (' '.join([YARN_BOOT_PY] + args.command)))
