@@ -432,6 +432,8 @@ public class ApplicationMaster {
                 nmClient.stopContainerAsync(r.container.getId(),
                         r.container.getNodeId());
                 r.abortRequested = true;
+                
+                this.killedTasks.add(r);
             }
         }
         this.killedTasks.addAll(this.pendingTasks);
@@ -439,6 +441,7 @@ public class ApplicationMaster {
             rmClient.removeContainerRequest(r.containerRequest);
         }
         this.pendingTasks.clear();
+        this.runningTasks.clear();
         LOG.info(msg);
     }
 
@@ -456,7 +459,7 @@ public class ApplicationMaster {
             }
             LOG.info("Task "
                     + r.taskId
-                    + "failed on "
+                    + " failed on "
                     + r.container.getId()
                     + ". See LOG at : "
                     + String.format("http://%s/node/containerlogs/%s/"
@@ -501,16 +504,17 @@ public class ApplicationMaster {
                         this.abortJob("[DMLC] Task "
                                 + r.taskId
                                 + " killed because of exceeding allocated physical memory");
-                        continue;
+                        return;
                     }
                     if (exstatus == ContainerExitStatus.class.getField(
                             "KILLED_EXCEEDED_VMEM").getInt(null)) {
                         this.abortJob("[DMLC] Task "
                                 + r.taskId
                                 + " killed because of exceeding allocated virtual memory");
-                        continue;
+                        return;
                     }
                 } catch (Exception e) {
+                	LOG.warn(e.getMessage());
                 }
                 LOG.info("[DMLC] Task " + r.taskId + " exited with status "
                          + exstatus + " Diagnostics:"+ s.getDiagnostics());
