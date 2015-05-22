@@ -69,7 +69,9 @@ parser.add_argument('--libhdfs-opts', default='-Xmx128m', type=str,
                     help = 'setting to be passed to libhdfs')
 parser.add_argument('--name-node', default='default', type=str,
                     help = 'the namenode address of hdfs, libhdfs should connect to, normally leave it as default')
-
+parser.add_argument('--ship-libcxx',default='none',type=str,
+                    help = 'the path of gcc lib. if you change the default gcc version,you should ship the libstdc++.so or libstdc++.so.6 ') 
+					
 parser.add_argument('command', nargs='+',
                     help = 'command for dmlc program')
 args = parser.parse_args()
@@ -126,7 +128,17 @@ def yarn_submit(nworker, nserver, pass_env):
         for f in flst:
             if os.path.exists(f):
                 fset.add(f)            
-    JAVA_HOME = os.getenv('JAVA_HOME')
+	if args.ship_libcxx != 'none':
+        sysbit = subprocess.Popen(['getconf LONG_BIT'],stdout=subprocess.PIPE,shell=True).communicate()
+        libcxx = ''
+        if sysbit[0] == '64\n':
+                libcxx = args.ship_libcxx + '/libstdc++.so.6'
+        else:
+                libcxx = args.ship_libcxx + '/libstdc++.so'
+        cmd = 'cp %s ./'%libcxx
+        subprocess.check_call(cmd, shell = True)
+        fset.add(libcxx)
+	JAVA_HOME = os.getenv('JAVA_HOME')
     if JAVA_HOME is None:
         JAVA = 'java'
     else:
