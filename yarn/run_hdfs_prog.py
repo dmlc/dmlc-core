@@ -30,6 +30,7 @@ for f in classpath.split(':'):
 lpath = []
 lpath.append('%s/lib/native' % hdfs_home)
 lpath.append('%s/jre/lib/amd64/server' % java_home) 
+lpath.append('./')
 
 env = os.environ.copy()
 env['CLASSPATH'] = '${CLASSPATH}:' + (':'.join(cpath))
