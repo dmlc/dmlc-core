@@ -11,6 +11,7 @@ import subprocess
 import warnings
 import tracker
 import logging
+import platform
 from threading import Thread
 
 YARN_JAR_PATH = os.path.dirname(__file__) + '/../yarn/dmlc-yarn.jar'
@@ -69,7 +70,7 @@ parser.add_argument('--libhdfs-opts', default='-Xmx128m', type=str,
                     help = 'setting to be passed to libhdfs')
 parser.add_argument('--name-node', default='default', type=str,
                     help = 'the namenode address of hdfs, libhdfs should connect to, normally leave it as default')
-parser.add_argument('--ship-libcxx',default='none',type=str,
+parser.add_argument('--ship-libcxx', type=str,
                     help = 'the path of gcc lib. if you change the default gcc version,you should ship the libstdc++.so or libstdc++.so.6 ') 
 					
 parser.add_argument('command', nargs='+',
@@ -127,18 +128,9 @@ def yarn_submit(nworker, nserver, pass_env):
                     args.command[i] = './' + args.command[i].split('/')[-1]
         for f in flst:
             if os.path.exists(f):
-                fset.add(f)            
-	if args.ship_libcxx != 'none':
-        sysbit = subprocess.Popen(['getconf LONG_BIT'],stdout=subprocess.PIPE,shell=True).communicate()
-        libcxx = ''
-        if sysbit[0] == '64\n':
-                libcxx = args.ship_libcxx + '/libstdc++.so.6'
-        else:
-                libcxx = args.ship_libcxx + '/libstdc++.so'
-        cmd = 'cp %s ./'%libcxx
-        subprocess.check_call(cmd, shell = True)
-        fset.add(libcxx)
-	JAVA_HOME = os.getenv('JAVA_HOME')
+                fset.add(f)
+            
+    JAVA_HOME = os.getenv('JAVA_HOME')
     if JAVA_HOME is None:
         JAVA = 'java'
     else:
@@ -149,6 +141,16 @@ def yarn_submit(nworker, nserver, pass_env):
     for k, v in pass_env.items():
         env[k] = str(v)
 
+    # ship lib-stdc++.so
+    if args.ship_libcxx is not None:
+        if platform.architecture()[0] == '64bit':
+            libcxx = args.ship_libcxx + '/libstdc++.so.6'
+        else:
+            libcxx = args.ship_libcxx + '/libstdc++.so'        
+        fset.add(libcxx)
+        # update local LD_LIBRARY_PATH
+        env['LD_LIBRARY_PATH'] = libcxx + ':' + env['LD_LIBRARY_PATH']
+        
     env['DMLC_CPU_VCORES'] = str(args.vcores)
     env['DMLC_MEMORY_MB'] = str(args.memory_mb)
     env['DMLC_NUM_WORKER'] = str(args.nworker)
