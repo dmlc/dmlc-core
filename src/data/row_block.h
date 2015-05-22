@@ -137,6 +137,7 @@ RowBlockContainer<IndexType>::GetBlock(void) const {
   data.size = offset.size() - 1;
   data.offset = BeginPtr(offset);
   data.label = BeginPtr(label);
+  data.importance = BeginPtr(importance);
   data.index = BeginPtr(index);
   if (value.size() == 0) {
     data.value = NULL;
