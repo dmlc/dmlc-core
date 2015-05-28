@@ -10,7 +10,6 @@
 #include "data/basic_row_iter.h"
 #include "data/disk_row_iter.h"
 #include "data/libsvm_parser.h"
-#include "data/mslr_parser.h"
 
 namespace dmlc {
 /*! \brief namespace for useful input data structure */

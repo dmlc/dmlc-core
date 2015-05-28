@@ -27,8 +27,8 @@ struct RowBlockContainer {
   std::vector<size_t> offset;
   /*! \brief array[size] label of each instance */
   std::vector<real_t> label;
-  /*! \brief array[size] importance of each instance */
-  std::vector<real_t> importance;
+  /*! \brief array[size] weight of each instance */
+  std::vector<real_t> weight;
   /*! \brief feature index */
   std::vector<IndexType> index;
   /*! \brief feature value */
@@ -137,7 +137,7 @@ RowBlockContainer<IndexType>::GetBlock(void) const {
   data.size = offset.size() - 1;
   data.offset = BeginPtr(offset);
   data.label = BeginPtr(label);
-  data.importance = BeginPtr(importance);
+  data.weight = BeginPtr(weight);
   data.index = BeginPtr(index);
   if (value.size() == 0) {
     data.value = NULL;

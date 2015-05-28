@@ -121,33 +121,56 @@ FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   return true;
 }
 
-
 template <typename IndexType>
 inline void LibSVMParser<IndexType>::
 ParseBlock(char *begin,
            char *end,
            RowBlockContainer<IndexType> *out) {
   out->Clear();
-  char *p = begin;
-  while (p != end) {
-    while (isspace(*p) && p != end) ++p;
-    if (p == end) break;
-
-    char *head = p;
-    while (isdigit(*p) && p != end) ++p;
-    if (*p == ':') {
-      out->index.push_back(atol(head));
-      out->value.push_back(static_cast<real_t>(atof(p + 1)));
-    } else {
-      if (out->label.size() != 0) {
-        out->offset.push_back(out->index.size());
-      }
-      out->label.push_back(static_cast<real_t>(atof(head)));
+  char * lbegin = begin;
+  char * lend = lbegin;
+  while (lbegin != end) {
+    // get line end
+    lend = lbegin + 1;
+    while (lend != end && *lend != '\n') lend++;
+    // parse label[:weight]
+    const char * p = lbegin;
+    const char * q = NULL;
+    real_t label;
+    real_t weight;
+    int r = parsePair<real_t, real_t>(p, lend, &q, label, weight);
+    if (r < 1) {
+      // empty line
+      lbegin = lend;
+      continue;
     }
-    while (!isspace(*p) && p != end) ++p;
-  }
-  if (out->label.size() != 0) {
-    out->offset.push_back(out->index.size());
+    if (r == 2) {
+      // has weight
+      out->weight.push_back(weight);
+    }
+    if (out->label.size() != 0) {
+      out->offset.push_back(out->index.size());
+    }
+    out->label.push_back(label);
+    // parse feature[:value]
+    p = q;
+    while (p != end) {
+      IndexType featureId;
+      real_t value;
+      int r = parsePair<IndexType, real_t>(p, end, &q, featureId, value);
+      if (r < 1) {
+        p = q;
+        continue;
+      }
+      out->index.push_back(featureId);
+      if (r == 2) {
+        // has value
+        out->value.push_back(value);
+      }
+      p = q;
+    }
+    // next line
+    lbegin = lend;
   }
   CHECK(out->label.size() + 1 == out->offset.size());
 }
