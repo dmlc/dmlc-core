@@ -12,6 +12,7 @@ extern "C" {
 }
 #else
 #include <Windows.h>
+#define stat _stat64
 #endif
 
 namespace dmlc {
