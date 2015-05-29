@@ -11,6 +11,7 @@ import subprocess
 import warnings
 import tracker
 import logging
+import platform
 from threading import Thread
 
 YARN_JAR_PATH = os.path.dirname(__file__) + '/../yarn/dmlc-yarn.jar'
@@ -20,11 +21,11 @@ if not os.path.exists(YARN_JAR_PATH):
     warnings.warn("cannot find \"%s\", I will try to run build" % YARN_JAR_PATH)
     cmd = 'cd %s;./build.sh' % (os.path.dirname(__file__) + '/../yarn/')
     print cmd
-    subprocess.check_call(cmd, shell = True, env = os.environ) 
+    subprocess.check_call(cmd, shell = True, env = os.environ)
     assert os.path.exists(YARN_JAR_PATH), "failed to build dmlc-yarn.jar, try it manually"
 
 hadoop_binary  = None
-# code 
+# code
 hadoop_home = os.getenv('HADOOP_HOME')
 
 if hadoop_home != None:
@@ -69,22 +70,24 @@ parser.add_argument('--libhdfs-opts', default='-Xmx128m', type=str,
                     help = 'setting to be passed to libhdfs')
 parser.add_argument('--name-node', default='default', type=str,
                     help = 'the namenode address of hdfs, libhdfs should connect to, normally leave it as default')
+parser.add_argument('--ship-libcxx', type=str,
+                    help = 'the path of gcc lib. if you change the default gcc version,you should ship the libstdc++.so or libstdc++.so.6 ')
 
 parser.add_argument('command', nargs='+',
                     help = 'command for dmlc program')
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 if args.jobname == 'auto':
-    args.jobname = ('Dmlc[nworker=%d]:' % args.nworker) + args.command[0].split('/')[-1];
+    args.jobname = ('DMLC[nworker=%d]:' % args.nworker) + args.command[0].split('/')[-1];
 
 if hadoop_binary == None:
     parser.add_argument('-hb', '--hadoop_binary', required = True,
-                        help="path to hadoop binary file")  
+                        help="path to hadoop binary file")
 else:
-    parser.add_argument('-hb', '--hadoop_binary', default = hadoop_binary, 
-                        help="path to hadoop binary file")  
+    parser.add_argument('-hb', '--hadoop_binary', default = hadoop_binary,
+                        help="path to hadoop binary file")
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 if args.jobname == 'auto':
     if args.server_nodes == 0:
@@ -100,7 +103,7 @@ hadoop_version = out[1].split('.')
 
 (classpath, err) = subprocess.Popen('%s classpath --glob' % args.hadoop_binary, shell = True, stdout=subprocess.PIPE).communicate()
 
-if hadoop_version < 2:    
+if hadoop_version < 2:
     print 'Current Hadoop Version is %s, dmlc_yarn will need Yarn(Hadoop 2.0)' % out[1]
 
 def yarn_submit(nworker, nserver, pass_env):
@@ -112,7 +115,7 @@ def yarn_submit(nworker, nserver, pass_env):
          nserver number of server nodes to start up
          pass_env enviroment variables to be added to the starting programs
     """
-    fset = set([YARN_JAR_PATH, YARN_BOOT_PY]) 
+    fset = set([YARN_JAR_PATH, YARN_BOOT_PY])
     flst = []
     if args.auto_file_cache != 0:
         for i in range(len(args.command)):
@@ -125,17 +128,28 @@ def yarn_submit(nworker, nserver, pass_env):
                     args.command[i] = './' + args.command[i].split('/')[-1]
         for f in flst:
             if os.path.exists(f):
-                fset.add(f)            
+                fset.add(f)
+
     JAVA_HOME = os.getenv('JAVA_HOME')
     if JAVA_HOME is None:
         JAVA = 'java'
     else:
-        JAVA = JAVA_HOME + '/bin/java'        
+        JAVA = JAVA_HOME + '/bin/java'
     cmd = '%s -cp `%s classpath`:%s org.apache.hadoop.yarn.dmlc.Client '\
           % (JAVA, args.hadoop_binary, YARN_JAR_PATH)
     env = os.environ.copy()
     for k, v in pass_env.items():
         env[k] = str(v)
+
+    # ship lib-stdc++.so
+    if args.ship_libcxx is not None:
+        if platform.architecture()[0] == '64bit':
+            libcxx = args.ship_libcxx + '/libstdc++.so.6'
+        else:
+            libcxx = args.ship_libcxx + '/libstdc++.so'
+        fset.add(libcxx)
+        # update local LD_LIBRARY_PATH
+        env['LD_LIBRARY_PATH'] = libcxx + ':' + env['LD_LIBRARY_PATH']
 
     env['DMLC_CPU_VCORES'] = str(args.vcores)
     env['DMLC_MEMORY_MB'] = str(args.memory_mb)
@@ -158,8 +172,8 @@ def yarn_submit(nworker, nserver, pass_env):
         subprocess.check_call(cmd, shell = True, env = env)
     thread = Thread(target = run, args=())
     thread.setDaemon(True)
-    thread.start()    
+    thread.start()
 
 tracker.config_logger(args)
 tracker.submit(args.nworker, args.server_nodes, fun_submit = yarn_submit,
-               pscmd= (' '.join(args.command)))
+               pscmd= (' '.join([YARN_BOOT_PY] + args.command) + ' ' + ' '.join(unknown)))

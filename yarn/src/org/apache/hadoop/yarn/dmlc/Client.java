@@ -266,6 +266,8 @@ public class Client {
             for (QueueInfo q : yarnClient.getAllQueues()) {
               System.out.println(q.getQueueName());
             }
+            
+            yarnClient.killApplication(appId);
         }
     }
 
