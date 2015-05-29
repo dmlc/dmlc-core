@@ -147,7 +147,7 @@ struct RowBlock {
   /*! \return memory cost of the block in bytes */
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(real_t));
-	if (weight != NULL) cost += size * sizeof(real_t);
+	  if (weight != NULL) cost += size * sizeof(real_t);
     size_t ndata = offset[size] - offset[0];
     if (index != NULL) cost += ndata * sizeof(IndexType);
     if (value != NULL) cost += ndata * sizeof(real_t);
@@ -164,7 +164,7 @@ struct RowBlock {
     RowBlock ret;
     ret.size = end - begin;
     ret.label = label + begin;
-	if (imporrtance != NULL)
+	if (weight != NULL)
 		ret.weight = weight + begin;
 	else
 		ret.weight = NULL;

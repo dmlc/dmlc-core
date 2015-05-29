@@ -6,6 +6,7 @@
  */
 #ifndef DMLC_IO_INPUT_SPLIT_BASE_H_
 #define DMLC_IO_INPUT_SPLIT_BASE_H_
+#include <algorithm>
 #include <vector>
 #include <cstdio>
 #include <string>

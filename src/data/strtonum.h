@@ -218,7 +218,7 @@ inline int parsePair(const char * begin, const char * end, const char ** parseEn
   p++;
   while (p != end && !isdigits(*p)) p++;
   q = p;
-  while (q != end && isdigit(*q)) q++;
+  while (q != end && isdigits(*q)) q++;
   *parseEnd = q;
   v2 = str2T<T2>(p, q);
   return 2;

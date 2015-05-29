@@ -154,10 +154,10 @@ ParseBlock(char *begin,
     out->label.push_back(label);
     // parse feature[:value]
     p = q;
-    while (p != end) {
+    while (p != lend) {
       IndexType featureId;
       real_t value;
-      int r = parsePair<IndexType, real_t>(p, end, &q, featureId, value);
+      int r = parsePair<IndexType, real_t>(p, lend, &q, featureId, value);
       if (r < 1) {
         p = q;
         continue;
@@ -171,6 +171,9 @@ ParseBlock(char *begin,
     }
     // next line
     lbegin = lend;
+  }
+  if (out->label.size() != 0) {
+    out->offset.push_back(out->index.size());
   }
   CHECK(out->label.size() + 1 == out->offset.size());
 }

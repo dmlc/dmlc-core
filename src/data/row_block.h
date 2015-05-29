@@ -55,7 +55,7 @@ struct RowBlockContainer {
   /*! \brief clear the container */
   inline void Clear(void) {
     offset.clear(); offset.push_back(0);
-    label.clear(); index.clear(); value.clear();
+    label.clear(); index.clear(); value.clear(); weight.clear();
     max_index = 0;
   }
   /*! \brief size of the data */
@@ -66,6 +66,7 @@ struct RowBlockContainer {
   inline size_t MemCostBytes(void) const {
     return offset.size() * sizeof(size_t) +
         label.size() * sizeof(real_t) +
+        weight.size() * sizeof(real_t) +
         index.size() * sizeof(IndexType) +
         value.size() * sizeof(real_t);
   }
@@ -76,6 +77,7 @@ struct RowBlockContainer {
    */
   template<typename I>
   inline void Push(Row<I> row) {
+    LOG(FATLE) << "not supported" << endl;
     label.push_back(row.label);
     for (size_t i = 0; i < row.length; ++i) {
       CHECK(row.index[i] < std::numeric_limits<IndexType>::max())
@@ -102,6 +104,12 @@ struct RowBlockContainer {
     label.resize(label.size() + batch.size);
     std::memcpy(BeginPtr(label) + size, batch.label,
                 batch.size * sizeof(real_t));
+    if (batch.weight != NULL) {
+      /*weight.resize(weight.size() + batch.size);
+      std::memcpy(BeginPtr(weight) + weight.size(), batch.weight,
+        batch.size * sizeof(real_t));*/
+      weight.insert(weight.end(), batch.weight, batch.weight + batch.size);
+    }
     size_t ndata = batch.offset[batch.size] - batch.offset[0];
     index.resize(index.size() + ndata);
     IndexType *ihead = BeginPtr(index) + offset.back();
@@ -139,11 +147,7 @@ RowBlockContainer<IndexType>::GetBlock(void) const {
   data.label = BeginPtr(label);
   data.weight = BeginPtr(weight);
   data.index = BeginPtr(index);
-  if (value.size() == 0) {
-    data.value = NULL;
-  } else {
-    data.value = BeginPtr(value);
-  }
+  data.value = BeginPtr(value);
   return data;
 }
 template<typename IndexType>
