@@ -144,7 +144,7 @@ public:
 };
 
 template<typename T>
-inline T str2T(const char * begin, const char * end) {
+inline T Str2Type(const char * begin, const char * end) {
   return Str2T<T>::get(begin, end);
 }
 
@@ -198,29 +198,29 @@ public:
 * \output number of values parsed
 */
 template<typename T1, typename T2>
-inline int parsePair(const char * begin, const char * end, const char ** parseEnd, T1 & v1, T2 & v2) {
+inline int ParsePair(const char * begin, const char * end, const char ** endptr, T1 & v1, T2 & v2) {
   const char * p = begin;
   while (p != end && !isdigits(*p)) p++;
   if (p == end) {
-    *parseEnd = end;
+    *endptr = end;
     return 0;
   }
   const char * q = p;
   while (q != end && isdigit(*q)) q++;
-  v1 = str2T<T1>(p, q);
+  v1 = Str2Type<T1>(p, q);
   p = q;
   while (p != end && isblank(*p)) p++;
   if (p == end || *p != ':') {
     // only v1
-    *parseEnd = p;
+    *endptr = p;
     return 1;
   }
   p++;
   while (p != end && !isdigits(*p)) p++;
   q = p;
   while (q != end && isdigits(*q)) q++;
-  *parseEnd = q;
-  v2 = str2T<T2>(p, q);
+  *endptr = q;
+  v2 = Str2Type<T2>(p, q);
   return 2;
 }
 

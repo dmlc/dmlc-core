@@ -209,10 +209,12 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType> inst;
   inst.label = label[rowid];
-  if (weight != NULL)
-	  inst.weight = weight[rowid];
-  else
-	  inst.weight = 1.0f;
+  if (weight != NULL) {
+    inst.weight = weight[rowid];
+  }
+  else {
+    inst.weight = 1.0f;
+  }
   inst.length = offset[rowid + 1] - offset[rowid];
   inst.index = index + offset[rowid];
   if (value == NULL) {
