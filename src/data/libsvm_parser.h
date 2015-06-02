@@ -127,8 +127,6 @@ ParseBlock(char *begin,
            char *end,
            RowBlockContainer<IndexType> *out) {
   out->Clear();
-
-#if 1
   char * lbegin = begin;
   char * lend = lbegin;
   while (lbegin != end) {
@@ -177,40 +175,6 @@ ParseBlock(char *begin,
   if (out->label.size() != 0) {
     out->offset.push_back(out->index.size());
   }
-#else
-  char *p = begin;
-  while (p != end) {
-    // auto skip empty lines
-    while (p != end && isspace(*p)) ++p;
-    if (p == end) break;
-    char *head = p;
-    while (p != end && isdigit(*p)) ++p;
-    if (*p == ':') {
-      // with weight
-      out->label.push_back(atof(head));
-      char *endptr;
-      real_t w = strtof(p + 1, &endptr);
-      out->weight.push_back(w);
-      p = endptr;
-    }
-    else {
-      out->label.push_back(atof(head));
-    }
-    while (p != end && *p != '\n' && *p != '\r') {
-      while (p != end && isblank(*p)) ++p;
-      head = p;
-      out->index.push_back(atol(head));
-      while (p != end && isdigit(*p)) ++p;
-      if (*p == ':') {
-        char *endptr;
-        real_t v = strtof(p + 1, &endptr);
-        out->value.push_back(v);
-        p = endptr;
-      }
-    }
-    out->offset.push_back(out->index.size());
-  }
-#endif
   CHECK(out->label.size() + 1 == out->offset.size());
 }
 

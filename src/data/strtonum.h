@@ -206,7 +206,7 @@ inline int ParsePair(const char * begin, const char * end, const char ** endptr,
     return 0;
   }
   const char * q = p;
-  while (q != end && isdigit(*q)) q++;
+  while (q != end && isdigits(*q)) q++;
   v1 = Str2Type<T1>(p, q);
   p = q;
   while (p != end && isblank(*p)) p++;

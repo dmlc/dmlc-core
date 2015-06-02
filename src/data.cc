@@ -45,11 +45,38 @@ CreateIter_(const char *uri_,
 }
 }  // namespace data
 template<>
-RowBlockIter<unsigned> *
-RowBlockIter<unsigned>::Create(const char *uri,
+RowBlockIter<uint32_t> *
+RowBlockIter<uint32_t>::Create(const char *uri,
                                unsigned part_index,
                                unsigned num_parts,
                                const char *type) {
-  return data::CreateIter_<unsigned>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint32_t>(uri, part_index, num_parts, type);
+}
+
+template<>
+RowBlockIter<int32_t> *
+RowBlockIter<int32_t>::Create(const char *uri,
+unsigned part_index,
+unsigned num_parts,
+const char *type) {
+  return data::CreateIter_<int32_t>(uri, part_index, num_parts, type);
+}
+
+template<>
+RowBlockIter<uint64_t> *
+RowBlockIter<uint64_t>::Create(const char *uri,
+unsigned part_index,
+unsigned num_parts,
+const char *type) {
+  return data::CreateIter_<uint64_t>(uri, part_index, num_parts, type);
+}
+
+template<>
+RowBlockIter<int64_t> *
+RowBlockIter<int64_t>::Create(const char *uri,
+unsigned part_index,
+unsigned num_parts,
+const char *type) {
+  return data::CreateIter_<int64_t>(uri, part_index, num_parts, type);
 }
 }  // dmlc
