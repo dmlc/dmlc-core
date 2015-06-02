@@ -10,7 +10,6 @@
 
 namespace dmlc {
 namespace data {
-
 inline bool isspace(char c) {
   return (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f');
 }
@@ -137,10 +136,7 @@ inline float atof(const char *nptr) {
 template<typename T>
 class Str2T {
 public:
-  static inline T get(const char * begin, const char * end) {
-    assert(0);
-    return T();
-  }
+  static inline T get(const char * begin, const char * end);
 };
 
 template<typename T>
@@ -198,33 +194,31 @@ public:
 * \output number of values parsed
 */
 template<typename T1, typename T2>
-inline int ParsePair(const char * begin, const char * end, const char ** endptr, T1 & v1, T2 & v2) {
+inline int ParsePair(const char * begin, const char * end, const char ** endptr, T1 &v1, T2 &v2) {
   const char * p = begin;
-  while (p != end && !isdigits(*p)) p++;
+  while (p != end && !isdigits(*p)) ++p;
   if (p == end) {
     *endptr = end;
     return 0;
   }
   const char * q = p;
-  while (q != end && isdigits(*q)) q++;
+  while (q != end && isdigits(*q)) ++q;
   v1 = Str2Type<T1>(p, q);
   p = q;
-  while (p != end && isblank(*p)) p++;
+  while (p != end && isblank(*p)) ++p;
   if (p == end || *p != ':') {
     // only v1
     *endptr = p;
     return 1;
   }
   p++;
-  while (p != end && !isdigits(*p)) p++;
+  while (p != end && !isdigits(*p)) ++p;
   q = p;
-  while (q != end && isdigits(*q)) q++;
+  while (q != end && isdigits(*q)) ++q;
   *endptr = q;
   v2 = Str2Type<T2>(p, q);
   return 2;
 }
-
 }  // namespace data
 }  // namespace dmlc
-
 #endif /* DMLC_DATA_STRTONUM_H_ */

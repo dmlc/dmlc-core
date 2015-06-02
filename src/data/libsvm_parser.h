@@ -47,6 +47,7 @@ class LibSVMParser : public ParserImpl<IndexType> {
   virtual bool ParseNext(std::vector<RowBlockContainer<IndexType> > *data) {
     return FillData(data);
   }
+
  protected:
   /*!
    * \brief read in next several blocks of data
@@ -132,7 +133,7 @@ ParseBlock(char *begin,
   while (lbegin != end) {
     // get line end
     lend = lbegin + 1;
-    while (lend != end && *lend != '\n') lend++;
+    while (lend != end && *lend != '\n') ++lend;
     // parse label[:weight]
     const char * p = lbegin;
     const char * q = NULL;

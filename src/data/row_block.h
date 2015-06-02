@@ -76,9 +76,9 @@ struct RowBlockContainer {
    * \tparam I the index type of the row
    */
   template<typename I>
-  inline void Push(Row<I> row) {
-    LOG(FATLE) << "not supported" << endl;
+  inline void Push(Row<I> row) {    
     label.push_back(row.label);
+    weight.push_back(row.weight);
     for (size_t i = 0; i < row.length; ++i) {
       CHECK(row.index[i] < std::numeric_limits<IndexType>::max())
           << "index exceed numeric bound of current type";
@@ -92,7 +92,7 @@ struct RowBlockContainer {
       }
     }
     offset.push_back(index.size());
-   }
+  }
   /*!
    * \brief push the row block into container
    * \param row the row to push back
@@ -105,9 +105,6 @@ struct RowBlockContainer {
     std::memcpy(BeginPtr(label) + size, batch.label,
                 batch.size * sizeof(real_t));
     if (batch.weight != NULL) {
-      /*weight.resize(weight.size() + batch.size);
-      std::memcpy(BeginPtr(weight) + weight.size(), batch.weight,
-        batch.size * sizeof(real_t));*/
       weight.insert(weight.end(), batch.weight, batch.weight + batch.size);
     }
     size_t ndata = batch.offset[batch.size] - batch.offset[0];

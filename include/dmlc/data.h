@@ -147,7 +147,7 @@ struct RowBlock {
   /*! \return memory cost of the block in bytes */
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(real_t));
-	  if (weight != NULL) cost += size * sizeof(real_t);
+    if (weight != NULL) cost += size * sizeof(real_t);
     size_t ndata = offset[size] - offset[0];
     if (index != NULL) cost += ndata * sizeof(IndexType);
     if (value != NULL) cost += ndata * sizeof(real_t);
@@ -164,10 +164,11 @@ struct RowBlock {
     RowBlock ret;
     ret.size = end - begin;
     ret.label = label + begin;
-	if (weight != NULL)
-		ret.weight = weight + begin;
-	else
-		ret.weight = NULL;
+    if (weight != NULL) {
+      ret.weight = weight + begin;
+    } else {
+      ret.weight = NULL;
+    }
     ret.offset = offset + begin;
     ret.index = index;
     ret.value = value;
@@ -176,9 +177,17 @@ struct RowBlock {
 };
 
 /*!
- * \brief row block iterator interface that gets RowBlocks
- * \sa DataIter
+ * \brief Data structure that holds the data
+ * Row block iterator interface that gets RowBlocks
+ * Difference between RowBlockIter and Parser:
+ *     RowBlockIter caches the data internally that can be used
+ *     to iterate the dataset multiple times,
+ *     Parser holds very limited internal state and was usually
+ *     used to read data only once
+ *
+ * \sa Parser 
  * \tparam IndexType type of index in RowBlock
+ *  Create function was only implemented for IndexType uint64_t and uint32_t
  */
 template<typename IndexType>
 class RowBlockIter : public DataIter<RowBlock<IndexType> > {
@@ -204,10 +213,19 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
 };
 
 /*!
-* \brief parser interface that parses file splits
-* \sa DataIter
-* \tparam IndexType type of index in RowBlock
-*/
+ * \brief parser interface that parses input data
+ * used to load dmlc data format into your own data format
+ * Difference between RowBlockIter and Parser:
+ *     RowBlockIter caches the data internally that can be used
+ *     to iterate the dataset multiple times,
+ *     Parser holds very limited internal state and was usually
+ *     used to read data only once
+ *
+ *
+ * \sa RowBlockIter
+ * \tparam IndexType type of index in RowBlock
+ *  Create function was only implemented for IndexType uint64_t and uint32_t
+ */
 template <typename IndexType>
 class Parser : public DataIter<RowBlock<IndexType> > {
 public:
@@ -239,8 +257,7 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
   inst.label = label[rowid];
   if (weight != NULL) {
     inst.weight = weight[rowid];
-  }
-  else {
+  } else {
     inst.weight = 1.0f;
   }
   inst.length = offset[rowid + 1] - offset[rowid];
