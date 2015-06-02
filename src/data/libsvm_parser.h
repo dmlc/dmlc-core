@@ -23,7 +23,7 @@ namespace data {
  * and returns rows in input data
  */
 template <typename IndexType>
-class LibSVMParser : public Parser<IndexType> {
+class LibSVMParser : public ParserImpl<IndexType> {
  public:
   explicit LibSVMParser(InputSplit *source,
                         int nthread)

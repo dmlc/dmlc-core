@@ -21,7 +21,7 @@ typedef float real_t;
 
 /*!
  * \brief this defines the unsigned integer type
- * that can normally be used store feature index
+ * that can normally be used to store feature index
  */
 typedef unsigned index_t;
 
@@ -174,6 +174,7 @@ struct RowBlock {
     return ret;
   }
 };
+
 /*!
  * \brief row block iterator interface that gets RowBlocks
  * \sa DataIter
@@ -202,6 +203,33 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
   virtual size_t NumCol() const = 0;
 };
 
+/*!
+* \brief parser interface that parses file splits
+* \sa DataIter
+* \tparam IndexType type of index in RowBlock
+*/
+template <typename IndexType>
+class Parser : public DataIter<RowBlock<IndexType> > {
+public:
+  /*!
+  * \brief create a new instance of parser based on the "type"
+  *
+  * \param uri the uri of the input, can contain hdfs prefix
+  * \param part_index the part id of current input
+  * \param num_parts total number of splits
+  * \param type type of dataset can be: "libsvm", ...
+  *
+  * \return the created parser
+  */
+  static Parser<IndexType> *
+    Create(const char *uri_,
+    unsigned part_index,
+    unsigned num_parts,
+    const char *type);
+  /*! \return size of bytes read so far */
+  virtual size_t BytesRead(void) const = 0;
+};
+
 // implementation of operator[]
 template<typename IndexType>
 inline Row<IndexType>
@@ -224,5 +252,6 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
   }
   return inst;
 }
+
 }  // namespace dmlc
 #endif  // DMLC_DATA_H_
