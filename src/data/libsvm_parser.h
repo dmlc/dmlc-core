@@ -133,7 +133,7 @@ ParseBlock(char *begin,
   while (lbegin != end) {
     // get line end
     lend = lbegin + 1;
-    while (lend != end && *lend != '\n') ++lend;
+    while (lend != end && *lend != '\n' && *lend != '\r') ++lend;
     // parse label[:weight]
     const char * p = lbegin;
     const char * q = NULL;
