@@ -22,7 +22,7 @@ inline bool isdigit(char c) {
   return (c >= '0' && c <= '9');
 }
 
-inline bool isdigits(char c) {
+inline bool isdigitchars(char c) {
   return (c >= '0' && c <= '9') 
     || c == '+' || c == '-' 
     || c == '.' 
@@ -199,13 +199,13 @@ public:
 template<typename T1, typename T2>
 inline int ParsePair(const char * begin, const char * end, const char ** endptr, T1 &v1, T2 &v2) {
   const char * p = begin;
-  while (p != end && !isdigits(*p)) ++p;
+  while (p != end && !isdigitchars(*p)) ++p;
   if (p == end) {
     *endptr = end;
     return 0;
   }
   const char * q = p;
-  while (q != end && isdigits(*q)) ++q;
+  while (q != end && isdigitchars(*q)) ++q;
   v1 = Str2Type<T1>(p, q);
   p = q;
   while (p != end && isblank(*p)) ++p;
@@ -215,9 +215,9 @@ inline int ParsePair(const char * begin, const char * end, const char ** endptr,
     return 1;
   }
   p++;
-  while (p != end && !isdigits(*p)) ++p;
+  while (p != end && !isdigitchars(*p)) ++p;
   q = p;
-  while (q != end && isdigits(*q)) ++q;
+  while (q != end && isdigitchars(*q)) ++q;
   *endptr = q;
   v2 = Str2Type<T2>(p, q);
   return 2;
