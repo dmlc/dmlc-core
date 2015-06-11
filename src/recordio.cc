@@ -1,5 +1,6 @@
 // use direct path for to save compile flags
 #define _CRT_SECURE_NO_WARNINGS
+#include <algorithm>
 #include <dmlc/base.h>
 #include <dmlc/recordio.h>
 #include <dmlc/logging.h>

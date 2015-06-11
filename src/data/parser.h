@@ -20,11 +20,11 @@ class ThreadedParser;
 /*! \brief base class for parser to parse data */
 
 template <typename IndexType>
-class Parser : public DataIter<RowBlock<IndexType> > {
+class ParserImpl : public Parser<IndexType> {
  public:
-  Parser() : data_ptr_(0), data_end_(0) {}
+  ParserImpl() : data_ptr_(0), data_end_(0) {}
   // virtual destructor
-  virtual ~Parser() {}
+  virtual ~ParserImpl() {}
   /*! \brief implement next */
   virtual bool Next(void) {
     while (true) {
@@ -66,9 +66,9 @@ class Parser : public DataIter<RowBlock<IndexType> > {
 #if DMLC_USE_CXX11
 
 template <typename IndexType>
-class ThreadedParser : public Parser<IndexType> {
+class ThreadedParser : public ParserImpl<IndexType> {
  public:
-  explicit ThreadedParser(Parser<IndexType> *base)
+   explicit ThreadedParser(ParserImpl<IndexType> *base)
       : base_(base), tmp_(NULL) {
     iter_.set_max_capacity(8);
     iter_.Init([base](std::vector<RowBlockContainer<IndexType> > **dptr) {
@@ -88,8 +88,8 @@ class ThreadedParser : public Parser<IndexType> {
     iter_.BeforeFirst();
   }
   /*! \brief implement next */
-  using Parser<IndexType>::data_ptr_;
-  using Parser<IndexType>::data_end_;
+  using ParserImpl<IndexType>::data_ptr_;
+  using ParserImpl<IndexType>::data_end_;
   virtual bool Next(void) {
     while (true) {
       while (data_ptr_ < data_end_) {
