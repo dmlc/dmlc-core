@@ -21,7 +21,7 @@ typedef float real_t;
 
 /*!
  * \brief this defines the unsigned integer type
- * that can normally be used store feature index
+ * that can normally be used to store feature index
  */
 typedef unsigned index_t;
 
@@ -68,6 +68,8 @@ class Row {
  public:
   /*! \brief label of the instance */
   real_t label;
+  /*! \brief weight of the instance */
+  real_t weight;
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
@@ -130,6 +132,8 @@ struct RowBlock {
   const size_t *offset;
   /*! \brief array[size] label of each instance */
   const real_t *label;
+  /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
+  const real_t *weight;
   /*! \brief feature index */
   const IndexType *index;
   /*! \brief feature value, can be NULL, indicating all values are 1 */
@@ -143,6 +147,7 @@ struct RowBlock {
   /*! \return memory cost of the block in bytes */
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(real_t));
+    if (weight != NULL) cost += size * sizeof(real_t);
     size_t ndata = offset[size] - offset[0];
     if (index != NULL) cost += ndata * sizeof(IndexType);
     if (value != NULL) cost += ndata * sizeof(real_t);
@@ -159,16 +164,30 @@ struct RowBlock {
     RowBlock ret;
     ret.size = end - begin;
     ret.label = label + begin;
+    if (weight != NULL) {
+      ret.weight = weight + begin;
+    } else {
+      ret.weight = NULL;
+    }
     ret.offset = offset + begin;
     ret.index = index;
     ret.value = value;
     return ret;
   }
 };
+
 /*!
- * \brief row block iterator interface that gets RowBlocks
- * \sa DataIter
+ * \brief Data structure that holds the data
+ * Row block iterator interface that gets RowBlocks
+ * Difference between RowBlockIter and Parser:
+ *     RowBlockIter caches the data internally that can be used
+ *     to iterate the dataset multiple times,
+ *     Parser holds very limited internal state and was usually
+ *     used to read data only once
+ *
+ * \sa Parser 
  * \tparam IndexType type of index in RowBlock
+ *  Create function was only implemented for IndexType uint64_t and uint32_t
  */
 template<typename IndexType>
 class RowBlockIter : public DataIter<RowBlock<IndexType> > {
@@ -193,6 +212,42 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
   virtual size_t NumCol() const = 0;
 };
 
+/*!
+ * \brief parser interface that parses input data
+ * used to load dmlc data format into your own data format
+ * Difference between RowBlockIter and Parser:
+ *     RowBlockIter caches the data internally that can be used
+ *     to iterate the dataset multiple times,
+ *     Parser holds very limited internal state and was usually
+ *     used to read data only once
+ *
+ *
+ * \sa RowBlockIter
+ * \tparam IndexType type of index in RowBlock
+ *  Create function was only implemented for IndexType uint64_t and uint32_t
+ */
+template <typename IndexType>
+class Parser : public DataIter<RowBlock<IndexType> > {
+public:
+  /*!
+  * \brief create a new instance of parser based on the "type"
+  *
+  * \param uri the uri of the input, can contain hdfs prefix
+  * \param part_index the part id of current input
+  * \param num_parts total number of splits
+  * \param type type of dataset can be: "libsvm", ...
+  *
+  * \return the created parser
+  */
+  static Parser<IndexType> *
+    Create(const char *uri_,
+    unsigned part_index,
+    unsigned num_parts,
+    const char *type);
+  /*! \return size of bytes read so far */
+  virtual size_t BytesRead(void) const = 0;
+};
+
 // implementation of operator[]
 template<typename IndexType>
 inline Row<IndexType>
@@ -200,6 +255,11 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType> inst;
   inst.label = label[rowid];
+  if (weight != NULL) {
+    inst.weight = weight[rowid];
+  } else {
+    inst.weight = 1.0f;
+  }
   inst.length = offset[rowid + 1] - offset[rowid];
   inst.index = index + offset[rowid];
   if (value == NULL) {
@@ -209,5 +269,6 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
   }
   return inst;
 }
+
 }  // namespace dmlc
 #endif  // DMLC_DATA_H_
