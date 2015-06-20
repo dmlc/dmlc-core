@@ -33,3 +33,6 @@ BUILD_TEST=0
 # path to gtest library (only used when $BUILD_TEST=1)
 # there should be an include path in $GTEST_PATH/include and library in $GTEST_PATH/lib
 GTEST_PATH=
+
+# path to third-party dependences such as glog
+DEPS_PATH=
