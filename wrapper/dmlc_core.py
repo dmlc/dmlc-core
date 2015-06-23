@@ -31,6 +31,27 @@ def loadlib__(lib = 'standard'):
     #dmlclib.RabitVersionNumber.restype = ctypes.c_int
     dmlclib.DMLC_RowBlockIter_Next.restype = ctypes.c_int
     dmlclib.DMLC_RowBlockIter_NumCol.restype = ctypes.c_uint32
+    dmlclib.DMLC_RowBlockIter_Size.restype = ctypes.c_uint64
+    dmlclib.DMLC_RowBlockIter_Size_ALL.restype = ctypes.c_uint64
+    dmlclib.DMLC_RowBlockIter_NumRow.restype = ctypes.c_uint32
+    dmlclib.DMLC_RowBlockIter_NumRow_ALL.restype = ctypes.c_uint32
+    dmlclib.DMLC_RowBlockIter_Value_Extract.argtypes = [
+        ctypes.c_void_p,
+        np.ctypeslib.ndpointer(dtype=np.uint64),
+        np.ctypeslib.ndpointer(dtype=np.float32),
+        np.ctypeslib.ndpointer(dtype=np.uint32),
+        np.ctypeslib.ndpointer(dtype=np.float32),
+        np.ctypeslib.ndpointer(dtype=np.uint32),
+        ctypes.c_uint32, ctypes.c_uint32
+    ]
+    dmlclib.DMLC_RowBlockIter_Value_ALL.argtypes = [
+        ctypes.c_void_p,
+        np.ctypeslib.ndpointer(dtype=np.uint64),
+        np.ctypeslib.ndpointer(dtype=np.float32),
+        np.ctypeslib.ndpointer(dtype=np.uint32),
+        np.ctypeslib.ndpointer(dtype=np.float32),
+        np.ctypeslib.ndpointer(dtype=np.uint32),
+        ctypes.c_uint32, ctypes.c_uint32]
     #dmlclib.TEST_write_numpy.argtypes = [np.ctypeslib.ndpointer(dtype=np.float32), np.uint64]
     #dmlclib.DMLC_RowBlockIter_CreateFromUri.argtypes = [
     #    ctypes.c_char_p, ctypes.c_int, ctypes.c_int, ctypes.c_char_p]
@@ -71,7 +92,8 @@ class RowBlock(object):
 class RowBlockIter(object):
     def __init__(me):
         me.data_ptr = None
-    def CreateFromUri(me, uri, part_index, num_parts, format):
+        me.valueall = False
+    def CreateFromUri(me, uri, part_index, num_parts, format, padding = 0):
         #print 'get = ', dmlclib.DMLC_test(ctypes.c_char_p(uri))
 
         me.data_ptr = dmlclib.DMLC_RowBlockIter_CreateFromUri(
@@ -79,45 +101,92 @@ class RowBlockIter(object):
             ctypes.c_int(part_index), 
             ctypes.c_int(num_parts), 
             ctypes.c_char_p(format))
-
+        me.padding = padding
+        me.aux = np.empty((0, padding),  dtype = np.uint32)
+        me.label = np.empty((1),  dtype = np.float32)
+        me.index = np.empty((1), dtype = np.uint32)
+        me.value = np.empty((1), dtype = np.float32)
+        me.offset = np.empty((1),  dtype = np.uint64)
     def BeforeFirst(me):
         dmlclib.DMLC_RowBlockIter_Beforefirst(me.data_ptr);
         me.has_next = False
         me.has_value = False
         me.spmat = None
+    def __iter__(me):
+        me.iter_idx = 0
+        if me.valueall == False:
+            me.BeforeFirst()
+        return me
     def Next(me):
         me.has_next =  True if dmlclib.DMLC_RowBlockIter_Next(me.data_ptr) > 0 else False
         #print 'me.has_next = ', me.has_next
         me.has_value = False
         me.spmat = None
-
-        me.label = None
-        me.offset = None
-        me.index = None
-        me.value = None
-
         return me.has_next
+    def next(me):
+        me.iter_idx += 1
+        if me.iter_idx == me.length:
+            if me.valueall or (me.Next() == False):
+                raise StopIteration()
+            else:
+                me.Value()
+                me.iter_idx = 0
+        s = me.offset[me.iter_idx]
+        e = me.offset[me.iter_idx + 1]
+        return me.label[me.iter_idx], me.index[s:e], me.value[s:e], me.aux[me.iter_idx,:]
+    def ValueALL(me):
+        me.valueall = True
+        me.length = dmlclib.DMLC_RowBlockIter_NumRow_ALL(me.data_ptr)
+        me.n_elem = dmlclib.DMLC_RowBlockIter_Size_ALL(me.data_ptr)
+        #print 'dbg: padding = ', me.padding
+        me.aux.resize((me.length, me.padding))
+        
+        #print me.n_elem, me.length, me.padding
+        me.n_elem = int(me.n_elem) - me.length * me.padding
+        me.label.resize((me.n_elem))
+        me.value.resize((me.n_elem))
+        me.index.resize((me.n_elem))
+        me.offset =  np.empty((me.length + 1),  dtype = np.uint64)
+        dmlclib.DMLC_RowBlockIter_Value_ALL(me.data_ptr, 
+            me.offset,  me.label, me.index, 
+            me.value,  me.aux, me.padding, me.n_elem)
+        me.has_spmat = False
+        me.has_value = True
+               
     def Value(me):
         if me.has_next == 0:
             return 
-        me._size = ctypes.c_uint64()
-        me._label = POINTER(ctypes.c_float)()
-        me._offset = POINTER(ctypes.c_uint64)()
-        me._index = POINTER(ctypes.c_uint32)()
-        me._value = POINTER(ctypes.c_float)()
-        dmlclib.DMLC_RowBlockIter_Value(me.data_ptr, 
-            byref(me._size),  byref(me._offset), byref(me._label), 
-            byref(me._index), byref(me._value))
-        me.length = me._size.value;
-        me.label = np.ctypeslib.as_array(me._label, shape = (me.length ,))
-        me.offset = np.ctypeslib.as_array(me._offset, shape = (me.length + 1,))
-        me.n_elem = me.offset[-1]
-        me.index = np.ctypeslib.as_array(me._index, shape = (me.n_elem ,))
-        me.value = np.ctypeslib.as_array(me._value, shape = (me.n_elem ,))
-        #print me.label
-        #print me.offset
-        #print me.index
-        #print me.value
+
+        if me.padding == 0:
+            me._size = ctypes.c_uint64()
+            me._label = POINTER(ctypes.c_float)()
+            me._offset = POINTER(ctypes.c_uint64)()
+            me._index = POINTER(ctypes.c_uint32)()
+            me._value = POINTER(ctypes.c_float)()
+            dmlclib.DMLC_RowBlockIter_Value(me.data_ptr, 
+                byref(me._size),  byref(me._offset), byref(me._label), 
+                byref(me._index), byref(me._value))
+            me.length = me._size.value
+            me.offset = np.ctypeslib.as_array(me._offset, shape = (me.length + 1,))
+            me.label = np.ctypeslib.as_array(me._label, shape = (me.length ,))
+            me.n_elem = me.offset[-1]
+            me.index = np.ctypeslib.as_array(me._index, shape = (me.n_elem ,))
+            me.value = np.ctypeslib.as_array(me._value, shape = (me.n_elem ,))
+        else:
+            me.length = dmlclib.DMLC_RowBlockIter_NumRow(me.data_ptr)
+            me.n_elem = dmlclib.DMLC_RowBlockIter_Size(me.data_ptr)
+            #print 'dbg: padding = ', me.padding
+            me.aux.resize((me.length, me.padding))
+            
+            #print me.n_elem, me.length, me.padding
+            me.n_elem = int(me.n_elem) - me.length * me.padding
+            me.label.resize((me.n_elem))
+            me.value.resize((me.n_elem))
+            me.index.resize((me.n_elem))
+            me.offset =  np.empty((me.length + 1),  dtype = np.uint64)
+            dmlclib.DMLC_RowBlockIter_Value_Extract(me.data_ptr, 
+                me.offset,  me.label, me.index, 
+                me.value,  me.aux, me.padding, me.n_elem)
         me.has_spmat = False
         me.has_value = True
     def NumCol(me):
