@@ -20,6 +20,10 @@ namespace dmlc {
  *  default logger if DMLC_LOG_FATAL_THROW == 1
  */
 struct Error : public std::runtime_error {
+  /*!
+   * \brief constructor 
+   * \param s the error message
+   */
   Error(const std::string &s) : std::runtime_error(s) {}
 };
 } // namespace dmlc

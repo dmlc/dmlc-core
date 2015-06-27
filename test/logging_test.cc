@@ -1,4 +1,3 @@
-
 #include <dmlc/logging.h>
 
 int main(void) {
