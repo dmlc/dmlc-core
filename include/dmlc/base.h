@@ -6,9 +6,17 @@
 #ifndef DMLC_BASE_H_
 #define DMLC_BASE_H_
 
-/*! \brief whether use glog for logging*/
+/*! \brief whether use glog for logging */
 #ifndef DMLC_USE_GLOG
 #define DMLC_USE_GLOG 0
+#endif
+
+/*!
+ * \brief whether throw runtime error instead of abort
+ *  when FATAL error occured
+ */
+#ifndef DMLC_LOG_FATAL_THROW
+#define DMLC_LOG_FATAL_THROW 1
 #endif
 
 /*! \brief whether compile with hdfs support */

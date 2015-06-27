@@ -11,7 +11,24 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <stdexcept>
 #include "./base.h"
+
+namespace dmlc {
+/*!
+ * \brief exception class that will be thrown by
+ *  default logger if DMLC_LOG_FATAL_THROW == 1
+ */
+struct Error : public std::runtime_error {
+  Error(const std::string &s) : std::runtime_error(s) {}
+};
+} // namespace dmlc
+
+#if DMLC_USE_CXX11
+#define DMLC_THROW_EXCEPTION noexcept(false)
+#else
+#define DMLC_THROW_EXCEPTION
+#endif
 
 #if DMLC_USE_GLOG
 #include <glog/logging.h>
@@ -20,12 +37,13 @@ namespace dmlc {
 inline void InitLogging(const char* argv0) {
   google::InitGoogleLogging(argv0);
 }
-}  // namespace dmcl
+}  // namespace dmlc
 
 #else
 // use a light version of glog
 #include <assert.h>
 #include <iostream>
+#include <sstream>
 #include <cstdio>
 #include <ctime>
 
@@ -34,7 +52,6 @@ inline void InitLogging(const char* argv0) {
 #endif
 
 namespace dmlc {
-
 inline void InitLogging(const char* argv0) {
   // DO NOTHING
 }
@@ -156,6 +173,7 @@ class LogMessage {
   void operator=(const LogMessage&);
 };
 
+#if DMLC_LOG_FATAL_THROW == 0
 class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
@@ -168,6 +186,27 @@ class LogMessageFatal : public LogMessage {
   LogMessageFatal(const LogMessageFatal&);
   void operator=(const LogMessageFatal&);
 };
+#else
+class LogMessageFatal {
+ public:
+  LogMessageFatal(const char* file, int line) {
+    log_stream_ << "[" << pretty_date_.HumanDate() << "] " << file << ":"
+                << line << ": ";
+  }
+  std::ostringstream &stream() { return log_stream_; }
+  ~LogMessageFatal() DMLC_THROW_EXCEPTION {
+    // throwing out of destructor is evil
+    // hopefully we can do it here
+    throw Error(log_stream_.str());
+  }
+
+ private:
+  std::ostringstream log_stream_;
+  DateLogger pretty_date_;
+  LogMessageFatal(const LogMessageFatal&);
+  void operator=(const LogMessageFatal&);
+};
+#endif
 
 // This class is used to explicitly ignore values in the conditional
 // logging macros.  This avoids compiler warnings like "value computed
