@@ -10,7 +10,7 @@ include $(config)
 include make/dmlc.mk
 
 # this is the common build script for dmlc lib
-export LDFLAGS= -pthread -lm
+export LDFLAGS= -pthread -lm -lrt
 export CFLAGS = -O3 -Wall -msse2  -Wno-unknown-pragmas -Iinclude -std=c++0x
 LDFLAGS+= $(DMLC_LDFLAGS)
 CFLAGS+= $(DMLC_CFLAGS)
@@ -29,6 +29,10 @@ endif
 
 ifeq ($(USE_S3), 1)
 	OBJ += s3_filesys.o
+endif
+
+ifndef LINT_LANG
+	LINT_LANG="all"
 endif
 
 
@@ -63,10 +67,6 @@ $(OBJ) :
 
 $(ALIB):
 	ar cr $@ $+
-
-ifndef LINT_LANG
-	LINT_LANG="all"
-endif
 
 lint:
 	scripts/lint.py ${LINT_LANG} include src test scripts
