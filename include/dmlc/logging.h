@@ -24,9 +24,9 @@ struct Error : public std::runtime_error {
    * \brief constructor 
    * \param s the error message
    */
-  Error(const std::string &s) : std::runtime_error(s) {}
+  explicit Error(const std::string &s) : std::runtime_error(s) {}
 };
-} // namespace dmlc
+}  // namespace dmlc
 
 #if DMLC_USE_CXX11
 #define DMLC_THROW_EXCEPTION noexcept(false)
@@ -48,7 +48,6 @@ inline void InitLogging(const char* argv0) {
 #include <assert.h>
 #include <iostream>
 #include <sstream>
-#include <cstdio>
 #include <ctime>
 
 #if defined(_MSC_VER)
@@ -72,7 +71,7 @@ inline void InitLogging(const char* argv0) {
 #define CHECK_EQ(x, y) CHECK((x) == (y))
 #define CHECK_NE(x, y) CHECK((x) != (y))
 #define CHECK_NOTNULL(x) \
-  ((x) == NULL ? dmlc::LogMessageFatal(__FILE__, __LINE__).stream() << "Check  notnull: "  #x << ' ', (x) : (x))
+  ((x) == NULL ? dmlc::LogMessageFatal(__FILE__, __LINE__).stream() << "Check  notnull: "  #x << ' ', (x) : (x)) // NOLINT(*)
 // Debug-only checking.
 #ifdef NDEBUG
 #define DCHECK(x) \

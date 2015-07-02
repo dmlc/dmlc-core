@@ -60,7 +60,7 @@ class ThreadedIter : public DataIter<DType> {
     }
     /*!
      * \brief load the data content into DType,
-     * the caller can pass in NULL or an existing address     
+     * the caller can pass in NULL or an existing address
      * when inout_dptr is NULL:
      *    producer need to allocate a DType and fill the content
      * when inout_dptr is specified
@@ -69,12 +69,12 @@ class ThreadedIter : public DataIter<DType> {
      *
      * \param inout_dptr used to pass in the data holder cell
      *        and return the address of the cell filled
-     * \return true if there is next record, false if we reach the end     
+     * \return true if there is next record, false if we reach the end
      */
     virtual bool Next(DType **inout_dptr) = 0;
   };
   /*!
-   * \brief constructor 
+   * \brief constructor
    * \param max_capacity maximum capacity of the queue
    */
   explicit ThreadedIter(size_t max_capacity = 8)
@@ -89,14 +89,14 @@ class ThreadedIter : public DataIter<DType> {
     this->Destroy();
   }
   /*!
-   * \brief destroy all the related resources 
+   * \brief destroy all the related resources
    *  this is equivalent to destructor, can be used
    *  to destroy the threaditer when user think it is
    *  appropriate, it is safe to call this multiple times
    */
   inline void Destroy(void);
   /*!
-   * \brief set maximum capacity of the queue 
+   * \brief set maximum capacity of the queue
    * \param max_capacity maximum capacity of the queue
    */
   inline void set_max_capacity(size_t max_capacity) {
@@ -138,7 +138,7 @@ class ThreadedIter : public DataIter<DType> {
    */
   inline void Recycle(DType **inout_dptr);
   /*!
-   * \brief adapt the iterator interface's Next 
+   * \brief adapt the iterator interface's Next
    *  NOTE: the call to this function is not threadsafe
    *  use the other Next instead
    */
@@ -189,7 +189,7 @@ class ThreadedIter : public DataIter<DType> {
     lock.unlock();
     producer_cond_.notify_one();
   }
-  
+
  private:
   /*! \brief not support BeforeFirst */
   inline static void NotImplemented(void) {
@@ -221,7 +221,7 @@ class ThreadedIter : public DataIter<DType> {
   unsigned nwait_producer_;
   /*! \brief conditional variable for producer thread */
   std::condition_variable producer_cond_;
-  /*! \brief conditional variable for consumer threads */  
+  /*! \brief conditional variable for consumer threads */
   std::condition_variable consumer_cond_;
   /*! \brief the current output cell */
   DType *out_data_;
@@ -276,20 +276,20 @@ Init(Producer *producer, bool pass_ownership) {
   auto beforefirst = [producer]() {
     producer->BeforeFirst();
   };
-  this->Init(next, beforefirst);    
+  this->Init(next, beforefirst);
 }
 template<typename DType>
 inline void ThreadedIter<DType>::
 Init(std::function<bool(DType **)> next,
      std::function<void()> beforefirst) {
-  producer_sig_= kProduce;
+  producer_sig_ = kProduce;
   producer_sig_processed_ = false;
   produce_end_ = false;
   // procedure running in prodcuer
   // run producer thread
   auto producer_fun = [this, next, beforefirst] () {
     while (true) {
-      CHECK(!producer_sig_processed_);    
+      CHECK(!producer_sig_processed_);
       std::unique_lock<std::mutex> lock(mutex_);
       ++this->nwait_producer_;
       producer_cond_.wait(lock, [this]() {
@@ -330,7 +330,7 @@ Init(std::function<bool(DType **)> next,
         consumer_cond_.notify_all();
         return;
       }
-      // now without lock    
+      // now without lock
       produce_end_ = !next(&cell);
       CHECK(cell != NULL || produce_end_);
       // put things into queue

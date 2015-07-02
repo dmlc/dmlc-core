@@ -32,10 +32,10 @@ namespace dmlc {
  *
  *  (1) cflag == 0: this is a complete record;
  *  (2) cflag == 1: start of a multiple-rec;
- *      cflag == 2: middle of multiple-rec; 
+ *      cflag == 2: middle of multiple-rec;
  *      cflag == 3: end of multiple-rec
  */
-class RecordIOWriter {  
+class RecordIOWriter {
  public:
   /*!
    * \brief magic number of recordio
@@ -72,7 +72,7 @@ class RecordIOWriter {
    * \param stream the stream to be constructed
    */
   explicit RecordIOWriter(Stream *stream)
-      : stream_(stream), except_counter_(0) { 
+      : stream_(stream), except_counter_(0) {
     CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
@@ -117,7 +117,7 @@ class RecordIOReader {
     CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
-   * \brief read next complete record from stream   
+   * \brief read next complete record from stream
    * \param out_rec used to store output record in string
    * \return true of read was successful, false if end of stream was reached
    */
@@ -160,7 +160,7 @@ class RecordIOChunkReader {
    * \return true of read was successful, false if end was reached
    */
   bool NextRecord(InputSplit::Blob *out_rec);
-  
+
  private:
   /*! \brief internal temporal data */
   std::string temp_;

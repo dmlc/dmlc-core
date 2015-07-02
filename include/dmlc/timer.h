@@ -1,10 +1,12 @@
-#ifndef DMLC_TIMER_H_
-#define DMLC_TIMER_H_
 /*!
+ *  Copyright (c) 2015 by Contributors
  * \file timer.h
  * \brief cross platform timer for timing
  * \author Tianqi Chen
  */
+#ifndef DMLC_TIMER_H_
+#define DMLC_TIMER_H_
+
 #include <time.h>
 #ifdef __MACH__
 #include <mach/clock.h>
@@ -17,7 +19,7 @@ namespace dmlc {
  * \brief return time in seconds
  */
 inline double GetTime(void) {
-  // TODO: use c++11 chrono when c++11 was available
+  // TODO(tqchen): use c++11 chrono when c++11 was available
   #ifdef __MACH__
   clock_serv_t cclock;
   mach_timespec_t mts;

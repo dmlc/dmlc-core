@@ -71,7 +71,7 @@ class Stream {  // NOLINT(*)
   /*!
    * \brief writes a string
    * \param str the string to be written/serialized
-   */ 
+   */
   inline void Write(const std::string &str);
   /*!
    * \brief loads a string
@@ -94,7 +94,7 @@ class SeekStream: public Stream {
    * \brief generic factory function
    *  create an SeekStream for read only,
    *  the stream will close the underlying files upon deletion
-   *  error will be reported and the system will exit when create failed 
+   *  error will be reported and the system will exit when create failed
    * \param uri the uri of the input currently we support
    *            hdfs://, s3://, and file:// by default file:// will be used
    * \param allow_null whether NULL can be returned, or directly report error
@@ -107,12 +107,12 @@ class SeekStream: public Stream {
 /*! \brief interface for serializable objects */
 class Serializable {
  public:
-  /*! 
+  /*!
   * \brief load the model from a stream
   * \param fi stream where to load the model from
   */
   virtual void Load(Stream *fi) = 0;
-  /*! 
+  /*!
   * \brief saves the model to a stream
   * \param fo stream where to save the model to
   */
@@ -123,7 +123,7 @@ class Serializable {
  * \brief input split creates that allows reading
  *  of records from split of data,
  *  independent part that covers all the dataset
- * 
+ *
  *  see InputSplit::Create for definition of record
  */
 class InputSplit {
@@ -141,7 +141,7 @@ class InputSplit {
    *  this is a hint so may not be enforced,
    *  but InputSplit will try adjust its internal buffer
    *  size to the hinted value
-   * \param chunk_size the chunk size 
+   * \param chunk_size the chunk size
    */
   virtual void HintChunkSize(size_t chunk_size) {}
   /*! \brief reset the position of InputSplit to beginning */
@@ -150,7 +150,7 @@ class InputSplit {
    * \brief get the next record, the returning value
    *   is valid until next call to NextRecord or NextChunk
    *   caller can modify the memory content of out_rec
-   *   
+   *
    *   For text, out_rec contains a single line
    *   For recordio, out_rec contains one record content(with header striped)
    *
@@ -161,11 +161,11 @@ class InputSplit {
    */
   virtual bool NextRecord(Blob *out_rec) = 0;
   /*!
-   * \brief get a chunk of memory that can contain multiple records, 
+   * \brief get a chunk of memory that can contain multiple records,
    *  the caller needs to parse the content of the resulting chunk,
    *  for text file, out_chunk can contain data of multiple lines
    *  for recordio, out_chunk can contain multiple records(including headers)
-   *   
+   *
    *  This function ensures there won't be partial record in the chunk
    *  caller can modify the memory content of out_chunk,
    *  the memory is valid until next call to NextRecord or NextChunk
@@ -240,7 +240,7 @@ class ostream : public std::basic_ostream<char> {
     buf_.set_stream(stream);
     this->rdbuf(&buf_);
   }
-  
+
  private:
   // internal streambuf
   class OutBuf : public std::streambuf {
@@ -251,7 +251,7 @@ class ostream : public std::basic_ostream<char> {
     }
     // set stream to the buffer
     inline void set_stream(Stream *stream);
-    
+
    private:
     /*! \brief internal stream by StreamBuf */
     Stream *stream_;
@@ -287,7 +287,7 @@ class istream : public std::basic_istream<char> {
    * \param buffer_size internal buffer size
    */
   explicit istream(Stream *stream,
-                   size_t buffer_size = 1 << 10)                   
+                   size_t buffer_size = 1 << 10)
       : std::basic_istream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
   }
@@ -325,7 +325,7 @@ class istream : public std::basic_istream<char> {
     Stream *stream_;
     /*! \brief how many bytes we read so far */
     size_t bytes_read_;
-    /*! \brief internal buffer */    
+    /*! \brief internal buffer */
     std::vector<char> buffer_;
     // override underflow
     inline int_type underflow();
@@ -402,7 +402,7 @@ inline int ostream::OutBuf::overflow(int c) {
 // implementations for istream
 inline void istream::InBuf::set_stream(Stream *stream) {
   stream_ = stream;
-  this->setg(&buffer_[0], &buffer_[0], &buffer_[0]);  
+  this->setg(&buffer_[0], &buffer_[0], &buffer_[0]);
 }
 inline int istream::InBuf::underflow() {
   char *bhead = &buffer_[0];

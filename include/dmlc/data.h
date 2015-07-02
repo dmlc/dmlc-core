@@ -228,7 +228,7 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
  */
 template <typename IndexType>
 class Parser : public DataIter<RowBlock<IndexType> > {
-public:
+ public:
   /*!
   * \brief create a new instance of parser based on the "type"
   *

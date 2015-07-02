@@ -40,9 +40,11 @@ class LintHelper(object):
                             '-d', 'superfluous-parens']
         self.pylint_cats = set(['error', 'warning', 'convention'])
         # setup cpp lint
-        cpplint_args = ['.', '--linelength', '100']
+        cpplint_args = ['.']
         _ = cpplint.ParseArguments(cpplint_args)
+        cpplint._SetFilters('-build/header_guard,-build/c++11')
         cpplint._SetCountingStyle('toplevel')
+        cpplint._line_length = 100
 
     def process_cpp(self, path, suffix):
         """Process a cpp file."""
@@ -93,7 +95,7 @@ def process(fname, allow_type):
     """Process a file."""
     fname = str(fname)
     arr = fname.rsplit('.', 1)
-    if arr[-1] not in allow_type:
+    if fname.find('#') != -1 or arr[-1] not in allow_type:
         return
     if arr[-1] in CXX_SUFFIX:
         _HELPER.process_cpp(fname, arr[-1])
