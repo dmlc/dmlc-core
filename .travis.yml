@@ -1,7 +1,8 @@
 # Use Build Matrix to do lint and build seperately
 env:
   matrix:
-    - TASK=lint
+    - TASK=lint LINT_LANG=cpp
+    - TASK=lint LINT_LANG=python
     - TASK=doc
     - TASK=build CXX=g++
 #   - TASK=build_test

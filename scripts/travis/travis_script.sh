@@ -6,7 +6,8 @@ if [ ${TASK} == "lint" ]; then
 fi
 
 if [ ${TASK} == "doc" ]; then
-    (make doc |grep warning) && exit -1
+    make doc 2>log.txt
+    (cat log.txt|grep warning) && exit -1
 fi
 
 if [ ${TASK} == "build" ]; then

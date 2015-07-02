@@ -64,8 +64,12 @@ $(OBJ) :
 $(ALIB):
 	ar cr $@ $+
 
+ifndef LINT_LANG
+	LINT_LANG= all
+endif
+
 lint:
-	scripts/lint.py all include src test scripts
+	scripts/lint.py ${LINT_LANG} include src test scripts
 
 doc:
 	doxygen doc/Doxyfile
