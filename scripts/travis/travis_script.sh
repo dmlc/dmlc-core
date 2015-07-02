@@ -1,5 +1,5 @@
 #!/bin/bash
-# Main script of travis 
+# Main script of travis
 
 if [ ${TASK} == "lint" ]; then
     make lint
