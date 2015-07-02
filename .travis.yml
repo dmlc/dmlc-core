@@ -2,8 +2,8 @@
 env:
   matrix:
     - TASK=lint
-    - TASK=build, CXX=g++
-    - TASK=build, CXX=clang++
+    - TASK=build CXX=g++
+    - TASK=build CXX=clang++
 #    - TASK=build_test
 
 language: c
