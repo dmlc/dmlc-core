@@ -18,3 +18,4 @@ notifications:
   email:
     on_success: change
     on_failure: always
+  slack: dmlc:mKX5kxjqTP6fBb89lXD3G5f3
