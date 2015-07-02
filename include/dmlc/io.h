@@ -24,7 +24,7 @@ namespace dmlc {
 /*!
  * \brief interface of stream I/O for serialization
  */
-class Stream {
+class Stream {  // NOLINT(*)
  public:
   /*!
    * \brief reads data from a stream
