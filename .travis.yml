@@ -1,4 +1,5 @@
 # Use Build Matrix to do lint and build seperately
+sudo: false
 env:
   matrix:
     - TASK=lint LINT_LANG=cpp
