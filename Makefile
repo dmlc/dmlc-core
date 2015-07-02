@@ -65,7 +65,7 @@ $(ALIB):
 	ar cr $@ $+
 
 ifndef LINT_LANG
-	LINT_LANG= all
+	LINT_LANG="all"
 endif
 
 lint:
