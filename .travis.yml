@@ -1,0 +1,25 @@
+# Use Build Matrix to do lint and build seperately
+env:
+  matrix:
+    - TASK=lint
+    - TASK=build
+#    - TASK=build_test
+
+language: c
+
+compiler:
+    - gcc
+
+before_install:
+  - export TRAVIS=./scripts/travis
+
+install:
+  - sudo -E ${TRAVIS}/travis_install.sh
+
+script: ${TRAVIS}/travis_script.sh
+
+notifications:
+# Emails are sent to the committer's git-configured email address by default,
+  email:
+    on_success: change
+    on_failure: always
