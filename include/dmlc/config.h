@@ -51,13 +51,13 @@ class Config {
 
   /*!
    * \brief create empty config
-   * \param whether the config supports multi value
+   * \param multi_value whether the config supports multi value
    */
   explicit Config(bool multi_value = false);
   /*!
    * \brief create config and load content from the given stream
-   * \param input stream
-   * \param whether the config supports multi value
+   * \param is input stream
+   * \param multi_value whether the config supports multi value
    */
   explicit Config(std::istream& is, bool multi_value = false);  // NOLINT(*)
   /*!
@@ -126,13 +126,25 @@ class Config {
     ConfigIterator(const ConfigIterator& other);
     /*!
      * \brief uni-increment operators
+     * \return the reference of current config
      */
     ConfigIterator& operator++();
+    /*!
+     * \brief uni-increment operators
+     * \return the reference of current config
+     */
     ConfigIterator operator++(int);  // NOLINT(*)
     /*!
      * \brief compare operators
+     * \param rhs the other config to compare against
+     * \return the compared result
      */
     bool operator == (const ConfigIterator& rhs) const;
+    /*!
+     * \brief compare operators not equal
+     * \param rhs the other config to compare against
+     * \return the compared result
+     */
     bool operator != (const ConfigIterator& rhs) const;
     /*!
      * \brief retrieve value from operator

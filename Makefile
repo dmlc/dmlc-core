@@ -19,7 +19,7 @@ ifdef DEPS_PATH
 CFLAGS+= -I$(DEPS_PATH)/include
 endif
 
-.PHONY: clean all test lint
+.PHONY: clean all test lint doc
 
 OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o
 
@@ -66,6 +66,9 @@ $(ALIB):
 
 lint:
 	scripts/lint.py all include src test scripts
+
+doc:
+	doxygen doc/Doxyfile
 
 clean:
 	$(RM) $(OBJ) $(BIN) $(ALIB) $(ALL_TEST) $(ALL_TEST_OBJ) *~ src/*~ src/*/*~ include/dmlc/*~ test/*~

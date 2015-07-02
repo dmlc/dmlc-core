@@ -107,7 +107,11 @@ inline T *BeginPtr(std::vector<T> &vec) {  // NOLINT(*)
     return &vec[0];
   }
 }
-/*! \brief get the beginning address of a vector */
+/*!
+ * \brief get the beginning address of a vector
+ * \param vec input vector
+ * \return beginning address of a vector
+ */
 template<typename T>
 inline const T *BeginPtr(const std::vector<T> &vec) {
   if (vec.size() == 0) {
@@ -116,10 +120,20 @@ inline const T *BeginPtr(const std::vector<T> &vec) {
     return &vec[0];
   }
 }
+/*!
+ * \brief get the beginning address of a vector
+ * \param str input string
+ * \return beginning address of a string
+ */
 inline char* BeginPtr(std::string &str) {  // NOLINT(*)
   if (str.length() == 0) return NULL;
   return &str[0];
 }
+/*!
+ * \brief get the beginning address of a vector
+ * \param str input string
+ * \return beginning address of a string
+ */
 inline const char* BeginPtr(const std::string &str) {
   if (str.length() == 0) return NULL;
   return &str[0];

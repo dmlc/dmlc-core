@@ -16,6 +16,11 @@ Contributing to dmlc-core is welcomed! dmlc-core follows google's C style guide.
 * Use of c++11 is allowed, given that the code is macro guarded with ```DMLC_USE_CXX11```
 * Try to introduce minimum dependency when possible
 
+CheckList before submit code
+=====
+* Type ```make lint``` and fix all the style problems.
+* Type ```make doc``` and fix all the warnings.
+
 NOTE
 ====
 deps:

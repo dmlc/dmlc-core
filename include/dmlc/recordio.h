@@ -47,6 +47,7 @@ class RecordIOWriter {
    * \brief encode the lrecord
    * \param cflag cflag part of the lrecord
    * \param length length part of lrecord
+   * \return the encoded data
    */
   inline static uint32_t EncodeLRec(uint32_t cflag, uint32_t length) {
     return (cflag << 29U) | length;

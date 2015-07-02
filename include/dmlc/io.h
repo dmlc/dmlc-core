@@ -192,9 +192,10 @@ class InputSplit {
    *   List of possible types: "text", "recordio"
    *     - "text":
    *         text file, each line is treated as a record
-   *         input split will split on \n or \r
+   *         input split will split on '\\n' or '\\r'
    *     - "recordio":
    *         binary recordio file, see recordio.h
+   * \return a new input split
    * \sa InputSplit::Type
    */
   static InputSplit* Create(const char *uri,
@@ -224,7 +225,7 @@ class ostream : public std::basic_ostream<char> {
    * \param buffer_size internal streambuf size
    */
   explicit ostream(Stream *stream,
-                   size_t buffer_size = 1 << 10)
+                   size_t buffer_size = (1 << 10))
       : std::basic_ostream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
   }
@@ -287,7 +288,7 @@ class istream : public std::basic_istream<char> {
    * \param buffer_size internal buffer size
    */
   explicit istream(Stream *stream,
-                   size_t buffer_size = 1 << 10)
+                   size_t buffer_size = (1 << 10))
       : std::basic_istream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
   }

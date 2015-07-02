@@ -2,8 +2,9 @@
 env:
   matrix:
     - TASK=lint
+    - TASK=doc
     - TASK=build CXX=g++
-#    - TASK=build_test
+#   - TASK=build_test
 
 before_install:
   - export TRAVIS=./scripts/travis

@@ -5,7 +5,11 @@ apt-get -y update
 if [ ${TASK} == "lint" ]; then
     apt-get install python-pip
     pip install cpplint pylint
+elif [ ${TASK} == "doc" ]; then
+    apt-get install doxygen
 else
     apt-get install \
         wget git curl libcurl4-openssl-dev
 fi
+
+
