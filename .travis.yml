@@ -6,8 +6,6 @@ env:
     - TASK=build CXX=clang++
 #    - TASK=build_test
 
-language: c
-
 before_install:
   - export TRAVIS=./scripts/travis
 
