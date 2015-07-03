@@ -1,10 +1,12 @@
+// Copyright by Contributors
+#include <dmlc/config.h>
+#include <gtest/gtest.h>
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include <dmlc/config.h>
-#include <gtest/gtest.h>
+
 
 using namespace std;
 

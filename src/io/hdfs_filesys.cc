@@ -1,5 +1,6 @@
-#include <limits>
+// Copyright by Contributors
 #include <dmlc/logging.h>
+#include <limits>
 #include "./hdfs_filesys.h"
 
 namespace dmlc {
@@ -35,12 +36,12 @@ class HDFSStream : public SeekStream {
       if (ret > 0) {
         size_t n = static_cast<size_t>(ret);
         nleft -= n; buf += n;
-      } else if(ret == 0) {
+      } else if (ret == 0) {
         break;
       } else {
         int errsv = errno;
         if (errno == EINTR) continue;
-        LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);        
+        LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);
       }
     }
     return size - nleft;
@@ -80,7 +81,7 @@ class HDFSStream : public SeekStream {
       }
       fp_ = NULL;
     }
-  }  
+  }
 
  private:
   hdfsFS fs_;
@@ -91,7 +92,7 @@ class HDFSStream : public SeekStream {
 HDFSFileSystem::HDFSFileSystem(void) {
   namenode_ = "default";
   fs_ = hdfsConnect(namenode_.c_str(), 0);
-  if(fs_ == NULL) {
+  if (fs_ == NULL) {
     LOG(FATAL) << "Failed to load HDFS-configuration:";
   }
   ref_counter_ = new int();
@@ -100,7 +101,7 @@ HDFSFileSystem::HDFSFileSystem(void) {
 
 HDFSFileSystem::~HDFSFileSystem(void) {
   ref_counter_[0] -= 1;
-  if (ref_counter_[0] == 0) {  
+  if (ref_counter_[0] == 0) {
     delete ref_counter_;
     if (hdfsDisconnect(fs_) != 0) {
       int errsv = errno;

@@ -1,9 +1,10 @@
-// use direct path for to save compile flags
+// Copyright by Contributors
 #define _CRT_SECURE_NO_WARNINGS
-#include <cstring>
+
 #include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <cstring>
 #include "io/uri_spec.h"
 #include "io/line_split.h"
 #include "io/recordio_split.h"
@@ -44,14 +45,14 @@ FileSystem *FileSystem::GetInstance(const std::string &protocol) {
   LOG(FATAL) << "unknown filesystem protocol " + protocol;
   return NULL;
 }
-} // namespace io
+}  // namespace io
 
 InputSplit* InputSplit::Create(const char *uri_,
                                unsigned part,
                                unsigned nsplit,
                                const char *type) {
   using namespace std;
-  using namespace dmlc::io; 
+  using namespace dmlc::io;
   // allow cachefile in format path#cachefile
   io::URISpec spec(uri_, part, nsplit);
   if (!strcmp(spec.uri.c_str(), "stdin")) {

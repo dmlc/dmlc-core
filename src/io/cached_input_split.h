@@ -8,11 +8,15 @@
  */
 #ifndef DMLC_IO_CACHED_INPUT_SPLIT_H_
 #define DMLC_IO_CACHED_INPUT_SPLIT_H_
+
 #include <dmlc/base.h>
 // this code depends on c++11
 #if DMLC_USE_CXX11
 #include <dmlc/threadediter.h>
+#include <string>
+#include <algorithm>
 #include "./input_split_base.h"
+
 namespace dmlc {
 namespace io {
 /*!
@@ -23,7 +27,7 @@ namespace io {
 class CachedInputSplit : public InputSplit {
  public:
   /*!
-   * \brief constructor 
+   * \brief constructor
    * \param base source input split
    * \param cache_file the path to cache file
    * \param reuse_exist_cache whether reuse existing cache file, if any
@@ -62,7 +66,7 @@ class CachedInputSplit : public InputSplit {
       if (tmp_chunk_ != NULL) {
         iter_preproc_->Recycle(&tmp_chunk_);
       }
-      while(iter_preproc_->Next(&tmp_chunk_)) {
+      while (iter_preproc_->Next(&tmp_chunk_)) {
         iter_preproc_->Recycle(&tmp_chunk_);
       }
       // finalize the push out process
@@ -90,7 +94,7 @@ class CachedInputSplit : public InputSplit {
     }
     while (!base_->ExtractNextRecord(out_rec, tmp_chunk_)) {
       iter->Recycle(&tmp_chunk_);
-      if (!iter->Next(&tmp_chunk_)) return false;      
+      if (!iter->Next(&tmp_chunk_)) return false;
     }
     return true;
   }
@@ -102,11 +106,11 @@ class CachedInputSplit : public InputSplit {
     }
     while (!base_->ExtractNextChunk(out_chunk, tmp_chunk_)) {
       iter->Recycle(&tmp_chunk_);
-      if (!iter->Next(&tmp_chunk_)) return false;      
+      if (!iter->Next(&tmp_chunk_)) return false;
     }
     return true;
   }
-  
+
  private:
   /*! \brief internal buffer size */
   size_t buffer_size_;
@@ -127,7 +131,7 @@ class CachedInputSplit : public InputSplit {
   /*! \brief initialize the cached iterator */
   inline void InitPreprocIter(void);
   /*!
-   * \brief initialize the cached iterator 
+   * \brief initialize the cached iterator
    * \return wheher the file exist and
    *  initialization is successful
    */
@@ -135,8 +139,8 @@ class CachedInputSplit : public InputSplit {
 };
 
 inline void CachedInputSplit:: InitPreprocIter(void) {
-  fo_ = dmlc::Stream::Create(cache_file_.c_str(), "w");  
-  iter_preproc_ = new ThreadedIter<InputSplitBase::Chunk>();    
+  fo_ = dmlc::Stream::Create(cache_file_.c_str(), "w");
+  iter_preproc_ = new ThreadedIter<InputSplitBase::Chunk>();
   iter_preproc_->set_max_capacity(16);
   iter_preproc_->Init([this](InputSplitBase::Chunk **dptr) {
       if (*dptr == NULL) {
@@ -177,6 +181,6 @@ inline bool CachedInputSplit::InitCachedIter(void) {
   return true;
 }
 }  // namespace io
-}  // namespace dlmc
+}  // namespace dmlc
 #endif  // DMLC_USE_CXX11
 #endif  // DMLC_IO_CACHED_INPUT_SPLIT_H_

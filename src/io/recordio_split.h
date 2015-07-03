@@ -7,12 +7,12 @@
 #ifndef DMLC_IO_RECORDIO_SPLIT_H_
 #define DMLC_IO_RECORDIO_SPLIT_H_
 
+#include <dmlc/io.h>
+#include <dmlc/recordio.h>
 #include <vector>
 #include <cstdio>
 #include <string>
 #include <cstring>
-#include <dmlc/io.h>
-#include <dmlc/recordio.h>
 #include "./input_split_base.h"
 
 namespace dmlc {
@@ -27,7 +27,8 @@ class RecordIOSplitter : public InputSplitBase {
     this->Init(fs, uri, rank, nsplit, 4);
   }
 
-  virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk);  
+  virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk);
+
  protected:
   virtual size_t SeekRecordBegin(Stream *fi);
   virtual const char*

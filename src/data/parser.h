@@ -6,10 +6,11 @@
  */
 #ifndef DMLC_DATA_PARSER_H_
 #define DMLC_DATA_PARSER_H_
-#include <vector>
+
 #include <dmlc/base.h>
 #include <dmlc/logging.h>
 #include <dmlc/threadediter.h>
+#include <vector>
 #include "./row_block.h"
 
 namespace dmlc {
@@ -68,7 +69,7 @@ class ParserImpl : public Parser<IndexType> {
 template <typename IndexType>
 class ThreadedParser : public ParserImpl<IndexType> {
  public:
-   explicit ThreadedParser(ParserImpl<IndexType> *base)
+  explicit ThreadedParser(ParserImpl<IndexType> *base)
       : base_(base), tmp_(NULL) {
     iter_.set_max_capacity(8);
     iter_.Init([base](std::vector<RowBlockContainer<IndexType> > **dptr) {

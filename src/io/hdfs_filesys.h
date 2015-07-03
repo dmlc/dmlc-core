@@ -9,6 +9,8 @@
 extern "C" {
 #include <hdfs.h>
 }
+#include <vector>
+#include <string>
 #include "./filesys.h"
 
 namespace dmlc {
@@ -19,7 +21,7 @@ class HDFSFileSystem : public FileSystem {
   /*! \brief destructor */
   virtual ~HDFSFileSystem();
   /*!
-   * \brief get information about a path 
+   * \brief get information about a path
    * \param path the path to the file
    * \return the information about the file
    */
@@ -28,7 +30,7 @@ class HDFSFileSystem : public FileSystem {
    * \brief list files in a directory
    * \param path to the file
    * \param out_list the output information about the files
-   */ 
+   */
   virtual void ListDirectory(const URI &path, std::vector<FileInfo> *out_list);
   /*!
    * \brief open a stream, will report error and exit if bad thing happens
@@ -50,7 +52,7 @@ class HDFSFileSystem : public FileSystem {
    */
   virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
   /*!
-   * \brief get a singleton of HDFSFileSystem when needed 
+   * \brief get a singleton of HDFSFileSystem when needed
    * \return a singleton instance
    */
   inline static HDFSFileSystem *GetInstance(void) {
@@ -64,7 +66,7 @@ class HDFSFileSystem : public FileSystem {
   /*! \brief namenode address */
   std::string namenode_;
   /*! \brief hdfs handle */
-  hdfsFS fs_;  
+  hdfsFS fs_;
   /*! \brief reference counter of fs */
   int *ref_counter_;
 };

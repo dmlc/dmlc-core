@@ -1,5 +1,5 @@
 /*!
- *  Copyright (c) 2015 by Contributors
+ *x  Copyright (c) 2015 by Contributors
  * \file strtonum.h
  * \brief A faster implementation of strtod, ...
  */
@@ -23,9 +23,9 @@ inline bool isdigit(char c) {
 }
 
 inline bool isdigitchars(char c) {
-  return (c >= '0' && c <= '9') 
-    || c == '+' || c == '-' 
-    || c == '.' 
+  return (c >= '0' && c <= '9')
+    || c == '+' || c == '-'
+    || c == '.'
     || c == 'e' || c == 'E';
 }
 
@@ -36,14 +36,14 @@ inline bool isdigitchars(char c) {
 inline float strtof(const char *nptr, char **endptr) {
   const char *p = nptr;
   // Skip leading white space, if any. Not necessary
-  while (isspace(*p) ) ++ p;
+  while (isspace(*p) ) ++p;
 
   // Get sign, if any.
   bool sign = true;
   if (*p == '-') {
-    sign = false; ++ p;
+    sign = false; ++p;
   } else if (*p == '+') {
-    ++ p;
+    ++p;
   }
 
   // Get digits before decimal point or exponent, if any.
@@ -56,28 +56,27 @@ inline float strtof(const char *nptr, char **endptr) {
   if (*p == '.') {
     unsigned pow10 = 1;
     unsigned val2 = 0;
-    ++ p;
+    ++p;
     while (isdigit(*p)) {
       val2 = val2 * 10 + (*p - '0');
       pow10 *= 10;
-      ++ p;
+      ++p;
     }
-    // std::cout << val2 << "  " << pow10 << std::endl;
-    value += (float)val2 / (float)pow10;
+    value += static_cast<float>(val2) / static_cast<float>(pow10);
   }
 
   // Handle exponent, if any.
   if ((*p == 'e') || (*p == 'E')) {
-    ++ p;
+    ++p;
     bool frac = false;
     float scale = 1.0;
     unsigned expon;
     // Get sign of exponent, if any.
     if (*p == '-') {
       frac = true;
-      ++ p;
+      ++p;
     } else if (*p == '+') {
-      ++ p;
+      ++p;
     }
     // Get digits of exponent, if any.
     for (expon = 0; isdigit(*p); p += 1) {
@@ -91,7 +90,7 @@ inline float strtof(const char *nptr, char **endptr) {
     value = frac ? (value / scale) : (value * scale);
   }
 
-  if (endptr) *endptr = (char*) p;
+  if (endptr) *endptr = (char*)p;  // NOLINT(*)
   return sign ? value : - value;
 }
 
@@ -103,14 +102,14 @@ template <typename V>
 inline V strtoint(const char* nptr, char **endptr, int base) {
   const char *p = nptr;
   // Skip leading white space, if any. Not necessary
-  while (isspace(*p) ) ++ p;
+  while (isspace(*p) ) ++p;
 
   // Get sign if any
   bool sign = true;
   if (*p == '-') {
-    sign = false; ++ p;
+    sign = false; ++p;
   } else if (*p == '+') {
-    ++ p;
+    ++p;
   }
 
   V value;
@@ -118,17 +117,17 @@ inline V strtoint(const char* nptr, char **endptr, int base) {
     value = value * base + (*p - '0');
   }
 
-  if (endptr) *endptr = (char*) p;
+  if (endptr) *endptr = (char*)p; // NOLINT(*)
   return sign ? value : - value;
 }
 
 inline uint64_t
 strtoull(const char* nptr, char **endptr, int base) {
   return strtoint<uint64_t>(nptr, endptr, base);
-};
+}
 
-inline long atol(const char* p) {
-  return strtoint<long>(p, 0, 10);
+inline long atol(const char* p) {  // NOLINT(*)
+  return strtoint<long>(p, 0, 10); // NOLINT(*)
 }
 
 inline float atof(const char *nptr) {
@@ -138,7 +137,7 @@ inline float atof(const char *nptr) {
 
 template<typename T>
 class Str2T {
-public:
+ public:
   static inline T get(const char * begin, const char * end);
 };
 
@@ -149,7 +148,7 @@ inline T Str2Type(const char * begin, const char * end) {
 
 template<>
 class Str2T<int32_t> {
-public:
+ public:
   static inline int32_t get(const char * begin, const char * end) {
     return strtoint<int>(begin, NULL, 10);
   }
@@ -157,7 +156,7 @@ public:
 
 template<>
 class Str2T<uint32_t> {
-public:
+ public:
   static inline uint32_t get(const char * begin, const char * end) {
     return strtoint<int>(begin, NULL, 10);
   }
@@ -165,7 +164,7 @@ public:
 
 template<>
 class Str2T<int64_t> {
-public:
+ public:
   static inline int64_t get(const char * begin, const char * end) {
     return strtoint<int64_t>(begin, NULL, 10);
   }
@@ -173,7 +172,7 @@ public:
 
 template<>
 class Str2T<uint64_t> {
-public:
+ public:
   static inline uint64_t get(const char * begin, const char * end) {
     return strtoint<uint64_t>(begin, NULL, 10);
   }
@@ -181,7 +180,7 @@ public:
 
 template<>
 class Str2T<float> {
-public:
+ public:
   static inline float get(const char * begin, const char * end) {
     return atof(begin);
   }
@@ -197,7 +196,8 @@ public:
 * \output number of values parsed
 */
 template<typename T1, typename T2>
-inline int ParsePair(const char * begin, const char * end, const char ** endptr, T1 &v1, T2 &v2) {
+inline int ParsePair(const char * begin, const char * end,
+                     const char ** endptr, T1 &v1, T2 &v2) { // NOLINT(*)
   const char * p = begin;
   while (p != end && !isdigitchars(*p)) ++p;
   if (p == end) {

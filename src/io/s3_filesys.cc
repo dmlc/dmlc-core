@@ -1,10 +1,4 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <algorithm>
-#include <ctime>
-#include <sstream>
+// Copyright by Contributors
 extern "C" {
 #include <errno.h>
 #include <curl/curl.h>
@@ -16,6 +10,14 @@ extern "C" {
 }
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <algorithm>
+#include <ctime>
+#include <sstream>
+
 #include "./s3_filesys.h"
 
 namespace dmlc {
@@ -28,7 +30,7 @@ struct XMLIter {
   const char *content_;
   // end of content
   const char *cend_;
-  explicit XMLIter() 
+  XMLIter()
       : content_(NULL), cend_(NULL) {
   }
   // constructor
@@ -47,7 +49,7 @@ struct XMLIter {
    * \param value the return value if success
    * \return if the get is success
    */
-  inline bool GetNext(const char *key,                          
+  inline bool GetNext(const char *key,
                       XMLIter *value) {
     std::string begin = std::string("<") + key +">";
     std::string end = std::string("</") + key +">";
@@ -71,11 +73,11 @@ struct XMLIter {
 std::string Base64(unsigned char md[], unsigned len) {
   // encode base64
   BIO *fp = BIO_push(BIO_new(BIO_f_base64()),
-                       BIO_new(BIO_s_mem()));    
+                       BIO_new(BIO_s_mem()));
   BIO_write(fp, md, len);
-  BIO_ctrl(fp, BIO_CTRL_FLUSH, 0, NULL);    
+  BIO_ctrl(fp, BIO_CTRL_FLUSH, 0, NULL);
   BUF_MEM *res;
-  BIO_get_mem_ptr(fp, &res);   
+  BIO_get_mem_ptr(fp, &res);
   std::string ret(res->data, res->length - 1);
   BIO_free_all(fp);
   return ret;
@@ -181,7 +183,7 @@ struct ReadStringStream {
   const char *dptr;
   size_t nleft;
   // constructor
-  ReadStringStream(const std::string &data) {
+  explicit ReadStringStream(const std::string &data) {
     dptr = BeginPtr(data);
     nleft = data.length();
   }
@@ -216,12 +218,12 @@ class CURLReadStreamBase : public SeekStream {
   // lazy seek function
   virtual void Seek(size_t pos) {
     if (curr_bytes_ != pos) {
-      this->Cleanup();    
+      this->Cleanup();
       curr_bytes_ = pos;
     }
-  }  
+  }
   virtual size_t Read(void *ptr, size_t size);
-  
+
  protected:
   CURLReadStreamBase()
       : mcurl_(NULL), ecurl_(NULL), slist_(NULL),
@@ -257,7 +259,7 @@ class CURLReadStreamBase : public SeekStream {
   CURL *mcurl_, *ecurl_;
   // slist needed by the program
   curl_slist *slist_;
-  // data buffer 
+  // data buffer
   std::string buffer_;
   // header buffer
   std::string header_;
@@ -266,7 +268,7 @@ class CURLReadStreamBase : public SeekStream {
   // current position in the stream
   size_t curr_bytes_;
   // mark end of stream
-  bool at_end_;  
+  bool at_end_;
 };
 
 // read data in
@@ -296,7 +298,7 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
 }
 
 // cleanup the previous sessions for restart
-void CURLReadStreamBase::Cleanup() {  
+void CURLReadStreamBase::Cleanup() {
   if (mcurl_ != NULL) {
     curl_multi_remove_handle(mcurl_, ecurl_);
     curl_easy_cleanup(ecurl_);
@@ -330,13 +332,13 @@ void CURLReadStreamBase::Init(size_t begin_bytes) {
   // start running and check header
   this->FillBuffer(1);
   if (FindHttpError(header_)) {
-    while (this->FillBuffer(buffer_.length() + 256) != 0);
+    while (this->FillBuffer(buffer_.length() + 256) != 0) {}
     LOG(FATAL) << "Request Error:\n" << header_ << buffer_;
   }
   // setup the variables
   at_end_ = false;
   curr_bytes_ = begin_bytes;
-  read_ptr_ = 0;  
+  read_ptr_ = 0;
 }
 
 // fill the buffer with wanted bytes
@@ -354,11 +356,11 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
     timeval timeout;
     timeout.tv_sec = 60;
     timeout.tv_usec = 0;
-    long curl_timeo;
+    long curl_timeo;  // NOLINT(*)
     curl_multi_timeout(mcurl_, &curl_timeo);
     if (curl_timeo >= 0) {
       timeout.tv_sec = curl_timeo / 1000;
-      if(timeout.tv_sec > 1) {
+      if (timeout.tv_sec > 1) {
         timeout.tv_sec = 1;
       } else {
         timeout.tv_usec = (curl_timeo % 1000) * 1000;
@@ -416,7 +418,7 @@ class ReadStream : public CURLReadStreamBase {
   virtual void InitRequest(size_t begin_bytes,
                            CURL *ecurl,
                            curl_slist **slist);
-  
+
  private:
   // path we are reading
   URI path_;
@@ -453,7 +455,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
 /*! \brief simple http read stream to check */
 class HttpReadStream : public CURLReadStreamBase {
  public:
-  HttpReadStream(const URI &path)
+  explicit HttpReadStream(const URI &path)
       : path_(path) {}
   // implement InitRequest
   virtual void InitRequest(size_t begin_bytes,
@@ -463,7 +465,7 @@ class HttpReadStream : public CURLReadStreamBase {
         << " HttpReadStream: do not support Seek";
     CHECK(curl_easy_setopt(ecurl, CURLOPT_URL, path_.str().c_str()) == CURLE_OK);
   }
-  
+
  private:
   URI path_;
 };
@@ -498,7 +500,7 @@ class WriteStream : public Stream {
     this->Finish();
     curl_easy_cleanup(ecurl_);
   }
-    
+
  private:
   // internal maximum buffer size
   size_t max_buffer_size_;
@@ -575,7 +577,7 @@ void WriteStream::Run(const std::string &method,
                                content_type, date, amz,
                                std::string("/") + path_.host + '/' +
                                RemoveBeginSlash(path_.name) + args);
-  
+
   // generate headers
   std::ostringstream sauth, sdate, surl, scontent, smd5;
   std::ostringstream rheader, rdata;
@@ -593,7 +595,7 @@ void WriteStream::Run(const std::string &method,
     slist = curl_slist_append(slist, smd5.str().c_str());
   }
   slist = curl_slist_append(slist, sauth.str().c_str());
-  
+
   int num_retry = 0;
   while (true) {
     // helper for read string
@@ -603,7 +605,7 @@ void WriteStream::Run(const std::string &method,
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADER, 0L) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &rdata) == CURLE_OK);  
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &rdata) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEHEADER, WriteSStreamCallback) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
     if (method == "POST") {
@@ -619,15 +621,15 @@ void WriteStream::Run(const std::string &method,
     CURLcode ret = curl_easy_perform(ecurl_);
     if (ret != CURLE_OK) {
       LOG(INFO) << "request " << surl.str() << "failed with error "
-                << curl_easy_strerror(ret) << " Progress " 
+                << curl_easy_strerror(ret) << " Progress "
                 << etags_.size() << " uploaded " << " retry=" << num_retry;
       num_retry += 1;
       CHECK(num_retry < max_error_retry_) << " maximum retry time reached";
       curl_easy_cleanup(ecurl_);
-      ecurl_ = curl_easy_init();      
+      ecurl_ = curl_easy_init();
     } else {
       break;
-    }   
+    }
   }
   curl_slist_free_all(slist);
   *out_header = rheader.str();
@@ -659,10 +661,10 @@ void WriteStream::Upload(void) {
   const char *p = strstr(rheader.c_str(), "ETag: ");
   CHECK(p != NULL) << "cannot find ETag in header";
   p = strchr(p, '\"');
-  CHECK(p != NULL) << "cannot find ETag in header";  
+  CHECK(p != NULL) << "cannot find ETag in header";
   const char *end = strchr(p + 1, '\"');
   CHECK(end != NULL) << "cannot find ETag in header";
-  
+
   etags_.push_back(std::string(p, end - p + 1));
   part_ids_.push_back(partno);
   buffer_.clear();
@@ -700,8 +702,8 @@ void ListObjects(const URI &path,
   std::vector<std::string> amz;
   std::string date = GetDateString();
   std::string signature = Sign(aws_key, "GET", "", "", date, amz,
-                               std::string("/") + path.host + "/");    
-  
+                               std::string("/") + path.host + "/");
+
   std::ostringstream sauth, sdate, surl;
   std::ostringstream result;
   sauth << "Authorization: AWS " << aws_id << ":" << signature;
@@ -726,7 +728,8 @@ void ListObjects(const URI &path,
   if (ret.find("<Error>") != std::string::npos) {
     LOG(FATAL) << ret;
   }
-  {// get files
+  {
+    // get files
     XMLIter xml(ret.c_str());
     XMLIter data;
     CHECK(xml.GetNext("IsTruncated", &data)) << "missing IsTruncated";
@@ -744,7 +747,8 @@ void ListObjects(const URI &path,
       out_list->push_back(info);
     }
   }
-  {// get directories
+  {
+    // get directories
     XMLIter xml(ret.c_str());
     XMLIter data;
     while (xml.GetNext("CommonPrefixes", &data)) {
@@ -822,12 +826,12 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
       return;
     }
     if (files[i].path.name == pdir) {
-      CHECK(files[i].type == kDirectory);       
+      CHECK(files[i].type == kDirectory);
       s3::ListObjects(files[i].path, aws_access_id_,
                       aws_secret_key_, out_list);
       return;
     }
-  }  
+  }
 }
 
 Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_null) {
@@ -837,14 +841,14 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
     CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
     return new s3::WriteStream(path, aws_access_id_, aws_secret_key_);
-  }else {
-    LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;    
+  } else {
+    LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;
     return NULL;
   }
 }
 
 SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
-  // simple http read stream  
+  // simple http read stream
   if (!allow_null && (path.protocol == "http://"|| path.protocol == "https://")) {
     return new s3::HttpReadStream(path);
   }
@@ -852,7 +856,7 @@ SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   FileInfo info;
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
     return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
-  } else {    
+  } else {
     CHECK(allow_null) << " S3FileSystem: fail to open " << path.str();
     return NULL;
   }

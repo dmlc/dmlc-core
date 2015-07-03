@@ -1,6 +1,7 @@
+// Copyright by Contributors
 #define _CRT_SECURE_NO_WARNINGS
-#include <algorithm>
 #include <dmlc/logging.h>
+#include <algorithm>
 #include "./line_split.h"
 
 namespace dmlc {
@@ -12,7 +13,7 @@ void InputSplitBase::Init(FileSystem *filesys,
                           size_t align_bytes) {
   this->filesys_ = filesys;
   // initialize the path
-  this->InitInputFileInfo(uri);  
+  this->InitInputFileInfo(uri);
   file_offset_.resize(files_.size() + 1);
   file_offset_[0] = 0;
   for (size_t i = 0; i < files_.size(); ++i) {
@@ -43,7 +44,7 @@ void InputSplitBase::Init(FileSystem *filesys,
     offset_end_ += SeekRecordBegin(fs_);
     delete fs_;
   }
-  fs_ = filesys_->OpenForRead(files_[file_ptr_].path); 
+  fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
   if (offset_begin_ != file_offset_[file_ptr_]) {
     fs_->Seek(offset_begin_ - file_offset_[file_ptr_]);
     offset_begin_ += SeekRecordBegin(fs_);
@@ -80,7 +81,7 @@ void InputSplitBase::InitInputFileInfo(const char *uri) {
   std::string uri_ = uri;
   char *p = std::strtok(BeginPtr(uri_), dlm);
   std::vector<URI> vec;
-  
+
   while (p != NULL) {
     URI path(p);
     FileInfo info = filesys_->GetPathInfo(path);
@@ -114,7 +115,7 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     offset_curr_ += n;
     if (nleft == 0) break;
     if (n == 0) {
-      if (offset_curr_ != file_offset_[file_ptr_ + 1]) { 
+      if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
         LOG(ERROR) << "curr=" << offset_curr_
                    << ",begin=" << offset_begin_
                    << ",end=" << offset_end_
@@ -128,7 +129,7 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
       if (file_ptr_ + 1 >= files_.size()) break;
       file_ptr_ += 1;
       delete fs_;
-      fs_ = filesys_->OpenForRead(files_[file_ptr_].path);    
+      fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
     }
   }
   return size - nleft;
@@ -139,8 +140,8 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
   if (max_size <= overflow_.length()) {
     *size = 0; return true;
   }
-  if (overflow_.length() != 0) { 
-    std::memcpy(buf, BeginPtr(overflow_), overflow_.length());  
+  if (overflow_.length() != 0) {
+    std::memcpy(buf, BeginPtr(overflow_), overflow_.length());
   }
   size_t olen = overflow_.length();
   overflow_.resize(0);
@@ -189,7 +190,7 @@ bool InputSplitBase::ExtractNextChunk(Blob *out_chunk, Chunk *chunk) {
   if (chunk->begin == chunk->end) return false;
   out_chunk->dptr = chunk->begin;
   out_chunk->size = chunk->end - chunk->begin;
-  chunk->begin = chunk->end;  
+  chunk->begin = chunk->end;
   return true;
 }
 }  // namespace io

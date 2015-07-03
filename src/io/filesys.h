@@ -7,9 +7,10 @@
 #ifndef DMLC_IO_FILESYS_H_
 #define DMLC_IO_FILESYS_H_
 
+#include <dmlc/io.h>
 #include <cstring>
 #include <string>
-#include <dmlc/io.h>
+#include <vector>
 
 namespace dmlc {
 namespace io {
@@ -18,7 +19,7 @@ struct URI {
   /*! \brief protocol */
   std::string protocol;
   /*!
-   * \brief host name, namenode for HDFS, bucket name for s3   
+   * \brief host name, namenode for HDFS, bucket name for s3
    */
   std::string host;
   /*! \brief name of the path */
@@ -26,7 +27,7 @@ struct URI {
   /*! \brief enable default constructor */
   URI(void) {}
   /*!
-   * \brief construct from URI string      
+   * \brief construct from URI string
    */
   explicit URI(const char *uri) {
     const char *p = std::strstr(uri, "://");
@@ -80,11 +81,11 @@ class FileSystem {
    * \return a corresponding filesystem, report error if
    *         we cannot find a matching system
    */
-  static FileSystem *GetInstance(const std::string &protocol);  
+  static FileSystem *GetInstance(const std::string &protocol);
   /*! \brief virtual destructor */
   virtual ~FileSystem() {}
   /*!
-   * \brief get information about a path 
+   * \brief get information about a path
    * \param path the path to the file
    * \return the information about the file
    */

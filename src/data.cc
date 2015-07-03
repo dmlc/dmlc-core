@@ -1,10 +1,10 @@
-// use direct path for to save compile flags
+// Copyright by Contributors
 #define _CRT_SECURE_NO_WARNINGS
-#include <cstring>
-#include <string>
 #include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <cstring>
+#include <string>
 #include "io/uri_spec.h"
 #include "data/parser.h"
 #include "data/basic_row_iter.h"
@@ -27,12 +27,11 @@ CreateParser_(const char *uri_,
     InputSplit* source = InputSplit::Create(
         uri_, part_index, num_parts, "text");
     parser = new LibSVMParser<IndexType>(source, 2);
-  }
-  else {
+  } else {
     LOG(FATAL) << "unknown datatype " << type;
   }
 #if DMLC_USE_CXX11
-  parser = new ThreadedParser<IndexType>(parser);  
+  parser = new ThreadedParser<IndexType>(parser);
 #endif
   return parser;
 }
@@ -46,7 +45,7 @@ CreateIter_(const char *uri_,
   using namespace std;
   io::URISpec spec(uri_, part_index, num_parts);
   Parser<IndexType> *parser = CreateParser_<IndexType>
-      (spec.uri.c_str(), part_index, num_parts, type);  
+      (spec.uri.c_str(), part_index, num_parts, type);
   if (spec.cache_file.length() != 0) {
 #if DMLC_USE_CXX11
     return new DiskRowIter<IndexType>(parser, spec.cache_file.c_str(), true);
@@ -95,4 +94,4 @@ Parser<uint64_t>::Create(const char *uri_,
                          const char *type) {
   return data::CreateParser_<uint64_t>(uri_, part_index, num_parts, type);
 }
-}  // dmlc
+}  // namespace dmlc

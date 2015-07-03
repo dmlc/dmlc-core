@@ -6,12 +6,13 @@
  */
 #ifndef DMLC_IO_INPUT_SPLIT_BASE_H_
 #define DMLC_IO_INPUT_SPLIT_BASE_H_
-#include <algorithm>
-#include <vector>
-#include <cstdio>
-#include <string>
-#include <cstring>
+
 #include <dmlc/io.h>
+#include <cstdio>
+#include <cstring>
+#include <vector>
+#include <string>
+#include <algorithm>
 #include "./filesys.h"
 
 namespace dmlc {
@@ -27,7 +28,7 @@ class InputSplitBase : public InputSplit {
     char *begin;
     char *end;
     std::vector<size_t> data;
-    Chunk(size_t buffer_size)
+    explicit Chunk(size_t buffer_size)
         : begin(NULL), end(NULL),
           data(buffer_size + 1) {}
     // load chunk from split
@@ -67,9 +68,9 @@ class InputSplitBase : public InputSplit {
    *   after the function returns, it stores the size of the chunk
    * \return whether end of file was reached
    */
-  bool ReadChunk(void *buf, size_t *size);  
+  bool ReadChunk(void *buf, size_t *size);
   /*!
-   * \brief extract next chunk from the chunk 
+   * \brief extract next chunk from the chunk
    * \param out_chunk the output record
    * \param chunk the chunk information
    * \return true if non-empty record is extracted
@@ -77,14 +78,14 @@ class InputSplitBase : public InputSplit {
    */
   bool ExtractNextChunk(Blob *out_rchunk, Chunk *chunk);
   /*!
-   * \brief extract next record from the chunk 
+   * \brief extract next record from the chunk
    * \param out_rec the output record
    * \param chunk the chunk information
    * \return true if non-empty record is extracted
    *    false if the chunk is already finishes its life
    */
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) = 0;
-  
+
  protected:
   // constructor
   InputSplitBase()
@@ -141,7 +142,7 @@ class InputSplitBase : public InputSplit {
   size_t offset_end_;
   /*! \brief temporal chunk */
   Chunk tmp_chunk_;
-  /*! \brief buffer size */  
+  /*! \brief buffer size */
   size_t buffer_size_;
   /*! \brief byte-offset of each file */
   std::vector<size_t> file_offset_;
@@ -150,7 +151,7 @@ class InputSplitBase : public InputSplit {
   /*! \brief initialize information in files */
   void InitInputFileInfo(const char *uri);
   /*! \brief same as stream.Read */
-  size_t Read(void *ptr, size_t size);  
+  size_t Read(void *ptr, size_t size);
 };
 }  // namespace io
 }  // namespace dmlc

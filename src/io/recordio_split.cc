@@ -1,13 +1,15 @@
+// Copyright by Contributors
 #define _CRT_SECURE_NO_WARNINGS
-#include <algorithm>
 #include <dmlc/recordio.h>
 #include <dmlc/logging.h>
+#include <algorithm>
 #include "./recordio_split.h"
+
 namespace dmlc {
 namespace io {
 size_t RecordIOSplitter::SeekRecordBegin(Stream *fi) {
   size_t nstep = 0;
-  uint32_t v, lrec; 
+  uint32_t v, lrec;
   while (true) {
     if (fi->Read(&v, sizeof(v)) == 0) return nstep;
     nstep += sizeof(v);
@@ -15,7 +17,7 @@ size_t RecordIOSplitter::SeekRecordBegin(Stream *fi) {
       CHECK(fi->Read(&lrec, sizeof(lrec)) != 0)
             << "invalid record io format";
       nstep += sizeof(lrec);
-      uint32_t cflag = RecordIOWriter::DecodeFlag(lrec);        
+      uint32_t cflag = RecordIOWriter::DecodeFlag(lrec);
       if (cflag == 0 || cflag == 1) break;
     }
   }
@@ -24,8 +26,8 @@ size_t RecordIOSplitter::SeekRecordBegin(Stream *fi) {
 }
 const char* RecordIOSplitter::FindLastRecordBegin(const char *begin,
                                                   const char *end) {
-  CHECK((reinterpret_cast<size_t>(begin) & 3UL) == 0); 
-  CHECK((reinterpret_cast<size_t>(end) & 3UL) == 0);
+  CHECK_EQ((reinterpret_cast<size_t>(begin) & 3UL), 0);
+  CHECK_EQ((reinterpret_cast<size_t>(end) & 3UL), 0);
   const uint32_t *pbegin = reinterpret_cast<const uint32_t *>(begin);
   const uint32_t *p = reinterpret_cast<const uint32_t *>(end);
   CHECK(p >= pbegin + 2);
@@ -44,8 +46,8 @@ bool RecordIOSplitter::ExtractNextRecord(Blob *out_rec, Chunk *chunk) {
   if (chunk->begin == chunk->end) return false;
   CHECK(chunk->begin + 2 * sizeof(uint32_t) <= chunk->end)
       << "Invalid RecordIO Format";
-  CHECK((reinterpret_cast<size_t>(chunk->begin) & 3UL) == 0); 
-  CHECK((reinterpret_cast<size_t>(chunk->end) & 3UL) == 0);
+  CHECK_EQ((reinterpret_cast<size_t>(chunk->begin) & 3UL), 0);
+  CHECK_EQ((reinterpret_cast<size_t>(chunk->end) & 3UL), 0);
   uint32_t *p = reinterpret_cast<uint32_t *>(chunk->begin);
   uint32_t cflag = RecordIOWriter::DecodeFlag(p[1]);
   uint32_t clen = RecordIOWriter::DecodeLength(p[1]);

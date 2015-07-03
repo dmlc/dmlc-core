@@ -7,12 +7,14 @@
  */
 #ifndef DMLC_DATA_ROW_BLOCK_H_
 #define DMLC_DATA_ROW_BLOCK_H_
-#include <cstring>
-#include <vector>
-#include <limits>
+
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <dmlc/data.h>
+#include <cstring>
+#include <vector>
+#include <limits>
+#include <algorithm>
 
 namespace dmlc {
 namespace data {
@@ -76,7 +78,7 @@ struct RowBlockContainer {
    * \tparam I the index type of the row
    */
   template<typename I>
-  inline void Push(Row<I> row) {    
+  inline void Push(Row<I> row) {
     label.push_back(row.label);
     weight.push_back(row.weight);
     for (size_t i = 0; i < row.length; ++i) {
