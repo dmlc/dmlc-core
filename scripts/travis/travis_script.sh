@@ -13,6 +13,9 @@ fi
 if [ ${TASK} == "build" ]; then
     cp make/config.mk .
     echo "USE_S3=1" >> config.mk
+    echo "USE_BLAS=blas" >> config.mk
+    echo "USE_CUDA=0" >> config.mk
+    echo "USE_CUDNN=0" >> config.mk
     echo "export CXX="${CXX} >> config.mk
     make all || exit -1
 fi
