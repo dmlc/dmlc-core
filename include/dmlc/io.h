@@ -14,6 +14,7 @@
 
 // include uint64_t only to make io standalone
 #ifdef _MSC_VER
+/*! \brief uint64 */
 typedef unsigned __int64 uint64_t;
 #else
 #include <inttypes.h>
