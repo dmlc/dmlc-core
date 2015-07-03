@@ -22,6 +22,8 @@ addons:
 
 before_install:
   - export TRAVIS=./scripts/travis
+  - export PATH=${HOME}/.local/bin:${PATH}
+  - export CACHE_PREFIX=${HOME}/.cache/usr
   - ${TRAVIS}/travis_install.sh
 
 script: ${TRAVIS}/travis_script.sh
@@ -33,7 +35,6 @@ before_cache:
 cache:
   pip: true
   directories:
-    - ${HOME}/.cache/pip
     - ${HOME}/.cache/usr
 
 notifications:

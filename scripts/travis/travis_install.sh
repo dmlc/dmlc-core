@@ -3,13 +3,8 @@
 # Do not use sudo, to enable cache
 
 # Build additional dependencies from source
-CACHE_PREFIX=${HOME}/.cache/usr
-PYTHON_CACHE=${HOME}/.cache/pip
 
-if [ ! -d ${CACHE_PREFIX} ]; then
-    mkdir ${PYTHON_CACHE}
-fi
-pip install --target=${PYTHON_CACHE} cpplint pylint
+pip install -r cpplint pylint --user `whoami`
 
 if [ ! -d ${CACHE_PREFIX} ]; then
     mkdir ${CACHE_PREFIX}

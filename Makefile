@@ -10,7 +10,7 @@ include $(config)
 include make/dmlc.mk
 
 # this is the common build script for dmlc lib
-export LDFLAGS= -pthread -lm -lrt
+export LDFLAGS= -pthread -lm
 export CFLAGS = -O3 -Wall -msse2  -Wno-unknown-pragmas -Iinclude -std=c++0x
 LDFLAGS+= $(DMLC_LDFLAGS)
 CFLAGS+= $(DMLC_CFLAGS)
