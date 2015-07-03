@@ -1,15 +1,6 @@
 #!/bin/bash
-# Main script of travis
 
-# setup the env variables
-export PATH=${PATH}:${CACHE_PREFIX}/bin
-export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH}:${CACHE_PREFIX}/include
-export C_INCLUDE_PATH=${C_INCLUDE_PATH}:${CACHE_PREFIX}/include
-export LIBRARY_PATH=${LIBRARY_PATH}:${CACHE_PREFIX}/lib
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CACHE_PREFIX}/lib
-
-alias make="make -j4"
-
+# main script of travis
 if [ ${TASK} == "lint" ]; then
     make lint || exit -1
 fi

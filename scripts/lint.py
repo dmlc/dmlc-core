@@ -12,7 +12,7 @@ import cpplint
 from cpplint import _cpplint_state
 from pylint import epylint
 
-CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h'])
+CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h', 'cu', 'hpp'])
 PYTHON_SUFFIX = set(['py'])
 
 class LintHelper(object):
@@ -42,7 +42,7 @@ class LintHelper(object):
                             '-d', 'superfluous-parens']
         self.pylint_cats = set(['error', 'warning', 'convention'])
         # setup cpp lint
-        cpplint_args = ['.']
+        cpplint_args = ['.', '--extensions=' + (','.join(CXX_SUFFIX))]
         _ = cpplint.ParseArguments(cpplint_args)
         cpplint._SetFilters(','.join(['-build/c++11',
                                       '-build/namespaces',
@@ -137,14 +137,12 @@ def main():
         exit(-1)
     _HELPER.project_name = sys.argv[1]
     file_type = sys.argv[2]
-    allow_type = set([])
-    if file_type == 'python':
-        allow_type = ['py']
-    elif file_type == 'cpp':
-        allow_type = ['cc', 'h']
-    else:
-        allow_type = ['cc', 'h', 'py']
-
+    allow_type = []
+    if file_type == 'python' or file_type == 'all':
+        allow_type += [x for x in PYTHON_SUFFIX]
+    if file_type == 'cpp' or file_type == 'all':
+        allow_type += [x for x in CXX_SUFFIX]
+    allow_type = set(allow_type)
     sys.stderr = codecs.StreamReaderWriter(sys.stderr,
                                            codecs.getreader('utf8'),
                                            codecs.getwriter('utf8'),
