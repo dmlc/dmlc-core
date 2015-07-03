@@ -36,6 +36,7 @@ cache:
   pip: true
   directories:
     - ${HOME}/.cache/usr
+    - ${HOME}/.local/bin
 
 notifications:
 # Emails are sent to the committer's git-configured email address by default,

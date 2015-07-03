@@ -7,7 +7,11 @@ pip install  cpplint pylint --user `whoami`
 # Build additional dependencies from source
 if [ ! -d ${CACHE_PREFIX} ]; then
     mkdir ${CACHE_PREFIX}
+fi
+if [ ! -d ${CACHE_PREFIX}/include ]; then
     mkdir ${CACHE_PREFIX}/include
+fi
+if [ ! -d ${CACHE_PREFIX}/lib ]; then
     mkdir ${CACHE_PREFIX}/lib
 fi
 
@@ -19,8 +23,8 @@ if [ ! -d ${CACHE_PREFIX}/include/gtest ]; then
     cd gtest-1.7.0
     ./configure
     make
-    cp -rf include/gtest ${CACHE_PREFIX}/include
-    cp -rf lib/.libs/* ${CACHE_PREFIX}/lib
+    cp -r include/gtest ${CACHE_PREFIX}/include
+    cp -r lib/.libs/* ${CACHE_PREFIX}/lib
     cd ..
     rm -rf gtest-1.7.0.zip
 fi
