@@ -1,7 +1,7 @@
 DMLC Core
 ====
 
-[![Build Status]([https://travis-ci.org/dmlc/dmlc-core.svg?branch=master)(https://travis-ci.org/dmlc/dmlc-core)
+[![Build Status](https://travis-ci.org/dmlc/dmlc-core.svg?branch=master)(https://travis-ci.org/dmlc/dmlc-core)
 
 A common code-base for Distributed Machine Learning in C++.
 
