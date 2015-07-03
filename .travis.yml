@@ -32,8 +32,8 @@ before_cache:
 
 cache:
   pip: true
-  apt: true
   directories:
+    - ${HOME}/.cache/pip
     - ${HOME}/.cache/usr
 
 notifications:

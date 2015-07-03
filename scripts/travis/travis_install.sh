@@ -1,10 +1,15 @@
 #!/bin/bash
 # Install dependencies of dmlc-core for travis CI
 # Do not use sudo, to enable cache
-pip install cpplint pylint
 
 # Build additional dependencies from source
 CACHE_PREFIX=${HOME}/.cache/usr
+PYTHON_CACHE=${HOME}/.cache/pip
+
+if [ ! -d ${CACHE_PREFIX} ]; then
+    mkdir ${PYTHON_CACHE}
+fi
+pip install --target=${PYTHON_CACHE} cpplint pylint
 
 if [ ! -d ${CACHE_PREFIX} ]; then
     mkdir ${CACHE_PREFIX}

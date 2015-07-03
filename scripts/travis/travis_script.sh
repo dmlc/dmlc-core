@@ -30,6 +30,7 @@ fi
 
 if [ ${TASK} == "unittest_gtest" ]; then
     cp make/config.mk .
+    ls -alh ${CACHE_PREFIX}/lib
     echo "USE_S3=1" >> config.mk
     echo "BUILD_TEST=1" >> config.mk
     echo "export CXX="${CXX} >> config.mk
