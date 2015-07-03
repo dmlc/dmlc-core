@@ -38,4 +38,4 @@ inline double GetTime(void) {
   #endif
 }
 }  // namespace dmlc
-#endif
+#endif  // DMLC_TIMER_H_

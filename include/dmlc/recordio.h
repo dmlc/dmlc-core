@@ -7,8 +7,8 @@
  */
 #ifndef DMLC_RECORDIO_H_
 #define DMLC_RECORDIO_H_
-#include <string>
 #include <cstring>
+#include <string>
 #include "./io.h"
 #include "./logging.h"
 

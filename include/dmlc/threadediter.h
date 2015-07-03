@@ -12,11 +12,11 @@
 #include "./base.h"
 // this code depends on c++11
 #if DMLC_USE_CXX11
-#include <functional>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
+#include <functional>
+#include <mutex>
 #include <queue>
+#include <thread>
 #include "./data.h"
 #include "./logging.h"
 

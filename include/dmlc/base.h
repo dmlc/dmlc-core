@@ -89,8 +89,8 @@ typedef __int64 int64_t;
 #else
 #include <inttypes.h>
 #endif
-#include <vector>
 #include <string>
+#include <vector>
 
 /*! \brief namespace for dmlc */
 namespace dmlc {

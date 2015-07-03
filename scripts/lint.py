@@ -6,12 +6,13 @@ Copyright by Contributors
 """
 import codecs
 import sys
+import re
 import os
 import cpplint
 from cpplint import _cpplint_state
 from pylint import epylint
 
-CXX_SUFFIX = set(['cc', 'h'])
+CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h'])
 PYTHON_SUFFIX = set(['py'])
 
 class LintHelper(object):
@@ -32,6 +33,7 @@ class LintHelper(object):
         return len(result_map) - npass
 
     def __init__(self):
+        self.project_name = None
         self.cpp_header_map = {}
         self.cpp_src_map = {}
         self.python_map = {}
@@ -42,8 +44,7 @@ class LintHelper(object):
         # setup cpp lint
         cpplint_args = ['.']
         _ = cpplint.ParseArguments(cpplint_args)
-        cpplint._SetFilters(','.join(['-build/header_guard',
-                                      '-build/c++11',
+        cpplint._SetFilters(','.join(['-build/c++11',
                                       '-build/namespaces',
                                       '-build/include,',
                                       '+build/include_what_you_use',
@@ -96,6 +97,27 @@ class LintHelper(object):
 # singleton helper for lint check
 _HELPER = LintHelper()
 
+def get_header_guard_dmlc(filename):
+    """Get Header Guard Convention for DMLC Projects.
+
+    For headers in include, directly use the path
+    For headers in src, use project name plus path
+
+    Examples: with project-name = dmlc
+        include/dmlc/timer.h -> DMLC_TIMTER_H_
+        src/io/libsvm_parser.h -> DMLC_IO_LIBSVM_PARSER_H_
+    """
+    fileinfo = cpplint.FileInfo(filename)
+    file_path_from_root = fileinfo.RepositoryName()
+
+    if file_path_from_root.startswith('include'):
+        file_path_from_root = re.sub('^include' + os.sep, '', file_path_from_root)
+    elif file_path_from_root.startswith('src') and _HELPER.project_name is not None:
+        file_path_from_root = re.sub('^src', _HELPER.project_name, file_path_from_root)
+    return re.sub(r'[-./\s]', '_', file_path_from_root).upper() + '_'
+
+cpplint.GetHeaderGuardCPPVariable = get_header_guard_dmlc
+
 def process(fname, allow_type):
     """Process a file."""
     fname = str(fname)
@@ -109,12 +131,12 @@ def process(fname, allow_type):
 
 def main():
     """Main entry function."""
-    if len(sys.argv) < 2:
-        print('Usage: <filetype> <list-of-path to traverse>')
+    if len(sys.argv) < 3:
+        print('Usage: <project-name> <filetype> <list-of-path to traverse>')
         print('\tfiletype can be python/cpp/all')
         exit(-1)
-
-    file_type = sys.argv[1]
+    _HELPER.project_name = sys.argv[1]
+    file_type = sys.argv[2]
     allow_type = set([])
     if file_type == 'python':
         allow_type = ['py']
@@ -127,7 +149,7 @@ def main():
                                            codecs.getreader('utf8'),
                                            codecs.getwriter('utf8'),
                                            'replace')
-    for path in sys.argv[1:]:
+    for path in sys.argv[3:]:
         if os.path.isfile(path):
             process(path, allow_type)
         else:

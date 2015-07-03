@@ -6,8 +6,8 @@
 #ifndef DMLC_CONFIG_H_
 #define DMLC_CONFIG_H_
 
-#include <iostream>
 #include <cstring>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <vector>

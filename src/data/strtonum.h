@@ -224,4 +224,4 @@ inline int ParsePair(const char * begin, const char * end,
 }
 }  // namespace data
 }  // namespace dmlc
-#endif /* DMLC_DATA_STRTONUM_H_ */
+#endif  // DMLC_DATA_STRTONUM_H_

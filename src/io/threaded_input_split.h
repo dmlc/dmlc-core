@@ -90,4 +90,4 @@ class ThreadedInputSplit : public InputSplit {
 }  // namespace io
 }  // namespace dmlc
 #endif  // DMLC_USE_CXX11
-#endif  // DMLC_IO_THREAD_INPUT_SPLIT_H_
+#endif  // DMLC_IO_THREADED_INPUT_SPLIT_H_

@@ -155,4 +155,4 @@ class InputSplitBase : public InputSplit {
 };
 }  // namespace io
 }  // namespace dmlc
-#endif  // DMLC_IO_LINE_SPLIT_H_
+#endif  // DMLC_IO_INPUT_SPLIT_BASE_H_
