@@ -35,7 +35,6 @@ before_cache:
 
 
 cache:
-  pip: true
   directories:
     - ${HOME}/.cache/usr
 
