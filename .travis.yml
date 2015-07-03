@@ -31,9 +31,9 @@ before_cache:
   - ${TRAVIS}/travis_before_cache.sh
 
 cache:
+  pip: true
   apt: true
   directories:
-    - ${HOME}/.cache/pip
     - ${HOME}/.cache/usr
 
 notifications:

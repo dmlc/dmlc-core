@@ -20,9 +20,8 @@ if [ ! -d ${CACHE_PREFIX}/include/gtest ]; then
     cd gtest-1.7.0
     ./configure
     make
-    cp -a include/gtest ${CACHE_PREFIX}/include
-    cp -a lib/.libs/* ${CACHE_PREFIX}/lib
+    cp -rf include/gtest ${CACHE_PREFIX}/include
+    cp -rf lib/.libs/* ${CACHE_PREFIX}/lib
     cd ..
     rm -rf gtest-1.7.0.zip
 fi
-
