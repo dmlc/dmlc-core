@@ -1,14 +1,13 @@
 #!/bin/bash
 # Main script of travis
 
-CACHE_PREFIX=${HOME}/.cache/usr
+export CACHE_PREFIX=${HOME}/.cache/usr
 
 # setup the env variables
 export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH}:${CACHE_PREFIX}/include
 export C_INCLUDE_PATH=${C_INCLUDE_PATH}:${CACHE_PREFIX}/include
 export LIBRARY_PATH=${LIBRARY_PATH}:${CACHE_PREFIX}/lib
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CACHE_PREFIX}/lib
-echo $LIBRARY_PATH
 
 alias make="make -j4"
 
