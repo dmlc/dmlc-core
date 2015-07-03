@@ -31,7 +31,7 @@ class SingleFileSplit : public InputSplit {
     }
     if (!use_stdin_) {
       fp_ = fopen64(fname, "rb");
-      CHECK_NOTNULL(fp_) << "SingleFileSplit: fail to open " << fname;
+      CHECK(fp_ != NULL) << "SingleFileSplit: fail to open " << fname;
     }
     buffer_.resize(kBufferSize);
   }
