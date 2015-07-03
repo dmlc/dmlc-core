@@ -69,7 +69,7 @@ $(ALIB):
 	ar cr $@ $+
 
 lint:
-	scripts/lint.py ${LINT_LANG} include src test scripts
+	python scripts/lint.py ${LINT_LANG} include src test scripts
 
 doc:
 	doxygen doc/Doxyfile
