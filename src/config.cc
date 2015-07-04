@@ -1,3 +1,6 @@
+/*!
+ *  Copyright (c) 2015 by Contributors
+ */
 #include <sstream>
 #include <exception>
 
@@ -15,8 +18,7 @@ struct Token {
 
 class TokenizeError : public exception {
  public:
-  TokenizeError(const string& msg = "tokenize error"): msg_(msg) {
-  }
+  explicit TokenizeError(const string& msg = "tokenize error"): msg_(msg) { }
   ~TokenizeError() throw() {}
   virtual const char* what() const throw() {
     return msg_.c_str();
@@ -27,33 +29,33 @@ class TokenizeError : public exception {
 
 class Tokenizer {
  public:
-  Tokenizer(istream& is): is_(is), state_(kNone) {}
-  bool GetNextToken(Token& tok) {
+  explicit Tokenizer(istream* is): is_(is), state_(kNone) {}
+  bool GetNextToken(Token* tok) {
     // token is defined as
     // 1. [^\s=]+
     // 2. "[(^"|\\")]*"
     // 3. =
     state_ = kNone;
-    tok.buf.clear();
-    tok.is_string = false;
+    tok->buf.clear();
+    tok->is_string = false;
     char ch;
-    while( (ch = PeekChar()) != EOF && state_ != kFinish ) {
-      switch(ch) {
+    while ( (ch = PeekChar()) != EOF && state_ != kFinish ) {
+      switch (ch) {
       case ' ': case '\t': case '\n': case '\r':
-        if(state_ == kToken) {
+        if (state_ == kToken) {
           state_ = kFinish;
         } else {
-          EatChar(); // ignore
+          EatChar();  // ignore
         }
         break;
       case '\"':
-        ParseString(tok.buf);
+        ParseString(&tok->buf);
         state_ = kFinish;
-        tok.is_string = true;
+        tok->is_string = true;
         break;
       case '=':
-        if(state_ != kToken) {
-          tok.buf = '=';
+        if (state_ != kToken) {
+          tok->buf = '=';
           EatChar();
         }
         state_ = kFinish;
@@ -63,24 +65,24 @@ class Tokenizer {
         break;
       default:
         state_ = kToken;
-        tok.buf += ch;
+        tok->buf += ch;
         EatChar();
         break;
-      };
+      }
     }
     return PeekChar() != EOF;
   }
 
-  void ParseString(string& tok) {
-    EatChar(); // eat the first quotation mark
+  void ParseString(string* tok) {
+    EatChar();  // eat the first quotation mark
     char ch;
-    while( (ch = PeekChar()) != '\"' ) {
-      switch(ch) {
+    while ( (ch = PeekChar()) != '\"' ) {
+      switch (ch) {
         case '\\':
           EatChar();
           ch = PeekChar();
-          if(ch == '\"') {
-            tok += '\"';
+          if (ch == '\"') {
+            *tok += '\"';
           } else {
             throw TokenizeError("error parsing escape characters");
           }
@@ -88,38 +90,38 @@ class Tokenizer {
         case '\n': case '\r': case EOF:
           throw TokenizeError("quotation mark is not closed");
         default:
-          tok += ch;
+          *tok += ch;
           break;
-      };
+      }
       EatChar();
     }
-    EatChar(); // eat the last quotation mark
-  };
+    EatChar();  // eat the last quotation mark
+  }
 
   void ParseComments() {
     char ch;
-    while( (ch = PeekChar()) ) {
-      if(ch == '\n' || ch == '\r' || ch == EOF) {
-        break; // end of comment
+    while ( (ch = PeekChar()) ) {
+      if (ch == '\n' || ch == '\r' || ch == EOF) {
+        break;  // end of comment
       }
-      EatChar(); // ignore all others
+      EatChar();  // ignore all others
     }
   }
 
  private:
   char PeekChar() {
-    return is_.peek();
+    return is_->peek();
   }
   void EatChar() {
-    is_.get();
+    is_->get();
   }
- private:
+
   enum ParseState {
     kNone = 0,
     kToken,
     kFinish,
   };
-  istream& is_;
+  istream* is_;
   ParseState state_;
 };
 
@@ -142,14 +144,14 @@ void Config::LoadFromStream(istream& is) {
   Tokenizer tokenizer(is);
   Token key, eqop, value;
   try {
-    while( true ) {
-      tokenizer.GetNextToken(key);
-      if(key.buf.length() == 0) {
-        break; // no content left
+    while ( true ) {
+      tokenizer.GetNextToken(&key);
+      if (key.buf.length() == 0) {
+        break;  // no content left
       }
-      tokenizer.GetNextToken(eqop);
-      tokenizer.GetNextToken(value);
-      if(eqop.buf != "=") {
+      tokenizer.GetNextToken(&eqop);
+      tokenizer.GetNextToken(&value);
+      if (eqop.buf != "=") {
         LOG(ERROR) << "Parsing error: expect format \"k = v\"; but got \""
           << key.buf << eqop.buf << value.buf << "\"";
       }
@@ -161,20 +163,22 @@ void Config::LoadFromStream(istream& is) {
 }
 
 const string& Config::GetParam(const string& key) const {
-  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
+  CHECK(config_map_.find(key) != config_map_.end())
+      << "key \"" << key << "\" not found in configure";
   const std::vector<std::string>& vals = config_map_.find(key)->second.val;
-  return vals[vals.size() - 1]; // return tne latest inserted one
+  return vals[vals.size() - 1];  // return tne latest inserted one
 }
 
 bool Config::IsGenuineString(const std::string& key) const {
-  CHECK(config_map_.find(key) != config_map_.end()) << "key \"" << key << "\" not found in configure";
+  CHECK(config_map_.find(key) != config_map_.end())
+      << "key \"" << key << "\" not found in configure";
   return config_map_.find(key)->second.is_string;
 }
 
 string MakeProtoStringValue(const std::string& str) {
   string rst = "\"";
-  for(size_t i = 0; i < str.length(); ++i) {
-    if(str[i] != '\"') {
+  for (size_t i = 0; i < str.length(); ++i) {
+    if (str[i] != '\"') {
       rst += str[i];
     } else {
       rst += "\\\"";
@@ -186,7 +190,7 @@ string MakeProtoStringValue(const std::string& str) {
 
 string Config::ToProtoString(void) const {
   ostringstream oss;
-  for(ConfigIterator iter = begin(); iter != end(); ++iter) {
+  for (ConfigIterator iter = begin(); iter != end(); ++iter) {
     const ConfigEntry& entry = *iter;
     bool is_string = IsGenuineString(entry.first);
     oss << entry.first << " : " <<
@@ -206,7 +210,7 @@ Config::ConfigIterator Config::end() const {
 
 void Config::Insert(const std::string& key, const std::string& value, bool is_string) {
   size_t insert_index = order_.size();
-  if(!multi_value_) {
+  if (!multi_value_) {
     config_map_[key] = ConfigValue();
   }
   ConfigValue& cv = config_map_[key];
@@ -220,33 +224,35 @@ void Config::Insert(const std::string& key, const std::string& value, bool is_st
 
 ////////////////////// ConfigIterator //////////////////////
 
-Config::ConfigIterator::ConfigIterator(size_t i, const Config* c): index_(i), config_(c) {
+Config::ConfigIterator::ConfigIterator(size_t i, const Config* c)
+    : index_(i), config_(c) {
   FindNextIndex();
 }
 
-Config::ConfigIterator::ConfigIterator(const Config::ConfigIterator& other): index_(other.index_), config_(other.config_) {
+Config::ConfigIterator::ConfigIterator(const Config::ConfigIterator& other)
+    : index_(other.index_), config_(other.config_) {
 }
 
-Config::ConfigIterator& Config::ConfigIterator::operator ++ () {
-  if(index_ < config_->order_.size()) {
+Config::ConfigIterator& Config::ConfigIterator::operator++() {
+  if (index_ < config_->order_.size()) {
     ++index_;
   }
   FindNextIndex();
   return *this;
 }
 
-Config::ConfigIterator Config::ConfigIterator::operator ++ (int) {
+Config::ConfigIterator Config::ConfigIterator::operator++(int any) {
   ConfigIterator tmp(*this);
   operator++();
   return tmp;
 }
 
-bool Config::ConfigIterator::operator == (const Config::ConfigIterator& rhs) const {
+bool Config::ConfigIterator::operator==(const Config::ConfigIterator& rhs) const {
   return index_ == rhs.index_ && config_ == rhs.config_;
 }
 
-bool Config::ConfigIterator::operator != (const Config::ConfigIterator& rhs) const {
-  return ! (operator == (rhs));
+bool Config::ConfigIterator::operator!=(const Config::ConfigIterator& rhs) const {
+  return !(operator == (rhs));
 }
 
 Config::ConfigEntry Config::ConfigIterator::operator * () const {
@@ -258,11 +264,11 @@ Config::ConfigEntry Config::ConfigIterator::operator * () const {
 
 void Config::ConfigIterator::FindNextIndex() {
   bool found = false;
-  while(!found && index_ < config_->order_.size()) {
+  while (!found && index_ < config_->order_.size()) {
     const std::string& key = config_->order_[index_].first;
     size_t val_index = config_->order_[index_].second;
     size_t val_insert_index = config_->config_map_.find(key)->second.insert_index[val_index];
-    if(val_insert_index == index_) {
+    if (val_insert_index == index_) {
       found = true;
     } else {
       ++index_;
@@ -270,4 +276,4 @@ void Config::ConfigIterator::FindNextIndex() {
   }
 }
 
-} // namespace dmlc
+}  // namespace dmlc
