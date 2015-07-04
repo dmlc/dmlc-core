@@ -29,7 +29,7 @@ class TokenizeError : public exception {
 
 class Tokenizer {
  public:
-  explicit Tokenizer(istream* is): is_(is), state_(kNone) {}
+  explicit Tokenizer(istream& is): is_(is), state_(kNone) {}  // NOLINT(*)
   bool GetNextToken(Token* tok) {
     // token is defined as
     // 1. [^\s=]+
@@ -110,10 +110,10 @@ class Tokenizer {
 
  private:
   char PeekChar() {
-    return is_->peek();
+    return is_.peek();
   }
   void EatChar() {
-    is_->get();
+    is_.get();
   }
 
   enum ParseState {
@@ -121,7 +121,7 @@ class Tokenizer {
     kToken,
     kFinish,
   };
-  istream* is_;
+  istream& is_;
   ParseState state_;
 };
 
