@@ -37,10 +37,14 @@ class LintHelper(object):
         self.cpp_header_map = {}
         self.cpp_src_map = {}
         self.python_map = {}
+        pylint_disable = ['superfluous-parens',
+                          'too-many-instance-attributes',
+                          'too-few-public-methods']
         # setup pylint
         self.pylint_opts = ['--extension-pkg-whitelist=numpy',
-                            '-d', 'superfluous-parens']
-        self.pylint_cats = set(['error', 'warning', 'convention'])
+                            '--disable=' + ','.join(pylint_disable)]
+
+        self.pylint_cats = set(['error', 'warning', 'convention', 'refactor'])
         # setup cpp lint
         cpplint_args = ['.', '--extensions=' + (','.join(CXX_SUFFIX))]
         _ = cpplint.ParseArguments(cpplint_args)
