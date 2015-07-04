@@ -1,11 +1,10 @@
 # Install nvcc and setup environment variable
-# Do not directly call it, source it in your script
-# need to first set NVCC_PREFIX
 set -e
-if [ -z "$NVCC_PREFIX" ]; then
-    echo "NVCC_PREFIX need to be set"
-    exit -1
+if [ $# -lt 1 ]; then
+    echo "Usage: <NVCC_PREFIX>"
 fi
+
+prefix=$1
 
 # list of debs to download from nvidia
 files=( \
@@ -25,8 +24,3 @@ do
     dpkg -x ${item} ${prefix}
 done
 
-export PATH=${PATH}:${prefix}/usr/local/cuda-7.0/bin
-export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH}:${prefix}/usr/local/cuda-7.0/cuda-7.0/include
-export C_INCLUDE_PATH=${C_INCLUDE_PATH}:${prefix}/usr/local/cuda-7.0/cuda-7.0/include
-export LIBRARY_PATH=${LIBRARY_PATH}:${prefix}/usr/local/cuda-7.0/cuda-7.0/lib64
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${prefix}/usr/local/cuda-7.0/cuda-7.0/lib64
