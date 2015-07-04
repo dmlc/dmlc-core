@@ -22,6 +22,7 @@ files=( \
 for item in ${files[*]}
 do
     wget ${item}
-    dpkg -x ${item} ${prefix}
+    name=$(echo ${item} | tr "/" "\n" | tail -1)
+    dpkg -x ${name} ${prefix}
 done
 
