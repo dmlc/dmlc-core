@@ -1,3 +1,4 @@
+#!/bin/bash
 # Install nvcc and setup environment variable
 set -e
 if [ $# -lt 1 ]; then
