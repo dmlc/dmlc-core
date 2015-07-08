@@ -76,11 +76,11 @@ struct RowBlockContainer {
    * \tparam I the index type of the row
    */
   template<typename I>
-  inline void Push(Row<I> row) {    
+  inline void Push(Row<I> row) {
     label.push_back(row.label);
     weight.push_back(row.weight);
     for (size_t i = 0; i < row.length; ++i) {
-      CHECK(row.index[i] < std::numeric_limits<IndexType>::max())
+      CHECK_LE(row.index[i], std::numeric_limits<IndexType>::max())
           << "index exceed numeric bound of current type";
       IndexType findex = static_cast<IndexType>(row.index[i]);
       index.push_back(findex);
@@ -135,8 +135,8 @@ template<typename IndexType>
 inline RowBlock<IndexType>
 RowBlockContainer<IndexType>::GetBlock(void) const {
   // consistency check
-  CHECK(label.size() + 1 == offset.size());
-  CHECK(offset.back() == index.size());
+  CHECK_EQ(label.size() + 1, offset.size());
+  CHECK_EQ(offset.back(), index.size());
   CHECK(offset.back() == value.size() || value.size() == 0);
   RowBlock<IndexType> data;
   data.size = offset.size() - 1;
