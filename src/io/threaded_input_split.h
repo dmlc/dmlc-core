@@ -6,16 +6,18 @@
  */
 #ifndef DMLC_IO_THREADED_INPUT_SPLIT_H_
 #define DMLC_IO_THREADED_INPUT_SPLIT_H_
+
 #include <dmlc/base.h>
 // this code depends on c++11
 #if DMLC_USE_CXX11
 #include <dmlc/threadediter.h>
+#include <algorithm>
 #include "./input_split_base.h"
 
 namespace dmlc {
 namespace io {
 /*!
- * \brief a threaded version of InputSplit 
+ * \brief a threaded version of InputSplit
  *  wraps an InputSplitBase to use an thread to prefetch the data
  */
 class ThreadedInputSplit : public InputSplit {
@@ -59,7 +61,7 @@ class ThreadedInputSplit : public InputSplit {
     }
     while (!base_->ExtractNextRecord(out_rec, tmp_chunk_)) {
       iter_.Recycle(&tmp_chunk_);
-      if (!iter_.Next(&tmp_chunk_)) return false;      
+      if (!iter_.Next(&tmp_chunk_)) return false;
     }
     return true;
   }
@@ -70,11 +72,11 @@ class ThreadedInputSplit : public InputSplit {
     }
     while (!base_->ExtractNextChunk(out_chunk, tmp_chunk_)) {
       iter_.Recycle(&tmp_chunk_);
-      if (!iter_.Next(&tmp_chunk_)) return false;      
+      if (!iter_.Next(&tmp_chunk_)) return false;
     }
     return true;
-  }  
-  
+  }
+
  private:
   /*! \brief internal buffer size */
   size_t buffer_size_;
@@ -88,4 +90,4 @@ class ThreadedInputSplit : public InputSplit {
 }  // namespace io
 }  // namespace dmlc
 #endif  // DMLC_USE_CXX11
-#endif  // DMLC_IO_THREAD_INPUT_SPLIT_H_
+#endif  // DMLC_IO_THREADED_INPUT_SPLIT_H_

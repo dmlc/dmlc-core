@@ -48,7 +48,9 @@ def mpi_submit(nworker, nserver, pass_envs):
         cmd = 'mpirun -n %d --hostfile %s ' % (nworker + nserver, args.hostfile)
 
     for k, v in pass_envs.items():
+        # for mpich2
         cmd += ' -env %s %s' % (k, v)
+        # for openmpi
         # cmd += ' -x %s' % k
     cmd += ' '
     cmd += ' '.join(args.command)

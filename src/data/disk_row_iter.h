@@ -7,11 +7,14 @@
  */
 #ifndef DMLC_DATA_DISK_ROW_ITER_H_
 #define DMLC_DATA_DISK_ROW_ITER_H_
+
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <dmlc/data.h>
 #include <dmlc/timer.h>
 #include <dmlc/threadediter.h>
+#include <algorithm>
+#include <string>
 #include "./row_block.h"
 #include "./libsvm_parser.h"
 

@@ -13,6 +13,7 @@ endif
 ifndef NO_OPENMP
 	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
+	DMLC_LDFLAGS += -lrt
 else
     DMLC_LDFLAGS += -lrt 		# there is no -lrt on mac os x
 endif

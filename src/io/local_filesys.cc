@@ -1,8 +1,9 @@
+// Copyright by Contributors
 #define _CRT_SECURE_NO_WARNINGS
+
 #include <dmlc/logging.h>
-#include "./local_filesys.h"
 #include <errno.h>
-extern "C"{
+extern "C" {
 #include <sys/stat.h>
 }
 #ifndef _MSC_VER
@@ -14,6 +15,8 @@ extern "C" {
 #include <Windows.h>
 #define stat _stat64
 #endif
+
+#include "./local_filesys.h"
 
 namespace dmlc {
 namespace io {
@@ -33,7 +36,7 @@ class FileStream : public SeekStream {
         << "FileStream.Write incomplete";
   }
   virtual void Seek(size_t pos) {
-    std::fseek(fp_, static_cast<long>(pos), SEEK_SET);
+    std::fseek(fp_, static_cast<long>(pos), SEEK_SET);  // NOLINT(*)
   }
   virtual size_t Tell(void) {
     return std::ftell(fp_);
@@ -56,7 +59,7 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
   struct stat sb;
   if (stat(path.name.c_str(), &sb) == -1) {
     int errsv = errno;
-    LOG(FATAL) << "LocalFileSystem.GetPathInfo " << path.name 
+    LOG(FATAL) << "LocalFileSystem.GetPathInfo " << path.name
                << " Error:" << strerror(errsv);
   }
   FileInfo ret;
@@ -96,26 +99,26 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
 #else
   WIN32_FIND_DATA fd;
   std::string pattern = path.name + "/*";
-  HANDLE handle = FindFirstFile(pattern.c_str(), &fd); 
+  HANDLE handle = FindFirstFile(pattern.c_str(), &fd);
   if (handle == INVALID_HANDLE_VALUE) {
     int errsv = GetLastError();
     LOG(FATAL) << "LocalFileSystem.ListDirectory " << path.str()
                << " error: " << strerror(errsv);
   }
   do {
-   if (strcmp(fd.cFileName, ".") && strcmp(fd.cFileName, "..")) {
-    URI pp = path;
-	char clast = pp.name[pp.name.length() - 1];
-	if (pp.name == ".") {
-	  pp.name = fd.cFileName;
-	} else if (clast != '/' && clast != '\\') {
-      pp.name += '/';
-	  pp.name += fd.cFileName;
+    if (strcmp(fd.cFileName, ".") && strcmp(fd.cFileName, "..")) {
+      URI pp = path;
+      char clast = pp.name[pp.name.length() - 1];
+      if (pp.name == ".") {
+        pp.name = fd.cFileName;
+      } else if (clast != '/' && clast != '\\') {
+        pp.name += '/';
+        pp.name += fd.cFileName;
+      }
+      out_list->push_back(GetPathInfo(pp));
     }
-	out_list->push_back(GetPathInfo(pp));
-   }
-  }  while(FindNextFile(handle, &fd)); 
-  FindClose(handle); 
+  }  while (FindNextFile(handle, &fd));
+  FindClose(handle);
 #endif
 }
 

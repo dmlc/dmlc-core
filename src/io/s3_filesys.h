@@ -7,6 +7,8 @@
 #ifndef DMLC_IO_S3_FILESYS_H_
 #define DMLC_IO_S3_FILESYS_H_
 
+#include <vector>
+#include <string>
 #include "./filesys.h"
 
 namespace dmlc {
@@ -17,7 +19,7 @@ class S3FileSystem : public FileSystem {
   /*! \brief destructor */
   virtual ~S3FileSystem() {}
   /*!
-   * \brief get information about a path 
+   * \brief get information about a path
    * \param path the path to the file
    * \return the information about the file
    */
@@ -26,7 +28,7 @@ class S3FileSystem : public FileSystem {
    * \brief list files in a directory
    * \param path to the file
    * \param out_list the output information about the files
-   */ 
+   */
   virtual void ListDirectory(const URI &path, std::vector<FileInfo> *out_list);
   /*!
    * \brief open a stream, will report error and exit if bad thing happens
@@ -36,7 +38,7 @@ class S3FileSystem : public FileSystem {
    * \param flag can be "w", "r", "a"
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
-   */  
+   */
   virtual Stream *Open(const URI &path, const char* const flag, bool allow_null);
   /*!
    * \brief open a seekable stream for read
@@ -46,7 +48,7 @@ class S3FileSystem : public FileSystem {
    */
   virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
   /*!
-   * \brief get a singleton of S3FileSystem when needed 
+   * \brief get a singleton of S3FileSystem when needed
    * \return a singleton instance
    */
   inline static S3FileSystem *GetInstance(void) {
@@ -62,7 +64,7 @@ class S3FileSystem : public FileSystem {
   /*! \brief AWS secret key */
   std::string aws_secret_key_;
   /*!
-   * \brief try to get information about a path 
+   * \brief try to get information about a path
    * \param path the path to the file
    * \param out_info holds the path info
    * \return return false when path do not exist
@@ -71,4 +73,4 @@ class S3FileSystem : public FileSystem {
 };
 }  // namespace io
 }  // namespace dmlc
-#endif 
+#endif  // DMLC_IO_S3_FILESYS_H_

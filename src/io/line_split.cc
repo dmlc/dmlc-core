@@ -1,8 +1,10 @@
+// Copyright by Contributors
 #define _CRT_SECURE_NO_WARNINGS
-#include <algorithm>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <algorithm>
 #include "./line_split.h"
+
 namespace dmlc {
 namespace io {
 size_t LineSplitter::SeekRecordBegin(Stream *fi) {
@@ -27,7 +29,7 @@ const char* LineSplitter::FindLastRecordBegin(const char *begin,
                                               const char *end) {
   CHECK(begin != end);
   for (const char *p = end - 1; p != begin; --p) {
-    if (*p == '\n' || *p == '\r') return p + 1; 
+    if (*p == '\n' || *p == '\r') return p + 1;
   }
   return begin;
 }
@@ -43,7 +45,7 @@ bool LineSplitter::ExtractNextRecord(Blob *out_rec, Chunk *chunk) {
   }
   // set the string end sign for safety
   if (p == chunk->end) {
-    *p = '\0'; 
+    *p = '\0';
   } else {
     *(p - 1) = '\0';
   }

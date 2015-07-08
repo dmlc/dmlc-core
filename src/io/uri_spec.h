@@ -44,5 +44,4 @@ struct URISpec {
 };
 }  // namespace io
 }  // namespace dmlc
-#endif
-
+#endif  // DMLC_IO_URI_SPEC_H_

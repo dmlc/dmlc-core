@@ -6,14 +6,17 @@
  */
 #ifndef DMLC_IO_SINGLE_FILE_SPLIT_H_
 #define DMLC_IO_SINGLE_FILE_SPLIT_H_
-#include <cstdio>
+
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <cstdio>
+#include <string>
+#include <algorithm>
 
 namespace dmlc {
 namespace io {
 /*!
- * \brief line split implementation from single FILE 
+ * \brief line split implementation from single FILE
  * simply returns lines of files, used for stdin
  */
 class SingleFileSplit : public InputSplit {
@@ -28,7 +31,7 @@ class SingleFileSplit : public InputSplit {
     }
     if (!use_stdin_) {
       fp_ = fopen64(fname, "rb");
-      CHECK (fp_ != NULL) << "SingleFileSplit: fail to open " << fname;
+      CHECK(fp_ != NULL) << "SingleFileSplit: fail to open " << fname;
     }
     buffer_.resize(kBufferSize);
   }
@@ -43,7 +46,7 @@ class SingleFileSplit : public InputSplit {
   }
   virtual size_t Read(void *ptr, size_t size) {
     return std::fread(ptr, 1, size, fp_);
-  }  
+  }
   virtual void Write(const void *ptr, size_t size) {
     LOG(FATAL) << "InputSplit do not support write";
   }
@@ -55,13 +58,13 @@ class SingleFileSplit : public InputSplit {
                                 chunk_end_);
     out_rec->dptr = chunk_begin_;
     out_rec->size = next - chunk_begin_;
-    chunk_begin_ = next;    
+    chunk_begin_ = next;
     return true;
   }
   virtual bool NextChunk(Blob *out_chunk) {
     if (chunk_begin_ == chunk_end_) {
       if (!LoadChunk()) return false;
-    }    
+    }
     out_chunk->dptr = chunk_begin_;
     out_chunk->size = chunk_end_ - chunk_begin_;
     chunk_begin_ = chunk_end_;
@@ -72,8 +75,8 @@ class SingleFileSplit : public InputSplit {
     if (max_size <= overflow_.length()) {
       *size = 0; return true;
     }
-    if (overflow_.length() != 0) { 
-      std::memcpy(buf, BeginPtr(overflow_), overflow_.length());  
+    if (overflow_.length() != 0) {
+      std::memcpy(buf, BeginPtr(overflow_), overflow_.length());
     }
     size_t olen = overflow_.length();
     overflow_.resize(0);
@@ -96,13 +99,13 @@ class SingleFileSplit : public InputSplit {
       return true;
     }
   }
-  
+
  protected:
   inline const char* FindLastRecordBegin(const char *begin,
                                          const char *end) {
     if (begin == end) return begin;
     for (const char *p = end - 1; p != begin; --p) {
-      if (*p == '\n' || *p == '\r') return p + 1; 
+      if (*p == '\n' || *p == '\r') return p + 1;
     }
     return begin;
   }

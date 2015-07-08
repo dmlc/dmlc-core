@@ -1,15 +1,17 @@
-// use direct path for to save compile flags
+// Copyright by Contributors
 #define _CRT_SECURE_NO_WARNINGS
-#include <algorithm>
+
 #include <dmlc/base.h>
 #include <dmlc/recordio.h>
 #include <dmlc/logging.h>
+#include <algorithm>
+
 
 namespace dmlc {
 // implemmentation
 void RecordIOWriter::WriteRecord(const void *buf, size_t size) {
   CHECK(size < (1 << 29U))
-      << "RecordIO only accept record less than 2^29 bytes"; 
+      << "RecordIO only accept record less than 2^29 bytes";
   const uint32_t umagic = kMagic;
   // initialize the magic number, in stack
   const char *magic = reinterpret_cast<const char*>(&umagic);
@@ -82,8 +84,8 @@ bool RecordIOReader::NextRecord(std::string *out_rec) {
 
 // helper function to find next recordio head
 inline char *FindNextRecordIOHead(char *begin, char *end) {
-  CHECK((reinterpret_cast<size_t>(begin) & 3UL) == 0); 
-  CHECK((reinterpret_cast<size_t>(end) & 3UL) == 0);
+  CHECK_EQ((reinterpret_cast<size_t>(begin) & 3UL),  0);
+  CHECK_EQ((reinterpret_cast<size_t>(end) & 3UL), 0);
   uint32_t *p = reinterpret_cast<uint32_t *>(begin);
   uint32_t *pend = reinterpret_cast<uint32_t *>(end);
   for (; p + 1 < pend; ++p) {
@@ -97,10 +99,9 @@ inline char *FindNextRecordIOHead(char *begin, char *end) {
   return end;
 }
 
-RecordIOChunkReader::RecordIOChunkReader
-(InputSplit::Blob chunk,
- unsigned part_index,
- unsigned num_parts) {
+RecordIOChunkReader::RecordIOChunkReader(InputSplit::Blob chunk,
+                                         unsigned part_index,
+                                         unsigned num_parts) {
   size_t nstep = (chunk.size + num_parts - 1) / num_parts;
   // align
   nstep = ((nstep + 3UL) >> 2UL) << 2UL;
@@ -108,7 +109,7 @@ RecordIOChunkReader::RecordIOChunkReader
   size_t end = std::min(chunk.size, nstep * (part_index + 1));
   char *head = reinterpret_cast<char*>(chunk.dptr);
   pbegin_ = FindNextRecordIOHead(head + begin, head + chunk.size);
-  pend_ = FindNextRecordIOHead(head + end, head + chunk.size);  
+  pend_ = FindNextRecordIOHead(head + end, head + chunk.size);
 }
 
 bool RecordIOChunkReader::NextRecord(InputSplit::Blob *out_rec) {
@@ -133,7 +134,7 @@ bool RecordIOChunkReader::NextRecord(InputSplit::Blob *out_rec) {
     while (true) {
       CHECK(pbegin_ + 2 * sizeof(uint32_t) <= pend_);
       p = reinterpret_cast<uint32_t *>(pbegin_);
-      CHECK(p[0] == RecordIOWriter::kMagic);      
+      CHECK(p[0] == RecordIOWriter::kMagic);
       cflag = RecordIOWriter::DecodeFlag(p[1]);
       clen = RecordIOWriter::DecodeLength(p[1]);
       size_t tsize = temp_.length();

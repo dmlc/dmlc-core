@@ -7,11 +7,11 @@
 #ifndef DMLC_DATA_LIBSVM_PARSER_H_
 #define DMLC_DATA_LIBSVM_PARSER_H_
 
-#include <vector>
-#include <cstring>
-// #include <cctype>
 #include <dmlc/data.h>
 #include <dmlc/omp.h>
+#include <vector>
+#include <cstring>
+#include <algorithm>
 #include "./row_block.h"
 #include "./parser.h"
 #include "./strtonum.h"
@@ -100,7 +100,7 @@ FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   // reserve space for data
   data->resize(nthread);
   bytes_read_ += chunk.size;
-  CHECK(chunk.size != 0);
+  CHECK_NE(chunk.size, 0);
   char *head = reinterpret_cast<char*>(chunk.dptr);
   #pragma omp parallel num_threads(nthread_)
   {
@@ -181,4 +181,4 @@ ParseBlock(char *begin,
 
 }  // namespace data
 }  // namespace dmlc
-#endif  // DMLC_DATA_LIBSVM_ITER_H_
+#endif  // DMLC_DATA_LIBSVM_PARSER_H_

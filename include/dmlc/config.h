@@ -6,11 +6,13 @@
 #ifndef DMLC_CONFIG_H_
 #define DMLC_CONFIG_H_
 
-#include <iostream>
 #include <cstring>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <vector>
+#include <utility>
+#include <string>
 #include <sstream>
 
 /*! \brief namespace for dmlc */
@@ -18,9 +20,9 @@ namespace dmlc {
 
 /*!
  * \brief class for config parser
- * 
+ *
  * Two modes are supported:
- * 1. non-multi value mode: if two same keys in the configure file, the later one will replace the 
+ * 1. non-multi value mode: if two same keys in the configure file, the later one will replace the
  *      ealier one; when using iterator, the order will be the "last effective insersion" order
  * 2. multi value mode: multiple values with the same key could co-exist; when using iterator, the
  *      order will be the insersion order.
@@ -36,7 +38,6 @@ namespace dmlc {
  * }
  */
 class Config {
-
  public:
   /*!
    * \brief type when extracting from iterator
@@ -50,15 +51,15 @@ class Config {
 
   /*!
    * \brief create empty config
-   * \param whether the config supports multi value
+   * \param multi_value whether the config supports multi value
    */
-  Config(bool multi_value = false);
+  explicit Config(bool multi_value = false);
   /*!
    * \brief create config and load content from the given stream
-   * \param input stream
-   * \param whether the config supports multi value
+   * \param is input stream
+   * \param multi_value whether the config supports multi value
    */
-  explicit Config(std::istream& is, bool multi_value = false);
+  explicit Config(std::istream& is, bool multi_value = false);  // NOLINT(*)
   /*!
    * \brief clear all the values
    */
@@ -67,7 +68,7 @@ class Config {
    * \brief load the contents from the stream
    * \param is the stream as input
    */
-  void LoadFromStream(std::istream& is);
+  void LoadFromStream(std::istream& is);  // NOLINT(*)
   /*!
    * \brief set a key-value pair into the config; if the key already exists in the configure file,
    *        it will either replace the old value with the given one (in non-multi value mode) or
@@ -113,7 +114,6 @@ class Config {
   ConfigIterator end() const;
 
  public:
-
   /*!
    * \brief iterator class
    */
@@ -126,13 +126,25 @@ class Config {
     ConfigIterator(const ConfigIterator& other);
     /*!
      * \brief uni-increment operators
+     * \return the reference of current config
      */
-    ConfigIterator& operator ++ ();
-    ConfigIterator operator ++ (int);
+    ConfigIterator& operator++();
+    /*!
+     * \brief uni-increment operators
+     * \return the reference of current config
+     */
+    ConfigIterator operator++(int);  // NOLINT(*)
     /*!
      * \brief compare operators
+     * \param rhs the other config to compare against
+     * \return the compared result
      */
     bool operator == (const ConfigIterator& rhs) const;
+    /*!
+     * \brief compare operators not equal
+     * \param rhs the other config to compare against
+     * \return the compared result
+     */
     bool operator != (const ConfigIterator& rhs) const;
     /*!
      * \brief retrieve value from operator
@@ -147,7 +159,7 @@ class Config {
     size_t index_;
     const Config* config_;
   };
-  
+
  private:
   struct ConfigValue {
     std::vector<std::string> val;
@@ -169,6 +181,6 @@ void Config::SetParam(const std::string& key, const T& value, bool is_string) {
   Insert(key, oss.str(), is_string);
 }
 
-} // namespace dmlc
+}  // namespace dmlc
 
-#endif // DMLC_CONFIG_H_
+#endif  // DMLC_CONFIG_H_

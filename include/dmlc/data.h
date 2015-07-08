@@ -44,7 +44,7 @@ typedef unsigned index_t;
  *      // some computations
  *   }
  * \endcode
- * \tparam DType the data type 
+ * \tparam DType the data type
  */
 template<typename DType>
 class DataIter {
@@ -60,7 +60,7 @@ class DataIter {
 };
 
 /*!
- * \brief one row of training instance 
+ * \brief one row of training instance
  * \tparam IndexType type of index
  */
 template<typename IndexType>
@@ -73,7 +73,7 @@ class Row {
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
-   * \brief index of each instance    
+   * \brief index of each instance
    */
   const IndexType *index;
   /*!
@@ -81,11 +81,15 @@ class Row {
    *  indicating every value is set to be 1
    */
   const real_t *value;
-  /*! \return i-th feature index */
+  /*!
+   * \param i the input index
+   * \return i-th feature
+   */
   inline IndexType get_index(size_t i) const {
     return index[i];
   }
-  /*!    
+  /*!
+   * \param i the input index
    * \return i-th feature value, this function is always
    *  safe even when value == NULL
    */
@@ -95,8 +99,9 @@ class Row {
   /*!
    * \brief helper function to compute dot product of current
    * \param weight the dense array of weight we want to product
-   * \parma size the size of the weight vector
+   * \param size the size of the weight vector
    * \tparam V type of the weight vector
+   * \return the result of dot product
    */
   template<typename V>
   inline V SDot(const V *weight, size_t size) const {
@@ -116,7 +121,7 @@ class Row {
 };
 
 /*!
- * \brief a block of data, containing several rows in sparse matrix 
+ * \brief a block of data, containing several rows in sparse matrix
  *  This is useful for (streaming-sxtyle) algorithms that scans through rows of data
  *  examples include: SGD, GD, L-BFGS, kmeans
  *
@@ -139,7 +144,7 @@ struct RowBlock {
   /*! \brief feature value, can be NULL, indicating all values are 1 */
   const real_t *value;
   /*!
-   * \brief get specific rows in the batch 
+   * \brief get specific rows in the batch
    * \param rowid the rowid in that row
    * \return the instance corresponding to the row
    */
@@ -185,7 +190,7 @@ struct RowBlock {
  *     Parser holds very limited internal state and was usually
  *     used to read data only once
  *
- * \sa Parser 
+ * \sa Parser
  * \tparam IndexType type of index in RowBlock
  *  Create function was only implemented for IndexType uint64_t and uint32_t
  */
@@ -228,11 +233,11 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
  */
 template <typename IndexType>
 class Parser : public DataIter<RowBlock<IndexType> > {
-public:
+ public:
   /*!
   * \brief create a new instance of parser based on the "type"
   *
-  * \param uri the uri of the input, can contain hdfs prefix
+  * \param uri_ the uri of the input, can contain hdfs prefix
   * \param part_index the part id of current input
   * \param num_parts total number of splits
   * \param type type of dataset can be: "libsvm", ...
