@@ -154,16 +154,20 @@ inline void
 RowBlockContainer<IndexType>::Save(Stream *fo) const {
   fo->Write(offset);
   fo->Write(label);
+  fo->Write(weight);
   fo->Write(index);
   fo->Write(value);
+  fo->Write(&max_index, sizeof(IndexType));
 }
 template<typename IndexType>
 inline bool
 RowBlockContainer<IndexType>::Load(Stream *fi) {
   if (!fi->Read(&offset)) return false;
   CHECK(fi->Read(&label)) << "Bad RowBlock format";
-  CHECK(fi->Read(&value)) << "Bad RowBlock format";
+  CHECK(fi->Read(&weight)) << "Bad RowBlock format";
   CHECK(fi->Read(&index)) << "Bad RowBlock format";
+  CHECK(fi->Read(&value)) << "Bad RowBlock format";
+  CHECK(fi->Read(&max_index, sizeof(IndexType))) << "Bad RowBlock format";
   return true;
 }
 }  // namespace data
