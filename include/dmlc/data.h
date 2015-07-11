@@ -117,6 +117,7 @@ class Row {
         sum += weight[index[i]] * value[i];
       }
     }
+    return sum;
   }
 };
 
