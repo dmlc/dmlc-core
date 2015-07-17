@@ -38,7 +38,7 @@ class ParserImpl : public Parser<IndexType> {
       }
       if (!ParseNext(&data_)) break;
       data_ptr_ = 0;
-	  data_end_ = static_cast<IndexType>(data_.size());
+      data_end_ = static_cast<IndexType>(data_.size());
     }
     return false;
   }
