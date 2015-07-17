@@ -49,7 +49,7 @@ inline float strtof(const char *nptr, char **endptr) {
   // Get digits before decimal point or exponent, if any.
   float value;
   for (value = 0; isdigit(*p); ++p) {
-    value = value * 10.0 + (*p - '0');
+    value = value * 10.0f + (*p - '0');
   }
 
   // Get digits after decimal point, if any.
