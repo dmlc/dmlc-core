@@ -47,6 +47,7 @@ struct has_saveload {
 //! \cond Doxygen_Suppress
 // declare special traits when C++11 is not available
 #if DMLC_USE_CXX11 == 0
+DMLC_DECLARE_TRAITS(is_pod, char, true);
 DMLC_DECLARE_TRAITS(is_pod, int8_t, true);
 DMLC_DECLARE_TRAITS(is_pod, int16_t, true);
 DMLC_DECLARE_TRAITS(is_pod, int32_t, true);
