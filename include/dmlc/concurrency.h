@@ -32,16 +32,11 @@ class Spinlock {
   /*!
    * \brief Acquire lock.
    */
-  void lock() noexcept {
-    while (lock_.test_and_set(std::memory_order_acquire)) {
-    }
-  }
+  inline void lock() noexcept;
   /*!
    * \brief Release lock.
    */
-  void unlock() noexcept {
-    lock_.clear(std::memory_order_release);
-  }
+  inline void unlock() noexcept;
 
  private:
   std::atomic_flag lock_ = ATOMIC_FLAG_INIT;
@@ -67,64 +62,29 @@ class ConcurrentBlockingQueue {
    * It will copy or move the element into the queue, depending on the type of the parameter.
    * \param e Element to push into.
    */
-  template<typename E>
-  void Push(E&& e) {
-    static_assert(
-      std::is_same<typename std::remove_cv<
-        typename std::remove_reference<E>::type>::type, T>::value,
-      "Types must match.");
-    std::lock_guard<std::mutex> lock{mutex_};
-    queue_.emplace_back(std::forward<E>(e));
-    if (queue_.size() == 1) {
-      cv_.notify_all();
-    }
-  }
+  template<typename E> void Push(E&& e);
   /*!
    * \brief Pop element from the queue.
    * The element will be copied or moved into the object passed in.
    * \param e Element popped.
    * \return Whether the queue is not empty afterwards.
    */
-  bool Pop(T* rv) {
-    std::unique_lock<std::mutex> lock{mutex_};
-    while (queue_.empty() && !exit_now_.load()) {
-      cv_.wait(lock);
-    }
-    if (!exit_now_.load()) {
-      *rv = std::move(queue_.front());
-      queue_.pop_front();
-      return true;
-    } else {
-      return false;
-    }
-  }
+  bool Pop(T* rv);
   /*!
    * \brief Pop everything.
    * \return The queue.
    */
-  std::list<T> PopAll() {
-    std::lock_guard<std::mutex> lock{mutex_};
-    std::list<T> rv;
-    rv.swap(queue_);
-    return rv;
-  }
+  std::list<T> PopAll();
   /*!
    * \brief Signal the queue for destruction.
    * After calling this method, all blocking pop call to the queue will return false.
    */
-  void SignalForKill() {
-    std::unique_lock<std::mutex> lock{mutex_};
-    exit_now_.store(true);
-    cv_.notify_all();
-  }
+  void SignalForKill();
   /*!
    * \brief Get the size of the queue.
    * \return The size of the queue.
    */
-  size_t Size() {
-    std::unique_lock<std::mutex> lock{mutex_};
-    return queue_.size();
-  }
+  size_t Size();
 
  private:
   std::mutex mutex_;
@@ -132,6 +92,65 @@ class ConcurrentBlockingQueue {
   std::atomic<bool> exit_now_{false};
   std::list<T> queue_;
 };
+
+inline void Spinlock::lock() noexcept {
+  while (lock_.test_and_set(std::memory_order_acquire)) {
+  }
+}
+
+inline void Spinlock::unlock() noexcept {
+  lock_.clear(std::memory_order_release);
+}
+
+template<typename T>
+template<typename E>
+void ConcurrentBlockingQueue<T>::Push(E&& e) {
+  static_assert(
+      std::is_same<typename std::remove_cv<
+      typename std::remove_reference<E>::type>::type, T>::value,
+      "Types must match.");
+  std::lock_guard<std::mutex> lock{mutex_};
+  queue_.emplace_back(std::forward<E>(e));
+  if (queue_.size() == 1) {
+    cv_.notify_all();
+  }
+}
+
+template<typename T>
+bool ConcurrentBlockingQueue<T>::Pop(T* rv) {
+  std::unique_lock<std::mutex> lock{mutex_};
+  while (queue_.empty() && !exit_now_.load()) {
+    cv_.wait(lock);
+  }
+  if (!exit_now_.load()) {
+    *rv = std::move(queue_.front());
+    queue_.pop_front();
+    return true;
+  } else {
+    return false;
+  }
+}
+
+template<typename T>
+std::list<T> ConcurrentBlockingQueue<T>::PopAll() {
+  std::lock_guard<std::mutex> lock{mutex_};
+  std::list<T> rv;
+  rv.swap(queue_);
+  return rv;
+}
+
+template<typename T>
+void ConcurrentBlockingQueue<T>::SignalForKill() {
+  std::unique_lock<std::mutex> lock{mutex_};
+  exit_now_.store(true);
+  cv_.notify_all();
+}
+
+template<typename T>
+size_t ConcurrentBlockingQueue<T>::Size() {
+  std::unique_lock<std::mutex> lock{mutex_};
+  return queue_.size();
+}
 
 }  // namespace dmlc
 
