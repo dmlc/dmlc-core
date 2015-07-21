@@ -42,7 +42,7 @@ class ThreadedInputSplit : public InputSplit {
   // destructor
   virtual ~ThreadedInputSplit(void) {
     iter_.Destroy();
-    if (tmp_chunk_ != NULL) delete tmp_chunk_;
+    delete tmp_chunk_;
     delete base_;
   }
   virtual void BeforeFirst() {

@@ -55,7 +55,7 @@ class CachedInputSplit : public InputSplit {
     delete iter_preproc_;
     delete fo_;
     iter_cached_.Destroy();
-    if (tmp_chunk_ != NULL) delete tmp_chunk_;
+    delete tmp_chunk_;
     delete base_;
     delete fi_;
   }

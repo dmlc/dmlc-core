@@ -71,7 +71,7 @@ void InputSplitBase::BeforeFirst(void) {
 }
 
 InputSplitBase::~InputSplitBase(void) {
-  if (fs_ != NULL) delete fs_;
+  delete fs_;
   // no need to delete filesystem, it was singleton
 }
 

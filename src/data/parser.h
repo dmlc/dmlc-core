@@ -84,7 +84,7 @@ class ThreadedParser : public ParserImpl<IndexType> {
     // stop things before base is deleted
     iter_.Destroy();
     delete base_;
-    if (tmp_ != NULL) delete tmp_;
+    delete tmp_;
   }
   virtual void BeforeFirst() {
     iter_.BeforeFirst();

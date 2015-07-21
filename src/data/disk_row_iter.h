@@ -54,7 +54,7 @@ class DiskRowIter: public RowBlockIter<IndexType> {
   }
   virtual ~DiskRowIter(void) {
     iter_.Destroy();
-    if (fi_ != NULL) delete fi_;
+    delete fi_;
   }
   virtual void BeforeFirst(void) {
     iter_.BeforeFirst();
