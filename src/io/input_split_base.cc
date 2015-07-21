@@ -103,6 +103,7 @@ void InputSplitBase::InitInputFileInfo(const char *uri) {
 }
 
 size_t InputSplitBase::Read(void *ptr, size_t size) {
+  if (offset_begin_ >= offset_end_) return 0;
   if (offset_curr_ +  size > offset_end_) {
     size = offset_end_ - offset_curr_;
   }
