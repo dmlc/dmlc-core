@@ -13,9 +13,12 @@ endif
 ifndef NO_OPENMP
 	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
-	DMLC_LDFLAGS += -lrt
-else
-    DMLC_LDFLAGS += -lrt 		# there is no -lrt on mac os x
+endif
+
+# Mac OS X does not support "-lrt" flag
+OS := $(shell uname -s)
+ifneq ($(OS), Darwin)
+    DMLC_LDFLAGS += -lrt
 endif
 
 # handle fpic options
