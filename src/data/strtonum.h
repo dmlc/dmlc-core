@@ -178,14 +178,6 @@ class Str2T<uint64_t> {
   }
 };
 
-template<>
-class Str2T<unsigned long long> {  // NOLINT(*)
- public:
-  static inline unsigned long long get(  // NOLINT(*)
-      const char * begin, const char * end) {
-    return strtoint<unsigned long long>(begin, NULL, 10);  // NOLINT(*)
-  }
-};
 
 template<>
 class Str2T<float> {
