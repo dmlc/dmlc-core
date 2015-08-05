@@ -24,6 +24,9 @@ USE_HDFS = 0
 # whether use AWS S3 support during compile
 USE_S3 = 0
 
+# whether use Azure support during compile
+USE_AZURE = 1
+
 # path to libjvm.so
 LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 
