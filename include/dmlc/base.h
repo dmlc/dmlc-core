@@ -67,11 +67,11 @@
        T(T const&) = delete; \
        T(T&&) = delete; \
        T& operator=(T const&) = delete; \
-       T& operator=(T&&) = delete;
+       T& operator=(T&&) = delete
 #  else
 #    define DISALLOW_COPY_AND_ASSIGN(T) \
        T(T const&); \
-       T(T&&);
+       T& operator=(T const&) = delete
 #  endif
 #endif
 
