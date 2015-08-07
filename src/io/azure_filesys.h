@@ -1,3 +1,9 @@
+/*!
+ *  Copyright (c) 2015 by Contributors
+ * \file azure_filesys.h
+ * \brief Azure access module
+ * \author Mu Li
+ */
 #ifndef DMLC_IO_AZURE_FILESYS_H_
 #define DMLC_IO_AZURE_FILESYS_H_
 
@@ -10,7 +16,6 @@ namespace io {
 
 /*! \brief Microsoft Azure Blob filesystem */
 class AzureFileSystem : public FileSystem {
-
  public:
   virtual ~AzureFileSystem() {}
 
@@ -49,4 +54,4 @@ class AzureFileSystem : public FileSystem {
 }  // namespace io
 }  // namespace dmlc
 
-#endif  /* DMLC_IO_AZURE_FILESYS_H_ */
+#endif  // DMLC_IO_AZURE_FILESYS_H_
