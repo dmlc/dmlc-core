@@ -34,3 +34,5 @@ config.mk
 *.swp
 *.swo
 *.swn
+
+deps
