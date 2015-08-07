@@ -110,6 +110,8 @@ class SeekStream: public Stream {
 /*! \brief interface for serializable objects */
 class Serializable {
  public:
+  /*! \brief virtual destructor */
+  virtual ~Serializable() {}
   /*!
   * \brief load the model from a stream
   * \param fi stream where to load the model from

@@ -22,6 +22,10 @@
 #include "io/s3_filesys.h"
 #endif
 
+#if DMLC_USE_AZURE
+#include "io/azure_filesys.h"
+#endif
+
 namespace dmlc {
 namespace io {
 FileSystem *FileSystem::GetInstance(const std::string &protocol) {
@@ -42,6 +46,15 @@ FileSystem *FileSystem::GetInstance(const std::string &protocol) {
     LOG(FATAL) << "Please compile with DMLC_USE_S3=1 to use S3";
 #endif
   }
+
+  if (protocol == "azure://") {
+#if DMLC_USE_AZURE
+    return AzureFileSystem::GetInstance();
+#else
+    LOG(FATAL) << "Please compile with DMLC_USE_AZURE=1 to use Azure";
+#endif
+  }
+
   LOG(FATAL) << "unknown filesystem protocol " + protocol;
   return NULL;
 }

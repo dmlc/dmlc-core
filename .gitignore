@@ -37,3 +37,4 @@ config.mk
 
 # Emacs
 .clang_complete
+deps
