@@ -22,6 +22,8 @@ parser.add_argument('--log-level', default='INFO', type=str,
                     help = 'logging level')
 parser.add_argument('--log-file', type=str,
                     help = 'output log to the specific log file')
+parser.add_argument('--host', type=str, default='auto',
+                    help = 'host ip address')
 parser.add_argument('command', nargs='+',
                     help = 'command for launching the program')
 args, unknown = parser.parse_known_args()
@@ -96,5 +98,6 @@ def mthread_submit(nworker, nserver, envs):
 
 tracker.config_logger(args)
 # call submit, with nslave, the commands to run each job and submit function
-tracker.submit(args.nworker, args.server_nodes, fun_submit = mthread_submit,
+tracker.submit(args.nworker, args.server_nodes, 
+               fun_submit = mthread_submit, hostIP = args.host,
                pscmd= (' '.join(args.command) + ' ' + ' '.join(unknown)))
