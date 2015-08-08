@@ -35,4 +35,6 @@ config.mk
 *.swo
 *.swn
 
+# Emacs
+.clang_complete
 deps

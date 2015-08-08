@@ -1,3 +1,9 @@
+/*!
+ *  Copyright (c) 2015 by Contributors
+ * \file azure_filesys.cc
+ * \brief Azure access module
+ * \author Mu Li
+ */
 #include "./azure_filesys.h"
 #include "stdafx.h"
 
@@ -15,7 +21,7 @@ std::vector<std::string> split(std::string str, char delimiter) {
   std::stringstream ss(str);
   std::string tok;
 
-  while(std::getline(ss, tok, delimiter)) {
+  while (std::getline(ss, tok, delimiter)) {
     internal.push_back(tok);
   }
   return internal;
@@ -40,7 +46,7 @@ void AzureFileSystem::ListDirectory(
 
   utility::string_t
       storage_connection_string(U("DefaultEndpointsProtocol=https;AccountName="
-      + azure_account_ + ";AccountKey= " + azure_key_ ));
+      + azure_account_ + ";AccountKey= " + azure_key_));
 
   // Retrieve storage account from connection string.
   azure::storage::cloud_storage_account storage_account
@@ -73,7 +79,8 @@ void AzureFileSystem::ListDirectory(
       FileInfo info;
       info.path = path;
       info.size = 0;
-      std::vector<std::string> splitVec = split(it->as_directory().uri().primary_uri().to_string(), '/');
+      std::vector<std::string> splitVec =
+          split(it->as_directory().uri().primary_uri().to_string(), '/');
       info.path.name = '/' + splitVec[splitVec.size()-1];
       info.type = kDirectory;
       out_list->push_back(info);
