@@ -20,7 +20,7 @@ class Shuffler {
     std::random_device rd;
     this->Seed(rd());
   }
-  Shuffler(unsigned seed) {
+  explicit Shuffler(unsigned seed) {
     this->Seed(seed);
   }
   /*!
@@ -117,7 +117,7 @@ class GaussianSampler {
    * \param mean value
    * \param standard deviation stddev 
    */
-  GaussianSampler(RealType mean, RealType stddev) : 
+  GaussianSampler(RealType mean, RealType stddev) :
       dis(std::normal_distribution<RealType>(mean, stddev)) {
     std::random_device rd;
     this->rengine_ = std::mt19937(rd());
@@ -125,7 +125,7 @@ class GaussianSampler {
   /*!
    * \brief constructor with seed
    */ 
-  GaussianSampler(RealType mean, RealType stddev, unsigned seed) : 
+  GaussianSampler(RealType mean, RealType stddev, unsigned seed) :
       dis(std::normal_distribution<RealType>(mean, stddev)) {
     this->rengine_ = std::mt19937(seed);
   }
