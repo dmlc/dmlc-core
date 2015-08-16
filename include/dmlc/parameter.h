@@ -385,7 +385,7 @@ class FieldEntryNumeric
   // consistency check for numeric ranges
   virtual void Check(void *head) const {
     FieldEntryBase<TEntry, DType>::Check(head);
-    int v = this->Get(head);
+    DType v = this->Get(head);
     if (v < begin_ || v >= end_) {
       std::ostringstream os;
       os << "value " << v << "for Parameter " << this->key_
