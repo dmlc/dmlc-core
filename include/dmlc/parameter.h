@@ -14,6 +14,7 @@
 #include <typeinfo>
 #include <string>
 #include <vector>
+#include <utility>
 #include "./base.h"
 #include "./logging.h"
 #include "./type_traits.h"
@@ -77,7 +78,19 @@ struct Parameter {
    * \throw ParamError when something go wrong.
    */
   inline void Init(const std::map<std::string, std::string> &kwargs) {
-    PType::__MANAGER__()->Set(static_cast<PType*>(this), kwargs);
+    PType::__MANAGER__()->Set(static_cast<PType*>(this), kwargs.begin(), kwargs.end());
+  }
+
+  /*!
+   * \brief initialize the parameter by keyword arguments.
+   *  This function will initialize the parameter struct, check consistency
+   *  and throw error if something wrong happens.
+   *
+   * \param kwargs map of keyword arguments
+   * \throw ParamError when something go wrong.
+   */
+  inline void Init(const std::vector<std::pair<std::string, std::string> > &kwargs) {
+    PType::__MANAGER__()->Set(static_cast<PType*>(this), kwargs.begin(), kwargs.end());
   }
 
  protected:
@@ -229,11 +242,17 @@ class ParamManager {
   /*!
    * \brief set parameter by keyword arguments.
    * \param head head to the parameter field.
-   * \param kwargs the keyword arguments of parameters.
+   * \param begin begin iterator of original kwargs
+   * \param end end iterator of original kwargs
+   * \tparam RandomAccessIterator iterator type
    */
-  inline void Set(void *head, const std::map<std::string, std::string> &kwargs) const {
-    for (std::map<std::string, std::string>::const_iterator it = kwargs.begin();
-         it != kwargs.end(); ++it) {
+  template<typename RandomAccessIterator>
+  inline void Set(void *head,
+                  RandomAccessIterator begin,
+                  RandomAccessIterator end) const {
+    std::map<std::string, std::string> kwargs;
+    for (RandomAccessIterator it = begin; it != end; ++it) {
+      kwargs[it->first] = it->second;
       FieldAccessEntry *e = Find(it->first);
       if (e != NULL) {
         e->Set(head, it->second);
