@@ -247,22 +247,30 @@ class ostream : public std::basic_ostream<char> {
     this->rdbuf(&buf_);
   }
 
+  /*! \return how many bytes we written so far */
+  inline size_t bytes_written(void) const {
+    return buf_.bytes_out();
+  }
+
  private:
   // internal streambuf
   class OutBuf : public std::streambuf {
    public:
     explicit OutBuf(size_t buffer_size)
-        : stream_(NULL), buffer_(buffer_size) {
+        : stream_(NULL), buffer_(buffer_size), bytes_out_(0) {
       if (buffer_size == 0) buffer_.resize(2);
     }
     // set stream to the buffer
     inline void set_stream(Stream *stream);
 
+    inline size_t bytes_out() const { return bytes_out_; }
    private:
     /*! \brief internal stream by StreamBuf */
     Stream *stream_;
     /*! \brief internal buffer */
     std::vector<char> buffer_;
+    /*! \brief number of bytes written so far */
+    size_t bytes_out_;
     // override sync
     inline int_type sync(void);
     // override overflow
@@ -365,6 +373,7 @@ inline int ostream::OutBuf::sync(void) {
   std::ptrdiff_t n = pptr() - pbase();
   stream_->Write(pbase(), n);
   this->pbump(-static_cast<int>(n));
+  bytes_out_ += n;
   return 0;
 }
 inline int ostream::OutBuf::overflow(int c) {
@@ -373,8 +382,10 @@ inline int ostream::OutBuf::overflow(int c) {
   this->pbump(-static_cast<int>(n));
   if (c == EOF) {
     stream_->Write(pbase(), n);
+    bytes_out_ += n;
   } else {
     stream_->Write(pbase(), n + 1);
+    bytes_out_ += n + 1;
   }
   return c;
 }
