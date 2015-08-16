@@ -59,3 +59,10 @@ endif
 ifeq ($(USE_GLOG), 1)
 	DMLC_CFLAGS += -DDMLC_USE_GLOG=1
 endif
+
+ifeq ($(USE_AZURE),1)
+	DMLC_CFLAGS+= -DDMLC_USE_AZURE=1
+	DMLC_LDFLAGS+= -lazurestorage
+else
+	DMLC_CFLAGS+= -DDMLC_USE_AZURE=0
+endif
