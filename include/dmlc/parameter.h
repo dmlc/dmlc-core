@@ -34,11 +34,11 @@ struct ParamError : public dmlc::Error {
 namespace parameter {
 // forward declare ParamManager
 class ParamManager;
-// forward declare ParamAccessEntry
-class ParamAccessEntry;
-// forward declare TypedParamAccessEntry
+// forward declare FieldAccessEntry
+class FieldAccessEntry;
+// forward declare FieldEntry
 template<typename DType>
-struct TypedParamAccessEntry;
+struct FieldEntry;
 }  // namespace parameter
 
 /*!
@@ -87,9 +87,9 @@ struct Parameter {
    * \param ref the reference to the parameter in the struct.
    */
   template<typename DType>
-  inline parameter::TypedParamAccessEntry<DType>& DECLARE(const std::string &key, DType &ref) { // NOLINT(*)
-    parameter::TypedParamAccessEntry<DType> *e =
-        new parameter::TypedParamAccessEntry<DType>();
+  inline parameter::FieldEntry<DType>& DECLARE(const std::string &key, DType &ref) { // NOLINT(*)
+    parameter::FieldEntry<DType> *e =
+        new parameter::FieldEntry<DType>();
     e->Init(key, static_cast<PType*>(this), ref);
     PType::__MANAGER__()->AddEntry(key, e);
     return *e;
@@ -146,17 +146,17 @@ struct Parameter {
  */
 namespace parameter {
 /*!
- * \brief ParamAccessEntry interface to help manage the parameters
+ * \brief FieldAccessEntry interface to help manage the parameters
  *  Each entry can be used to access one parameter in the Parameter struct.
  *
  *  This is an internal interface used that is used to manage parameters
  */
-class ParamAccessEntry {
+class FieldAccessEntry {
  public:
-  ParamAccessEntry()
+  FieldAccessEntry()
       : has_default_(false) {}
   /*! \brief destructor */
-  virtual ~ParamAccessEntry() {}
+  virtual ~FieldAccessEntry() {}
   /*!
    * \brief set the default value, throw error if no default is presented
    * \param head the pointer to the head of the struct
@@ -218,10 +218,10 @@ class ParamManager {
   /*!
    * \brief find the access entry by parameter key
    * \param key the key of the parameter.
-   * \return pointer to ParamAccessEntry, NULL if nothing is found.
+   * \return pointer to FieldAccessEntry, NULL if nothing is found.
    */
-  inline ParamAccessEntry *Find(const std::string &key) const {
-    std::map<std::string, ParamAccessEntry*>::const_iterator it =
+  inline FieldAccessEntry *Find(const std::string &key) const {
+    std::map<std::string, FieldAccessEntry*>::const_iterator it =
         entry_map_.find(key);
     if (it == entry_map_.end()) return NULL;
     return it->second;
@@ -234,7 +234,7 @@ class ParamManager {
   inline void Set(void *head, const std::map<std::string, std::string> &kwargs) const {
     for (std::map<std::string, std::string>::const_iterator it = kwargs.begin();
          it != kwargs.end(); ++it) {
-      ParamAccessEntry *e = Find(it->first);
+      FieldAccessEntry *e = Find(it->first);
       if (e != NULL) {
         e->Set(head, it->second);
       } else {
@@ -244,7 +244,7 @@ class ParamManager {
       }
     }
 
-    for (std::map<std::string, ParamAccessEntry*>::const_iterator it = entry_map_.begin();
+    for (std::map<std::string, FieldAccessEntry*>::const_iterator it = entry_map_.begin();
          it != entry_map_.end(); ++it) {
       if (kwargs.count(it->first) == 0) {
         it->second->SetDefault(head);
@@ -257,7 +257,7 @@ class ParamManager {
    * \param key the key to the parameters
    * \param e the pointer to the new entry.
    */
-  inline void AddEntry(const std::string &key, ParamAccessEntry *e) {
+  inline void AddEntry(const std::string &key, FieldAccessEntry *e) {
     e->index_ = entry_.size();
     entry_.push_back(e);
     // TODO(bing) better error message
@@ -285,18 +285,18 @@ class ParamManager {
   /*! \brief parameter struct name */
   std::string param_name_;
   /*! \brief positional list of entries */
-  std::vector<ParamAccessEntry*> entry_;
+  std::vector<FieldAccessEntry*> entry_;
   /*! \brief map of key to entry */
-  std::map<std::string, ParamAccessEntry*> entry_map_;
+  std::map<std::string, FieldAccessEntry*> entry_map_;
 };
 
 //! \cond Doxygen_Suppress
 // The following piece of code will be template heavy and less documented
 
-// Base class of TypedParamAccessEntry
+// Base class of FieldEntry
 // implement set_default
 template<typename TEntry, typename DType>
-class ParamAccessEntryBase : public ParamAccessEntry {
+class FieldEntryBase : public FieldAccessEntry {
  public:
   // entry type
   typedef TEntry EntryType;
@@ -365,10 +365,10 @@ class ParamAccessEntryBase : public ParamAccessEntry {
 
 // parameter base for numeric types that have range
 template<typename TEntry, typename DType>
-class ParamAccessEntryNumeric
-    : public ParamAccessEntryBase<TEntry, DType> {
+class FieldEntryNumeric
+    : public FieldEntryBase<TEntry, DType> {
  public:
-  ParamAccessEntryNumeric() {
+  FieldEntryNumeric() {
     this->end_ = std::numeric_limits<DType>::max();
     if (std::numeric_limits<DType>::is_integer) {
       this->begin_ = std::numeric_limits<DType>::min();
@@ -384,7 +384,7 @@ class ParamAccessEntryNumeric
   }
   // consistency check for numeric ranges
   virtual void Check(void *head) const {
-    ParamAccessEntryBase<TEntry, DType>::Check(head);
+    FieldEntryBase<TEntry, DType>::Check(head);
     int v = this->Get(head);
     if (v < begin_ || v >= end_) {
       std::ostringstream os;
@@ -400,24 +400,24 @@ class ParamAccessEntryNumeric
 };
 
 /*!
- * \brief TypedParamAccessEntry defines parsing and checking behavior of DType.
+ * \brief FieldEntry defines parsing and checking behavior of DType.
  * This class can be specialized to implement specific behavior of more settings.
  * \tparam DType the data type of the entry.
  */
 template<typename DType>
-class TypedParamAccessEntry :
+class FieldEntry :
       public IfThenElseType<dmlc::is_arithmetic<DType>::value,
-                            ParamAccessEntryNumeric<TypedParamAccessEntry<DType>, DType>,
-                            ParamAccessEntryBase<TypedParamAccessEntry<DType>, DType> >::Type {
+                            FieldEntryNumeric<FieldEntry<DType>, DType>,
+                            FieldEntryBase<FieldEntry<DType>, DType> >::Type {
 };
 
 // specialize define for string
 template<>
-class TypedParamAccessEntry<std::string>
-    : public ParamAccessEntryBase<TypedParamAccessEntry<std::string>, std::string> {
+class FieldEntry<std::string>
+    : public FieldEntryBase<FieldEntry<std::string>, std::string> {
  public:
   // parent class
-  typedef ParamAccessEntryBase<TypedParamAccessEntry<std::string>, std::string> Parent;
+  typedef FieldEntryBase<FieldEntry<std::string>, std::string> Parent;
   // override check
   virtual void Check(void *head) const {
     Parent::Check(head);
@@ -427,7 +427,7 @@ class TypedParamAccessEntry<std::string>
     }
   }
   // add new set function
-  inline TypedParamAccessEntry<std::string> &add_enum(const std::string &value) {
+  inline FieldEntry<std::string> &add_enum(const std::string &value) {
     enum_set_.insert(value);
     return this->self();
   }
