@@ -50,9 +50,9 @@ struct TypedParamAccessEntry;
  *     std::string name;
  *     // declare parameters in header file
  *     DMLC_DECLARE_PARAMETER(Param) {
- *       DMLC_DECLARE(num_hidden).set_range(0, 1000);
- *       DMLC_DECLARE(learning_rate).set_default(0.01f);
- *       DMLC_DECLARE(name).set_default("hello");
+ *       DMLC_DECLARE_FIELD(num_hidden).set_range(0, 1000);
+ *       DMLC_DECLARE_FIELD(learning_rate).set_default(0.01f);
+ *       DMLC_DECLARE_FIELD(name).set_default("hello");
  *     }
  *   };
  *   // register it in cc file
@@ -62,7 +62,7 @@ struct TypedParamAccessEntry;
  *  After that, the Param struct will get all the functions defined in Parameter.
  * \tparam PType the type of parameter struct
  *
- * \sa DMLC_DECLARE, DMLC_REGISTER_PARAMETER, DMLC_DECLARE_PARAMETER
+ * \sa DMLC_DECLARE_FIELD, DMLC_REGISTER_PARAMETER, DMLC_DECLARE_PARAMETER
  */
 template<typename PType>
 struct Parameter {
@@ -121,7 +121,7 @@ struct Parameter {
  * \brief macro to declare fields
  * \param FieldName the name of the field.
  */
-#define DMLC_DECLARE(FieldName)  this->DECLARE(#FieldName, FieldName)
+#define DMLC_DECLARE_FIELD(FieldName)  this->DECLARE(#FieldName, FieldName)
 /*!
  * \brief Macro used to register parameter.
  *

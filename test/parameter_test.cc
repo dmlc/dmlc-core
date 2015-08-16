@@ -7,9 +7,9 @@ struct Param : public dmlc::Parameter<Param> {
   std::string name;
   // declare parameters in header file
   DMLC_DECLARE_PARAMETER(Param) {
-    DMLC_DECLARE(num_hidden).set_range(0, 1000);
-    DMLC_DECLARE(learning_rate).set_default(0.01f);
-    DMLC_DECLARE(name).set_default("hello");
+    DMLC_DECLARE_FIELD(num_hidden).set_range(0, 1000);
+    DMLC_DECLARE_FIELD(learning_rate).set_default(0.01f);
+    DMLC_DECLARE_FIELD(name).set_default("hello");
   }
 };
 // register it in cc file
