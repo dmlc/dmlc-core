@@ -10,6 +10,7 @@
 #include <sstream>
 #include <limits>
 #include <map>
+#include <set>
 #include <typeinfo>
 #include <string>
 #include <vector>
@@ -297,6 +298,8 @@ class ParamManager {
 template<typename TEntry, typename DType>
 class ParamAccessEntryBase : public ParamAccessEntry {
  public:
+  // entry type
+  typedef TEntry EntryType;
   // implement set value
   virtual void Set(void *head, const std::string &value) {
     is_.str(value);
@@ -407,6 +410,33 @@ class TypedParamAccessEntry :
                             ParamAccessEntryNumeric<TypedParamAccessEntry<DType>, DType>,
                             ParamAccessEntryBase<TypedParamAccessEntry<DType>, DType> >::Type {
 };
+
+// specialize define for string
+template<>
+class TypedParamAccessEntry<std::string>
+    : public ParamAccessEntryBase<TypedParamAccessEntry<std::string>, std::string> {
+ public:
+  // parent class
+  typedef ParamAccessEntryBase<TypedParamAccessEntry<std::string>, std::string> Parent;
+  // override check
+  virtual void Check(void *head) const {
+    Parent::Check(head);
+    std::string value = this->Get(head);
+    if (enum_set_.size() != 0 && enum_set_.count(value) == 0) {
+      throw dmlc::ParamError("value not found in enum");
+    }
+  }
+  // add new set function
+  inline TypedParamAccessEntry<std::string> &add_enum(const std::string &value) {
+    enum_set_.insert(value);
+    return this->self();
+  }
+
+ private:
+  // enumeration set in enum mode
+  std::set<std::string> enum_set_;
+};
+
 }  // namespace parameter
 //! \endcond
 }  // namespace dmlc

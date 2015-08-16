@@ -9,7 +9,9 @@ struct Param : public dmlc::Parameter<Param> {
   DMLC_DECLARE_PARAMETER(Param) {
     DMLC_DECLARE_FIELD(num_hidden).set_range(0, 1000);
     DMLC_DECLARE_FIELD(learning_rate).set_default(0.01f);
-    DMLC_DECLARE_FIELD(name).set_default("hello");
+
+    DMLC_DECLARE_FIELD(name).set_default("A")
+        .add_enum("A").add_enum("B");
   }
 };
 // register it in cc file
