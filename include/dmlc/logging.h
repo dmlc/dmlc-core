@@ -21,7 +21,7 @@ namespace dmlc {
  */
 struct Error : public std::runtime_error {
   /*!
-   * \brief constructor 
+   * \brief constructor
    * \param s the error message
    */
   explicit Error(const std::string &s) : std::runtime_error(s) {}
