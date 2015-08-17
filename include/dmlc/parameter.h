@@ -14,6 +14,7 @@
 #include <typeinfo>
 #include <string>
 #include <vector>
+#include <utility>
 #include "./base.h"
 #include "./logging.h"
 #include "./type_traits.h"
@@ -74,10 +75,12 @@ struct Parameter {
    *  and throw error if something wrong happens.
    *
    * \param kwargs map of keyword arguments
+   * \tparam Container container type
    * \throw ParamError when something go wrong.
    */
-  inline void Init(const std::map<std::string, std::string> &kwargs) {
-    PType::__MANAGER__()->Set(static_cast<PType*>(this), kwargs);
+  template<typename Container>
+  inline void Init(const Container &kwargs) {
+    PType::__MANAGER__()->RunInit(static_cast<PType*>(this), kwargs.begin(), kwargs.end());
   }
 
  protected:
@@ -227,14 +230,20 @@ class ParamManager {
   /*!
    * \brief set parameter by keyword arguments.
    * \param head head to the parameter field.
-   * \param kwargs the keyword arguments of parameters.
+   * \param begin begin iterator of original kwargs
+   * \param end end iterator of original kwargs
+   * \tparam RandomAccessIterator iterator type
    */
-  inline void Set(void *head, const std::map<std::string, std::string> &kwargs) const {
-    for (std::map<std::string, std::string>::const_iterator it = kwargs.begin();
-         it != kwargs.end(); ++it) {
+  template<typename RandomAccessIterator>
+  inline void RunInit(void *head,
+                  RandomAccessIterator begin,
+                  RandomAccessIterator end) const {
+    std::set<FieldAccessEntry*> selected_args;
+    for (RandomAccessIterator it = begin; it != end; ++it) {
       FieldAccessEntry *e = Find(it->first);
       if (e != NULL) {
         e->Set(head, it->second);
+        selected_args.insert(e);
       } else {
         std::ostringstream os;
         os << "Cannot find parameter " << it->first;
@@ -244,7 +253,7 @@ class ParamManager {
 
     for (std::map<std::string, FieldAccessEntry*>::const_iterator it = entry_map_.begin();
          it != entry_map_.end(); ++it) {
-      if (kwargs.count(it->first) == 0) {
+      if (selected_args.count(it->second) == 0) {
         it->second->SetDefault(head);
       }
     }
@@ -376,7 +385,7 @@ class FieldEntryNumeric
     }
   }
   // implement set_range
-  inline TEntry &set_range(DType begin, DType end) {
+  virtual TEntry &set_range(DType begin, DType end) {
     begin_ = begin; end_ = end;
     return this->self();
   }
@@ -409,6 +418,57 @@ class FieldEntry :
                             FieldEntryBase<FieldEntry<DType>, DType> >::Type {
 };
 
+// specialize define for int(enum)
+template<>
+class FieldEntry<int>
+    : public FieldEntryNumeric<FieldEntry<int>, int> {
+ public:
+  // construct
+  FieldEntry<int>() : is_enum_(false) {}
+  // parent
+  typedef FieldEntryNumeric<FieldEntry<int>, int> Parent;
+  // override set
+  virtual void Set(void *head, const std::string &value) {
+    if (is_enum_) {
+      std::map<std::string, int>::const_iterator it = enum_map_.find(value);
+      std::ostringstream os;
+      if (it == enum_map_.end()) {
+        os << "Invalid enum type: " << value;
+        throw dmlc::ParamError(os.str());
+      } else {
+        os << it->second;
+        Parent::Set(head, os.str());
+      }
+    } else {
+      Parent::Set(head, value);
+    }
+  }
+  // add enum
+  inline FieldEntry<int> &add_enum(const std::string &key, int value) {
+    if ((enum_map_.size() != 0 && enum_map_.count(key) != 0) || \
+        enum_value_set_.count(value) != 0) {
+      std::ostringstream os;
+      os << "Enum " << "(" << key << ": " << value << " exisit!" << ")\n";
+      os << "Enums: ";
+      for (std::map<std::string, int>::const_iterator it = enum_map_.begin();
+           it != enum_map_.end(); ++it) {
+        os << "(" << it->first << ": " << it->second << "), ";
+      }
+      throw dmlc::ParamError(os.str());
+    }
+    enum_map_[key] = value;
+    enum_value_set_.insert(value);
+    is_enum_ = true;
+    return this->self();
+  }
+ protected:
+  // enum flag
+  bool is_enum_;
+  // enum map
+  std::map<std::string, int> enum_map_;
+  // enum value map
+  std::set<int> enum_value_set_;
+};
 // specialize define for string
 template<>
 class FieldEntry<std::string>
@@ -416,11 +476,16 @@ class FieldEntry<std::string>
  public:
   // parent class
   typedef FieldEntryBase<FieldEntry<std::string>, std::string> Parent;
+  // override set
+  virtual void Set(void *head, const std::string &value) {
+    this->Get(head) = value;
+    this->Check(head);
+  }
   // override check
   virtual void Check(void *head) const {
     Parent::Check(head);
     std::string value = this->Get(head);
-    if (enum_set_.size() != 0 && enum_set_.count(value) == 0) {
+    if (enum_set_.size() > 0 && enum_set_.count(value) == 0) {
       throw dmlc::ParamError("value not found in enum");
     }
   }
