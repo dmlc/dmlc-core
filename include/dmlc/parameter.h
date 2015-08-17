@@ -428,7 +428,7 @@ class FieldEntry<int>
   // parent
   typedef FieldEntryNumeric<FieldEntry<int>, int> Parent;
   // override set
-  virtual void Set(void *head, const std::string &value) {
+  virtual void Set(void *head, const std::string &value) const {
     if (is_enum_) {
       std::map<std::string, int>::const_iterator it = enum_map_.find(value);
       std::ostringstream os;
@@ -477,7 +477,7 @@ class FieldEntry<std::string>
   // parent class
   typedef FieldEntryBase<FieldEntry<std::string>, std::string> Parent;
   // override set
-  virtual void Set(void *head, const std::string &value) {
+  virtual void Set(void *head, const std::string &value) const {
     this->Get(head) = value;
     this->Check(head);
   }
