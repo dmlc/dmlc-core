@@ -161,13 +161,13 @@ class FieldAccessEntry {
    * \brief set the default value, throw error if no default is presented
    * \param head the pointer to the head of the struct
    */
-  virtual void SetDefault(void *head) = 0;
+  virtual void SetDefault(void *head) const = 0;
   /*!
    * \brief set the parameter by string value
    * \param head the pointer to the head of the struct
    * \param value the value to be set
    */
-  virtual void Set(void *head, const std::string &value) = 0;
+  virtual void Set(void *head, const std::string &value) const = 0;
   // check if value is OK
   virtual void Check(void *head) const {}
   /*!
@@ -198,8 +198,6 @@ class FieldAccessEntry {
   std::string key_;
   /*! \brief parameter type */
   std::string type_;
-  /*! \brief internal parser */
-  std::istringstream is_;
   // allow ParamManager to modify self
   friend class ParamManager;
 };
@@ -301,10 +299,10 @@ class FieldEntryBase : public FieldAccessEntry {
   // entry type
   typedef TEntry EntryType;
   // implement set value
-  virtual void Set(void *head, const std::string &value) {
-    is_.str(value);
-    is_ >> this->Get(head);
-    if (is_.fail() || !is_.eof()) {
+  virtual void Set(void *head, const std::string &value) const {
+    std::istringstream is(value);
+    is >> this->Get(head);
+    if (is.fail() || !is.eof()) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_
          << " expect " << type_ << " but value=\'" << value<< '\'';
@@ -319,7 +317,7 @@ class FieldEntryBase : public FieldAccessEntry {
     return os.str();
   }
   // implement set head to default value
-  virtual void SetDefault(void *head) {
+  virtual void SetDefault(void *head) const {
     if (!has_default_) {
       std::ostringstream os;
       os << "Parameter " << key_
@@ -389,7 +387,7 @@ class FieldEntryNumeric
     if (v < begin_ || v >= end_) {
       std::ostringstream os;
       os << "value " << v << "for Parameter " << this->key_
-         << "exceed bound [" << begin_ << ',' << end_ <<')';
+         << " exceed bound [" << begin_ << ',' << end_ <<')';
       throw dmlc::ParamError(os.str());
     }
   }
