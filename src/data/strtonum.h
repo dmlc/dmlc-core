@@ -121,9 +121,36 @@ inline V strtoint(const char* nptr, char **endptr, int base) {
   return sign ? value : - value;
 }
 
+template <typename V>
+inline V strtouint(const char* nptr, char **endptr, int base) {
+  const char *p = nptr;
+  // Skip leading white space, if any. Not necessary
+  while (isspace(*p)) ++p;
+
+  // Get sign if any
+  bool sign = true;
+  if (*p == '-') {
+    sign = false; ++p;
+  }
+  else if (*p == '+') {
+    ++p;
+  }
+
+  // we are parsing unsigned, so no minus sign should be found
+  CHECK_EQ(sign, true);
+
+  V value;
+  for (value = 0; isdigit(*p); ++p) {
+    value = value * base + (*p - '0');
+  }
+
+  if (endptr) *endptr = (char*)p; // NOLINT(*)
+  return value;
+}
+
 inline uint64_t
 strtoull(const char* nptr, char **endptr, int base) {
-  return strtoint<uint64_t>(nptr, endptr, base);
+  return strtouint<uint64_t>(nptr, endptr, base);
 }
 
 inline long atol(const char* p) {  // NOLINT(*)
@@ -158,7 +185,7 @@ template<>
 class Str2T<uint32_t> {
  public:
   static inline uint32_t get(const char * begin, const char * end) {
-    return strtoint<int>(begin, NULL, 10);
+    return strtouint<int>(begin, NULL, 10);
   }
 };
 
@@ -174,7 +201,7 @@ template<>
 class Str2T<uint64_t> {
  public:
   static inline uint64_t get(const char * begin, const char * end) {
-    return strtoint<uint64_t>(begin, NULL, 10);
+    return strtouint<uint64_t>(begin, NULL, 10);
   }
 };
 
