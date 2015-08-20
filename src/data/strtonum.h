@@ -7,6 +7,7 @@
 #define DMLC_DATA_STRTONUM_H_
 #include <cstdint>
 #include "dmlc/base.h"
+#include "dmlc/logging.h"
 
 namespace dmlc {
 namespace data {
@@ -131,8 +132,7 @@ inline V strtouint(const char* nptr, char **endptr, int base) {
   bool sign = true;
   if (*p == '-') {
     sign = false; ++p;
-  }
-  else if (*p == '+') {
+  } else if (*p == '+') {
     ++p;
   }
 
