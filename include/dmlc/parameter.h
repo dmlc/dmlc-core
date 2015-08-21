@@ -14,6 +14,7 @@
 #include <typeinfo>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <utility>
 #include "./base.h"
 #include "./logging.h"
@@ -311,12 +312,26 @@ class FieldEntryBase : public FieldAccessEntry {
   virtual void Set(void *head, const std::string &value) const {
     std::istringstream is(value);
     is >> this->Get(head);
-    if (is.fail() || !is.eof()) {
+
+    if (!is.fail()) {
+      while (!is.eof()) {
+        int ch = is.get();
+        if (ch == EOF) {
+          is.clear(); break;
+        }
+        if (!isspace(ch)) {
+          is.setstate(std::ios::failbit); break;
+        }
+      }
+    }
+
+    if (is.fail()) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_
          << " expect " << type_ << " but value=\'" << value<< '\'';
       throw dmlc::ParamError(os.str());
     }
+    LOG(INFO) << "set=" << this->Get(head);
     this->Check(head);
   }
   // implement value to string
@@ -498,6 +513,38 @@ class FieldEntry<std::string>
  private:
   // enumeration set in enum mode
   std::set<std::string> enum_set_;
+};
+
+// specialize define for bool
+template<>
+class FieldEntry<bool>
+    : public FieldEntryBase<FieldEntry<bool>, bool> {
+ public:
+  // parent class
+  typedef FieldEntryBase<FieldEntry<bool>, bool> Parent;
+  // override set
+  virtual void Set(void *head, const std::string &value) const {
+    std::string lower_case; lower_case.resize(value.length());
+    std::transform(value.begin(), value.end(), lower_case.begin(), ::tolower);
+    bool &ref = this->Get(head);
+    if (lower_case == "true") {
+      ref = true;
+    } else if (lower_case == "false") {
+      ref = false;
+    } else if (lower_case == "1") {
+      ref = true;
+    } else if (lower_case == "0") {
+      ref = false;
+    } else {
+      std::ostringstream os;
+      os << "Invalid Parameter format for " << key_
+         << " expect " << type_ << " but value=\'" << value<< '\'';
+      throw dmlc::ParamError(os.str());
+    }
+  }
+  // override check
+  virtual void Check(void *head) const {
+  }
 };
 
 }  // namespace parameter
