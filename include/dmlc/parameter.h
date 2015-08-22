@@ -528,6 +528,8 @@ class FieldEntry<int>
       if (description_.length() != 0) {
         os << "    "<< description_ << '\n';
       }
+    } else {
+      Parent::PrintDocString(os);
     }
   }
   // override print default
