@@ -16,6 +16,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <iostream>
 #include "./base.h"
 #include "./logging.h"
 #include "./type_traits.h"
@@ -84,6 +85,15 @@ struct Parameter {
   template<typename Container>
   inline void Init(const Container &kwargs) {
     PType::__MANAGER__()->RunInit(static_cast<PType*>(this), kwargs.begin(), kwargs.end());
+  }
+  /*!
+   * \brief Print docstring of the parameter
+   * \return the printed docstring
+   */
+  inline static std::string __DOC__() {
+    std::ostringstream os;
+    PType::__MANAGER__()->PrintDocString(os);
+    return os.str();
   }
 
  protected:
@@ -180,23 +190,15 @@ class FieldAccessEntry {
   // check if value is OK
   virtual void Check(void *head) const {}
   /*!
-   * \brief get string representation of the value
-   * \param head pointer to head of parameter struct
-   * \return string representation
+   * \brief print string representation of default value
+   * \parma os the stream to print the docstring to.
    */
-  virtual std::string GetValueString(void *head) const = 0;
-  /*! \return the key of the parameter */
-  inline const std::string &key() const {
-    return key_;
-  }
-  /*! \return the type of the parameter */
-  inline const std::string &type() const {
-    return type_;
-  }
-  /*! \return whether the parameter has default value */
-  inline bool has_default() const {
-    return has_default_;
-  }
+  virtual void PrinDefaultValueString(std::ostream &os) const = 0;  // NOLINT(*)
+  /*!
+   * \brief Print readible docstring to ostream, add newline.
+   * \parma os the stream to print the docstring to.
+   */
+  virtual void PrintDocString(std::ostream &os) const  = 0;  // NOLINT(*)
 
  protected:
   /*! \brief whether this parameter have default value */
@@ -207,6 +209,8 @@ class FieldAccessEntry {
   std::string key_;
   /*! \brief parameter type */
   std::string type_;
+  /*! \brief description of the parameter */
+  std::string description_;
   // allow ParamManager to modify self
   friend class ParamManager;
 };
@@ -253,7 +257,9 @@ class ParamManager {
         selected_args.insert(e);
       } else {
         std::ostringstream os;
-        os << "Cannot find parameter " << it->first;
+        os << "Cannot find argument \'" << it->first << "\', Possible Arguments:\n";
+        os << "----------------\n";
+        PrintDocString(os);
         throw dmlc::ParamError(os.str());
       }
     }
@@ -276,7 +282,7 @@ class ParamManager {
     entry_.push_back(e);
     // TODO(bing) better error message
     if (entry_map_.count(key) != 0) {
-      LOG(FATAL) << "key " << key << " has already been registered in " << param_name_;
+      LOG(FATAL) << "key " << key << " has already been registered in " << name_;
     }
     entry_map_[key] = e;
   }
@@ -286,6 +292,15 @@ class ParamManager {
    */
   inline void set_name(const std::string &name) {
     name_ = name;
+  }
+  /*!
+   * \brief Print readible docstring to ostream, add newline.
+   * \parma os the stream to print the docstring to.
+   */
+  inline void PrintDocString(std::ostream &os) const {
+    for (size_t i = 0; i < entry_.size(); ++i) {
+      entry_[i]->PrintDocString(os);
+    }
   }
 
  private:
@@ -344,11 +359,21 @@ class FieldEntryBase : public FieldAccessEntry {
     LOG(INFO) << "set=" << this->Get(head);
     this->Check(head);
   }
-  // implement value to string
-  virtual std::string GetValueString(void *head) const {
-    std::ostringstream os;
-    os << Get(head);
-    return os.str();
+  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+    os << default_value_;
+  }
+  virtual void PrintDocString(std::ostream &os) const {  // NOLINT(*)
+    os << key_ << " : " << type_;
+    if (has_default_) {
+      os << ',' << "optional, default=";
+      PrinDefaultValueString(os);
+    } else {
+      os << ", required";
+    }
+    os << '\n';
+    if (description_.length() != 0) {
+      os << "    "<< description_ << '\n';
+    }
   }
   // implement set head to default value
   virtual void SetDefault(void *head) const {
@@ -369,6 +394,12 @@ class FieldEntryBase : public FieldAccessEntry {
   inline TEntry &set_default(const DType &default_value) {
     default_value_ = default_value;
     has_default_ = true;
+    // return self to allow chaining
+    return this->self();
+  }
+  // implement describe
+  inline TEntry &describe(const std::string &description) {
+    description_ = description;
     // return self to allow chaining
     return this->self();
   }
@@ -400,33 +431,48 @@ template<typename TEntry, typename DType>
 class FieldEntryNumeric
     : public FieldEntryBase<TEntry, DType> {
  public:
-  FieldEntryNumeric() {
-    this->end_ = std::numeric_limits<DType>::max();
-    if (std::numeric_limits<DType>::is_integer) {
-      this->begin_ = std::numeric_limits<DType>::min();
-    } else {
-      // use neg max for floating pts
-      this->begin_ = -std::numeric_limits<DType>::max();
-    }
+  FieldEntryNumeric()
+      : has_begin_(false), has_end_(false) {
+
   }
   // implement set_range
   virtual TEntry &set_range(DType begin, DType end) {
     begin_ = begin; end_ = end;
+    has_begin_ = true; has_end_ = true;
+    return this->self();
+  }
+  // implement set_range
+  virtual TEntry &set_lower_bound(DType begin) {
+    begin_ = begin; has_begin_ = true;
     return this->self();
   }
   // consistency check for numeric ranges
   virtual void Check(void *head) const {
     FieldEntryBase<TEntry, DType>::Check(head);
     DType v = this->Get(head);
-    if (v < begin_ || v >= end_) {
-      std::ostringstream os;
-      os << "value " << v << "for Parameter " << this->key_
-         << " exceed bound [" << begin_ << ',' << end_ <<')';
-      throw dmlc::ParamError(os.str());
+    if (has_begin_ && has_end_) {
+      if (v < begin_ || v >= end_) {
+        std::ostringstream os;
+        os << "value " << v << "for Parameter " << this->key_
+           << " exceed bound [" << begin_ << ',' << end_ <<')';
+        throw dmlc::ParamError(os.str());
+      }
+    } else if (has_begin_ && v < begin_) {
+        std::ostringstream os;
+        os << "value " << v << "for Parameter " << this->key_
+           << " should be greater equal to " << begin_;
+        throw dmlc::ParamError(os.str());
+    } else if (has_end_ && v >= end_) {
+        std::ostringstream os;
+        os << "value " << v << "for Parameter " << this->key_
+           << " should be smaller than " << end_;
+        throw dmlc::ParamError(os.str());
     }
   }
 
  protected:
+  // whether it have begin and end range
+  bool has_begin_, has_end_;
   // data bound
   DType begin_, end_;
 };
@@ -458,7 +504,9 @@ class FieldEntry<int>
       std::map<std::string, int>::const_iterator it = enum_map_.find(value);
       std::ostringstream os;
       if (it == enum_map_.end()) {
-        os << "Invalid enum type: " << value;
+        os << "Invalid Input: \'" << value;
+        os << "\', valid values are: ";
+        PrintEnums(os);
         throw dmlc::ParamError(os.str());
       } else {
         os << it->second;
@@ -468,10 +516,30 @@ class FieldEntry<int>
       Parent::Set(head, value);
     }
   }
+  virtual void PrintDocString(std::ostream &os) const {  // NOLINT(*)
+    if (is_enum_) {
+      os << key_ << " : ";
+      PrintEnums(os);
+      if (has_default_) {
+        os << ',' << "optional, default=";
+        PrinDefaultValueString(os);
+      } else {
+        os << ", required";
+      }
+      os << '\n';
+      if (description_.length() != 0) {
+        os << "    "<< description_ << '\n';
+      }
+    }
+  }
+  // override print default
+  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+    os << '\'' << enum_back_map_.at(default_value_) << '\'';
+  }
   // add enum
   inline FieldEntry<int> &add_enum(const std::string &key, int value) {
     if ((enum_map_.size() != 0 && enum_map_.count(key) != 0) || \
-        enum_value_set_.count(value) != 0) {
+        enum_back_map_.count(value) != 0) {
       std::ostringstream os;
       os << "Enum " << "(" << key << ": " << value << " exisit!" << ")\n";
       os << "Enums: ";
@@ -482,18 +550,33 @@ class FieldEntry<int>
       throw dmlc::ParamError(os.str());
     }
     enum_map_[key] = value;
-    enum_value_set_.insert(value);
+    enum_back_map_[value] = key;
     is_enum_ = true;
     return this->self();
   }
+
  protected:
   // enum flag
   bool is_enum_;
   // enum map
   std::map<std::string, int> enum_map_;
-  // enum value map
-  std::set<int> enum_value_set_;
+  // enum map
+  std::map<int, std::string> enum_back_map_;
+
+ private:
+  inline void PrintEnums(std::ostream &os) const {  // NOLINT(*)
+    os << '{';
+    for (std::map<std::string, int>::const_iterator
+             it = enum_map_.begin(); it != enum_map_.end(); ++it) {
+      if (it != enum_map_.begin()) {
+        os << ", ";
+      }
+      os << "\'" << it->first << '\'';
+    }
+    os << '}';
+  }
 };
+
 // specialize define for string
 template<>
 class FieldEntry<std::string>
@@ -506,23 +589,10 @@ class FieldEntry<std::string>
     this->Get(head) = value;
     this->Check(head);
   }
-  // override check
-  virtual void Check(void *head) const {
-    Parent::Check(head);
-    std::string value = this->Get(head);
-    if (enum_set_.size() > 0 && enum_set_.count(value) == 0) {
-      throw dmlc::ParamError("value not found in enum");
-    }
+  // override print default
+  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+    os << '\'' << default_value_ << '\'';
   }
-  // add new set function
-  inline FieldEntry<std::string> &add_enum(const std::string &value) {
-    enum_set_.insert(value);
-    return this->self();
-  }
-
- private:
-  // enumeration set in enum mode
-  std::set<std::string> enum_set_;
 };
 
 // specialize define for bool
@@ -552,8 +622,13 @@ class FieldEntry<bool>
       throw dmlc::ParamError(os.str());
     }
   }
-  // override check
-  virtual void Check(void *head) const {
+  // print default string
+  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+    if (default_value_) {
+      os << "True";
+    } else {
+      os << "False";
+    }
   }
 };
 
