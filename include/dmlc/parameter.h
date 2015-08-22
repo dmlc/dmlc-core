@@ -297,7 +297,7 @@ class ParamManager {
    * \brief Print readible docstring to ostream, add newline.
    * \parma os the stream to print the docstring to.
    */
-  inline void PrintDocString(std::ostream &os) const {
+  inline void PrintDocString(std::ostream &os) const {  // NOLINT(*)
     for (size_t i = 0; i < entry_.size(); ++i) {
       entry_[i]->PrintDocString(os);
     }
@@ -432,9 +432,7 @@ class FieldEntryNumeric
     : public FieldEntryBase<TEntry, DType> {
  public:
   FieldEntryNumeric()
-      : has_begin_(false), has_end_(false) {
-
-  }
+      : has_begin_(false), has_end_(false) {}
   // implement set_range
   virtual TEntry &set_range(DType begin, DType end) {
     begin_ = begin; end_ = end;
