@@ -25,7 +25,7 @@ USE_HDFS = 0
 USE_S3 = 0
 
 # whether use Azure blob support during compile
-USE_AZURE = 0 
+USE_AZURE = 0
 
 # path to libjvm.so
 LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server

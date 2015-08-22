@@ -21,12 +21,16 @@ namespace dmlc {
  */
 struct Error : public std::runtime_error {
   /*!
-   * \brief constructor 
+   * \brief constructor
    * \param s the error message
    */
   explicit Error(const std::string &s) : std::runtime_error(s) {}
 };
 }  // namespace dmlc
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define noexcept(a)
+#endif
 
 #if DMLC_USE_CXX11
 #define DMLC_THROW_EXCEPTION noexcept(false)

@@ -11,12 +11,13 @@ include make/dmlc.mk
 
 # this is the common build script for dmlc lib
 export LDFLAGS= -pthread -lm
-export CFLAGS = -O3 -Wall -msse2 -g -Wno-unknown-pragmas -Iinclude -std=c++0x
+export CFLAGS = -O3 -Wall -msse2  -Wno-unknown-pragmas -Iinclude  -std=c++0x
 LDFLAGS+= $(DMLC_LDFLAGS)
 CFLAGS+= $(DMLC_CFLAGS)
 
 ifdef DEPS_PATH
 CFLAGS+= -I$(DEPS_PATH)/include
+LDFLAGS+= -L$(DEPS_PATH)/lib
 endif
 
 .PHONY: clean all test lint doc
@@ -29,6 +30,10 @@ endif
 
 ifeq ($(USE_S3), 1)
 	OBJ += s3_filesys.o
+endif
+
+ifeq ($(USE_AZURE), 1)
+	OBJ += azure_filesys.o
 endif
 
 ifndef LINT_LANG
@@ -50,6 +55,7 @@ recordio_split.o: src/io/recordio_split.cc
 input_split_base.o: src/io/input_split_base.cc
 hdfs_filesys.o: src/io/hdfs_filesys.cc
 s3_filesys.o: src/io/s3_filesys.cc
+azure_filesys.o: src/io/azure_filesys.cc
 local_filesys.o: src/io/local_filesys.cc
 io.o: src/io.cc
 data.o: src/data.cc
