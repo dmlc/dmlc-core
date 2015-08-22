@@ -41,8 +41,10 @@ class FieldAccessEntry;
 // forward declare FieldEntry
 template<typename DType>
 struct FieldEntry;
+// forward declare ParamManagerSingleton
+template<typename PType>
+struct ParamManagerSingleton;
 }  // namespace parameter
-
 /*!
  * \brief Parameter is the base type every parameter struct should inheritate from
  * The following code is a complete example to setup parameters.
@@ -87,15 +89,18 @@ struct Parameter {
  protected:
   /*!
    * \brief internal function to allow declare of a parameter memember
+   * \param manager the parameter manager
    * \param key the key name of the parameter
    * \param ref the reference to the parameter in the struct.
    */
   template<typename DType>
-  inline parameter::FieldEntry<DType>& DECLARE(const std::string &key, DType &ref) { // NOLINT(*)
+  inline parameter::FieldEntry<DType>& DECLARE(
+      parameter::ParamManagerSingleton<PType> *manager,
+      const std::string &key, DType &ref) { // NOLINT(*)
     parameter::FieldEntry<DType> *e =
         new parameter::FieldEntry<DType>();
     e->Init(key, static_cast<PType*>(this), ref);
-    PType::__MANAGER__()->AddEntry(key, e);
+    manager->manager.AddEntry(key, e);
     return *e;
   }
 };
@@ -119,14 +124,14 @@ struct Parameter {
  * \param PType the name of parameter struct.
  * \sa Parameter
  */
-#define DMLC_DECLARE_PARAMETER(PType)                      \
-  static ::dmlc::parameter::ParamManager *__MANAGER__();   \
-  inline void __DECLARE__()
+#define DMLC_DECLARE_PARAMETER(PType)                                   \
+  static ::dmlc::parameter::ParamManager *__MANAGER__();                \
+  inline void __DECLARE__(::dmlc::parameter::ParamManagerSingleton<PType> *manager)
 /*!
  * \brief macro to declare fields
  * \param FieldName the name of the field.
  */
-#define DMLC_DECLARE_FIELD(FieldName)  this->DECLARE(#FieldName, FieldName)
+#define DMLC_DECLARE_FIELD(FieldName)  this->DECLARE(manager, #FieldName, FieldName)
 /*!
  * \brief Macro used to register parameter.
  *
@@ -137,11 +142,11 @@ struct Parameter {
  */
 #define DMLC_REGISTER_PARAMETER(PType)                                  \
   ::dmlc::parameter::ParamManager *PType::__MANAGER__() {               \
-    static ::dmlc::parameter::ParamManager inst;                        \
-    return &inst;                                                       \
+    static ::dmlc::parameter::ParamManagerSingleton<PType> inst(#PType); \
+    return &inst.manager;                                               \
   }                                                                     \
   static ::dmlc::parameter::ParamManager *__make__ ## PType ## ParamManager__ = \
-      PType::__MANAGER__()->__INIT__<PType>(#PType);
+      PType::__MANAGER__();
 
 //! \endcond
 /*!
@@ -205,6 +210,7 @@ class FieldAccessEntry {
   // allow ParamManager to modify self
   friend class ParamManager;
 };
+
 /*!
  * \brief manager class to handle parameter setting for each type
  *  An manager will be created for each parameter types.
@@ -275,23 +281,16 @@ class ParamManager {
     entry_map_[key] = e;
   }
   /*!
-   * \brief internal function to initialize parameter entry.
-   *  This function will only by call once during DMLC_REGISTER_PARAMETER
+   * \brief set the name of parameter manager
+   * \param name the name to set
    */
-  template<typename PType>
-  inline ParamManager *__INIT__(const std::string &param_name) {
-    if (param_name_.length() != 0) {
-      LOG(FATAL) << "DMLC_REGISTER_PARAMETER(" << param_name << ") has already been called";
-    }
-    PType p;
-    p.__DECLARE__();
-    param_name_ = param_name;
-    return this;
+  inline void set_name(const std::string &name) {
+    name_ = name;
   }
 
  private:
   /*! \brief parameter struct name */
-  std::string param_name_;
+  std::string name_;
   /*! \brief positional list of entries */
   std::vector<FieldAccessEntry*> entry_;
   /*! \brief map of key to entry */
@@ -299,7 +298,18 @@ class ParamManager {
 };
 
 //! \cond Doxygen_Suppress
+
 // The following piece of code will be template heavy and less documented
+// singleton parameter manager for certain type, used for initialization
+template<typename PType>
+struct ParamManagerSingleton {
+  ParamManager manager;
+  explicit ParamManagerSingleton(const std::string &param_name) {
+    PType param;
+    param.__DECLARE__(this);
+    manager.set_name(param_name);
+  }
+};
 
 // Base class of FieldEntry
 // implement set_default
