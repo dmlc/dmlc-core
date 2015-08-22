@@ -59,3 +59,11 @@ endif
 ifeq ($(USE_GLOG), 1)
 	DMLC_CFLAGS += -DDMLC_USE_GLOG=1
 endif
+
+# setup Azure
+ifeq ($(USE_AZURE),1)
+	DMLC_CFLAGS+= -DDMLC_USE_AZURE=1
+	DMLC_LDFLAGS+= -lazurestorage -lcpprest
+else
+	DMLC_CFLAGS+= -DDMLC_USE_AZURE=0
+endif

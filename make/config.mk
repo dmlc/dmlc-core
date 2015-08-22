@@ -24,6 +24,9 @@ USE_HDFS = 0
 # whether use AWS S3 support during compile
 USE_S3 = 0
 
+# whether use Azure blob support during compile
+USE_AZURE = 0 
+
 # path to libjvm.so
 LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 
@@ -35,4 +38,4 @@ BUILD_TEST=0
 GTEST_PATH=
 
 # path to third-party dependences such as glog
-DEPS_PATH=
+DEPS_PATH=deps
