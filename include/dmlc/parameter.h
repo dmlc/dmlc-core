@@ -365,7 +365,7 @@ class FieldEntryBase : public FieldAccessEntry {
   virtual void PrintDocString(std::ostream &os) const {  // NOLINT(*)
     os << key_ << " : " << type_;
     if (has_default_) {
-      os << ',' << "optional, default=";
+      os << ',' << " optional, default=";
       PrinDefaultValueString(os);
     } else {
       os << ", required";
