@@ -47,6 +47,23 @@ template<typename PType>
 struct ParamManagerSingleton;
 }  // namespace parameter
 /*!
+ * \brief Information about a parameter field in string representations.
+ */
+struct ParamFieldInfo {
+  /*! \brief name of the field */
+  std::string name;
+  /*! \brief type of the field in string format */
+  std::string type;
+  /*!
+   * \brief detailed type information string
+   *  This include the default value, enum constran and typename.
+   */
+  std::string type_info_str;
+  /*! \brief detailed description of the type */
+  std::string description;
+};
+
+/*!
  * \brief Parameter is the base type every parameter struct should inheritate from
  * The following code is a complete example to setup parameters.
  * \code
@@ -85,6 +102,14 @@ struct Parameter {
   template<typename Container>
   inline void Init(const Container &kwargs) {
     PType::__MANAGER__()->RunInit(static_cast<PType*>(this), kwargs.begin(), kwargs.end());
+  }
+  /*!
+   * \brief Get the fields of the parameters.
+   * \return List of ParamFieldInfo of each field.
+   */
+  inline static std::vector<ParamFieldInfo> __FIELDS__() {
+    std::ostringstream os;
+    return PType::__MANAGER__()->GetFieldInfo();
   }
   /*!
    * \brief Print docstring of the parameter
@@ -131,17 +156,20 @@ struct Parameter {
  *
  * This macro need to be put in a source file so that registeration only happens once.
  * Refer to example code in Parameter for details
+ *
  * \param PType the name of parameter struct.
  * \sa Parameter
  */
 #define DMLC_DECLARE_PARAMETER(PType)                                   \
   static ::dmlc::parameter::ParamManager *__MANAGER__();                \
-  inline void __DECLARE__(::dmlc::parameter::ParamManagerSingleton<PType> *manager)
+  inline void __DECLARE__(::dmlc::parameter::ParamManagerSingleton<PType> *manager) \
+
 /*!
  * \brief macro to declare fields
  * \param FieldName the name of the field.
  */
 #define DMLC_DECLARE_FIELD(FieldName)  this->DECLARE(manager, #FieldName, FieldName)
+
 /*!
  * \brief Macro used to register parameter.
  *
@@ -155,8 +183,8 @@ struct Parameter {
     static ::dmlc::parameter::ParamManagerSingleton<PType> inst(#PType); \
     return &inst.manager;                                               \
   }                                                                     \
-  static ::dmlc::parameter::ParamManager *__make__ ## PType ## ParamManager__ = \
-      PType::__MANAGER__();
+  static ::dmlc::parameter::ParamManager &__make__ ## PType ## ParamManager__ = \
+      (*PType::__MANAGER__())                                           \
 
 //! \endcond
 /*!
@@ -190,15 +218,10 @@ class FieldAccessEntry {
   // check if value is OK
   virtual void Check(void *head) const {}
   /*!
-   * \brief print string representation of default value
-   * \parma os the stream to print the docstring to.
+   * \brief Get field information
+   * \return the corresponding field information
    */
-  virtual void PrinDefaultValueString(std::ostream &os) const = 0;  // NOLINT(*)
-  /*!
-   * \brief Print readible docstring to ostream, add newline.
-   * \parma os the stream to print the docstring to.
-   */
-  virtual void PrintDocString(std::ostream &os) const  = 0;  // NOLINT(*)
+  virtual ParamFieldInfo GetFieldInfo() const = 0;
 
  protected:
   /*! \brief whether this parameter have default value */
@@ -211,6 +234,11 @@ class FieldAccessEntry {
   std::string type_;
   /*! \brief description of the parameter */
   std::string description_;
+  /*!
+   * \brief print string representation of default value
+   * \parma os the stream to print the docstring to.
+   */
+  virtual void PrinDefaultValueString(std::ostream &os) const = 0;  // NOLINT(*)
   // allow ParamManager to modify self
   friend class ParamManager;
 };
@@ -294,12 +322,27 @@ class ParamManager {
     name_ = name;
   }
   /*!
+   * \brief get field information of each field.
+   * \return field information
+   */
+  inline std::vector<ParamFieldInfo> GetFieldInfo() const {
+    std::vector<ParamFieldInfo> ret(entry_.size());
+    for (size_t i = 0; i < entry_.size(); ++i) {
+      ret[i] = entry_[i]->GetFieldInfo();
+    }
+    return ret;
+  }
+  /*!
    * \brief Print readible docstring to ostream, add newline.
    * \parma os the stream to print the docstring to.
    */
   inline void PrintDocString(std::ostream &os) const {  // NOLINT(*)
     for (size_t i = 0; i < entry_.size(); ++i) {
-      entry_[i]->PrintDocString(os);
+      ParamFieldInfo info = entry_[i]->GetFieldInfo();
+      os << info.name << " : " << info.type_info_str << '\n';
+      if (info.description.length() != 0) {
+        os << "    " << info.description << '\n';
+      }
     }
   }
 
@@ -356,24 +399,26 @@ class FieldEntryBase : public FieldAccessEntry {
          << " expect " << type_ << " but value=\'" << value<< '\'';
       throw dmlc::ParamError(os.str());
     }
-    LOG(INFO) << "set=" << this->Get(head);
     this->Check(head);
   }
   virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     os << default_value_;
   }
-  virtual void PrintDocString(std::ostream &os) const {  // NOLINT(*)
-    os << key_ << " : " << type_;
+  virtual ParamFieldInfo GetFieldInfo() const {
+    ParamFieldInfo info;
+    std::ostringstream os;
+    info.name = key_;
+    info.type = type_;
+    os << type_;
     if (has_default_) {
       os << ',' << " optional, default=";
       PrinDefaultValueString(os);
     } else {
       os << ", required";
     }
-    os << '\n';
-    if (description_.length() != 0) {
-      os << "    "<< description_ << '\n';
-    }
+    info.type_info_str = os.str();
+    info.description = description_;
+    return info;
   }
   // implement set head to default value
   virtual void SetDefault(void *head) const {
@@ -514,9 +559,12 @@ class FieldEntry<int>
       Parent::Set(head, value);
     }
   }
-  virtual void PrintDocString(std::ostream &os) const {  // NOLINT(*)
+  virtual ParamFieldInfo GetFieldInfo() const {
     if (is_enum_) {
-      os << key_ << " : ";
+      ParamFieldInfo info;
+      std::ostringstream os;
+      info.name = key_;
+      info.type = type_;
       PrintEnums(os);
       if (has_default_) {
         os << ',' << "optional, default=";
@@ -524,12 +572,11 @@ class FieldEntry<int>
       } else {
         os << ", required";
       }
-      os << '\n';
-      if (description_.length() != 0) {
-        os << "    "<< description_ << '\n';
-      }
+      info.type_info_str = os.str();
+      info.description = description_;
+      return info;
     } else {
-      Parent::PrintDocString(os);
+      return Parent::GetFieldInfo();
     }
   }
   // override print default
