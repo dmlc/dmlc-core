@@ -108,7 +108,6 @@ struct Parameter {
    * \return List of ParamFieldInfo of each field.
    */
   inline static std::vector<ParamFieldInfo> __FIELDS__() {
-    std::ostringstream os;
     return PType::__MANAGER__()->GetFieldInfo();
   }
   /*!
@@ -238,7 +237,7 @@ class FieldAccessEntry {
    * \brief print string representation of default value
    * \parma os the stream to print the docstring to.
    */
-  virtual void PrinDefaultValueString(std::ostream &os) const = 0;  // NOLINT(*)
+  virtual void PrintDefaultValueString(std::ostream &os) const = 0;  // NOLINT(*)
   // allow ParamManager to modify self
   friend class ParamManager;
 };
@@ -282,6 +281,7 @@ class ParamManager {
       FieldAccessEntry *e = Find(it->first);
       if (e != NULL) {
         e->Set(head, it->second);
+        e->Check(head);
         selected_args.insert(e);
       } else {
         std::ostringstream os;
@@ -307,11 +307,11 @@ class ParamManager {
    */
   inline void AddEntry(const std::string &key, FieldAccessEntry *e) {
     e->index_ = entry_.size();
-    entry_.push_back(e);
     // TODO(bing) better error message
     if (entry_map_.count(key) != 0) {
       LOG(FATAL) << "key " << key << " has already been registered in " << name_;
     }
+    entry_.push_back(e);
     entry_map_[key] = e;
   }
   /*!
@@ -399,9 +399,8 @@ class FieldEntryBase : public FieldAccessEntry {
          << " expect " << type_ << " but value=\'" << value<< '\'';
       throw dmlc::ParamError(os.str());
     }
-    this->Check(head);
   }
-  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     os << default_value_;
   }
   virtual ParamFieldInfo GetFieldInfo() const {
@@ -412,7 +411,7 @@ class FieldEntryBase : public FieldAccessEntry {
     os << type_;
     if (has_default_) {
       os << ',' << " optional, default=";
-      PrinDefaultValueString(os);
+      PrintDefaultValueString(os);
     } else {
       os << ", required";
     }
@@ -568,7 +567,7 @@ class FieldEntry<int>
       PrintEnums(os);
       if (has_default_) {
         os << ',' << "optional, default=";
-        PrinDefaultValueString(os);
+        PrintDefaultValueString(os);
       } else {
         os << ", required";
       }
@@ -580,8 +579,14 @@ class FieldEntry<int>
     }
   }
   // override print default
-  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
-    os << '\'' << enum_back_map_.at(default_value_) << '\'';
+  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+    if (is_enum_) {
+      CHECK_NE(enum_back_map_.count(default_value_), 0)
+          << "Default value not found in enum declared";
+      os << '\'' << enum_back_map_.at(default_value_) << '\'';
+    } else {
+      os << default_value_;
+    }
   }
   // add enum
   inline FieldEntry<int> &add_enum(const std::string &key, int value) {
@@ -634,10 +639,9 @@ class FieldEntry<std::string>
   // override set
   virtual void Set(void *head, const std::string &value) const {
     this->Get(head) = value;
-    this->Check(head);
   }
   // override print default
-  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     os << '\'' << default_value_ << '\'';
   }
 };
@@ -670,7 +674,7 @@ class FieldEntry<bool>
     }
   }
   // print default string
-  virtual void PrinDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     if (default_value_) {
       os << "True";
     } else {
