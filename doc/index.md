@@ -4,7 +4,7 @@ DMLC Core contains common codebase to help us build machine learning toolkits ea
 
 Contents
 --------
-* [Doxygen C++ API Reference](https://dmlc-core.readthedocs.org/latest/doxygen)
+* [Doxygen C++ API Reference](https://dmlc-core.readthedocs.org/en/latest/doxygen)
 
 Indices and tables
 ------------------

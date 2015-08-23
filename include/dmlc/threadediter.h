@@ -127,6 +127,7 @@ class ThreadedIter : public DataIter<DType> {
    *  after the function call, the caller takes ownership of the pointer
    *  the caller can call recycle to return ownership back to the threaditer
    *  so that the pointer can be re-used
+   * \return true if there is next record, false if we reach the end
    * \sa Recycle
    */
   inline bool Next(DType **out_dptr);
@@ -141,6 +142,7 @@ class ThreadedIter : public DataIter<DType> {
    * \brief adapt the iterator interface's Next
    *  NOTE: the call to this function is not threadsafe
    *  use the other Next instead
+   * \return true if there is next record, false if we reach the end
    */
   virtual bool Next(void) {
     if (out_data_ != NULL) {
