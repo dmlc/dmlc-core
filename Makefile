@@ -77,7 +77,7 @@ $(ALIB):
 lint:
 	python scripts/lint.py dmlc ${LINT_LANG} include src scripts
 
-doc:
+doxygen:
 	doxygen doc/Doxyfile
 
 clean:
