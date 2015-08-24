@@ -72,6 +72,11 @@ parser.add_argument('--name-node', default='default', type=str,
                     help = 'the namenode address of hdfs, libhdfs should connect to, normally leave it as default')
 parser.add_argument('--ship-libcxx', type=str,
                     help = 'the path of gcc lib. if you change the default gcc version,you should ship the libstdc++.so or libstdc++.so.6 ')
+parser.add_argument('--app-classpath', type=str,
+                    help = 'Explicit ApplicationMaster classpath. Can be used to override defaults.')
+parser.add_argument('--env', action='append', default=[],
+                    help = 'Client and ApplicationMaster environment variables.')
+
 
 parser.add_argument('command', nargs='+',
                     help = 'command for dmlc program')
@@ -167,6 +172,10 @@ def yarn_submit(nworker, nserver, pass_env):
     cmd += ' -jobname %s ' % args.jobname
     cmd += ' -tempdir %s ' % args.tempdir
     cmd += ' -queue %s ' % args.queue
+    if args.app_classpath: 
+        cmd += ' -appcp %s ' % args.app_classpath
+    for entry in args.env:
+        cmd += ' -env %s ' % entry
     cmd += (' '.join(['./run_hdfs_prog.py'] + args.command))
     def run():
         logging.debug(cmd)

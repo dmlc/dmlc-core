@@ -39,6 +39,7 @@ import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
 
 /**
  * application master for allocating resources of dmlc client
@@ -74,8 +75,6 @@ public class ApplicationMaster {
     private String userName = "";
     // user credentials
     private Credentials credentials = null;
-    // security tokens
-    private ByteBuffer securityTokens = null;
     // application tracker hostname
     private String appHostName = "";
     // tracker URL to do
@@ -102,6 +101,8 @@ public class ApplicationMaster {
     private final Collection<TaskRecord> finishedTasks = new java.util.LinkedList<TaskRecord>();
     // collection of killed tasks
     private final Collection<TaskRecord> killedTasks = new java.util.LinkedList<TaskRecord>();
+    // worker environment
+    private final Map<String, String> env = new java.util.HashMap<String, String>();
 
     public static void main(String[] args) throws Exception {
         new ApplicationMaster().run(args);
@@ -111,10 +112,25 @@ public class ApplicationMaster {
         dfs = FileSystem.get(conf);
         userName = UserGroupInformation.getCurrentUser().getShortUserName();
         credentials = UserGroupInformation.getCurrentUser().getCredentials();
-        DataOutputBuffer buffer = new DataOutputBuffer();
-        this.credentials.writeTokenStorageToStream(buffer);
-        this.securityTokens = ByteBuffer.wrap(buffer.getData());
     }
+
+    
+    /**
+     * setup security token given current user
+     * @return the ByeBuffer containing the security tokens
+     * @throws IOException
+     */
+    private ByteBuffer setupTokens() {
+        try {
+            DataOutputBuffer dob = new DataOutputBuffer();
+            credentials.writeTokenStorageToStream(dob);
+            return ByteBuffer.wrap(dob.getData(), 0, dob.getLength()).duplicate();
+        } catch (IOException e) {
+            throw new RuntimeException(e);  // TODO: FIXME
+        }
+    }
+    
+
     /**
      * get integer argument from environment variable
      * 
@@ -160,6 +176,9 @@ public class ApplicationMaster {
                 } else {
                     cacheFiles.put(arr[1], path);
                 }
+            } else if (args[i].equals("-env")) {
+                String[] pair = args[++i].split("=", 2);
+                env.put(pair[0], (pair.length == 1) ? "" : pair[1]);
             } else {
                 this.command += args[i] + " ";
             }
@@ -302,11 +321,10 @@ public class ApplicationMaster {
             + "/stderr";
         ctx.setCommands(Collections.singletonList(cmd));
 	// TODO: token was not right
-        //ctx.setTokens(this.securityTokens);
+        ctx.setTokens(setupTokens());
         LOG.info(workerResources);
         ctx.setLocalResources(this.workerResources);
         // setup environment variables
-        Map<String, String> env = new java.util.HashMap<String, String>();
 
         // setup class path, this is kind of duplicated, ignoring
         StringBuilder cpath = new StringBuilder("${CLASSPATH}:./*");

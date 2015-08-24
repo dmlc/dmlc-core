@@ -13,7 +13,9 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
+import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
@@ -56,6 +58,11 @@ public class Client {
     private String jobName = "";
     // queue
     private String queue = "default";
+    // ApplicationMaster classpath
+    private String appCp = null;
+    // ApplicationMaster env
+    private Map<String, String> env = new java.util.HashMap<String, String>();
+
     /**
      * constructor
      * @throws IOException
@@ -75,8 +82,27 @@ public class Client {
      */
     private ByteBuffer setupTokens() throws IOException {
         DataOutputBuffer buffer = new DataOutputBuffer();
-        this.credentials.writeTokenStorageToStream(buffer);
-        return ByteBuffer.wrap(buffer.getData());
+        if (UserGroupInformation.isSecurityEnabled()) {
+            // Note: Credentials class is marked as LimitedPrivate for HDFS and MapReduce
+            Credentials credentials = new Credentials();
+            String tokenRenewer = conf.get(YarnConfiguration.RM_PRINCIPAL);
+            if (tokenRenewer == null || tokenRenewer.length() == 0) {
+                throw new IOException(
+                "Can't get Master Kerberos principal for the RM to use as renewer");
+            }
+
+            // For now, only getting tokens for the default file-system.
+            final Token<?> tokens[] = dfs.addDelegationTokens(tokenRenewer, credentials);
+            if (tokens != null) {
+                for (Token<?> token : tokens) {
+                    LOG.info("Got dt for " + dfs.getUri() + "; " + token);
+                }
+            }
+            credentials.writeTokenStorageToStream(buffer);
+        } else {
+            this.credentials.writeTokenStorageToStream(buffer);
+        }
+        return ByteBuffer.wrap(buffer.getData(), 0, buffer.getLength());
     }
     
     /**
@@ -140,15 +166,22 @@ public class Client {
      */
     private Map<String, String> getEnvironment() {
         // Setup environment variables
-        Map<String, String> env = new java.util.HashMap<String, String>();
-        String cpath = "${CLASSPATH}:./*";
-        for (String c : conf.getStrings(
-                YarnConfiguration.YARN_APPLICATION_CLASSPATH,
-                YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-            cpath += ':';
-            cpath += c.trim();
+
+        if (appCp != null) {
+            env.put("CLASSPATH", appCp);
+        } else {
+            StringBuilder cpath = new StringBuilder()
+                .append(Environment.CLASSPATH.$$())
+                .append(":")
+                .append("./*");
+            for (String c : conf.getStrings(
+                        YarnConfiguration.YARN_APPLICATION_CLASSPATH,
+                        YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
+                cpath.append(":")
+                     .append(c.trim());
+            }
+            env.put("CLASSPATH", cpath.toString());
         }
-        env.put("CLASSPATH", cpath);
         for (Map.Entry<String, String> e : System.getenv().entrySet()) {
             if (e.getKey().startsWith("DMLC_")) {
                 env.put(e.getKey(), e.getValue());
@@ -189,6 +222,15 @@ public class Client {
                 this.tempdir = args[++i];
             } else if(args[i].equals("-queue")) {
                 this.queue = args[++i];
+            } else if(args[i].equals("-appcp")) {
+                this.appCp = args[++i];
+            } else if(args[i].equals("-env")) {
+                sargs.append(" ");
+                sargs.append(args[i]);
+                sargs.append(" ");
+                sargs.append(args[i+1]);
+                String[] pair = args[++i].split("=", 2);
+                env.put(pair[0], (pair.length == 1) ? "" : pair[1]);
             } else {
                 sargs.append(" ");
                 sargs.append(args[i]);
@@ -200,7 +242,7 @@ public class Client {
     private void run(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: [options] [commands..]");
-            System.out.println("options: [-file filename]");
+            System.out.println("options: [-file filename] [-appcp appClasspath]");
             return;
         }
         this.initArgs(args);
