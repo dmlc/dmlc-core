@@ -153,6 +153,7 @@ DMLC_DECLARE_TYPE_NAME(float, "float");
 DMLC_DECLARE_TYPE_NAME(double, "double");
 DMLC_DECLARE_TYPE_NAME(int, "int");
 DMLC_DECLARE_TYPE_NAME(std::string, "string");
+DMLC_DECLARE_TYPE_NAME(bool, "boolean");
 
 template<typename Then, typename Else>
 struct IfThenElseType<true, Then, Else> {

@@ -46,20 +46,21 @@ class Spinlock {
 template <typename T>
 class ConcurrentBlockingQueue {
  public:
-  ConcurrentBlockingQueue() = default;
+  ConcurrentBlockingQueue();
   ~ConcurrentBlockingQueue() = default;
   /*!
    * \brief Push element into the queue.
    * It will copy or move the element into the queue, depending on the type of
    * the parameter.
    * \param e Element to push into.
+   * \tparam E the element type
    */
   template <typename E>
   void Push(E&& e);
   /*!
    * \brief Pop element from the queue.
    * The element will be copied or moved into the object passed in.
-   * \param e Element popped.
+   * \param rv Element popped.
    * \return Whether the queue is not empty afterwards.
    */
   bool Pop(T* rv);
@@ -83,7 +84,7 @@ class ConcurrentBlockingQueue {
  private:
   std::mutex mutex_;
   std::condition_variable cv_;
-  std::atomic<bool> exit_now_{false};
+  std::atomic<bool> exit_now_;
   std::list<T> queue_;
   /*!
    * \brief Disable copy and move.
@@ -99,6 +100,9 @@ inline void Spinlock::lock() noexcept {
 inline void Spinlock::unlock() noexcept {
   lock_.clear(std::memory_order_release);
 }
+
+template <typename T>
+ConcurrentBlockingQueue<T>::ConcurrentBlockingQueue() : exit_now_{false} {}
 
 template <typename T>
 template <typename E>
