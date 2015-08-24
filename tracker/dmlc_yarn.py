@@ -180,7 +180,8 @@ def yarn_submit(nworker, nserver, pass_env):
     def run():
         logging.debug(cmd)
         subprocess.check_call(cmd, shell = True, env = env)
-    cmd += ' '.join(unknown)
+    if unknown:
+        cmd += ' ' + ' '.join(unknown)
     thread = Thread(target = run, args=())
     thread.setDaemon(True)
     thread.start()
