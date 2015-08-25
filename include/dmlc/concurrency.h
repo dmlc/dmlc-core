@@ -50,18 +50,20 @@ class ConcurrentBlockingQueue {
   ~ConcurrentBlockingQueue() = default;
   /*!
    * \brief Push element into the queue.
-   * It will copy or move the element into the queue, depending on the type of
-   * the parameter.
    * \param e Element to push into.
    * \tparam E the element type
+   *
+   * It will copy or move the element into the queue, depending on the type of
+   * the parameter.
    */
   template <typename E>
   void Push(E&& e);
   /*!
    * \brief Pop element from the queue.
-   * The element will be copied or moved into the object passed in.
    * \param rv Element popped.
-   * \return Whether the queue is not empty afterwards.
+   * \return On false, the queue is exiting.
+   *
+   * The element will be copied or moved into the object passed in.
    */
   bool Pop(T* rv);
   /*!
@@ -71,6 +73,7 @@ class ConcurrentBlockingQueue {
   std::list<T> PopAll();
   /*!
    * \brief Signal the queue for destruction.
+   *
    * After calling this method, all blocking pop call to the queue will return
    * false.
    */
