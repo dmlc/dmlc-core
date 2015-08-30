@@ -96,17 +96,30 @@ struct Parameter {
    *  and throw error if something wrong happens.
    *
    * \param kwargs map of keyword arguments, or vector of pairs
-   * \param unknown_args optional, used to hold unknown arguments
-   *          When it is specified, unknown arguments will be stored into here, instead of raise an error
    * \tparam Container container type
    * \throw ParamError when something go wrong.
    */
   template<typename Container>
-  inline void Init(const Container &kwargs,
-                   std::vector<std::pair<std::string, std::string> > *unknown_args = NULL) {
+  inline void Init(const Container &kwargs) {
     PType::__MANAGER__()->RunInit(static_cast<PType*>(this),
-                                  kwargs.begin(), kwargs.end(),
-                                  unknown_args);
+                                  kwargs.begin(), kwargs.end(), NULL);
+  }
+  /*!
+   * \brief initialize the parameter by keyword arguments.
+   *  This is same as Init, but allow unknown arguments.
+   *
+   * \param kwargs map of keyword arguments, or vector of pairs
+   * \tparam Container container type
+   * \throw ParamError when something go wrong.
+   * \return vector of pairs of unknown arguments.
+   */
+  template<typename Container>
+  inline std::vector<std::pair<std::string, std::string> >
+  InitAllowUnknown(const Container &kwargs) {
+    std::vector<std::pair<std::string, std::string> > unknown;
+    PType::__MANAGER__()->RunInit(static_cast<PType*>(this),
+                                  kwargs.begin(), kwargs.end(), &unknown);
+    return unknown;
   }
   /*!
    * \brief Get the fields of the parameters.

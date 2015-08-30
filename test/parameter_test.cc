@@ -18,11 +18,23 @@ struct Param : public dmlc::Parameter<Param> {
         .describe("Name of the net.");
   }
 };
+
+// this is actual pice of code
+struct SecondParam : public dmlc::Parameter<SecondParam> {
+  int num_data;
+  // declare parameters in header file
+  DMLC_DECLARE_PARAMETER(SecondParam) {
+    DMLC_DECLARE_FIELD(num_data).set_range(0, 1000)
+        .describe("Number of data points");
+  }
+};
 // register it in cc file
 DMLC_REGISTER_PARAMETER(Param);
+DMLC_REGISTER_PARAMETER(SecondParam);
 
 int main(int argc, char *argv[]) {
   Param param;
+  SecondParam param2;
   std::map<std::string, std::string> kwargs;
   for (int i = 0; i < argc; ++i) {
     char name[256], val[256];
@@ -33,13 +45,24 @@ int main(int argc, char *argv[]) {
   }
   printf("Parameters\n-----------\n%s", Param::__DOC__().c_str());
   std::vector<std::pair<std::string, std::string> > unknown;
-  param.Init(kwargs, &unknown);
+  unknown = param.InitAllowUnknown(kwargs);
+  unknown = param2.InitAllowUnknown(unknown);
+
+  if (unknown.size() != 0) {
+    std::ostringstream os;
+    os << "Cannot find argument \'" << unknown[0].first << "\', Possible Arguments:\n";
+    os << "----------------\n";
+    os << param.__DOC__();
+    os << param2.__DOC__();
+    throw dmlc::ParamError(os.str());
+  }
   printf("-----\n");
   printf("param.num_hidden=%d\n", param.num_hidden);
   printf("param.learning_rate=%f\n", param.learning_rate);
   printf("param.name=%s\n", param.name.c_str());
   printf("param.act=%d\n", param.act);
   printf("param.size=%lu\n", sizeof(param));
+
   printf("Unknown parameters:\n");
   for (size_t i = 0; i < unknown.size(); ++i) {
     printf("%s=%s\n", unknown[i].first.c_str(), unknown[i].second.c_str());
