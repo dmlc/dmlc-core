@@ -95,13 +95,18 @@ struct Parameter {
    *  This function will initialize the parameter struct, check consistency
    *  and throw error if something wrong happens.
    *
-   * \param kwargs map of keyword arguments
+   * \param kwargs map of keyword arguments, or vector of pairs
+   * \param unknown_args optional, used to hold unknown arguments
+   *          When it is specified, unknown arguments will be stored into here, instead of raise an error
    * \tparam Container container type
    * \throw ParamError when something go wrong.
    */
   template<typename Container>
-  inline void Init(const Container &kwargs) {
-    PType::__MANAGER__()->RunInit(static_cast<PType*>(this), kwargs.begin(), kwargs.end());
+  inline void Init(const Container &kwargs,
+                   std::vector<std::pair<std::string, std::string> > *unknown_args=NULL) {
+    PType::__MANAGER__()->RunInit(static_cast<PType*>(this),
+                                  kwargs.begin(), kwargs.end(),
+                                  unknown_args);
   }
   /*!
    * \brief Get the fields of the parameters.
@@ -270,12 +275,16 @@ class ParamManager {
    * \param head head to the parameter field.
    * \param begin begin iterator of original kwargs
    * \param end end iterator of original kwargs
+   * \param unknown_args optional, used to hold unknown arguments
+   *          When it is specified, unknown arguments will be stored into here, instead of raise an error
    * \tparam RandomAccessIterator iterator type
+   * \throw ParamError when there is unknown argument and unknown_args == NULL, or required argument is missing.
    */
   template<typename RandomAccessIterator>
   inline void RunInit(void *head,
-                  RandomAccessIterator begin,
-                  RandomAccessIterator end) const {
+                      RandomAccessIterator begin,
+                      RandomAccessIterator end,
+                      std::vector<std::pair<std::string, std::string> > *unknown_args=NULL) const {
     std::set<FieldAccessEntry*> selected_args;
     for (RandomAccessIterator it = begin; it != end; ++it) {
       FieldAccessEntry *e = Find(it->first);
@@ -284,11 +293,15 @@ class ParamManager {
         e->Check(head);
         selected_args.insert(e);
       } else {
-        std::ostringstream os;
-        os << "Cannot find argument \'" << it->first << "\', Possible Arguments:\n";
-        os << "----------------\n";
-        PrintDocString(os);
-        throw dmlc::ParamError(os.str());
+        if (unknown_args != NULL) {
+          unknown_args->push_back(*it);
+        } else {
+          std::ostringstream os;
+          os << "Cannot find argument \'" << it->first << "\', Possible Arguments:\n";
+          os << "----------------\n";
+          PrintDocString(os);
+          throw dmlc::ParamError(os.str());
+        }
       }
     }
 

@@ -32,12 +32,17 @@ int main(int argc, char *argv[]) {
     }
   }
   printf("Parameters\n-----------\n%s", Param::__DOC__().c_str());
-  param.Init(kwargs);
+  std::vector<std::pair<std::string, std::string> > unknown;
+  param.Init(kwargs, &unknown);
   printf("-----\n");
   printf("param.num_hidden=%d\n", param.num_hidden);
   printf("param.learning_rate=%f\n", param.learning_rate);
   printf("param.name=%s\n", param.name.c_str());
   printf("param.act=%d\n", param.act);
   printf("param.size=%lu\n", sizeof(param));
+  printf("Unknown parameters:\n");
+  for (size_t i = 0; i < unknown.size(); ++i) {
+    printf("%s=%s\n", unknown[i].first.c_str(), unknown[i].second.c_str());
+  }
   return 0;
 }
