@@ -41,7 +41,7 @@ class ParamManager;
 class FieldAccessEntry;
 // forward declare FieldEntry
 template<typename DType>
-struct FieldEntry;
+class FieldEntry;
 // forward declare ParamManagerSingleton
 template<typename PType>
 struct ParamManagerSingleton;
