@@ -103,7 +103,7 @@ struct Parameter {
    */
   template<typename Container>
   inline void Init(const Container &kwargs,
-                   std::vector<std::pair<std::string, std::string> > *unknown_args=NULL) {
+                   std::vector<std::pair<std::string, std::string> > *unknown_args = NULL) {
     PType::__MANAGER__()->RunInit(static_cast<PType*>(this),
                                   kwargs.begin(), kwargs.end(),
                                   unknown_args);
@@ -284,7 +284,7 @@ class ParamManager {
   inline void RunInit(void *head,
                       RandomAccessIterator begin,
                       RandomAccessIterator end,
-                      std::vector<std::pair<std::string, std::string> > *unknown_args=NULL) const {
+                      std::vector<std::pair<std::string, std::string> > *unknown_args) const {
     std::set<FieldAccessEntry*> selected_args;
     for (RandomAccessIterator it = begin; it != end; ++it) {
       FieldAccessEntry *e = Find(it->first);
