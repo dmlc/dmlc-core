@@ -22,7 +22,7 @@ endif
 
 .PHONY: clean all test lint doc
 
-OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o
+OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o json.o
 
 ifeq ($(USE_HDFS), 1)
 	OBJ += hdfs_filesys.o
@@ -61,6 +61,7 @@ io.o: src/io.cc
 data.o: src/data.cc
 recordio.o: src/recordio.cc
 config.o: src/config.cc
+json.o: src/json/json.cc
 
 libdmlc.a: $(OBJ)
 
