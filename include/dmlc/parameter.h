@@ -7,6 +7,7 @@
 #define DMLC_PARAMETER_H_
 
 #include <cstddef>
+#include <cstdlib>
 #include <sstream>
 #include <limits>
 #include <map>
@@ -32,6 +33,16 @@ struct ParamError : public dmlc::Error {
   explicit ParamError(const std::string &msg)
       : dmlc::Error(msg) {}
 };
+
+/*!
+ * \brief Get environment variable with default.
+ * \param key the name of environment variable.
+ * \param default_value the default value of environment vriable.
+ * \return The value received
+ */
+template<typename ValueType>
+inline ValueType GetEnv(const char *key,
+                        ValueType default_value);
 
 /*! \brief internal namespace for parameter manangement */
 namespace parameter {
@@ -406,7 +417,6 @@ class FieldEntryBase : public FieldAccessEntry {
   virtual void Set(void *head, const std::string &value) const {
     std::istringstream is(value);
     is >> this->Get(head);
-
     if (!is.fail()) {
       while (!is.eof()) {
         int ch = is.get();
@@ -711,5 +721,18 @@ class FieldEntry<bool>
 
 }  // namespace parameter
 //! \endcond
+
+// implement GetEnv
+template<typename ValueType>
+inline ValueType GetEnv(const char *key,
+                        ValueType default_value) {
+  const char *val = getenv(key);
+  if (val == NULL) return default_value;
+  ValueType ret;
+  parameter::FieldEntry<ValueType> e;
+  e.Init(key, &ret, ret);
+  e.Set(&ret, val);
+  return ret;
+}
 }  // namespace dmlc
 #endif  // DMLC_PARAMETER_H_
