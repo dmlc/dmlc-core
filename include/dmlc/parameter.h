@@ -19,6 +19,7 @@
 #include <utility>
 #include <iostream>
 #include "./base.h"
+#include "./json.h"
 #include "./logging.h"
 #include "./type_traits.h"
 
@@ -133,6 +134,32 @@ struct Parameter {
     return unknown;
   }
   /*!
+   * \brief Return a dictionary representation of the parameters
+   * \return A dictionary that maps key -> value
+   */
+  inline std::map<std::string, std::string> __DICT__() const {
+    std::vector<std::pair<std::string, std::string> > vec
+        = PType::__MANAGER__()->GetDict(this->head());
+    return std::map<std::string, std::string>(vec.begin(), vec.end());
+  }
+  /*!
+   * \brief Write the parameters in JSON format.
+   * \param writer JSONWriter used for writing.
+   */
+  inline void Save(dmlc::JSONWriter *writer) const {
+    writer->Write(this->__DICT__());
+  }
+  /*!
+   * \brief Load the parameters from JSON.
+   * \param reader JSONReader used for loading.
+   * \throw ParamError when something go wrong.
+   */
+  inline void Load(dmlc::JSONReader *reader) {
+    std::map<std::string, std::string> kwargs;
+    reader->Read(&kwargs);
+    this->Init(kwargs);
+  }
+  /*!
    * \brief Get the fields of the parameters.
    * \return List of ParamFieldInfo of each field.
    */
@@ -162,9 +189,15 @@ struct Parameter {
       const std::string &key, DType &ref) { // NOLINT(*)
     parameter::FieldEntry<DType> *e =
         new parameter::FieldEntry<DType>();
-    e->Init(key, static_cast<PType*>(this), ref);
+    e->Init(key, this->head(), ref);
     manager->manager.AddEntry(key, e);
     return *e;
+  }
+
+ private:
+  /*! \return Get head pointer of child structure */
+  inline PType *head() const {
+    return static_cast<PType*>(const_cast<Parameter<PType>*>(this));
   }
 };
 
@@ -245,6 +278,11 @@ class FieldAccessEntry {
   virtual void Set(void *head, const std::string &value) const = 0;
   // check if value is OK
   virtual void Check(void *head) const {}
+  /*!
+   * \brief get the string representation of value.
+   * \param head the pointer to the head of the struct
+   */
+  virtual std::string GetStringValue(void *head) const = 0;
   /*!
    * \brief Get field information
    * \return the corresponding field information
@@ -382,6 +420,19 @@ class ParamManager {
       }
     }
   }
+  /*!
+   * \brief Get internal parameters in vector of pairs.
+   * \param head the head of the struct.
+   * \return the parameter dictionary.
+   */
+  inline std::vector<std::pair<std::string, std::string> > GetDict(void * head) const {
+    std::vector<std::pair<std::string, std::string> > ret;
+    for (std::map<std::string, FieldAccessEntry*>::const_iterator
+            it = entry_map_.begin(); it != entry_map_.end(); ++it) {
+      ret.push_back(std::make_pair(it->first, it->second->GetStringValue(head)));
+    }
+    return ret;
+  }
 
  private:
   /*! \brief parameter struct name */
@@ -436,8 +487,10 @@ class FieldEntryBase : public FieldAccessEntry {
       throw dmlc::ParamError(os.str());
     }
   }
-  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
-    os << default_value_;
+  virtual std::string GetStringValue(void *head) const {
+    std::ostringstream os;
+    PrintValue(os, this->Get(head));
+    return os.str();
   }
   virtual ParamFieldInfo GetFieldInfo() const {
     ParamFieldInfo info;
@@ -494,6 +547,13 @@ class FieldEntryBase : public FieldAccessEntry {
   }
 
  protected:
+  // print the value
+  virtual void PrintValue(std::ostream &os, DType value) const { // NOLINT(*)
+    os << value;
+  }
+  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
+    PrintValue(os, default_value_);
+  }
   // get the internal representation of parameter
   // for example if this entry corresponds field param.learning_rate
   // then Get(&param) will return reference to param.learning_rate
@@ -614,16 +674,6 @@ class FieldEntry<int>
       return Parent::GetFieldInfo();
     }
   }
-  // override print default
-  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
-    if (is_enum_) {
-      CHECK_NE(enum_back_map_.count(default_value_), 0)
-          << "Default value not found in enum declared";
-      os << '\'' << enum_back_map_.at(default_value_) << '\'';
-    } else {
-      os << default_value_;
-    }
-  }
   // add enum
   inline FieldEntry<int> &add_enum(const std::string &key, int value) {
     if ((enum_map_.size() != 0 && enum_map_.count(key) != 0) || \
@@ -650,6 +700,23 @@ class FieldEntry<int>
   std::map<std::string, int> enum_map_;
   // enum map
   std::map<int, std::string> enum_back_map_;
+  // override print behavior
+  virtual void PrintDefaultValueString(std::ostream &os) const { // NOLINT(*)
+    os << '\'';
+    PrintValue(os, default_value_);
+    os << '\'';
+  }
+  // override print default
+  virtual void PrintValue(std::ostream &os, int value) const {  // NOLINT(*)
+    if (is_enum_) {
+      CHECK_NE(enum_back_map_.count(value), 0)
+          << "Value not found in enum declared";
+      os << enum_back_map_.at(value);
+    } else {
+      os << value;
+    }
+  }
+
 
  private:
   inline void PrintEnums(std::ostream &os) const {  // NOLINT(*)
@@ -709,9 +776,11 @@ class FieldEntry<bool>
       throw dmlc::ParamError(os.str());
     }
   }
+
+ protected:
   // print default string
-  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
-    if (default_value_) {
+  virtual void PrintValue(std::ostream &os, bool value) const {  // NOLINT(*)
+    if (value) {
       os << "True";
     } else {
       os << "False";
