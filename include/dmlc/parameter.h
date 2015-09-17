@@ -19,6 +19,7 @@
 #include <utility>
 #include <iostream>
 #include "./base.h"
+#include "./json.h"
 #include "./logging.h"
 #include "./type_traits.h"
 
@@ -133,6 +134,26 @@ struct Parameter {
     return unknown;
   }
   /*!
+   * \brief Store the parameter to a json string.
+   *
+   * \throw ParamError when something go wrong.
+   * \return a json format string.
+   */
+  inline std::string PrintJson() const {
+    std::ostringstream os;
+    PType::__MANAGER__()->PrintJsonString(static_cast<PType*>(const_cast<Parameter<PType>*>(this)), &os);
+    return os.str();
+  }
+  /*!
+   * \brief Load the parameter from a json string.
+   *
+   * \throw ParamError when something go wrong.
+   */
+  inline void LoadJson(const std::string& json) {
+    std::istringstream is(json);
+    PType::__MANAGER__()->ReadJsonString(static_cast<PType*>(this), &is);
+  }
+  /*!
    * \brief Get the fields of the parameters.
    * \return List of ParamFieldInfo of each field.
    */
@@ -245,6 +266,12 @@ class FieldAccessEntry {
   virtual void Set(void *head, const std::string &value) const = 0;
   // check if value is OK
   virtual void Check(void *head) const {}
+  /*!
+   * \brief get the string value.
+   * \param head the pointer to the head of the struct
+   * \param value the string value to return
+   */
+  virtual void GetStringValue(void *head, std::string *value) const = 0;
   /*!
    * \brief Get field information
    * \return the corresponding field information
@@ -383,6 +410,37 @@ class ParamManager {
     }
   }
 
+  /*!
+   * \brief Print readible json to ostream.
+   * \parma os the stream to print the json string to.
+   */
+  inline void PrintJsonString(void *head, std::ostream *os) const {  // NOLINT(*)
+    JSONWriter writer(os);
+    writer.BeginObject();
+    for (size_t i = 0; i < entry_.size(); ++i) {
+      ParamFieldInfo info = entry_[i]->GetFieldInfo();
+      std::string value;
+      entry_[i]->GetStringValue(head, &value);
+      writer.WriteObjectKeyValue(info.name, value);
+    }
+    writer.EndObject();
+  }
+  /*!
+   * \brief Print readible json to ostream.
+   * \parma os the stream to print the json string to.
+   */
+  inline void ReadJsonString(void *head, std::istringstream* is) {  // NOLINT(*)
+    JSONReader reader(is);
+    JSONObjectReadHelper helper;
+    std::vector<std::pair<std::string, std::string> > kwargs(entry_.size());
+    for (size_t i = 0; i < entry_.size(); ++i) {
+      ParamFieldInfo info = entry_[i]->GetFieldInfo();
+      kwargs[i].first = info.name;
+      helper.DeclareField(info.name, &kwargs[i].second);
+    }
+    helper.ReadAllFields(&reader);
+    RunInit(head, kwargs.begin(), kwargs.end(), NULL);
+  }
  private:
   /*! \brief parameter struct name */
   std::string name_;
@@ -435,6 +493,11 @@ class FieldEntryBase : public FieldAccessEntry {
          << " expect " << type_ << " but value=\'" << value<< '\'';
       throw dmlc::ParamError(os.str());
     }
+  }
+  virtual void GetStringValue(void *head, std::string *value) const {
+    std::ostringstream os;
+    os << this->Get(head);
+    *value = os.str();
   }
   virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     os << default_value_;
