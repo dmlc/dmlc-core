@@ -67,10 +67,16 @@ int main(int argc, char *argv[]) {
   for (size_t i = 0; i < unknown.size(); ++i) {
     printf("%s=%s\n", unknown[i].first.c_str(), unknown[i].second.c_str());
   }
+
+  std::ostringstream os;
+  dmlc::JSONWriter writer(&os);
+  param.Save(&writer);
+  printf("JSON:\n%s\n", os.str().c_str());
   printf("Environment variables\n");
   int test_env = dmlc::GetEnv("TEST_ENV", 1);
   std::string test_env2 = dmlc::GetEnv<std::string>("TEST_ENV2", "hello");
   printf("TEST_ENV=%d\n", test_env);
   printf("TEST_ENV2=%s\n", test_env2.c_str());
+
   return 0;
 }
