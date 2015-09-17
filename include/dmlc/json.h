@@ -38,8 +38,7 @@ class JSONReader {
   explicit JSONReader(std::istream *is)
       : is_(is),
         line_count_r_(0),
-        line_count_n_(0),
-        begin_(false) {}
+        line_count_n_(0) {}
   /*!
    * \brief Parse next JSON string.
    * \param out_str the output string.
@@ -104,6 +103,16 @@ class JSONReader {
   template<typename ValueType>
   inline void Read(ValueType *out_value);
 
+  /*! \return current line count */
+  inline std::string line_info() const {
+    char temp[64];
+    std::ostringstream os;
+    os << " Line " << std::max(line_count_r_, line_count_n_);
+    is_->getline(temp, 64);
+    os << ", around ^`" << temp << "`";
+    return os.str();
+  }
+
  private:
   /*! \brief internal reader stream */
   std::istream *is_;
@@ -111,8 +120,11 @@ class JSONReader {
   size_t line_count_r_;
   /*! \brief "\\n" counter */
   size_t line_count_n_;
-  /*! \brief whether at first entry */
-  bool begin_;
+  /*!
+   * \brief record how many element processed in
+   *  current array/object scope.
+   */
+  std::vector<size_t> scope_counter_;
   /*!
    * \brief Read next nonspace character.
    * \return the next nonspace character.
@@ -211,8 +223,13 @@ class JSONWriter {
   std::ostream *os_;
   /*! \brief Whether this is beginning of an object or array. */
   bool begin_;
-  /*! \brief The current scope counter */
-  std::vector<bool> scope_;
+  /*!
+   * \brief record how many element processed in
+   *  current array/object scope.
+   */
+  std::vector<size_t> scope_counter_;
+  /*! \brief Record whether current is a multiline scope */
+  std::vector<bool> scope_multi_line_;
   /*!
    * \brief Write seperating space and newlines
    */
@@ -433,8 +450,8 @@ inline int JSONReader::PeekNextNonSpace() {
 inline void JSONReader::ReadString(std::string *out_str) {
   int ch = NextNonSpace();
   CHECK_EQ(ch, '\"')
-      << "Error at line " << std::max(line_count_r_, line_count_n_)
-      << "Expect \'\"\' but get \'" << static_cast<char>(ch) << '\'';
+      << "Error at" << line_info()
+      << ", Expect \'\"\' but get \'" << static_cast<char>(ch) << '\'';
   std::ostringstream os;
   while (true) {
     ch = is_->get();
@@ -446,8 +463,8 @@ inline void JSONReader::ReadString(std::string *out_str) {
     }
     if (ch == EOF || ch == '\r' || ch == '\n') {
       LOG(FATAL)
-          << "Error at line " << std::max(line_count_r_, line_count_n_)
-          << "Expect \'\"\' but reach end of line ";
+          << "Error at" << line_info()
+          << ", Expect \'\"\' but reach end of line ";
     }
   }
   *out_str = os.str();
@@ -457,61 +474,87 @@ template<typename ValueType>
 inline void JSONReader::ReadNumber(ValueType *out_value) {
   *is_ >> *out_value;
   CHECK(!is_->fail())
-      << "Error at line " << std::max(line_count_r_, line_count_n_)
-      << "Expect number";
+      << "Error at" << line_info()
+      << ", Expect number";
 }
 
 inline void JSONReader::BeginObject() {
   int ch = NextNonSpace();
   CHECK_EQ(ch, '{')
-      << "Error at line " << std::max(line_count_r_, line_count_n_)
-      << "Expect \'{\' but get \'" << static_cast<char>(ch) << '\'';
-  begin_ = true;
+      << "Error at" << line_info()
+      << ", Expect \'{\' but get \'" << static_cast<char>(ch) << '\'';
+  scope_counter_.push_back(0);
 }
 
 inline void JSONReader::BeginArray() {
   int ch = NextNonSpace();
   CHECK_EQ(ch, '[')
-      << "Error at line " << std::max(line_count_r_, line_count_n_)
-      << "Expect \'{\' but get \'" << static_cast<char>(ch) << '\'';
-  begin_ = true;
+      << "Error at" << line_info()
+      << ", Expect \'{\' but get \'" << static_cast<char>(ch) << '\'';
+  scope_counter_.push_back(0);
 }
 
 inline bool JSONReader::NextObjectItem(std::string *out_key) {
-  if (!begin_) {
+  bool next = true;
+  if (scope_counter_.back() != 0) {
     int ch = NextNonSpace();
-    if (ch == EOF) return false;
-    if (ch == '}') return false;
-    CHECK_EQ(ch, ',')
-        << "Error at line " << std::max(line_count_r_, line_count_n_)
-        << "JSON object expect \'}\' or \',\' \'" << static_cast<char>(ch) << '\'';
+    if (ch == EOF) {
+      next = false;
+    } else if (ch == '}') {
+      next = false;
+    } else {
+      CHECK_EQ(ch, ',')
+          << "Error at" << line_info()
+          << ", JSON object expect \'}\' or \',\' \'" << static_cast<char>(ch) << '\'';
+    }
   } else {
-    begin_ = false;
     int ch = PeekNextNonSpace();
-    if (ch == '}') return false;
+    if (ch == '}') {
+      is_->get();
+      next = false;
+    }
   }
-  ReadString(out_key);
-  int ch = NextNonSpace();
-  CHECK_EQ(ch, ':')
-      << "Error at line " << std::max(line_count_r_, line_count_n_)
-      << "Expect \':\' but get \'" << static_cast<char>(ch) << '\'';
-  return true;
+  if (!next) {
+    scope_counter_.pop_back();
+    return false;
+  } else {
+    scope_counter_.back() += 1;
+    ReadString(out_key);
+    int ch = NextNonSpace();
+    CHECK_EQ(ch, ':')
+        << "Error at" << line_info()
+        << ", Expect \':\' but get \'" << static_cast<char>(ch) << '\'';
+    return true;
+  }
 }
 
 inline bool JSONReader::NextArrayItem() {
-  if (!begin_) {
+  bool next = true;
+  if (scope_counter_.back() != 0) {
     int ch = NextNonSpace();
-    if (ch == EOF) return false;
-    if (ch == ']') return false;
-    CHECK_EQ(ch, ',')
-        << "Error at line " << std::max(line_count_r_, line_count_n_)
-        << "JSON array expect \'}\' or \',\' \'" << static_cast<char>(ch) << '\'';
+    if (ch == EOF) {
+      next = false;
+    } else if (ch == ']') {
+      next = false;
+    } else {
+      CHECK_EQ(ch, ',')
+          << "Error at" << line_info()
+          << ", JSON array expect \']\' or \',\'. Get \'" << static_cast<char>(ch) << "\' instead";
+    }
   } else {
-    begin_ = false;
     int ch = PeekNextNonSpace();
-    if (ch == ']') return false;
+    if (ch == ']') {
+      is_->get();
+      next = false;
+    }
   }
-  return true;
+  if (!next) {
+    scope_counter_.pop_back();
+    return false;
+  } else {
+    scope_counter_.back() += 1;
+    return true;
+  }
 }
 
 template<typename ValueType>
@@ -547,29 +590,35 @@ inline void JSONWriter::WriteNumber(const ValueType &v) {
 
 inline void JSONWriter::BeginArray(bool multi_line) {
   *os_ << '[';
-  scope_.push_back(multi_line);
-  begin_ = true;
+  scope_multi_line_.push_back(multi_line);
+  scope_counter_.push_back(0);
 }
 
 inline void JSONWriter::EndArray() {
-  CHECK_NE(scope_.size(), 0);
-  bool newline = scope_.back();
-  scope_.pop_back();
-  if (newline) WriteSeperator();
+  CHECK_NE(scope_multi_line_.size(), 0);
+  CHECK_NE(scope_counter_.size(), 0);
+  bool newline = scope_multi_line_.back();
+  size_t nelem = scope_counter_.back();
+  scope_multi_line_.pop_back();
+  scope_counter_.pop_back();
+  if (newline && nelem != 0) WriteSeperator();
   *os_ << ']';
 }
 
 inline void JSONWriter::BeginObject(bool multi_line) {
-  *os_ << "{ ";
-  scope_.push_back(multi_line);
-  begin_ = true;
+  *os_ << "{";
+  scope_multi_line_.push_back(multi_line);
+  scope_counter_.push_back(0);
 }
 
 inline void JSONWriter::EndObject() {
-  CHECK_NE(scope_.size(), 0);
-  bool newline = scope_.back();
-  scope_.pop_back();
-  if (newline) WriteSeperator();
+  CHECK_NE(scope_multi_line_.size(), 0);
+  CHECK_NE(scope_counter_.size(), 0);
+  bool newline = scope_multi_line_.back();
+  size_t nelem = scope_counter_.back();
+  scope_multi_line_.pop_back();
+  scope_counter_.pop_back();
+  if (newline && nelem != 0) WriteSeperator();
   *os_ << '}';
 }
 
@@ -577,41 +626,40 @@ template<typename ValueType>
 inline void JSONWriter::WriteObjectKeyValue(const std::string &key,
                                             const ValueType &value) {
   std::ostream &os = *os_;
-  if (begin_) {
+  if (scope_counter_.back() == 0) {
     WriteSeperator();
     os << '\"' << key << "\": ";
-    begin_ = false;
   } else {
     os << ", ";
     WriteSeperator();
     os << '\"' << key << "\": ";
   }
+  scope_counter_.back() += 1;
   json::Handler<ValueType>::Write(this, value);
 }
 
 template<typename ValueType>
 inline void JSONWriter::WriteArrayItem(const ValueType &value) {
   std::ostream &os = *os_;
-  if (begin_) {
-    begin_ = false;
-  } else {
+  if (scope_counter_.back() != 0) {
     os << ", ";
   }
+  scope_counter_.back() += 1;
   WriteSeperator();
   json::Handler<ValueType>::Write(this, value);
 }
 
 template<typename ValueType>
 inline void JSONWriter::Write(const ValueType &value) {
-  size_t nscope = scope_.size();
+  size_t nscope = scope_multi_line_.size();
   json::Handler<ValueType>::Write(this, value);
-  CHECK_EQ(nscope, scope_.size())
+  CHECK_EQ(nscope, scope_multi_line_.size())
       << "Uneven scope, did you call EndArray/EndObject after each BeginObject/Array?";
 }
 
 inline void JSONWriter::WriteSeperator() {
-  if (scope_.size() == 0 || scope_.back()) {
-    *os_ << '\n' << std::string(scope_.size() * 2, ' ');
+  if (scope_multi_line_.size() == 0 || scope_multi_line_.back()) {
+    *os_ << '\n' << std::string(scope_multi_line_.size() * 2, ' ');
   }
 }
 
@@ -638,7 +686,8 @@ inline void JSONObjectReadHelper::ReadAllFields(JSONReader *reader) {
     for (std::map<std::string, std::pair<ReadFunction, void*> >::iterator
              it = map_.begin(); it != map_.end(); ++it) {
       CHECK_NE(visited.count(it->first), 0)
-          << "JSONReader: Missing field \"" << it->first << '\"';
+          << "JSONReader: Missing field \"" << it->first << "\"\n At "
+          << reader->line_info();
     }
   }
 }

@@ -266,8 +266,9 @@ class FieldAccessEntry {
   /*! \brief destructor */
   virtual ~FieldAccessEntry() {}
   /*!
-   * \brief set the default value, throw error if no default is presented
+   * \brief set the default value.
    * \param head the pointer to the head of the struct
+   * \throw error if no default is presented
    */
   virtual void SetDefault(void *head) const = 0;
   /*!
@@ -423,6 +424,7 @@ class ParamManager {
   /*!
    * \brief Get internal parameters in vector of pairs.
    * \param head the head of the struct.
+   * \param skip_default skip the values that equals default value.
    * \return the parameter dictionary.
    */
   inline std::vector<std::pair<std::string, std::string> > GetDict(void * head) const {

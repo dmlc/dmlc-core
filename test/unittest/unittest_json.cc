@@ -20,7 +20,7 @@ inline void TestSaveLoad(T data) {
     temp.clear();
   }
   std::string json = os.str();
-  LOG(INFO) << "JSON:\n" << json;
+  LOG(INFO) << json;
   std::istringstream is(json);
   dmlc::JSONReader reader(&is);
   T copy_data;
@@ -72,8 +72,13 @@ TEST(JSON, basics) {
 
   std::vector<std::vector<int> > temp {{1,2,3}, {1,2}, {1,2,3,4}};
   TestSaveLoad(temp);
+
+  std::vector<std::vector<int> > temp2 {{}, {}, {1,2,3,4}};
+  TestSaveLoad(temp2);
+
   TestSaveLoad(
       std::map<std::string, int>  {{"hellkow", 1}, {"world", 2}});
+
   TestSaveLoad(
       std::unordered_map<std::string, int>  {{"hellkow", 1}, {"world", 2}});
   TestSaveLoad(std::list<std::string>  {"hjhjm", "asasa"});
