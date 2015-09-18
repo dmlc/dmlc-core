@@ -147,8 +147,7 @@ class JSONWriter {
    * \param os the output stream.
    */
   explicit JSONWriter(std::ostream *os)
-      : os_(os),
-        begin_(false) {}
+      : os_(os) {}
   /*!
    * \brief Write a string that do not contain escape characters.
    * \param s the string to be written.
@@ -221,8 +220,6 @@ class JSONWriter {
  private:
   /*! \brief Output stream */
   std::ostream *os_;
-  /*! \brief Whether this is beginning of an object or array. */
-  bool begin_;
   /*!
    * \brief record how many element processed in
    *  current array/object scope.
@@ -441,7 +438,7 @@ inline int JSONReader::PeekNextNonSpace() {
     ch = is_->peek();
     if (ch == '\n') ++line_count_n_;
     if (ch == '\r') ++line_count_r_;
-    if (!isspace(ch)) return ch;
+    if (!isspace(ch)) break;
     is_->get();
   }
   return ch;
