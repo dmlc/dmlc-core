@@ -178,18 +178,16 @@ class ThreadedIter : public DataIter<DType> {
     if (nwait_producer_ != 0) {
       producer_cond_.notify_one();
     }
+    CHECK(!producer_sig_processed_);
+    // wait until the request has been processed
     consumer_cond_.wait(lock, [this]() {
         return producer_sig_processed_;
       });
-    while (queue_.size() != 0) {
-      free_cells_.push(queue_.front());
-      queue_.pop();
-    }
-    producer_sig_ = kProduce;
-    produce_end_ = false;
     producer_sig_processed_ = false;
+    bool notify = nwait_producer_ != 0 && !produce_end_;
     lock.unlock();
-    producer_cond_.notify_one();
+    // notify producer, in case they are waiting for the condition.
+    if (notify) producer_cond_.notify_one();
   }
 
  private:
@@ -291,7 +289,6 @@ Init(std::function<bool(DType **)> next,
   // run producer thread
   auto producer_fun = [this, next, beforefirst] () {
     while (true) {
-      CHECK(!producer_sig_processed_);
       std::unique_lock<std::mutex> lock(mutex_);
       ++this->nwait_producer_;
       producer_cond_.wait(lock, [this]() {
@@ -312,16 +309,20 @@ Init(std::function<bool(DType **)> next,
         }
         lock.unlock();
       } else if (producer_sig_ == kBeforeFirst) {
-        // finish the job
+        // reset the producer
         beforefirst();
+        // cleanup the queue
+        while (queue_.size() != 0) {
+          free_cells_.push(queue_.front());
+          queue_.pop();
+        }
+        // reset the state
+        produce_end_ = false;
         producer_sig_processed_ = true;
-        consumer_cond_.notify_all();
-        ++this->nwait_producer_;
-        producer_cond_.wait(lock, [this]() {
-            return producer_sig_ != kBeforeFirst;
-          });
-        --this->nwait_producer_;
+        producer_sig_ = kProduce;
         lock.unlock();
+        // notify consumer that all the process as been done.
+        consumer_cond_.notify_all();
         continue;
       } else {
           // destroy the thread
