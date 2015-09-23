@@ -170,9 +170,8 @@ class ThreadedIter : public DataIter<DType> {
       free_cells_.push(out_data_);
       out_data_ = NULL;
     }
-    if (producer_sig_ == kDestroy) {
-      lock.unlock(); return;
-    }
+    if (producer_sig_ == kDestroy)  return;
+
     producer_sig_ = kBeforeFirst;
     CHECK(!producer_sig_processed_);
     if (nwait_producer_ != 0) {
@@ -235,14 +234,15 @@ class ThreadedIter : public DataIter<DType> {
 template<typename DType>
 inline void ThreadedIter<DType>::Destroy(void) {
   if (producer_thread_ != NULL) {
-    // lock the mutex
-    std::unique_lock<std::mutex> lock(mutex_);
-    // send destroy signal
-    producer_sig_ = kDestroy;
-    if (nwait_producer_ != 0) {
-      producer_cond_.notify_one();
+    {
+      // lock the mutex
+      std::lock_guard<std::mutex> lock(mutex_);
+      // send destroy signal
+      producer_sig_ = kDestroy;
+      if (nwait_producer_ != 0) {
+        producer_cond_.notify_one();
+      }
     }
-    lock.unlock();
     producer_thread_->join();
     delete producer_thread_;
     producer_thread_ = NULL;
@@ -289,62 +289,65 @@ Init(std::function<bool(DType **)> next,
   // run producer thread
   auto producer_fun = [this, next, beforefirst] () {
     while (true) {
-      std::unique_lock<std::mutex> lock(mutex_);
-      ++this->nwait_producer_;
-      producer_cond_.wait(lock, [this]() {
-          if (producer_sig_ == kProduce) {
-            bool ret = !produce_end_ &&
-                (queue_.size() < max_capacity_ || free_cells_.size() != 0);
-            return ret;
-          } else {
-            return true;
-          }
-        });
-      --this->nwait_producer_;
       DType *cell = NULL;
-      if (producer_sig_ == kProduce) {
-        if (free_cells_.size() != 0) {
-          cell = free_cells_.front();
-          free_cells_.pop();
-        }
-        lock.unlock();
-      } else if (producer_sig_ == kBeforeFirst) {
-        // reset the producer
-        beforefirst();
-        // cleanup the queue
-        while (queue_.size() != 0) {
-          free_cells_.push(queue_.front());
-          queue_.pop();
-        }
-        // reset the state
-        produce_end_ = false;
-        producer_sig_processed_ = true;
-        producer_sig_ = kProduce;
-        lock.unlock();
-        // notify consumer that all the process as been done.
-        consumer_cond_.notify_all();
-        continue;
-      } else {
+      {// lockscope
+        std::unique_lock<std::mutex> lock(mutex_);
+        ++this->nwait_producer_;
+        producer_cond_.wait(lock, [this]() {
+            if (producer_sig_ == kProduce) {
+              bool ret = !produce_end_ &&
+                  (queue_.size() < max_capacity_ || free_cells_.size() != 0);
+              return ret;
+            } else {
+              return true;
+            }
+          });
+        --this->nwait_producer_;
+        if (producer_sig_ == kProduce) {
+          if (free_cells_.size() != 0) {
+            cell = free_cells_.front();
+            free_cells_.pop();
+          }
+        } else if (producer_sig_ == kBeforeFirst) {
+          // reset the producer
+          beforefirst();
+          // cleanup the queue
+          while (queue_.size() != 0) {
+            free_cells_.push(queue_.front());
+            queue_.pop();
+          }
+          // reset the state
+          produce_end_ = false;
+          producer_sig_processed_ = true;
+          producer_sig_ = kProduce;
+          // notify consumer that all the process as been done.
+          lock.unlock();
+          consumer_cond_.notify_all();
+          continue;
+        } else {
           // destroy the thread
-        CHECK(producer_sig_ == kDestroy);
-        producer_sig_processed_ = true;
-        produce_end_ = true;
-        lock.unlock();
-        consumer_cond_.notify_all();
-        return;
-      }
+          CHECK(producer_sig_ == kDestroy);
+          producer_sig_processed_ = true;
+          produce_end_ = true;
+          consumer_cond_.notify_all();
+          return;
+        }
+      }  // end of lock scope
       // now without lock
       produce_end_ = !next(&cell);
       CHECK(cell != NULL || produce_end_);
-      // put things into queue
-      lock.lock();
-      bool notify = nwait_consumer_ != 0;
-      if (!produce_end_) {
-        queue_.push(cell);
-      } else {
-        if (cell != NULL) free_cells_.push(cell);
+      bool notify;
+      {
+        // lockscope
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!produce_end_) {
+          queue_.push(cell);
+        } else {
+          if (cell != NULL) free_cells_.push(cell);
+        }
+        // put things into queue
+        notify = nwait_consumer_ != 0;
       }
-      lock.unlock();
       if (notify) consumer_cond_.notify_all();
     }
   };
@@ -372,21 +375,20 @@ Next(DType **out_dptr) {
     return true;
   } else  {
     CHECK(produce_end_);
-    lock.unlock();
     return false;
   }
 }
 
 template<typename DType>
 inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  free_cells_.push(*inout_dptr);
-  *inout_dptr = NULL;
-  bool notify = nwait_producer_ != 0 && !produce_end_;
-  lock.unlock();
-  if (notify) {
-    producer_cond_.notify_one();
+  bool notify;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    free_cells_.push(*inout_dptr);
+    *inout_dptr = NULL;
+    notify = nwait_producer_ != 0 && !produce_end_;
   }
+  if (notify) producer_cond_.notify_one();
 }
 }  // namespace dmlc
 #endif  // DMLC_USE_CXX11

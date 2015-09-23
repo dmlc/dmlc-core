@@ -177,14 +177,16 @@ bool ConcurrentBlockingQueue<T, type>::Pop(T* rv) {
 
 template <typename T, ConcurrentQueueType type>
 void ConcurrentBlockingQueue<T, type>::SignalForKill() {
-  std::unique_lock<std::mutex> lock{mutex_};
-  exit_now_.store(true);
+  {
+    std::lock_guard<std::mutex> lock{mutex_};
+    exit_now_.store(true);
+  }
   cv_.notify_all();
 }
 
 template <typename T, ConcurrentQueueType type>
 size_t ConcurrentBlockingQueue<T, type>::Size() {
-  std::unique_lock<std::mutex> lock{mutex_};
+  std::lock_guard<std::mutex> lock{mutex_};
   if (type == ConcurrentQueueType::kFIFO) {
     return fifo_queue_.size();
   } else {
