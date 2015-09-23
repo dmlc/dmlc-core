@@ -290,7 +290,8 @@ Init(std::function<bool(DType **)> next,
   auto producer_fun = [this, next, beforefirst] () {
     while (true) {
       DType *cell = NULL;
-      {// lockscope
+      {
+        // lockscope
         std::unique_lock<std::mutex> lock(mutex_);
         ++this->nwait_producer_;
         producer_cond_.wait(lock, [this]() {
