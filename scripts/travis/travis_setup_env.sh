@@ -12,6 +12,10 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CACHE_PREFIX}/lib
 alias make="make -j4"
 
 # setup the cache prefix folder
+if [ ! -d ${HOME}/.cache ]; then
+    mkdir ${HOME}/.cache
+fi
+
 if [ ! -d ${CACHE_PREFIX} ]; then
     mkdir ${CACHE_PREFIX}
 fi

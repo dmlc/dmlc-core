@@ -1,6 +1,10 @@
 # disable sudo to use container based build
 sudo: false
 
+# Enabling test on Linux and OS X
+os:
+  - osx
+
 # Use Build Matrix to do lint and build seperately
 env:
   matrix:
@@ -23,12 +27,10 @@ addons:
 before_install:
   - export TRAVIS=scripts/travis
   - source ${TRAVIS}/travis_setup_env.sh
-
+  - ${TRAVIS}/travis_osx_install.sh
 
 install:
   - pip install cpplint pylint --user `whoami`
-  - make -f scripts/packages.mk gtest
-
 
 script: ${TRAVIS}/travis_script.sh
 
