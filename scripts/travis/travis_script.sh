@@ -35,6 +35,7 @@ if [ ${TASK} == "unittest_gtest" ]; then
         echo "USE_S3=0" >> config.mk
         echo "USE_OPENMP=0" >> config.mk
     fi
+    echo "GTEST_PATH="${CACHE_PREFIX} >> config.mk
     echo "BUILD_TEST=1" >> config.mk
     make all || exit -1
     test/unittest/dmlc_unittest || exit -1
