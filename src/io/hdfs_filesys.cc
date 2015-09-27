@@ -167,7 +167,7 @@ SeekStream *HDFSFileSystem::Open(const URI &path,
     ref_counter_[0] += 1;
     return new HDFSStream(fs_, ref_counter_, fp_);
   }
-  CHECK(allow_null) << " HDFSFileSystem: fail to open " << path.str();
+  CHECK(allow_null) << " HDFSFileSystem: fail to open \"" << path.str() << '\"';
   return NULL;
 }
 
