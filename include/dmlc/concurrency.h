@@ -22,11 +22,11 @@ namespace dmlc {
 class Spinlock {
  public:
 #ifdef _MSC_VER
-   Spinlock() {
-     lock_.clear();
-   }
+  Spinlock() {
+    lock_.clear();
+  }
 #else
-   Spinlock() = default;
+  Spinlock() = default;
 #endif
   ~Spinlock() = default;
   /*!
