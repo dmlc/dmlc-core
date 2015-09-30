@@ -21,7 +21,13 @@ namespace dmlc {
  */
 class Spinlock {
  public:
+#ifdef _MSC_VER
+  Spinlock() {
+    lock_.clear();
+  }
+#else
   Spinlock() = default;
+#endif
   ~Spinlock() = default;
   /*!
    * \brief Acquire lock.
@@ -33,7 +39,11 @@ class Spinlock {
   inline void unlock() noexcept;
 
  private:
+#ifdef _MSC_VER
+  std::atomic_flag lock_;
+#else
   std::atomic_flag lock_ = ATOMIC_FLAG_INIT;
+#endif
   /*!
    * \brief Disable copy and move.
    */
