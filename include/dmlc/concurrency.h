@@ -40,7 +40,7 @@ class Spinlock {
 
  private:
 #ifdef _MSC_VER
-   std::atomic_flag lock_;
+  std::atomic_flag lock_;
 #else
   std::atomic_flag lock_ = ATOMIC_FLAG_INIT;
 #endif
