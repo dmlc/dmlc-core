@@ -33,7 +33,7 @@ class AzureFileStream : public SeekStream {
     LOG(FATAL)<< "Azure.FileStream cannot be used for write";
   }
   virtual void Seek(size_t pos) {
-    std::fseek(fp_, static_cast<long>(pos), SEEK_SET);// NOLINT(*)
+    std::fseek(fp_, static_cast<long>(pos), SEEK_SET);  // NOLINT(*)
   }
   virtual size_t Tell(void) {
     return std::ftell(fp_);

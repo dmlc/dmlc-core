@@ -17,7 +17,8 @@ namespace io {
 /*! \brief Microsoft Azure Blob filesystem */
 class AzureFileSystem : public FileSystem {
  public:
-  virtual ~AzureFileSystem() {}
+  virtual ~AzureFileSystem() {
+  }
 
   virtual FileInfo GetPathInfo(const URI &path);
 
@@ -45,7 +46,7 @@ class AzureFileSystem : public FileSystem {
 
   /*! \brief Azure storage account key */
   std::string azure_key_;
-  
+
   bool TryGetPathInfo(const URI &path, FileInfo *info);
 };
 
