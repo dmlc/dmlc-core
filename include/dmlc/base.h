@@ -170,7 +170,7 @@ inline const char* BeginPtr(const std::string &str) {
 }
 }  // namespace dmlc
 
-#if _MSC_VER<1900
+#if _MSC_VER < 1900
 #define constexpr const
 #define alignof __alignof
 #endif
