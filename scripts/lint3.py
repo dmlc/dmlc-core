@@ -152,10 +152,11 @@ def main():
     if file_type == 'cpp' or file_type == 'all':
         allow_type += [x for x in CXX_SUFFIX]
     allow_type = set(allow_type)
-    #sys.stderr = codecs.StreamReaderWriter(sys.stderr,
-    #                                       codecs.getreader('utf8'),
-    #                                       codecs.getwriter('utf8'),
-    #                                       'replace')
+    if os.name != 'nt':
+        sys.stderr = codecs.StreamReaderWriter(sys.stderr,
+                                               codecs.getreader('utf8'),
+                                               codecs.getwriter('utf8'),
+                                               'replace')
     for path in sys.argv[3:]:
         if os.path.isfile(path):
             process(path, allow_type)
