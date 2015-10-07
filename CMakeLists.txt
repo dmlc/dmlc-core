@@ -5,14 +5,61 @@ project(dmlccore C CXX)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
 include(cmake/Utils.cmake)
-include(cmake/dmlccore.cmake)
+#include(cmake/dmlccore.cmake)
 
+# Options
+dmlccore_option(USE_HDFS "Build with HDFS support" OFF)
+dmlccore_option(USE_S3 "Build with S3 support" OFF)
+dmlccore_option(USE_AZURE "Build with AZURE support" OFF)
+
+# include path
 include_directories("include")
 
-if(MSVC)
- add_definitions(-DDMLC_USE_CXX11)
+set(dmlccore_LINKER_LIBS "")
+# HDFS configurations
+if(USE_HDFS)
+ find_package(HDF5 COMPONENTS C CXX HL REQUIRED)
+ include_directories(SYSTEM ${HDF5_INCLUDE_DIRS} ${HDF5_HL_INCLUDE_DIR})
+ list(APPEND dmlccore_LINKER_LIBS ${HDF5_LIBRARIES})
+ add_definitions(-DDMLC_USE_HDFS=1)
+else()
+ add_definitions(-DDMLC_USE_HDFS=0)
+endif()
+# S3 configurations
+if(USE_S3)
+ find_package(CURL REQUIRED)
+ include_directories(SYSTEM ${CURL_INCLUDE_DIR})
+ list(APPEND dmlccore_LINKER_LIBS ${CURL_LIBRARY})
+ 
+ find_package(OpenSSL REQUIRED)
+ include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
+ list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_LIBRARY})
+ 
+ find_package(CRYPTO REQUIRED)
+ include_directories(SYSTEM ${CRYPTO_INCLUDE_DIR})
+ list(APPEND dmlccore_LINKER_LIBS ${CRYPTO_LIBRARY})
+ 
+ add_definitions(-DDMLC_USE_S3=1)
+else()
+ add_definitions(-DDMLC_USE_S3=0)
+endif()
+# Azure configurations
+if(USE_AZURE)
+  add_definitions(-DDMLC_USE_AZURE=1)
+else()
+  add_definitions(-DDMLC_USE_AZURE=0)
 endif()
 
+# compile
+if(MSVC)
+  add_definitions(-DDMLC_USE_CXX11)
+else(MSVC)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-std=c++0x"    SUPPORT_CXX0X)
+  check_cxx_compiler_flag("-msse2"        SUPPORT_MSSE2)
+  set(CMAKE_C_FLAGS "-O3 -Wall -msse2 -Wno-unknown-pragmas -std=c++0x")
+  set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS}) 
+endif(MSVC)
 
 FILE(GLOB SOURCE "src/*.cc")
 list(APPEND SOURCE "src/io/line_split.cc")
