@@ -23,9 +23,9 @@ class LintHelper(object):
         """Print summary of certain result map."""
         if len(result_map) == 0:
             return 0
-        npass = len([x for k, x in result_map.iteritems() if len(x) == 0])
+        npass = len([x for k, x in result_map.items() if len(x) == 0])
         strm.write('=====%d/%d %s files passed check=====\n' % (npass, len(result_map), ftype))
-        for fname, emap in result_map.iteritems():
+        for fname, emap in result_map.items():
             if len(emap) == 0:
                 continue
             strm.write('%s: %d Errors of %d Categories map=%s\n' % (
@@ -62,7 +62,6 @@ class LintHelper(object):
         cpplint.ProcessFile(str(path), _cpplint_state.verbose_level)
         _cpplint_state.PrintErrorCounts()
         errors = _cpplint_state.errors_by_category.copy()
-
         if suffix == 'h':
             self.cpp_header_map[str(path)] = errors
         else:
@@ -73,7 +72,7 @@ class LintHelper(object):
         (pylint_stdout, pylint_stderr) = epylint.py_run(
             ' '.join([str(path)] + self.pylint_opts), return_std=True)
         emap = {}
-        print pylint_stderr.read()
+        print(pylint_stderr.read())
         for line in pylint_stdout:
             sys.stderr.write(line)
             key = line.split(':')[-1].split('(')[0].strip()
@@ -115,9 +114,8 @@ def get_header_guard_dmlc(filename):
     file_path_from_root = fileinfo.RepositoryName()
     inc_list = ['include', 'api', 'wrapper']
 
-    if file_path_from_root.find('src/') != -1 and _HELPER.project_name is not None:
-        idx = file_path_from_root.find('src/')
-        file_path_from_root = _HELPER.project_name +  file_path_from_root[idx + 3:]
+    if file_path_from_root.startswith('src') and _HELPER.project_name is not None:
+        file_path_from_root = re.sub('^src', _HELPER.project_name, file_path_from_root)
     else:
         for spath in inc_list:
             prefix = spath + os.sep
@@ -145,6 +143,7 @@ def main():
         print('Usage: <project-name> <filetype> <list-of-path to traverse>')
         print('\tfiletype can be python/cpp/all')
         exit(-1)
+
     _HELPER.project_name = sys.argv[1]
     file_type = sys.argv[2]
     allow_type = []

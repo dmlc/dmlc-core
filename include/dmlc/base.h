@@ -169,4 +169,10 @@ inline const char* BeginPtr(const std::string &str) {
   return &str[0];
 }
 }  // namespace dmlc
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define constexpr const
+#define alignof __alignof
+#endif
+
 #endif  // DMLC_BASE_H_
