@@ -32,11 +32,11 @@ class Spinlock {
   /*!
    * \brief Acquire lock.
    */
-  inline void lock() noexcept;
+  inline void lock() noexcept(true);
   /*!
    * \brief Release lock.
    */
-  inline void unlock() noexcept;
+  inline void unlock() noexcept(true);
 
  private:
 #ifdef _MSC_VER
@@ -125,12 +125,12 @@ class ConcurrentBlockingQueue {
   DISALLOW_COPY_AND_ASSIGN(ConcurrentBlockingQueue);
 };
 
-inline void Spinlock::lock() noexcept {
+inline void Spinlock::lock() noexcept(true) {
   while (lock_.test_and_set(std::memory_order_acquire)) {
   }
 }
 
-inline void Spinlock::unlock() noexcept {
+inline void Spinlock::unlock() noexcept(true) {
   lock_.clear(std::memory_order_release);
 }
 
