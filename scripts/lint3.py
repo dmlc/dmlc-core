@@ -113,12 +113,11 @@ def get_header_guard_dmlc(filename):
     fileinfo = cpplint.FileInfo(filename)
     file_path_from_root = fileinfo.RepositoryName()
     inc_list = ['include', 'api', 'wrapper']
-
     if file_path_from_root.startswith('src') and _HELPER.project_name is not None:
         file_path_from_root = re.sub('^src', _HELPER.project_name, file_path_from_root)
     else:
         for spath in inc_list:
-            prefix = spath + os.sep
+            prefix = spath + '/'
             if file_path_from_root.startswith(prefix):
                 file_path_from_root = re.sub('^' + prefix, '', file_path_from_root)
                 break
