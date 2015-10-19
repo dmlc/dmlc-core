@@ -857,7 +857,7 @@ SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
     return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
   } else {
-    CHECK(allow_null) << " S3FileSystem: fail to open " << path.str();
+    CHECK(allow_null) << " S3FileSystem: fail to open \"" << path.str() << "\"";
     return NULL;
   }
 }

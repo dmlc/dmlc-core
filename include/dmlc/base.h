@@ -82,10 +82,12 @@
 #define fopen64 std::fopen
 #endif
 #ifdef _MSC_VER
+#if _MSC_VER < 1900
 // NOTE: sprintf_s is not equivalent to snprintf,
 // they are equivalent when success, which is sufficient for our case
 #define snprintf sprintf_s
 #define vsnprintf vsprintf_s
+#endif
 #else
 #ifdef _FILE_OFFSET_BITS
 #if _FILE_OFFSET_BITS == 32
@@ -167,4 +169,10 @@ inline const char* BeginPtr(const std::string &str) {
   return &str[0];
 }
 }  // namespace dmlc
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define constexpr const
+#define alignof __alignof
+#endif
+
 #endif  // DMLC_BASE_H_

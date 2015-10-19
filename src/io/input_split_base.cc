@@ -1,5 +1,4 @@
 // Copyright by Contributors
-#define _CRT_SECURE_NO_WARNINGS
 #include <dmlc/logging.h>
 #include <algorithm>
 #include "./line_split.h"

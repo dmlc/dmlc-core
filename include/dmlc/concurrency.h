@@ -9,7 +9,7 @@
 // this code depends on c++11
 #if DMLC_USE_CXX11
 #include <atomic>
-#include <list>
+#include <queue>
 #include <mutex>
 #include <condition_variable>
 #include "dmlc/base.h"
@@ -21,29 +21,48 @@ namespace dmlc {
  */
 class Spinlock {
  public:
+#ifdef _MSC_VER
+  Spinlock() {
+    lock_.clear();
+  }
+#else
   Spinlock() = default;
+#endif
   ~Spinlock() = default;
   /*!
    * \brief Acquire lock.
    */
-  inline void lock() noexcept;
+  inline void lock() noexcept(true);
   /*!
    * \brief Release lock.
    */
-  inline void unlock() noexcept;
+  inline void unlock() noexcept(true);
 
  private:
+#ifdef _MSC_VER
+  std::atomic_flag lock_;
+#else
   std::atomic_flag lock_ = ATOMIC_FLAG_INIT;
+#endif
   /*!
    * \brief Disable copy and move.
    */
   DISALLOW_COPY_AND_ASSIGN(Spinlock);
 };
 
+/*! \brief type of concurrent queue */
+enum class ConcurrentQueueType {
+  /*! \brief FIFO queue */
+  kFIFO,
+  /*! \brief queue with priority */
+  kPriority
+};
+
 /*!
  * \brief Cocurrent blocking queue.
  */
-template <typename T>
+template <typename T,
+          ConcurrentQueueType type = ConcurrentQueueType::kFIFO>
 class ConcurrentBlockingQueue {
  public:
   ConcurrentBlockingQueue();
@@ -51,13 +70,15 @@ class ConcurrentBlockingQueue {
   /*!
    * \brief Push element into the queue.
    * \param e Element to push into.
+   * \param priority the priority of the element, only used for priority queue.
+   *            The higher the priority is, the better.
    * \tparam E the element type
    *
    * It will copy or move the element into the queue, depending on the type of
    * the parameter.
    */
   template <typename E>
-  void Push(E&& e);
+  void Push(E&& e, int priority = 0);
   /*!
    * \brief Pop element from the queue.
    * \param rv Element popped.
@@ -66,11 +87,6 @@ class ConcurrentBlockingQueue {
    * The element will be copied or moved into the object passed in.
    */
   bool Pop(T* rv);
-  /*!
-   * \brief Pop everything.
-   * \return The queue.
-   */
-  std::list<T> PopAll();
   /*!
    * \brief Signal the queue for destruction.
    *
@@ -85,79 +101,114 @@ class ConcurrentBlockingQueue {
   size_t Size();
 
  private:
+  struct Entry {
+    T data;
+    int priority;
+    Entry(const T& data, int priority)
+        : data(data), priority(priority) {}
+    inline bool operator<(const Entry &b) const {
+      return priority < b.priority;
+    }
+  };
+
   std::mutex mutex_;
   std::condition_variable cv_;
   std::atomic<bool> exit_now_;
-  std::list<T> queue_;
+  int nwait_consumer_;
+  // a priority queue
+  std::priority_queue<Entry> priority_queue_;
+  // a FIFO queue
+  std::queue<T> fifo_queue_;
   /*!
    * \brief Disable copy and move.
    */
   DISALLOW_COPY_AND_ASSIGN(ConcurrentBlockingQueue);
 };
 
-inline void Spinlock::lock() noexcept {
+inline void Spinlock::lock() noexcept(true) {
   while (lock_.test_and_set(std::memory_order_acquire)) {
   }
 }
 
-inline void Spinlock::unlock() noexcept {
+inline void Spinlock::unlock() noexcept(true) {
   lock_.clear(std::memory_order_release);
 }
 
-template <typename T>
-ConcurrentBlockingQueue<T>::ConcurrentBlockingQueue() : exit_now_{false} {}
+template <typename T, ConcurrentQueueType type>
+ConcurrentBlockingQueue<T, type>::ConcurrentBlockingQueue()
+    : exit_now_{false}, nwait_consumer_{0} {}
 
-template <typename T>
+template <typename T, ConcurrentQueueType type>
 template <typename E>
-void ConcurrentBlockingQueue<T>::Push(E&& e) {
+void ConcurrentBlockingQueue<T, type>::Push(E&& e, int priority) {
   static_assert(std::is_same<typename std::remove_cv<
                                  typename std::remove_reference<E>::type>::type,
                              T>::value,
                 "Types must match.");
-  std::lock_guard<std::mutex> lock{mutex_};
-  queue_.emplace_back(std::forward<E>(e));
-  if (queue_.size() == 1) {
-    cv_.notify_all();
+  bool notify;
+  {
+    std::lock_guard<std::mutex> lock{mutex_};
+    if (type == ConcurrentQueueType::kFIFO) {
+      fifo_queue_.emplace(std::forward<E>(e));
+      notify = nwait_consumer_ != 0;
+    } else {
+      priority_queue_.emplace(std::forward<E>(e), priority);
+      notify = nwait_consumer_ != 0;
+    }
   }
+  if (notify) cv_.notify_one();
 }
 
-template <typename T>
-bool ConcurrentBlockingQueue<T>::Pop(T* rv) {
+template <typename T, ConcurrentQueueType type>
+bool ConcurrentBlockingQueue<T, type>::Pop(T* rv) {
   std::unique_lock<std::mutex> lock{mutex_};
-  while (queue_.empty() && !exit_now_.load()) {
-    cv_.wait(lock);
-  }
-  if (!exit_now_.load()) {
-    *rv = std::move(queue_.front());
-    queue_.pop_front();
-    return true;
+  if (type == ConcurrentQueueType::kFIFO) {
+    ++nwait_consumer_;
+    cv_.wait(lock, [this] {
+        return !fifo_queue_.empty() || exit_now_.load();
+      });
+    --nwait_consumer_;
+    if (!exit_now_.load()) {
+      *rv = std::move(fifo_queue_.front());
+      fifo_queue_.pop();
+      return true;
+    } else {
+      return false;
+    }
   } else {
-    return false;
+    ++nwait_consumer_;
+    cv_.wait(lock, [this] {
+        return !priority_queue_.empty() || exit_now_.load();
+      });
+    --nwait_consumer_;
+    if (!exit_now_.load()) {
+      *rv = std::move(priority_queue_.top().data);
+      priority_queue_.pop();
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
-template <typename T>
-std::list<T> ConcurrentBlockingQueue<T>::PopAll() {
-  std::lock_guard<std::mutex> lock{mutex_};
-  std::list<T> rv;
-  rv.swap(queue_);
-  return rv;
-}
-
-template <typename T>
-void ConcurrentBlockingQueue<T>::SignalForKill() {
-  std::unique_lock<std::mutex> lock{mutex_};
-  exit_now_.store(true);
+template <typename T, ConcurrentQueueType type>
+void ConcurrentBlockingQueue<T, type>::SignalForKill() {
+  {
+    std::lock_guard<std::mutex> lock{mutex_};
+    exit_now_.store(true);
+  }
   cv_.notify_all();
 }
 
-template <typename T>
-size_t ConcurrentBlockingQueue<T>::Size() {
-  std::unique_lock<std::mutex> lock{mutex_};
-  return queue_.size();
+template <typename T, ConcurrentQueueType type>
+size_t ConcurrentBlockingQueue<T, type>::Size() {
+  std::lock_guard<std::mutex> lock{mutex_};
+  if (type == ConcurrentQueueType::kFIFO) {
+    return fifo_queue_.size();
+  } else {
+    return priority_queue_.size();
+  }
 }
-
 }  // namespace dmlc
-
 #endif  // DMLC_USE_CXX11
 #endif  // DMLC_CONCURRENCY_H_
