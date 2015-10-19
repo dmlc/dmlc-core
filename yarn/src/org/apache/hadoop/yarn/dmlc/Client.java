@@ -82,7 +82,11 @@ public class Client {
      */
     private ByteBuffer setupTokens() throws IOException {
         DataOutputBuffer buffer = new DataOutputBuffer();
-        if (UserGroupInformation.isSecurityEnabled()) {
+        String loc = System.getenv().get("HADOOP_TOKEN_FILE_LOCATION");
+        if ((loc != null && loc.trim().length() > 0) 
+        ||  (!UserGroupInformation.isSecurityEnabled())) {
+            this.credentials.writeTokenStorageToStream(buffer);
+        } else {
             // Note: Credentials class is marked as LimitedPrivate for HDFS and MapReduce
             Credentials credentials = new Credentials();
             String tokenRenewer = conf.get(YarnConfiguration.RM_PRINCIPAL);
@@ -99,8 +103,6 @@ public class Client {
                 }
             }
             credentials.writeTokenStorageToStream(buffer);
-        } else {
-            this.credentials.writeTokenStorageToStream(buffer);
         }
         return ByteBuffer.wrap(buffer.getData(), 0, buffer.getLength());
     }
