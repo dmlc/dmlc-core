@@ -59,6 +59,18 @@ class Registry {
     return *e;
   }
   /*!
+   * \brief Internal function to either register or get registered entry
+   * \param name name of the function
+   * \return ref to the registered entry, used to set properties
+   */
+  inline EntryType &__REGISTER_OR_GET__(const std::string& name) {
+    if (fmap_.count(name) == 0) {
+      return __REGISTER__(name);
+    } else {
+      return *fmap_.at(name);
+    }
+  }
+  /*!
    * \brief get a singleton of the Registry.
    *  This function can be defined by DMLC_ENABLE_REGISTRY.
    * \return get a singleton
