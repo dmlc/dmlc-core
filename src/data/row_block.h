@@ -67,7 +67,7 @@ struct RowBlockContainer {
   /*! \brief size of the data */
   inline real_t Instance_num(void) const {
     real_t sum = 0;
-    for (size_t i = 0 ; i < weight.size();++i){
+    for (size_t i = 0 ; i < weight.size(); ++i) {
          sum +=(weight[i]-1);
     }
     sum += (offset.size() - 1);
