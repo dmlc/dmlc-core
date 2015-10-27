@@ -46,6 +46,10 @@ class BasicRowIter: public RowBlockIter<IndexType> {
   virtual size_t NumCol(void) const {
     return static_cast<size_t>(data_.max_index) + 1;
   }
+  virtual real_t NumInstances(void) const {
+    real_t num = data_.Instance_num();
+    return num;
+  }
 
  private:
   // at head

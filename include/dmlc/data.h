@@ -216,6 +216,7 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
          const char *type);
   /*! \return maximum feature dimension in the dataset */
   virtual size_t NumCol() const = 0;
+  virtual real_t NumInstances() const = 0;
 };
 
 /*!
