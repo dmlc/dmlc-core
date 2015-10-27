@@ -74,7 +74,7 @@ class DiskRowIter: public RowBlockIter<IndexType> {
     return num_col_;
   }
   virtual real_t NumInstances(void) const {
-	return 1;
+    return 1;
   }
 
  private:
