@@ -73,6 +73,9 @@ class DiskRowIter: public RowBlockIter<IndexType> {
   virtual size_t NumCol(void) const {
     return num_col_;
   }
+  virtual real_t NumInstances(void) const {
+	return 1;
+  }
 
  private:
   // file place
