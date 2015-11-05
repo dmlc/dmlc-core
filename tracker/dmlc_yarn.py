@@ -160,8 +160,8 @@ def yarn_submit(nworker, nserver, pass_env):
             libcxx = args.ship_libcxx + '/libstdc++.so'
         fset.add(libcxx)
         # update local LD_LIBRARY_PATH
-        if 'LD_LIBRARY_PATH' in env:
-            env['LD_LIBRARY_PATH'] = libcxx + ':' + env['LD_LIBRARY_PATH']
+        old_LD_LIBRARY_PATH = env['LD_LIBRARY_PATH'] if 'LD_LIBRARY_PATH' in env else ''
+        env['LD_LIBRARY_PATH'] = args.ship_libcxx + ':' + old_LD_LIBRARY_PATH
 
     env['DMLC_CPU_VCORES'] = str(args.vcores)
     env['DMLC_MEMORY_MB'] = str(args.memory_mb)

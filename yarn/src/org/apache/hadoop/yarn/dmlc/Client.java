@@ -197,6 +197,9 @@ public class Client {
             if (e.getKey() == "LIBHDFS_OPTS") {
                 env.put(e.getKey(), e.getValue());
             }
+            if (e.getKey().equals("LD_LIBRARY_PATH")) {
+                env.put(e.getKey(), e.getValue());
+            }
         }
         LOG.debug(env);
         return env;
