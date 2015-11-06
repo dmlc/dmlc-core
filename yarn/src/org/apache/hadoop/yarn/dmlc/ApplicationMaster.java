@@ -365,8 +365,9 @@ public class ApplicationMaster {
         env.put("CLASSPATH", cpath.toString());
         //LOG.info("CLASSPATH =" + cpath.toString());
         // setup LD_LIBARY_PATH path for libhdfs
+        String oldLD_LIBRARY_PATH = System.getenv("LD_LIBRARY_PATH");
         env.put("LD_LIBRARY_PATH",
-                "${LD_LIBRARY_PATH}:$HADOOP_HDFS_HOME/lib/native:$JAVA_HOME/jre/lib/amd64/server");
+                oldLD_LIBRARY_PATH == null ? "" : oldLD_LIBRARY_PATH + ":$HADOOP_HDFS_HOME/lib/native:$JAVA_HOME/jre/lib/amd64/server");
         env.put("PYTHONPATH", "${PYTHONPATH}:.");
         // inherit all rabit variables
         for (Map.Entry<String, String> e : System.getenv().entrySet()) {
