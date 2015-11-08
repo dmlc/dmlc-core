@@ -228,6 +228,7 @@ class CURLReadStreamBase : public SeekStream {
   CURLReadStreamBase()
       : mcurl_(NULL), ecurl_(NULL), slist_(NULL),
         read_ptr_(0), curr_bytes_(0), at_end_(false) {
+    expect_file_size_ = 0;
   }
   /*!
    * \brief initialize the ecurl request,
@@ -238,6 +239,9 @@ class CURLReadStreamBase : public SeekStream {
   virtual void InitRequest(size_t begin_bytes,
                            CURL *ecurl,
                            curl_slist **slist) = 0;
+ protected:
+  // the total size of the file
+  size_t expect_file_size_;
 
  private:
   /*!
@@ -294,6 +298,24 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
   }
   size_t read_bytes = size - nleft;
   curr_bytes_ += read_bytes;
+
+  // safety check, re-establish connection if failure happens
+  if (at_end_ && expect_file_size_ != 0 &&
+      curr_bytes_ != expect_file_size_) {
+    int nretry = 0;
+    CHECK_EQ(buffer_.length(), 0);
+    while (true) {
+      size_t rec_curr_bytes = curr_bytes_;
+      this->Cleanup();
+      this->Init(rec_curr_bytes);
+      if (this->FillBuffer(1) != 0) break;
+      ++nretry;
+      CHECK_LT(nretry, 4)
+          << "Unable to re-establish connection to read full file"
+          << " ,expect_file_size=" << expect_file_size_
+          << " ,curr_bytes=" << curr_bytes_;
+    }
+  }
   return read_bytes;
 }
 
@@ -408,8 +430,10 @@ class ReadStream : public CURLReadStreamBase {
  public:
   ReadStream(const URI &path,
              const std::string &aws_id,
-             const std::string &aws_key)
+             const std::string &aws_key,
+             size_t file_size)
       : path_(path), aws_id_(aws_id), aws_key_(aws_key) {
+    this->expect_file_size_ = file_size;
   }
   virtual ~ReadStream(void) {}
 
@@ -855,7 +879,7 @@ SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
   FileInfo info;
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
-    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_);
+    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_, info.size);
   } else {
     CHECK(allow_null) << " S3FileSystem: fail to open \"" << path.str() << "\"";
     return NULL;
