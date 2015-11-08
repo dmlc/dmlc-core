@@ -239,7 +239,7 @@ class CURLReadStreamBase : public SeekStream {
   virtual void InitRequest(size_t begin_bytes,
                            CURL *ecurl,
                            curl_slist **slist) = 0;
-                           
+
  protected:
   // the total size of the file
   size_t expect_file_size_;
