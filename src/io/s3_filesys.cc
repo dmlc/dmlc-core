@@ -386,7 +386,7 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
     int maxfd = -1;
 
     timeval timeout;
-    long curl_timeo = 0;
+    long curl_timeo;  // NOLINT(*)
     curl_multi_timeout(mcurl_, &curl_timeo);
     if (curl_timeo < 0) curl_timeo = 980;
     timeout.tv_sec = curl_timeo / 1000;
