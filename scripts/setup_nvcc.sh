@@ -17,6 +17,8 @@ files=( \
     "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-cublas-dev-7-0_7.0-28_amd64.deb" \
     "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-curand-7-0_7.0-28_amd64.deb" \
     "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-curand-dev-7-0_7.0-28_amd64.deb" \
+    "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-nvrtc-7-0_7.0-28_amd64.deb" \
+    "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-nvrtc-dev-7-0_7.0-28_amd64.deb" \
 )
 
 for item in ${files[*]}
