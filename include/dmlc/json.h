@@ -255,11 +255,22 @@ class JSONObjectReadHelper {
    * \brief Declare field of type T
    * \param key the key of the of field.
    * \param addr address of the data type.
-   * \param optional if set to true, no error will be reported if the key is not presented.
    * \tparam T the data type to be read, must be STL composition of JSON serializable.
    */
   template<typename T>
-  inline void DeclareField(const std::string &key, T *addr, bool optional = false);
+  inline void DeclareField(const std::string &key, T *addr) {
+    DeclareFieldInternal(key, addr, false);
+  }
+  /*!
+   * \brief Declare optional field of type T
+   * \param key the key of the of field.
+   * \param addr address of the data type.
+   * \tparam T the data type to be read, must be STL composition of JSON serializable.
+   */
+  template<typename T>
+  inline void DeclareOptionalField(const std::string &key, T *addr) {
+    DeclareFieldInternal(key, addr, true);
+  }
   /*!
    * \brief Read in all the declared fields.
    * \param reader the JSONReader to read the json.
@@ -267,6 +278,15 @@ class JSONObjectReadHelper {
   inline void ReadAllFields(JSONReader *reader);
 
  private:
+  /*!
+   * \brief Internal function to declare field.
+   * \param key the key of the of field.
+   * \param addr address of the data type.
+   * \param optional if set to true, no error will be reported if the key is not presented.
+   * \tparam T the data type to be read, must be STL composition of JSON serializable.
+   */
+  template<typename T>
+  inline void DeclareFieldInternal(const std::string &key, T *addr, bool optional);
   /*!
    * \brief The internal reader function.
    * \param reader The reader to read.
@@ -706,7 +726,8 @@ inline void JSONObjectReadHelper::ReaderFunction(JSONReader *reader, void *addr)
 }
 
 template<typename T>
-inline void JSONObjectReadHelper::DeclareField(const std::string &key, T *addr, bool optional) {
+inline void JSONObjectReadHelper::
+DeclareFieldInternal(const std::string &key, T *addr, bool optional) {
   CHECK_EQ(map_.count(key), 0)
       << "Adding duplicate field " << key;
   Entry e;

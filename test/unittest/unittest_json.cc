@@ -41,7 +41,7 @@ class MyClass {
   inline void Load(dmlc::JSONReader *reader) {
     dmlc::JSONObjectReadHelper helper;
     helper.DeclareField("data", &data_);
-    helper.DeclareField("value", &value_, true);
+    helper.DeclareOptionalField("value", &value_);
     helper.ReadAllFields(reader);
   }
   inline bool operator==(const MyClass &other) const {
