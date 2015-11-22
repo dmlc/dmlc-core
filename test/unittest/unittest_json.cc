@@ -34,14 +34,14 @@ class MyClass {
   MyClass(std::string data) : data_{data}, value_(0) {}
   inline void Save(dmlc::JSONWriter *writer) const {
     writer->BeginObject();
-    writer->WriteObjectKeyValue("data", data_);
     writer->WriteObjectKeyValue("value", value_);
+    writer->WriteObjectKeyValue("data", data_);
     writer->EndObject();
   }
   inline void Load(dmlc::JSONReader *reader) {
     dmlc::JSONObjectReadHelper helper;
     helper.DeclareField("data", &data_);
-    helper.DeclareField("value", &value_);
+    helper.DeclareField("value", &value_, true);
     helper.ReadAllFields(reader);
   }
   inline bool operator==(const MyClass &other) const {

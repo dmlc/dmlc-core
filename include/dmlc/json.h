@@ -255,10 +255,11 @@ class JSONObjectReadHelper {
    * \brief Declare field of type T
    * \param key the key of the of field.
    * \param addr address of the data type.
+   * \param optional if set to true, no error will be reported if the key is not presented.
    * \tparam T the data type to be read, must be STL composition of JSON serializable.
    */
   template<typename T>
-  inline void DeclareField(const std::string &key, T *addr);
+  inline void DeclareField(const std::string &key, T *addr, bool optional = false);
   /*!
    * \brief Read in all the declared fields.
    * \param reader the JSONReader to read the json.
@@ -275,8 +276,17 @@ class JSONObjectReadHelper {
   inline static void ReaderFunction(JSONReader *reader, void *addr);
   /*! \brief callback type to reader function */
   typedef void (*ReadFunction)(JSONReader *reader, void *addr);
+  /*! \brief internal data entry */
+  struct Entry {
+    /*! \brief the reader function */
+    ReadFunction func;
+    /*! \brief the address to read */
+    void *addr;
+    /*! \brief whether it is optional */
+    bool optional;
+  };
   /*! \brief the internal map of reader callbacks */
-  std::map<std::string, std::pair<ReadFunction, void*> > map_;
+  std::map<std::string, Entry> map_;
 };
 
 //! \cond Doxygen_Suppress
@@ -666,13 +676,13 @@ inline void JSONObjectReadHelper::ReadAllFields(JSONReader *reader) {
   std::string key;
   while (reader->NextObjectItem(&key)) {
     if (map_.count(key) != 0) {
-      std::pair<ReadFunction, void*> kv = map_[key];
-      (*kv.first)(reader, kv.second);
+      Entry e = map_[key];
+      (*e.func)(reader, e.addr);
       visited[key] = 0;
     } else {
       std::ostringstream os;
       os << "JSONReader: Unknown field " << key << ", candidates are: \n";
-      for (std::map<std::string, std::pair<ReadFunction, void*> >::iterator
+      for (std::map<std::string, Entry>::iterator
                it = map_.begin(); it != map_.end(); ++it) {
         os << '\"' <<it->first << "\"\n";
       }
@@ -680,8 +690,9 @@ inline void JSONObjectReadHelper::ReadAllFields(JSONReader *reader) {
     }
   }
   if (visited.size() != map_.size()) {
-    for (std::map<std::string, std::pair<ReadFunction, void*> >::iterator
+    for (std::map<std::string, Entry>::iterator
              it = map_.begin(); it != map_.end(); ++it) {
+      if (it->second.optional) continue;
       CHECK_NE(visited.count(it->first), 0)
           << "JSONReader: Missing field \"" << it->first << "\"\n At "
           << reader->line_info();
@@ -695,10 +706,14 @@ inline void JSONObjectReadHelper::ReaderFunction(JSONReader *reader, void *addr)
 }
 
 template<typename T>
-inline void JSONObjectReadHelper::DeclareField(const std::string &key, T *addr) {
+inline void JSONObjectReadHelper::DeclareField(const std::string &key, T *addr, bool optional) {
   CHECK_EQ(map_.count(key), 0)
       << "Adding duplicate field " << key;
-  map_[key] = std::make_pair(ReaderFunction<T>, static_cast<void*>(addr));
+  Entry e;
+  e.func = ReaderFunction<T>;
+  e.addr = static_cast<void*>(addr);
+  e.optional = optional;
+  map_[key] = e;
 }
 
 //! \endcond
