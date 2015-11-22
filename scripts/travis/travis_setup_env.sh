@@ -35,6 +35,6 @@ if [ ! -z "$NVCC_PREFIX" ]; then
     export PATH=${PATH}:${NVCC_PREFIX}/usr/local/cuda-7.0/bin
     export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH}:${NVCC_PREFIX}/usr/local/cuda-7.0/include
     export C_INCLUDE_PATH=${C_INCLUDE_PATH}:${NVCC_PREFIX}/usr/local/cuda-7.0/include
-    export LIBRARY_PATH=${LIBRARY_PATH}:${NVCC_PREFIX}/usr/local/cuda-7.0/lib64
-    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NVCC_PREFIX}/usr/local/cuda-7.0/lib64
+    export LIBRARY_PATH=${LIBRARY_PATH}:${NVCC_PREFIX}/usr/local/cuda-7.0/lib64:${NVCC_PREFIX}/usr/lib/x86_64-linux-gnu
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${NVCC_PREFIX}/usr/local/cuda-7.0/lib64:${NVCC_PREFIX}/usr/lib/x86_64-linux-gnu
 fi
