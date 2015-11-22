@@ -306,15 +306,23 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
     int nretry = 0;
     CHECK_EQ(buffer_.length(), 0);
     while (true) {
+      LOG(ERROR) << "Re-establishing connection to Amazon S3, retry " << nretry;
       size_t rec_curr_bytes = curr_bytes_;
       this->Cleanup();
       this->Init(rec_curr_bytes);
       if (this->FillBuffer(1) != 0) break;
       ++nretry;
-      CHECK_LT(nretry, 4)
+      CHECK_LT(nretry, 50)
           << "Unable to re-establish connection to read full file"
           << " ,expect_file_size=" << expect_file_size_
           << " ,curr_bytes=" << curr_bytes_;
+      // sleep 100ms
+#ifdef _WIN32
+      Sleep(100);
+#else
+      struct timeval wait = { 0, 100 * 1000 };
+      select(0, NULL, NULL, NULL, &wait);
+#endif
     }
   }
   return read_bytes;
@@ -376,19 +384,13 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
     FD_ZERO(&fdwrite);
     FD_ZERO(&fdexcep);
     int maxfd = -1;
+
     timeval timeout;
-    timeout.tv_sec = 60;
-    timeout.tv_usec = 0;
     long curl_timeo;  // NOLINT(*)
     curl_multi_timeout(mcurl_, &curl_timeo);
-    if (curl_timeo >= 0) {
-      timeout.tv_sec = curl_timeo / 1000;
-      if (timeout.tv_sec > 1) {
-        timeout.tv_sec = 1;
-      } else {
-        timeout.tv_usec = (curl_timeo % 1000) * 1000;
-      }
-    }
+    if (curl_timeo < 0) curl_timeo = 980;
+    timeout.tv_sec = curl_timeo / 1000;
+    timeout.tv_usec = (curl_timeo % 1000) * 1000;
     CHECK(curl_multi_fdset(mcurl_, &fdread, &fdwrite, &fdexcep, &maxfd) == CURLM_OK);
     int rc;
     if (maxfd == -1) {
