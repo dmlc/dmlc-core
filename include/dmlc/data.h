@@ -279,7 +279,7 @@ struct ParserFactoryReg
  *
  *  // defin the factory function
  *  template<typename IndexType>
- *  LibSVMParser<IndexType>*
+ *  Parser<IndexType>*
  *  CreateLibSVMParser(const char* uri, unsigned part_index, unsigned num_parts) {
  *    return new LibSVMParser(uri, part_index, num_parts);
  *  }
