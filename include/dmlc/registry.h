@@ -188,8 +188,8 @@ class FunctionRegEntryBase {
  */
 #define DMLC_REGISTRY_ENABLE(EntryType)                                 \
   template<>                                                            \
-  Registry<EntryType> *Registry<EntryType>::Get() {                     \
-    static Registry<EntryType> inst;                                    \
+  Registry<EntryType > *Registry<EntryType >::Get() {                   \
+    static Registry<EntryType > inst;                                   \
     return &inst;                                                       \
   }                                                                     \
 
