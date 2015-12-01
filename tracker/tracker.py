@@ -136,7 +136,7 @@ class RabitTracker:
                 break
             except socket.error:
                 continue
-        sock.listen(16)
+        sock.listen(256)
         self.sock = sock
         self.hostIP = hostIP
         logging.info('start listen on %s:%d' % (hostIP, self.port))
