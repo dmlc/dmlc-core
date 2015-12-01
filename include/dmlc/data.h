@@ -11,6 +11,7 @@
 #include "./base.h"
 #include "./io.h"
 #include "./logging.h"
+#include "./registry.h"
 
 namespace dmlc {
 /*!
@@ -246,13 +247,57 @@ class Parser : public DataIter<RowBlock<IndexType> > {
   * \return the created parser
   */
   static Parser<IndexType> *
-    Create(const char *uri_,
-    unsigned part_index,
-    unsigned num_parts,
-    const char *type);
+  Create(const char *uri_,
+         unsigned part_index,
+         unsigned num_parts,
+         const char *type);
   /*! \return size of bytes read so far */
   virtual size_t BytesRead(void) const = 0;
+  /*! \brief Factory type of the parser*/
+  typedef Parser<IndexType>* (*Factory)
+      (const char *uri, unsigned part_index, unsigned num_parts);
 };
+
+
+/*!
+ * \brief registry entry of parser factory
+ * \tparam IndexType The type of index
+ */
+template<typename IndexType>
+struct ParserFactoryReg
+    : public FunctionRegEntryBase<ParserFactoryReg<IndexType>,
+                                  typename Parser<IndexType>::Factory> {};
+
+/*!
+ * \brief Register a new distributed parser to dmlc-core.
+ *
+ * \param IndexType The type of Batch index, can be uint32_t or uint64_t
+ * \param TypeName The typename of of the data.
+ * \param FactoryFunction The factory function that creates the parser.
+ *
+ * \begincode
+ *
+ *  // defin the factory function
+ *  template<typename IndexType>
+ *  Parser<IndexType>*
+ *  CreateLibSVMParser(const char* uri, unsigned part_index, unsigned num_parts) {
+ *    return new LibSVMParser(uri, part_index, num_parts);
+ *  }
+ *
+ *  // Register it to DMLC
+ *  // Then we can use Parser<uint32_t>::Create(uri, part_index, num_parts, "libsvm");
+ *  // to create the parser
+ *
+ *  DMLC_REGISTER_DATA_PARSER(uint32_t, libsvm, CreateLibSVMParser<uint32_t>);
+ *  DMLC_REGISTER_DATA_PARSER(uint64_t, libsvm, CreateLibSVMParser<uint64_t>);
+ *
+ * \endcode
+ */
+#define DMLC_REGISTER_DATA_PARSER(IndexType, TypeName, FactoryFunction) \
+  DMLC_REGISTRY_REGISTER(::dmlc::ParserFactoryReg<IndexType>,           \
+                         ParserFactoryReg ## _ ## IndexType, TypeName)  \
+  .set_body(FactoryFunction)
+
 
 // implementation of operator[]
 template<typename IndexType>
