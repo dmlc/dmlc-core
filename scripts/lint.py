@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable=protected-access, unused-variable, locally-disabled
+# pylint: disable=protected-access, unused-variable, locally-disabled, redefined-variable-type
 """Lint helper to generate lint summary of source.
 
 Copyright by Contributors
