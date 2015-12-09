@@ -16,8 +16,21 @@ namespace io {
 /*! \brief AWS S3 filesystem */
 class S3FileSystem : public FileSystem {
  public:
+  /*! \brief constructor */
+  S3FileSystem() = default;
+
   /*! \brief destructor */
   virtual ~S3FileSystem() {}
+
+  /*!
+   * \brief Sets AWS access credentials
+   * \param aws_access_id The AWS Access Key ID
+   * \param aws_secret_key The AWS Secret Key
+   * \return the information about the file
+   */
+  void SetCredentials(const std::string& aws_access_id,
+                      const std::string& aws_secret_key);
+
   /*!
    * \brief get information about a path
    * \param path the path to the file
