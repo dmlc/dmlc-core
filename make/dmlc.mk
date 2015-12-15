@@ -65,6 +65,7 @@ endif
 
 ifeq ($(USE_GLOG), 1)
 	DMLC_CFLAGS += -DDMLC_USE_GLOG=1
+	DMLC_LDFLAGS += -lglog
 endif
 
 ifeq ($(USE_AZURE),1)
