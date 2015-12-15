@@ -55,15 +55,16 @@ inline float strtof(const char *nptr, char **endptr) {
 
   // Get digits after decimal point, if any.
   if (*p == '.') {
-    unsigned pow10 = 1;
-    unsigned val2 = 0;
+    uint64_t pow10 = 1;
+    uint64_t val2 = 0;
     ++p;
     while (isdigit(*p)) {
       val2 = val2 * 10 + (*p - '0');
       pow10 *= 10;
       ++p;
     }
-    value += static_cast<float>(val2) / static_cast<float>(pow10);
+    value += static_cast<float>(
+        static_cast<double>(val2) / static_cast<double>(pow10));
   }
 
   // Handle exponent, if any.
