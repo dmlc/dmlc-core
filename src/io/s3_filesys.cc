@@ -418,13 +418,13 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
   do {
     int msgq = 0;
     m = curl_multi_info_read(mcurl_, &msgq);
-    if(m && (m->msg == CURLMSG_DONE)) {
+    if (m && (m->msg == CURLMSG_DONE)) {
       if (m->data.result != CURLE_OK) {
         LOG(INFO) << "request failed with error "
                   << curl_easy_strerror(m->data.result);
       }
     }
-  } while(m);
+  } while (m);
 
   return nrun;
 }

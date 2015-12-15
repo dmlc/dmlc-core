@@ -16,9 +16,6 @@ namespace io {
 /*! \brief AWS S3 filesystem */
 class S3FileSystem : public FileSystem {
  public:
-  /*! \brief constructor */
-  S3FileSystem() = default;
-
   /*! \brief destructor */
   virtual ~S3FileSystem() {}
 
