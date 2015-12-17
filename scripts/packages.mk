@@ -9,6 +9,7 @@ ${CACHE_PREFIX}/include/gtest:
 	wget http://googletest.googlecode.com/files/gtest-1.7.0.zip
 	unzip gtest-1.7.0.zip
 	cd gtest-1.7.0 ; ./configure; make; cd -
+	mkdir -p ${CACHE_PREFIX}/include ${CACHE_PREFIX}/lib
 	cp -r gtest-1.7.0/include/gtest ${CACHE_PREFIX}/include
 	cp -r gtest-1.7.0/lib/.libs/* ${CACHE_PREFIX}/lib
 	rm ${CACHE_PREFIX}/lib/libgtest_main.la ${CACHE_PREFIX}/lib/libgtest.la
