@@ -1,12 +1,14 @@
 DMLC Core
-====
+=========
 
 [![Build Status](https://travis-ci.org/dmlc/dmlc-core.svg?branch=master)](https://travis-ci.org/dmlc/dmlc-core)
+[![Documentation Status](https://readthedocs.org/projects/dmlc-core/badge/?version=latest)](http://dmlc-core.readthedocs.org/en/latest/)
+[![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
+
 
 A common code-base for Distributed Machine Learning in C++.
 
 Developer Channel [![Join the chat at https://gitter.im/dmlc/dmlc-core](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dmlc/dmlc-core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 
 
 Contributing

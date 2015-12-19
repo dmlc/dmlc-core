@@ -1,13 +1,12 @@
-Building Parameter Structure for Machine Learning
-=================================================
+Parameter Structure for Machine Learning
+========================================
 One of the most important ingredient of machine learning projects are the parameters.
-Parameters such as learning rate, and configuration of the model act as a way of communication between users and the library.
-In this article, we will introduce the parameter module of DMLC, a lightweight C++ module that is designed to support
-all the machine learning libraries in DMLC. It comes with the following nice properties:
+Parameters act as a way of communication between users and the library. In this article, we will introduce the parameter module of DMLC, a lightweight C++ module that is designed to support
+general machine learning libraries. It comes with the following nice properties:
 
 - Easy declaration of typed fields, default values and constraints.
 - Auto checking of constraints and throw exceptions when constraint is not met.
-- Auto generation  of human readable docstrings on parameters.
+- Auto generation of human readable docstrings on parameters.
 - Serialization and de-serialization into JSON and ```std::map<std::string, std::string>```.
 
 Use Parameter Module
@@ -182,7 +181,7 @@ struct MyParam : public dmlc::Parameter<MyParam> {
 // This code is only used to show the general idea.
 // This code will only run once, the real code is done via singleton declaration pattern.
 {
-  ParamManagerSingleton<MyParam> manager;
+  static ParamManagerSingleton<MyParam> manager;
   MyParam tmp;
   tmp->__DECLARE__(&manager);
 }
@@ -194,6 +193,6 @@ To figure out how to access each of the field, we can
 - The relative position of the field against the head of the structure is recorded into a global singleton.
 - When we call ```Init```, we can get the ```offset``` from the singleton, and access the address of the field via ```(ValueType*)((char*)this + offset)```.
 
-You are welcomed to checkout the real details in [dmlc/parameter.h](https://github.com/dmlc/dmlc-core/blob/master/include/dmlc/parameter.h).
+You are welcomed to check out the real details in [dmlc/parameter.h](https://github.com/dmlc/dmlc-core/blob/master/include/dmlc/parameter.h).
 By using the generic template programming in C++, we have created a simple and useful parameter module for machine learning libraries.
 This module is used extensively by DMLC projects. Hope you will find it useful as well :).

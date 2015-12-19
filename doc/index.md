@@ -4,6 +4,7 @@ DMLC Core contains common codebase to help us build machine learning toolkits ea
 
 Contents
 --------
+* [Parameter Structure for Machine Learning](parameter.md)
 * [Doxygen C++ API Reference](https://dmlc-core.readthedocs.org/en/latest/doxygen)
 
 Indices and tables
