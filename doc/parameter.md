@@ -1,6 +1,6 @@
 Parameter Structure for Machine Learning
 ========================================
-One of the most important ingredient of machine learning projects are the parameters.
+One of the most important ingredients of machine learning projects are the parameters.
 Parameters act as a way of communication between users and the library. In this article, we will introduce the parameter module of DMLC, a lightweight C++ module that is designed to support
 general machine learning libraries. It comes with the following nice properties:
 
