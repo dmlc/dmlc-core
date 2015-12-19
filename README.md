@@ -11,14 +11,15 @@ DMLC-Core is the backbone library to support all DMLC projects, offers the brick
 Developer Channel [![Join the chat at https://gitter.im/dmlc/dmlc-core](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/dmlc/dmlc-core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
+What's New
+----------
+* [Note on Parameter Module for Machine Learning](http://dmlc-core.readthedocs.org/en/latest/parameter.html)
+
+
 Contents
 --------
 * [Documentation and Tutorials](http://dmlc-core.readthedocs.org/en/latest/)
 * [Contributing](#contributing)
-
-What's New
-----------
-* [Note on Parameter Module for Machine Learning](http://dmlc-core.readthedocs.org/en/latest/parameter.html)
 
 
 Contributing
