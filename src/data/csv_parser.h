@@ -48,6 +48,7 @@ ParseBlock(char *begin,
     // get line end
     lend = lbegin + 1;
     while (lend != end && *lend != '\n' && *lend != '\r') ++lend;
+
     char* p = lbegin;
     IndexType idx = 0;
     while (p != lend) {
@@ -57,11 +58,14 @@ ParseBlock(char *begin,
       out->value.push_back(v);
       out->index.push_back(idx++);
       while (*p != ',' && p != lend) ++p;
+      if (p != lend) ++p;
     }
+    // skip empty line
+    while ((*lend == '\n' || *lend == '\r') && lend != end) ++lend;
     lbegin = lend;
+    out->label.push_back(0.0f);
+    out->offset.push_back(out->index.size());
   }
-  out->label.push_back(0.0f);
-  out->offset.push_back(out->index.size());
   CHECK(out->label.size() + 1 == out->offset.size());
 }
 }  // namespace data
