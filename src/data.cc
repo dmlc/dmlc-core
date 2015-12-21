@@ -12,6 +12,7 @@
 #include "data/basic_row_iter.h"
 #include "data/disk_row_iter.h"
 #include "data/libsvm_parser.h"
+#include "data/csv_parser.h"
 
 namespace dmlc {
 /*! \brief namespace for useful input data structure */
@@ -31,6 +32,15 @@ CreateLibSVMParser(const char *uri_,
   return parser;
 }
 
+template<typename IndexType>
+Parser<IndexType> *
+CreateCSVParser(const char *uri_,
+                unsigned part_index,
+                unsigned num_parts) {
+  InputSplit* source = InputSplit::Create(
+      uri_, part_index, num_parts, "text");
+  return new CSVParser<IndexType>(source, 2);
+}
 
 template<typename IndexType>
 inline Parser<IndexType> *
@@ -112,4 +122,6 @@ DMLC_REGISTRY_ENABLE(ParserFactoryReg<uint32_t>);
 DMLC_REGISTRY_ENABLE(ParserFactoryReg<uint64_t>);
 DMLC_REGISTER_DATA_PARSER(uint32_t, libsvm, data::CreateLibSVMParser<uint32_t>);
 DMLC_REGISTER_DATA_PARSER(uint64_t, libsvm, data::CreateLibSVMParser<uint64_t>);
+
+DMLC_REGISTER_DATA_PARSER(uint32_t, csv, data::CreateCSVParser<uint32_t>);
 }  // namespace dmlc
