@@ -20,7 +20,7 @@ CFLAGS+= -I$(DEPS_PATH)/include
 LDFLAGS+= -L$(DEPS_PATH)/lib
 endif
 
-.PHONY: clean all test lint doc
+.PHONY: clean all test lint doc example
 
 OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o
 
@@ -45,10 +45,13 @@ ALIB=libdmlc.a
 all: $(ALIB) test
 
 include test/dmlc_test.mk
+include example/dmlc_example.mk
 
 ifeq ($(BUILD_TEST), 1)
 test: $(ALL_TEST)
 endif
+
+example: $(ALL_EXAMPLE)
 
 line_split.o: src/io/line_split.cc
 recordio_split.o: src/io/recordio_split.cc
