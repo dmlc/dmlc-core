@@ -137,7 +137,9 @@ template<typename IndexType>
 inline RowBlock<IndexType>
 RowBlockContainer<IndexType>::GetBlock(void) const {
   // consistency check
-  CHECK_EQ(label.size() + 1, offset.size());
+  if (label.size()) {
+    CHECK_EQ(label.size() + 1, offset.size());
+  }
   CHECK_EQ(offset.back(), index.size());
   CHECK(offset.back() == value.size() || value.size() == 0);
   RowBlock<IndexType> data;
