@@ -66,7 +66,7 @@ class HDFSFileSystem : public FileSystem {
 
  private:
   /*! \brief constructor */
-  HDFSFileSystem(const std::string &namenode);
+  explicit HDFSFileSystem(const std::string &namenode);
   /*! \brief switch to another hdfs cluster */
   void ResetNamenode(const std::string &namenode);
   /*! \brief namenode address */
