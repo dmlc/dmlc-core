@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   using namespace dmlc::io;
   if (!strcmp(argv[1], "ls")) {
     URI path(argv[2]);
-    FileSystem *fs = FileSystem::GetInstance(path.protocol);
+    FileSystem *fs = FileSystem::GetInstance(path);
     std::vector<FileInfo> info;
     fs->ListDirectory(path, &info);
     for (size_t i = 0; i < info.size(); ++i) {
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   }
   if (!strcmp(argv[1], "cat")) {
     URI path(argv[2]);
-    FileSystem *fs = FileSystem::GetInstance(path.protocol);
+    FileSystem *fs = FileSystem::GetInstance(path);
     dmlc::Stream *fp = fs->OpenForRead(path);
     char buf[32];
     while (true) {
