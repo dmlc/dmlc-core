@@ -55,14 +55,20 @@ class HDFSFileSystem : public FileSystem {
    * \brief get a singleton of HDFSFileSystem when needed
    * \return a singleton instance
    */
-  inline static HDFSFileSystem *GetInstance(void) {
-    static HDFSFileSystem instance;
+  inline static HDFSFileSystem *GetInstance(const std::string &namenode = "default") {
+    static HDFSFileSystem instance(namenode);
+    // switch to another hdfs
+    if (namenode != "default" && instance.namenode_ != namenode) {
+      instance.ResetNamenode(namenode);
+    }
     return &instance;
   }
 
  private:
   /*! \brief constructor */
-  HDFSFileSystem();
+  explicit HDFSFileSystem(const std::string &namenode);
+  /*! \brief switch to another hdfs cluster */
+  void ResetNamenode(const std::string &namenode);
   /*! \brief namenode address */
   std::string namenode_;
   /*! \brief hdfs handle */
