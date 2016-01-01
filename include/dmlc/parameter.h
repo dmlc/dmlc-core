@@ -591,10 +591,10 @@ class FieldEntryNumeric
     FieldEntryBase<TEntry, DType>::Check(head);
     DType v = this->Get(head);
     if (has_begin_ && has_end_) {
-      if (v < begin_ || v >= end_) {
+      if (v < begin_ || v > end_) {
         std::ostringstream os;
         os << "value " << v << "for Parameter " << this->key_
-           << " exceed bound [" << begin_ << ',' << end_ <<')';
+           << " exceed bound [" << begin_ << ',' << end_ <<']';
         throw dmlc::ParamError(os.str());
       }
     } else if (has_begin_ && v < begin_) {
@@ -602,10 +602,10 @@ class FieldEntryNumeric
         os << "value " << v << "for Parameter " << this->key_
            << " should be greater equal to " << begin_;
         throw dmlc::ParamError(os.str());
-    } else if (has_end_ && v >= end_) {
+    } else if (has_end_ && v > end_) {
         std::ostringstream os;
         os << "value " << v << "for Parameter " << this->key_
-           << " should be smaller than " << end_;
+           << " should be smaller equal to " << end_;
         throw dmlc::ParamError(os.str());
     }
   }
