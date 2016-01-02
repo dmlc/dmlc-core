@@ -232,6 +232,13 @@ struct Parameter {
 #define DMLC_DECLARE_FIELD(FieldName)  this->DECLARE(manager, #FieldName, FieldName)
 
 /*!
+ * \brief macro to declare alias of a fields
+ * \param FieldName the name of the field.
+ * \param AliasName the name of the alias, must be declared after the field is declared.
+ */
+#define DMLC_DECLARE_ALIAS(FieldName, AliasName)  manager->manager.AddAlias(#FieldName, #AliasName)
+
+/*!
  * \brief Macro used to register parameter.
  *
  * This macro need to be put in a source file so that registeration only happens once.
@@ -389,6 +396,21 @@ class ParamManager {
     }
     entry_.push_back(e);
     entry_map_[key] = e;
+  }
+  /*!
+   * \brief internal function to add entry to manager,
+   *  The manager will take ownership of the entry.
+   * \param key the key to the parameters
+   * \param e the pointer to the new entry.
+   */
+  inline void AddAlias(const std::string& field, const std::string& alias) {
+    if (entry_map_.count(field) == 0) {
+      LOG(FATAL) << "key " << field << " has not been registered in " << name_;
+    }
+    if (entry_map_.count(alias) != 0) {
+      LOG(FATAL) << "Alias " << alias << " has already been registered in " << name_;
+    }
+    entry_map_[alias] = entry_map_[field];
   }
   /*!
    * \brief set the name of parameter manager
