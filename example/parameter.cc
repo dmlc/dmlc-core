@@ -25,6 +25,10 @@ struct MyParam : public dmlc::Parameter<MyParam> {
         .describe("Activation function type.");
     DMLC_DECLARE_FIELD(name).set_default("mnet")
         .describe("Name of the net.");
+
+    // user can also set nhidden besides num_hidden
+    DMLC_DECLARE_ALIAS(num_hidden, nhidden);
+    DMLC_DECLARE_ALIAS(activation, act);
   }
 };
 
