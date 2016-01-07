@@ -89,7 +89,7 @@ def mthread_submit(nworker, nserver, envs):
             role = 'worker'
         else:
             role = 'server'
-        procs[i] = Thread(target = exec_cmd, args = (args.command, role, i, envs))
+        procs[i] = Thread(target = exec_cmd, args = (args.command + unknown, role, i, envs))
         procs[i].setDaemon(True)
         procs[i].start()
 
