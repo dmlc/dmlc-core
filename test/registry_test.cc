@@ -28,7 +28,7 @@ struct TreeFactory
   DMLC_REGISTRY_REGISTER(::tree::TreeFactory, TreeFactory, Name)        \
   .set_body([]() { return new Name(); } )
 
-DMLC_REGISTY_FILE_TAG(my_tree);
+DMLC_REGISTRY_FILE_TAG(my_tree);
 
 }  // namespace tree
 
@@ -45,7 +45,7 @@ REGISTER_TREE(BinaryTree)
 
 REGISTER_TREE(AVLTree);
 
-DMLC_REGISTY_LINK_TAG(my_tree);
+DMLC_REGISTRY_LINK_TAG(my_tree);
 }
 
 int main(int argc, char *argv[]) {

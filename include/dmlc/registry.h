@@ -213,18 +213,18 @@ class FunctionRegEntryBase {
  *  incur a link dependency.
  *
  * \param UniqueTag The unique tag used to represent.
- * \sa DMLC_REGISTY_LINK_TAG
+ * \sa DMLC_REGISTRY_LINK_TAG
  */
-#define DMLC_REGISTY_FILE_TAG(UniqueTag)                                \
-  extern int __dmlc_registry_file_tag_ ## UniqueTag ## __() { return 0; }
+#define DMLC_REGISTRY_FILE_TAG(UniqueTag)                                \
+  int __dmlc_registry_file_tag_ ## UniqueTag ## __() { return 0; }
 
 /*!
  * \brief (Optional) Force link to all the objects registered in file tag.
  *
  *  This macro must be used in the same file as DMLC_REGISTRY_ENABLE and
- *  in the same namespace as DMLC_REGISTY_FILE_TAG
+ *  in the same namespace as DMLC_REGISTRY_FILE_TAG
  *
- *  DMLC_REGISTY_FILE_TAG and DMLC_REGISTY_LINK_TAG are optional macros for registration.
+ *  DMLC_REGISTRY_FILE_TAG and DMLC_REGISTRY_LINK_TAG are optional macros for registration.
  *  They are used to encforce link of certain file into during static linking.
  *
  *  This is mainly used to solve problem during statically link a library which contains backward registration.
@@ -238,26 +238,26 @@ class FunctionRegEntryBase {
  * \begincode
  * // in file objective_registry.cc
  * DMLC_REGISTRY_ENABLE(MyObjective);
- * DMLC_REGISTY_LINK_TAG(regression_op);
- * DMLC_REGISTY_LINK_TAG(rank_op);
+ * DMLC_REGISTRY_LINK_TAG(regression_op);
+ * DMLC_REGISTRY_LINK_TAG(rank_op);
  *
  * // in file regression_op.cc
  * // declare tag of this file.
- * DMLC_REGISTY_FILE_TAG(regression_op);
+ * DMLC_REGISTRY_FILE_TAG(regression_op);
  * DMLC_REGISTRY_REGISTER(MyObjective, logistic_reg, logistic_reg);
  * // ...
  *
  * // in file rank_op.cc
  * // declare tag of this file.
- * DMLC_REGISTY_FILE_TAG(rank_op);
+ * DMLC_REGISTRY_FILE_TAG(rank_op);
  * DMLC_REGISTRY_REGISTER(MyObjective, pairwiserank, pairwiserank);
  *
  * \endcode
  *
  * \param UniqueTag The unique tag used to represent.
- * \sa DMLC_REGISTRY_ENABLE, DMLC_REGISTY_FILE_TAG
+ * \sa DMLC_REGISTRY_ENABLE, DMLC_REGISTRY_FILE_TAG
  */
-#define DMLC_REGISTY_LINK_TAG(UniqueTag)                                \
+#define DMLC_REGISTRY_LINK_TAG(UniqueTag)                                \
   int __dmlc_registry_file_tag_ ## UniqueTag ## __();                   \
   static int __reg_file_tag_ ## UniqueTag ## __ = __dmlc_registry_file_tag_ ## UniqueTag ## __();
 }  // namespace dmlc
