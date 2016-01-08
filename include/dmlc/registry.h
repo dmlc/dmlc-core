@@ -206,5 +206,59 @@ class FunctionRegEntryBase {
   static EntryType & __make_ ## EntryTypeName ## _ ## Name ## __ =      \
       ::dmlc::Registry<EntryType>::Get()->__REGISTER__(#Name)           \
 
+/*!
+ * \brief (Optional) Declare a file tag to current file that contains object registrations.
+ *
+ *  This will declare a dummy function that will be called by register file to
+ *  incur a link dependency.
+ *
+ * \param UniqueTag The unique tag used to represent.
+ * \sa DMLC_REGISTY_LINK_TAG
+ */
+#define DMLC_REGISTY_FILE_TAG(UniqueTag)                                \
+  extern int __dmlc_registry_file_tag_ ## UniqueTag ## __() { return 0; }
+
+/*!
+ * \brief (Optional) Force link to all the objects registered in file tag.
+ *
+ *  This macro must be used in the same file as DMLC_REGISTRY_ENABLE and
+ *  in the same namespace as DMLC_REGISTY_FILE_TAG
+ *
+ *  DMLC_REGISTY_FILE_TAG and DMLC_REGISTY_LINK_TAG are optional macros for registration.
+ *  They are used to encforce link of certain file into during static linking.
+ *
+ *  This is mainly used to solve problem during statically link a library which contains backward registration.
+ *  Specifically, this avoids the objects in these file tags to be ignored by compiler.
+ *
+ *  For dynamic linking, this problem won't occur as everything is loaded by default.
+ *
+ *  Use of this is optional as it will create an error when a file tag do not exist.
+ *  An alternative solution is always ask user to enable --whole-archieve during static link.
+ *
+ * \begincode
+ * // in file objective_registry.cc
+ * DMLC_REGISTRY_ENABLE(MyObjective);
+ * DMLC_REGISTY_LINK_TAG(regression_op);
+ * DMLC_REGISTY_LINK_TAG(rank_op);
+ *
+ * // in file regression_op.cc
+ * // declare tag of this file.
+ * DMLC_REGISTY_FILE_TAG(regression_op);
+ * DMLC_REGISTRY_REGISTER(MyObjective, logistic_reg, logistic_reg);
+ * // ...
+ *
+ * // in file rank_op.cc
+ * // declare tag of this file.
+ * DMLC_REGISTY_FILE_TAG(rank_op);
+ * DMLC_REGISTRY_REGISTER(MyObjective, pairwiserank, pairwiserank);
+ *
+ * \endcode
+ *
+ * \param UniqueTag The unique tag used to represent.
+ * \sa DMLC_REGISTRY_ENABLE, DMLC_REGISTY_FILE_TAG
+ */
+#define DMLC_REGISTY_LINK_TAG(UniqueTag)                                \
+  int __dmlc_registry_file_tag_ ## UniqueTag ## __();                   \
+  static int __reg_file_tag_ ## UniqueTag ## __ = __dmlc_registry_file_tag_ ## UniqueTag ## __();
 }  // namespace dmlc
 #endif  // DMLC_REGISTRY_H_
