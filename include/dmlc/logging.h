@@ -205,7 +205,9 @@ class LogMessageFatal {
     // throwing out of destructor is evil
     // hopefully we can do it here
     // also log the message before throw
+#if DMLC_LOG_BEFORE_THROW
     LOG(ERROR) << log_stream_.str();
+#endif
     throw Error(log_stream_.str());
   }
 

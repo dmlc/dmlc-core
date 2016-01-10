@@ -21,6 +21,14 @@
 #define DMLC_LOG_FATAL_THROW 1
 #endif
 
+/*!
+ * \brief whether always log a message before throw
+ * This can help identify the error that cannot be catched.
+ */
+#ifndef DMLC_LOG_BEFORE_THROW
+#define DMLC_LOG_BEFORE_THROW 1
+#endif
+
 /*! \brief whether compile with hdfs support */
 #ifndef DMLC_USE_HDFS
 #define DMLC_USE_HDFS 0
