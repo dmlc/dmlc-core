@@ -62,6 +62,15 @@
 #endif
 
 /*!
+ * \brief Enable std::thread related modules,
+ *  Used to disable some module in mingw compile.
+ */
+#ifndef DMLC_ENABLE_STD_THREAD
+#define DMLC_ENABLE_STD_THREAD DMLC_USE_CXX11
+#endif
+
+
+/*!
  * \brief Disable copy constructor and assignment operator.
  *
  * If C++11 is supported, both copy and move constructors and

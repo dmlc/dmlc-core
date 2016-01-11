@@ -11,7 +11,7 @@
 // defines DMLC_USE_CXX11
 #include "./base.h"
 // this code depends on c++11
-#if DMLC_USE_CXX11
+#if DMLC_ENABLE_STD_THREAD
 #include <condition_variable>
 #include <functional>
 #include <mutex>

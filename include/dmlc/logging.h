@@ -144,13 +144,19 @@ class DateLogger {
     _strtime_s(buffer_, sizeof(buffer_));
 #else
     time_t time_value = time(NULL);
+    struct tm *pnow;
+#if !defined(_WIN32)
     struct tm now;
-    localtime_r(&time_value, &now);
-    snprintf(buffer_, sizeof(buffer_), "%02d:%02d:%02d", now.tm_hour,
-             now.tm_min, now.tm_sec);
+    pnow = localtime_r(&time_value, &now);
+#else
+    pnow = localtime(&time_value);  // NOLINT(*)
+#endif
+    snprintf(buffer_, sizeof(buffer_), "%02d:%02d:%02d",
+             pnow->tm_hour, pnow->tm_min, pnow->tm_sec);
 #endif
     return buffer_;
   }
+
  private:
   char buffer_[9];
 };

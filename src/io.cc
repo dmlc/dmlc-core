@@ -82,7 +82,7 @@ InputSplit* InputSplit::Create(const char *uri_,
   } else {
     LOG(FATAL) << "unknown input split type " << type;
   }
-#if DMLC_USE_CXX11
+#if DMLC_ENABLE_STD_THREAD
   if (spec.cache_file.length() == 0) {
     return new ThreadedInputSplit(split);
   } else {
