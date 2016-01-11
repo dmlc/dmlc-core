@@ -65,7 +65,7 @@ class ParserImpl : public Parser<IndexType> {
   RowBlock<IndexType> block_;
 };
 
-#if DMLC_USE_CXX11
+#if DMLC_ENABLE_STD_THREAD
 
 template <typename IndexType>
 class ThreadedParser : public ParserImpl<IndexType> {
