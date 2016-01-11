@@ -25,7 +25,7 @@ CreateLibSVMParser(const char *uri_,
   InputSplit* source = InputSplit::Create(
       uri_, part_index, num_parts, "text");
   ParserImpl<IndexType> *parser = new LibSVMParser<IndexType>(source, 2);
-#if DMLC_USE_CXX11
+#if DMLC_ENABLE_STD_THREAD
   parser = new ThreadedParser<IndexType>(parser);
 #endif
   return parser;
@@ -67,7 +67,7 @@ CreateIter_(const char *uri_,
   Parser<IndexType> *parser = CreateParser_<IndexType>
       (spec.uri.c_str(), part_index, num_parts, type);
   if (spec.cache_file.length() != 0) {
-#if DMLC_USE_CXX11
+#if DMLC_ENABLE_STD_THREAD
     return new DiskRowIter<IndexType>(parser, spec.cache_file.c_str(), true);
 #else
     LOG(FATAL) << "compile with c++0x or c++11 to enable cache file";

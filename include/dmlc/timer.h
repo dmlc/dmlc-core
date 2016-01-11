@@ -20,6 +20,7 @@ namespace dmlc {
  */
 inline double GetTime(void) {
   // TODO(tqchen): use c++11 chrono when c++11 was available
+
   #ifdef __MACH__
   clock_serv_t cclock;
   mach_timespec_t mts;
