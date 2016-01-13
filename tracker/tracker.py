@@ -46,11 +46,17 @@ class ExSocket:
 # magic number used to verify existence of data
 kMagic = 0xff99
 
+def get_some_ip(host):
+    return socket.getaddrinfo(host, None)[0][4][0]
+
+def get_family(addr):
+    return socket.getaddrinfo(addr, None)[0][0]
+
 class SlaveEntry:
     def __init__(self, sock, s_addr):
         slave = ExSocket(sock)
         self.sock = slave
-        self.host = socket.gethostbyname(s_addr[0])
+        self.host = get_some_ip(s_addr[0])
         magic = slave.recvint()
         assert magic == kMagic, 'invalid magic number=%d from %s' % (magic, self.host)
         slave.sendint(kMagic)
@@ -128,14 +134,17 @@ class RabitTracker:
     tracker for rabit
     """
     def __init__(self, hostIP, nslave, port = 9091, port_end = 9999):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.socket(get_family(hostIP), socket.SOCK_STREAM)
         for port in range(port, port_end):
             try:
                 sock.bind((hostIP, port))
                 self.port = port
                 break
-            except socket.error:
-                continue
+            except socket.error as e:
+                if e.errno == 98:
+                    continue
+                else:
+                    raise
         sock.listen(256)
         self.sock = sock
         self.hostIP = hostIP
@@ -326,7 +335,7 @@ class PSTracker:
         if cmd is None:
             return
         self.hostIP = hostIP
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.socket(get_family(hostIP), socket.SOCK_STREAM)
         for port in range(port, port_end):
             try:
                 sock.bind(('', port))
@@ -366,10 +375,10 @@ def submit(nworker, nserver, fun_submit, hostIP = 'auto', pscmd = None):
     elif hostIP == 'ip':
         from socket import gaierror
         try:
-            hostIP = socket.gethostbyname(socket.getfqdn())
+            hostIP = get_some_ip(socket.getfqdn())
         except gaierror:
-            logging.warn('gethostbyname(socket.getfqdn()) failed... trying on hostname()')
-            hostIP = socket.gethostbyname(socket.gethostname())
+            logging.warn('get_some_ip(socket.getfqdn()) failed... trying on hostname()')
+            hostIP = get_some_ip(socket.gethostname())
 
     if nserver == 0:
         pscmd = None
