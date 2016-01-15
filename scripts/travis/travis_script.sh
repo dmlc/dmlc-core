@@ -2,28 +2,14 @@
 
 # main script of travis
 if [ ${TASK} == "lint" ]; then
-    if [ ${TRAVIS_OS_NAME} != "osx" ]; then
-        make lint || exit -1
-    fi
+    make lint || exit -1
+    make doxygen 2>log.txt
+    (cat log.txt| grep -v ENABLE_PREPROCESSING |grep -v "unsupported tag" |grep warning) && exit -1
+    exit 0
 fi
 
 if [ ${TRAVIS_OS_NAME} == "osx" ]; then
     export NO_OPENMP=1
-fi
-
-if [ ${TASK} == "doc" ]; then
-    if [ ${TRAVIS_OS_NAME} != "osx" ]; then
-        make doxygen 2>log.txt
-        (cat log.txt| grep -v ENABLE_PREPROCESSING |grep -v "unsupported tag" |grep warning) && exit -1
-    fi
-fi
-
-if [ ${TASK} == "build" ]; then
-    cp make/config.mk .
-    if [ ${TRAVIS_OS_NAME} != "osx" ]; then
-        echo "USE_S3=1" >> config.mk
-    fi
-    make all || exit -1
 fi
 
 if [ ${TASK} == "unittest_gtest" ]; then
