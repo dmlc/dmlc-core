@@ -18,7 +18,9 @@ ${CACHE_PREFIX}/include/gtest:
 
 gtest: | ${CACHE_PREFIX}/include/gtest
 
-lz4: | ${CACHE_PREFIX}/include/lz4.h
+lz4:  ${CACHE_PREFIX}/include/lz4.h
+
+${CACHE_PREFIX}/include/lz4.h:
 	rm -rf lz4
 	git clone https://github.com/Cyan4973/lz4
 	cd lz4; make; make install PREFIX=${CACHE_PREFIX}; cd -
