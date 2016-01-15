@@ -13,12 +13,13 @@ else()
 		set(LINT_COMMAND ${PYTHON3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/lint3.py)
 	endif()
 endif()
+
 set(LINT_DIRS include src scripts)
 
 cmake_policy(SET CMP0009 NEW)  # suppress cmake warning
 execute_process(
-    COMMAND ${LINT_COMMAND} dmlc all ${LINT_DIRS}
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMAND ${LINT_COMMAND} ${PROJECT_NAME} all ${LINT_DIRS}
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     ERROR_VARIABLE LINT_OUTPUT
     ERROR_STRIP_TRAILING_WHITESPACE
 	
