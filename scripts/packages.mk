@@ -1,7 +1,7 @@
 # Makfile for easily install dependencies
 
 # List of packages here
-.PHONY: gtest
+.PHONY: gtest lz4
 
 # rules for gtest
 ${CACHE_PREFIX}/include/gtest:
@@ -17,3 +17,8 @@ ${CACHE_PREFIX}/include/gtest:
 	rm -rf gtest-1.7.0.zip
 
 gtest: | ${CACHE_PREFIX}/include/gtest
+
+lz4: | ${CACHE_PREFIX}/include/lz4.h
+	rm -rf lz4
+	git clone https://github.com/Cyan4973/lz4
+	cd lz4; make; make install PREFIX=${CACHE_PREFIX}; cd -
