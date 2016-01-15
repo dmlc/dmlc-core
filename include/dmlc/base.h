@@ -29,6 +29,14 @@
 #define DMLC_LOG_BEFORE_THROW 1
 #endif
 
+/*!
+ * \brief Whether to use customized logger,
+ * whose output can be decided by other libraries.
+ */
+#ifndef DMLC_LOG_CUSTOMIZE
+#define DMLC_LOG_CUSTOMIZE 0
+#endif
+
 /*! \brief whether compile with hdfs support */
 #ifndef DMLC_USE_HDFS
 #define DMLC_USE_HDFS 0

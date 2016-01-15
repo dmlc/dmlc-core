@@ -102,7 +102,11 @@ inline void InitLogging(const char* argv0) {
 #define DCHECK_NE(x, y) CHECK((x) != (y))
 #endif  // NDEBUG
 
+#if DMLC_LOG_CUSTOMIZE
+#define LOG_INFO dmlc::CustomLogMessage(__FILE__, __LINE__)
+#else
 #define LOG_INFO dmlc::LogMessage(__FILE__, __LINE__)
+#endif
 #define LOG_ERROR LOG_INFO
 #define LOG_WARNING LOG_INFO
 #define LOG_FATAL dmlc::LogMessageFatal(__FILE__, __LINE__)
@@ -174,7 +178,7 @@ class LogMessage {
     log_stream_ << "[" << pretty_date_.HumanDate() << "] " << file << ":"
                 << line << ": ";
   }
-  ~LogMessage() { log_stream_ << "\n"; }
+  ~LogMessage() { log_stream_ << '\n'; }
   std::ostream& stream() { return log_stream_; }
 
  protected:
@@ -184,6 +188,28 @@ class LogMessage {
   DateLogger pretty_date_;
   LogMessage(const LogMessage&);
   void operator=(const LogMessage&);
+};
+
+// customized logger that can allow user to define where to log the message.
+class CustomLogMessage {
+ public:
+  CustomLogMessage(const char* file, int line) {
+    log_stream_ << "[" << DateLogger().HumanDate() << "] " << file << ":"
+                << line << ": ";
+  }
+  ~CustomLogMessage() {
+    Log(log_stream_.str());
+  }
+  std::ostream& stream() { return log_stream_; }
+  /*!
+   * \brief customized logging of the message.
+   * This function won't be implemented by libdmlc
+   * \param msg The message to be logged.
+   */
+  static void Log(const std::string& msg);
+
+ private:
+  std::ostringstream log_stream_;
 };
 
 #if DMLC_LOG_FATAL_THROW == 0

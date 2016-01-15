@@ -128,7 +128,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
   FILE *fp = NULL;
   const char *fname = path.name.c_str();
   using namespace std;
-#ifndef DMLC_STRICT_CXX98_
+#ifndef DMLC_DISABLE_STDIN
   if (!strcmp(fname, "stdin")) {
     use_stdio = true; fp = stdin;
   }
