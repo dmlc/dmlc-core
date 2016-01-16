@@ -9,7 +9,7 @@
 
 #include <dmlc/base.h>
 // this code depends on c++11
-#if DMLC_USE_CXX11
+#if DMLC_ENABLE_STD_THREAD
 #include <dmlc/threadediter.h>
 #include <algorithm>
 #include "./input_split_base.h"

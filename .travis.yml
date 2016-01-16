@@ -9,11 +9,13 @@ os:
 # Use Build Matrix to do lint and build seperately
 env:
   matrix:
-    - TASK=lint LINT_LANG=cpp
-    - TASK=lint LINT_LANG=python
-    - TASK=doc
-    - TASK=build CXX=g++
-    - TASK=unittest_gtest CXX=g++
+    - TASK=lint
+    - TASK=unittest_gtest
+
+matrix:
+  exclude:
+    - os: osx
+      env: TASK=lint
 
 # dependent apt packages
 addons:

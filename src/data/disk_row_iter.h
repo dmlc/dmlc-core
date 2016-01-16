@@ -18,7 +18,7 @@
 #include "./row_block.h"
 #include "./libsvm_parser.h"
 
-#if DMLC_USE_CXX11
+#if DMLC_ENABLE_STD_THREAD
 namespace dmlc {
 namespace data {
 /*!

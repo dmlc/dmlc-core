@@ -21,6 +21,22 @@
 #define DMLC_LOG_FATAL_THROW 1
 #endif
 
+/*!
+ * \brief whether always log a message before throw
+ * This can help identify the error that cannot be catched.
+ */
+#ifndef DMLC_LOG_BEFORE_THROW
+#define DMLC_LOG_BEFORE_THROW 1
+#endif
+
+/*!
+ * \brief Whether to use customized logger,
+ * whose output can be decided by other libraries.
+ */
+#ifndef DMLC_LOG_CUSTOMIZE
+#define DMLC_LOG_CUSTOMIZE 0
+#endif
+
 /*! \brief whether compile with hdfs support */
 #ifndef DMLC_USE_HDFS
 #define DMLC_USE_HDFS 0
@@ -52,6 +68,15 @@
 #define DMLC_USE_CXX11 0
 #endif
 #endif
+
+/*!
+ * \brief Enable std::thread related modules,
+ *  Used to disable some module in mingw compile.
+ */
+#ifndef DMLC_ENABLE_STD_THREAD
+#define DMLC_ENABLE_STD_THREAD DMLC_USE_CXX11
+#endif
+
 
 /*!
  * \brief Disable copy constructor and assignment operator.

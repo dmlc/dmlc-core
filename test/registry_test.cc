@@ -27,7 +27,11 @@ struct TreeFactory
 #define REGISTER_TREE(Name)                                             \
   DMLC_REGISTRY_REGISTER(::tree::TreeFactory, TreeFactory, Name)        \
   .set_body([]() { return new Name(); } )
+
+DMLC_REGISTRY_FILE_TAG(my_tree);
+
 }  // namespace tree
+
 
 // usually this sits on a seperate file
 namespace dmlc {
@@ -40,6 +44,8 @@ REGISTER_TREE(BinaryTree)
 .describe("This is a binary tree.");
 
 REGISTER_TREE(AVLTree);
+
+DMLC_REGISTRY_LINK_TAG(my_tree);
 }
 
 int main(int argc, char *argv[]) {
@@ -52,4 +58,3 @@ int main(int argc, char *argv[]) {
   delete binary; delete avl;
   return 0;
 }
-
