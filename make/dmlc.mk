@@ -16,8 +16,13 @@ ifndef NO_OPENMP
 endif
 
 # Mac OS X does not support "-lrt" flag
-OS := $(shell uname -s)
-ifneq ($(OS), Darwin)
+ifeq ($(OS), Windows_NT)
+	UNAME=Windows
+else 
+	UNAME=$(shell uname)
+endif
+
+ifeq ($(UNAME), Linux)
     DMLC_LDFLAGS += -lrt
 endif
 
