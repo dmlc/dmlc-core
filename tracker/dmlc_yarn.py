@@ -14,15 +14,15 @@ import logging
 import platform
 from threading import Thread
 
+is_windows = os.name == 'nt'
 hadoop_binary  = None
 # code
 hadoop_home = os.getenv('HADOOP_HOME')
 
 if hadoop_home != None:
     if hadoop_binary == None:
-        hadoop_binary = hadoop_home + '/bin/hadoop'
+        hadoop_binary = os.path.join(hadoop_home, 'bin', 'hadoop')
         assert os.path.exists(hadoop_binary), "HADOOP_HOME does not contain the hadoop binary"
-
 
 parser = argparse.ArgumentParser(description='Dmlc script to submit dmlc jobs to Yarn.')
 parser.add_argument('-n', '--nworker', required=True, type=int,
@@ -67,7 +67,7 @@ parser.add_argument('--app-classpath', type=str,
 parser.add_argument('--env', action='append', default=[],
                     help = 'Client and ApplicationMaster environment variables.')
 parser.add_argument('--yarn-scripts', type=str, 
-                    default=os.path.dirname(__file__) + '/../yarn/',
+                    default=os.path.join(os.path.dirname(__file__), os.pardir, 'yarn'),
                     help = 'Path to DMLC yarn scripts and jar file.')
 parser.add_argument('--max-attempts', type=int, default=3,
                     help = 'Maximum number of attempts per worker.')
@@ -95,12 +95,13 @@ if args.jobname == 'auto':
         args.jobname = ('DMLC[nworker=%d,nsever=%d]:' % (args.nworker, args.server_nodes)) + args.command[0].split('/')[-1];
 
 # Determine path for Yarn helpers
-YARN_JAR_PATH = args.yarn_scripts + '/dmlc-yarn.jar'
-YARN_BOOT_PY = args.yarn_scripts + '/run_hdfs_prog.py'
+YARN_JAR_PATH = os.path.join(args.yarn_scripts, 'dmlc-yarn.jar')
+YARN_BOOT_PY = os.path.join(args.yarn_scripts, 'run_hdfs_prog.py')
 
 if not os.path.exists(YARN_JAR_PATH):
     warnings.warn("cannot find \"%s\", I will try to run build" % YARN_JAR_PATH)
-    cmd = 'cd %s;./build.sh' % (os.path.dirname(__file__) + '/../yarn/')
+    cmd = 'cd %s;./build.%s' % \
+        (os.path.join(os.path.dirname(__file__), os.pardir, 'yarn'), 'bat' if is_windows else 'sh')
     print cmd
     subprocess.check_call(cmd, shell = True, env = os.environ)
     assert os.path.exists(YARN_JAR_PATH), "failed to build dmlc-yarn.jar, try it manually"
@@ -112,7 +113,8 @@ out = out.split('\n')[0].split()
 assert out[0] == 'Hadoop', 'cannot parse hadoop version string'
 hadoop_version = out[1].split('.')
 
-(classpath, err) = subprocess.Popen('%s classpath --glob' % args.hadoop_binary, shell = True, stdout=subprocess.PIPE).communicate()
+(classpath, err) = subprocess.Popen('%s classpath' % args.hadoop_binary, shell = True, stdout=subprocess.PIPE).communicate()
+classpath = classpath.strip()
 
 if hadoop_version < 2:
     print 'Current Hadoop Version is %s, dmlc_yarn will need Yarn(Hadoop 2.0)' % out[1]
@@ -145,9 +147,9 @@ def yarn_submit(nworker, nserver, pass_env):
     if JAVA_HOME is None:
         JAVA = 'java'
     else:
-        JAVA = JAVA_HOME + '/bin/java'
-    cmd = '%s -cp `%s classpath`:%s org.apache.hadoop.yarn.dmlc.Client '\
-          % (JAVA, args.hadoop_binary, YARN_JAR_PATH)
+        JAVA = os.path.join(JAVA_HOME, 'bin', 'java')
+    cmd = '%s -cp %s%s%s org.apache.hadoop.yarn.dmlc.Client '\
+          % (JAVA, classpath, ';' if is_windows else ':', YARN_JAR_PATH)
     env = os.environ.copy()
     for k, v in pass_env.items():
         env[k] = str(v)
