@@ -326,21 +326,32 @@ public class ApplicationMaster {
         ctx.setLocalResources(this.workerResources);
         // setup environment variables
 
+        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
         // setup class path, this is kind of duplicated, ignoring
-        StringBuilder cpath = new StringBuilder("${CLASSPATH}:./*");
+        String classPathStr = isWindows? "%CLASSPATH%" : "${CLASSPATH}";
+        StringBuilder cpath = new StringBuilder(classPathStr 
+        		+ File.pathSeparatorChar 
+        		+ "./*");
         for (String c : conf.getStrings(
                 YarnConfiguration.YARN_APPLICATION_CLASSPATH,
                 YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-            String[] arrPath = c.split(":");
+        	if (isWindows) c = c.replace('\\', '/');
+            String[] arrPath = c.split("" + File.pathSeparatorChar);
             for (String ps : arrPath) {
-                if (ps.endsWith("*.jar") || ps.endsWith("*")) {
+                if (ps.endsWith("*.jar") 
+                		|| ps.endsWith("*") 
+                		|| ps.endsWith("/")) {
                     ps = ps.substring(0, ps.lastIndexOf('*'));
-                    String prefix = ps.substring(0, ps.lastIndexOf('/'));
-                    if (ps.startsWith("$")) {
+                    if (ps.startsWith("$") || ps.startsWith("%")) {
                         String[] arr =ps.split("/", 2);
                         if (arr.length != 2) continue;
                         try {
-                            ps = System.getenv(arr[0].substring(1)) + '/' + arr[1];
+                        	String vname = isWindows ? 
+                        			arr[0].substring(1, arr[0].length() - 1) :
+                        			arr[0].substring(1);
+                        	String vv = System.getenv(vname);
+                        	if (isWindows) vv = vv.replace('\\', '/');
+                            ps = vv + '/' + arr[1];
                         } catch (Exception e){
                             continue;
                         }
@@ -349,13 +360,15 @@ public class ApplicationMaster {
                     if (dir.isDirectory()) {
                         for (File f: dir.listFiles()) {
                             if (f.isFile() && f.getPath().endsWith(".jar")) {
-                                cpath.append(":");
-                                cpath.append(prefix + '/' + f.getName());
+                                cpath.append(File.pathSeparatorChar);
+                                cpath.append(ps + '/' + f.getName());
                             }
                         }
                     }
+                    cpath.append(File.pathSeparatorChar);
+                    cpath.append(ps + '/');
                 } else {
-                    cpath.append(':');
+                    cpath.append(File.pathSeparatorChar);
                     cpath.append(ps.trim());
                 }
             }
@@ -363,7 +376,6 @@ public class ApplicationMaster {
         // already use hadoop command to get class path in worker, maybe a
         // better solution in future
         env.put("CLASSPATH", cpath.toString());
-        //LOG.info("CLASSPATH =" + cpath.toString());
         // setup LD_LIBARY_PATH path for libhdfs
         String oldLD_LIBRARY_PATH = System.getenv("LD_LIBRARY_PATH");
         env.put("LD_LIBRARY_PATH",
@@ -389,6 +401,7 @@ public class ApplicationMaster {
         env.put("DMLC_NUM_ATTEMPT", String.valueOf(task.attemptCounter));
         // ctx.setUser(userName);
         ctx.setEnvironment(env);
+        LOG.info(env);
         synchronized (this) {
             assert (!this.runningTasks.containsKey(container.getId()));
             this.runningTasks.put(container.getId(), task);
