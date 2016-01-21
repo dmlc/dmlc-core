@@ -19,11 +19,12 @@ namespace data {
 
 template<typename IndexType>
 Parser<IndexType> *
-CreateLibSVMParser(const char *uri_,
+CreateLibSVMParser(const std::string& path,
+                   const std::map<std::string, std::string>& args,
                    unsigned part_index,
                    unsigned num_parts) {
   InputSplit* source = InputSplit::Create(
-      uri_, part_index, num_parts, "text");
+      path.c_str(), part_index, num_parts, "text");
   ParserImpl<IndexType> *parser = new LibSVMParser<IndexType>(source, 2);
 #if DMLC_ENABLE_STD_THREAD
   parser = new ThreadedParser<IndexType>(parser);
@@ -33,12 +34,13 @@ CreateLibSVMParser(const char *uri_,
 
 template<typename IndexType>
 Parser<IndexType> *
-CreateCSVParser(const char *uri_,
+CreateCSVParser(const std::string& path,
+                const std::map<std::string, std::string>& args,
                 unsigned part_index,
                 unsigned num_parts) {
   InputSplit* source = InputSplit::Create(
-      uri_, part_index, num_parts, "text");
-  return new CSVParser<IndexType>(source, 2);
+      path.c_str(), part_index, num_parts, "text");
+  return new CSVParser<IndexType>(source, args, 2);
 }
 
 template<typename IndexType>
@@ -47,13 +49,23 @@ CreateParser_(const char *uri_,
               unsigned part_index,
               unsigned num_parts,
               const char *type) {
+  std::string ptype = type;
+  io::URISpec spec(uri_, part_index, num_parts);
+  if (ptype == "auto") {
+    if (spec.args.count("format") != 0) {
+      ptype = spec.args.at("format");
+    } else {
+      ptype = "libsvm";
+    }
+  }
+
   const ParserFactoryReg<IndexType>* e =
-      Registry<ParserFactoryReg<IndexType> >::Get()->Find(type);
+      Registry<ParserFactoryReg<IndexType> >::Get()->Find(ptype);
   if (e == NULL) {
     LOG(FATAL) << "Unknown data type " << type;
   }
   // create parser
-  return (*e->body)(uri_, part_index, num_parts);
+  return (*e->body)(spec.uri, spec.args, part_index, num_parts);
 }
 
 template<typename IndexType>
@@ -77,6 +89,8 @@ CreateIter_(const char *uri_,
     return new BasicRowIter<IndexType>(parser);
   }
 }
+
+DMLC_REGISTER_PARAMETER(CSVParserParam);
 }  // namespace data
 
 // template specialization
@@ -123,4 +137,5 @@ DMLC_REGISTER_DATA_PARSER(uint32_t, libsvm, data::CreateLibSVMParser<uint32_t>);
 DMLC_REGISTER_DATA_PARSER(uint64_t, libsvm, data::CreateLibSVMParser<uint64_t>);
 
 DMLC_REGISTER_DATA_PARSER(uint32_t, csv, data::CreateCSVParser<uint32_t>);
+
 }  // namespace dmlc

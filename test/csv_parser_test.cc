@@ -19,21 +19,22 @@ int main(int argc, char *argv[]) {
     }
   }
   using namespace dmlc;
-  InputSplit *split = InputSplit::Create(argv[1],
-                                         atoi(argv[2]),
-                                         atoi(argv[3]),
-                                         "text");
-  int nthread = atoi(argv[4]);
-  data::CSVParser<unsigned> parser(split, nthread);
+  std::unique_ptr<dmlc::Parser<unsigned> > parser(
+      dmlc::Parser<unsigned>::Create(argv[1],
+                                     atoi(argv[2]),
+                                     atoi(argv[3]),
+                                     "csv"));
   double tstart = GetTime();
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;
   size_t num_ex = 0;
-  while (parser.Next()) {
-    bytes_read  = parser.BytesRead();
-    num_ex += parser.Value().size;
+  while (parser->Next());
+  parser->BeforeFirst();
+  while (parser->Next()) {
+    bytes_read  = parser->BytesRead();
+    num_ex += parser->Value().size;
     if (fo != NULL){
-      const dmlc::RowBlock<unsigned>& batch = parser.Value();
+      const dmlc::RowBlock<unsigned>& batch = parser->Value();
       for (size_t i = 0; i < batch.size; ++i) {
         for (size_t j = 0; j < batch[i].length; ++j) {
           fprintf(fo, "%g", batch[i].value[j]);

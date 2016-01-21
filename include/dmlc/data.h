@@ -6,8 +6,10 @@
  */
 #ifndef DMLC_DATA_H_
 #define DMLC_DATA_H_
+
 #include <string>
 #include <vector>
+#include <map>
 #include "./base.h"
 #include "./io.h"
 #include "./logging.h"
@@ -242,7 +244,9 @@ class Parser : public DataIter<RowBlock<IndexType> > {
   * \param uri_ the uri of the input, can contain hdfs prefix
   * \param part_index the part id of current input
   * \param num_parts total number of splits
-  * \param type type of dataset can be: "libsvm", ...
+  * \param type type of dataset can be: "libsvm", "auto", ...
+  *
+  * When "auto" is passed, the type is decided by format argument string in URI.
   *
   * \return the created parser
   */
@@ -255,9 +259,11 @@ class Parser : public DataIter<RowBlock<IndexType> > {
   virtual size_t BytesRead(void) const = 0;
   /*! \brief Factory type of the parser*/
   typedef Parser<IndexType>* (*Factory)
-      (const char *uri, unsigned part_index, unsigned num_parts);
+      (const std::string& path,
+       const std::map<std::string, std::string>& args,
+       unsigned part_index,
+       unsigned num_parts);
 };
-
 
 /*!
  * \brief registry entry of parser factory
