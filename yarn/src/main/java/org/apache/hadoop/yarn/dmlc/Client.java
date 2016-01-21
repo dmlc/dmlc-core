@@ -1,4 +1,5 @@
 package org.apache.hadoop.yarn.dmlc;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -174,12 +175,12 @@ public class Client {
         } else {
             StringBuilder cpath = new StringBuilder()
                 .append(Environment.CLASSPATH.$$())
-                .append(":")
-                .append("./*");
+                .append(File.pathSeparatorChar)
+                .append("." + File.pathSeparator + "*");
             for (String c : conf.getStrings(
                         YarnConfiguration.YARN_APPLICATION_CLASSPATH,
                         YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-                cpath.append(":")
+                cpath.append(File.pathSeparatorChar)
                      .append(c.trim());
             }
             env.put("CLASSPATH", cpath.toString());
@@ -271,12 +272,13 @@ public class Client {
         // setup cache-files and environment variables
         amContainer.setLocalResources(this.setupCacheFiles(appId));
         amContainer.setEnvironment(this.getEnvironment());
-        String cmd = "$JAVA_HOME/bin/java"
+        String cmd = Environment.JAVA_HOME.$$() + "/bin/java"
                 + " -Xmx900m"
                 + " org.apache.hadoop.yarn.dmlc.ApplicationMaster"
                 + this.cacheFileArg + ' ' + this.appArgs + " 1>"
                 + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"
                 + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr";
+
         LOG.debug(cmd);
         amContainer.setCommands(Collections.singletonList(cmd));
 
