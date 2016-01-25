@@ -210,24 +210,26 @@ class InputSplit {
 };
 
 /*!
- * \brief a std::ostream class that can can wrap Stream objects,
+ * \brief a std::ostream class that wraps a Stream object,
  *  can use ostream with that output to underlying Stream
  *
  * Usage example:
  * \code
  *
- *   Stream *fs = Stream::Create("hdfs:///test.txt", "w");
- *   dmlc::ostream os(fs);
+ *   dmlc::ostream os("hdfs:///test.txt");
  *   os << "hello world" << std::endl;
- *   delete fs;
  * \endcode
  */
 class ostream : public std::basic_ostream<char> {
  public:
   /*!
    * \brief construct std::ostream type
-   * \param stream the Stream output to be used
+   * \param uri the uri of the input currently we support
+   *            hdfs://, s3://, and file:// by default file:// will be used
+   * \param allow_null whether NULL can be returned, or directly report error
    * \param buffer_size internal streambuf size
+   *
+   * Internally, it creates a new Stream object with flag "w".
    */
   explicit ostream(const char *uri,
                    bool allow_null = false,
@@ -262,6 +264,8 @@ class ostream : public std::basic_ostream<char> {
         : stream_(NULL), buffer_(buffer_size), bytes_out_(0) {
       if (buffer_size == 0) buffer_.resize(2);
     }
+
+    // release the internal Stream object.
     virtual ~OutBuf(){
       delete stream_;
       stream_ = NULL;
@@ -288,24 +292,26 @@ class ostream : public std::basic_ostream<char> {
 };
 
 /*!
- * \brief a std::istream class that can can wrap Stream objects,
+ * \brief a std::istream class that wraps a Stream object,
  *  can use istream with that output to underlying Stream
  *
  * Usage example:
  * \code
  *
- *   Stream *fs = Stream::Create("hdfs:///test.txt", "r");
- *   dmlc::istream is(fs);
+ *   dmlc::istream is("hdfs:///test.txt");
  *   is >> mydata;
- *   delete fs;
  * \endcode
  */
 class istream : public std::basic_istream<char> {
  public:
   /*!
-   * \brief construct std::ostream type
-   * \param stream the Stream output to be used
+   * \brief construct std::istream type
+   * \param uri the uri of the input currently we support
+   *            hdfs://, s3://, and file:// by default file:// will be used
+   * \param allow_null whether NULL can be returned, or directly report error
    * \param buffer_size internal buffer size
+   *
+   * Internally, it creates a new Stream object with flag "r".
    */
   explicit istream(const char *uri,
                    bool allow_null = false,
@@ -314,6 +320,13 @@ class istream : public std::basic_istream<char> {
     this->set_stream(Stream::Create(uri, "r", allow_null));
   }
   virtual ~istream() {}
+
+  /*! \return how many bytes we read so far */
+  inline size_t bytes_read(void) const {
+    return buf_.bytes_read();
+  }
+
+ private:
   /*!
    * \brief set internal stream to be stream, reset states
    * \param stream new stream as output
@@ -322,12 +335,7 @@ class istream : public std::basic_istream<char> {
     buf_.set_stream(stream);
     this->rdbuf(&buf_);
   }
-  /*! \return how many bytes we read so far */
-  inline size_t bytes_read(void) const {
-    return buf_.bytes_read();
-  }
 
- private:
   // internal streambuf
   class InBuf : public std::streambuf {
    public:
@@ -337,6 +345,7 @@ class istream : public std::basic_istream<char> {
       if (buffer_size == 0) buffer_.resize(2);
     }
 
+    // release the internal Stream object.
     virtual ~InBuf(){
       delete stream_;
       stream_ = NULL;
@@ -374,14 +383,19 @@ template<typename T>
 inline bool Stream::Read(T *out_data) {
   return serializer::Handler<T>::Read(this, out_data);
 }
+
 // implementations for ostream
 inline void ostream::OutBuf::set_stream(Stream *stream) {
-  if (stream_ != NULL) this->pubsync();
+  if (this->stream_ != NULL){
+    this->pubsync();
+    delete stream_;
+    this->stream_ = NULL;
+  }
   this->stream_ = stream;
   this->setp(&buffer_[0], &buffer_[0] + buffer_.size() - 1);
 }
 inline int ostream::OutBuf::sync(void) {
-  if (stream_ == NULL) return -1;
+  if (stream_ == NULL)return -1;
   std::ptrdiff_t n = pptr() - pbase();
   stream_->Write(pbase(), n);
   this->pbump(-static_cast<int>(n));
@@ -404,7 +418,11 @@ inline int ostream::OutBuf::overflow(int c) {
 
 // implementations for istream
 inline void istream::InBuf::set_stream(Stream *stream) {
-  stream_ = stream;
+  if (this->stream_ != NULL){
+    delete this->stream_;
+    this->stream_ = NULL;
+  }
+  this->stream_ = stream;
   this->setg(&buffer_[0], &buffer_[0], &buffer_[0]);
 }
 inline int istream::InBuf::underflow() {
