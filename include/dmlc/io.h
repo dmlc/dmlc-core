@@ -266,7 +266,7 @@ class ostream : public std::basic_ostream<char> {
     }
 
     // release the internal Stream object.
-    virtual ~OutBuf(){
+    virtual ~OutBuf() {
       delete stream_;
       stream_ = NULL;
     }
@@ -275,6 +275,7 @@ class ostream : public std::basic_ostream<char> {
     inline void set_stream(Stream *stream);
 
     inline size_t bytes_out() const { return bytes_out_; }
+
    private:
     /*! \brief internal stream by StreamBuf */
     Stream *stream_;
@@ -346,7 +347,7 @@ class istream : public std::basic_istream<char> {
     }
 
     // release the internal Stream object.
-    virtual ~InBuf(){
+    virtual ~InBuf() {
       delete stream_;
       stream_ = NULL;
     }
@@ -356,6 +357,7 @@ class istream : public std::basic_istream<char> {
     inline size_t bytes_read(void) const {
       return bytes_read_;
     }
+
    private:
     /*! \brief internal stream by StreamBuf */
     Stream *stream_;
@@ -386,7 +388,7 @@ inline bool Stream::Read(T *out_data) {
 
 // implementations for ostream
 inline void ostream::OutBuf::set_stream(Stream *stream) {
-  if (this->stream_ != NULL){
+  if (this->stream_ != NULL) {
     this->pubsync();
     delete stream_;
     this->stream_ = NULL;
@@ -395,7 +397,7 @@ inline void ostream::OutBuf::set_stream(Stream *stream) {
   this->setp(&buffer_[0], &buffer_[0] + buffer_.size() - 1);
 }
 inline int ostream::OutBuf::sync(void) {
-  if (stream_ == NULL)return -1;
+  if (stream_ == NULL) return -1;
   std::ptrdiff_t n = pptr() - pbase();
   stream_->Write(pbase(), n);
   this->pbump(-static_cast<int>(n));
@@ -418,7 +420,7 @@ inline int ostream::OutBuf::overflow(int c) {
 
 // implementations for istream
 inline void istream::InBuf::set_stream(Stream *stream) {
-  if (this->stream_ != NULL){
+  if (this->stream_ != NULL) {
     delete this->stream_;
     this->stream_ = NULL;
   }
