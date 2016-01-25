@@ -62,7 +62,7 @@ CreateParser_(const char *uri_,
   const ParserFactoryReg<IndexType>* e =
       Registry<ParserFactoryReg<IndexType> >::Get()->Find(ptype);
   if (e == NULL) {
-    LOG(FATAL) << "Unknown data type " << type;
+    LOG(FATAL) << "Unknown data type " << ptype;
   }
   // create parser
   return (*e->body)(spec.uri, spec.args, part_index, num_parts);
