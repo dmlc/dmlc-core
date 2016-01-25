@@ -229,15 +229,23 @@ class ostream : public std::basic_ostream<char> {
    * \param stream the Stream output to be used
    * \param buffer_size internal streambuf size
    */
-  explicit ostream(Stream *stream,
+  explicit ostream(const char *uri,
+                   bool allow_null = false,
                    size_t buffer_size = (1 << 10))
       : std::basic_ostream<char>(NULL), buf_(buffer_size) {
-    this->set_stream(stream);
+    this->set_stream(Stream::Create(uri, "w", allow_null));
   }
   // explictly synchronize the buffer
   virtual ~ostream() {
     buf_.pubsync();
   }
+
+  /*! \return how many bytes we written so far */
+  inline size_t bytes_written(void) const {
+    return buf_.bytes_out();
+  }
+
+ private:
   /*!
    * \brief set internal stream to be stream, reset states
    * \param stream new stream as output
@@ -247,12 +255,6 @@ class ostream : public std::basic_ostream<char> {
     this->rdbuf(&buf_);
   }
 
-  /*! \return how many bytes we written so far */
-  inline size_t bytes_written(void) const {
-    return buf_.bytes_out();
-  }
-
- private:
   // internal streambuf
   class OutBuf : public std::streambuf {
    public:
@@ -260,6 +262,11 @@ class ostream : public std::basic_ostream<char> {
         : stream_(NULL), buffer_(buffer_size), bytes_out_(0) {
       if (buffer_size == 0) buffer_.resize(2);
     }
+    virtual ~OutBuf(){
+      delete stream_;
+      stream_ = NULL;
+    }
+
     // set stream to the buffer
     inline void set_stream(Stream *stream);
 
@@ -300,10 +307,11 @@ class istream : public std::basic_istream<char> {
    * \param stream the Stream output to be used
    * \param buffer_size internal buffer size
    */
-  explicit istream(Stream *stream,
+  explicit istream(const char *uri,
+                   bool allow_null = false,
                    size_t buffer_size = (1 << 10))
       : std::basic_istream<char>(NULL), buf_(buffer_size) {
-    this->set_stream(stream);
+    this->set_stream(Stream::Create(uri, "r", allow_null));
   }
   virtual ~istream() {}
   /*!
@@ -327,6 +335,11 @@ class istream : public std::basic_istream<char> {
         : stream_(NULL), bytes_read_(0),
           buffer_(buffer_size) {
       if (buffer_size == 0) buffer_.resize(2);
+    }
+
+    virtual ~InBuf(){
+      delete stream_;
+      stream_ = NULL;
     }
     // set stream to the buffer
     inline void set_stream(Stream *stream);
@@ -361,7 +374,6 @@ template<typename T>
 inline bool Stream::Read(T *out_data) {
   return serializer::Handler<T>::Read(this, out_data);
 }
-
 // implementations for ostream
 inline void ostream::OutBuf::set_stream(Stream *stream) {
   if (stream_ != NULL) this->pubsync();
