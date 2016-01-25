@@ -34,8 +34,8 @@ class InputSplitBase : public InputSplit {
     // load chunk from split
     bool Load(InputSplitBase *split, size_t buffer_size);
   };
-  // 2MB
-  static const size_t kBufferSize = 1UL << 15UL;
+  // 32MB
+  static const size_t kBufferSize = 4UL << 20UL;
   // destructor
   virtual ~InputSplitBase(void);
   // implement BeforeFirst
