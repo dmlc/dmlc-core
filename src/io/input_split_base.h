@@ -149,7 +149,9 @@ class InputSplitBase : public InputSplit {
   /*! \brief internal overflow buffer */
   std::string overflow_;
   /*! \brief initialize information in files */
-  void InitInputFileInfo(const char *uri);
+  void InitInputFileInfo(const std::string& uri);
+  /*! \brief strip continous chars in the end of str */
+  std::string StripEnd(std::string str, char ch);
   /*! \brief same as stream.Read */
   size_t Read(void *ptr, size_t size);
 };

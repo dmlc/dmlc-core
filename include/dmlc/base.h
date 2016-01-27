@@ -77,6 +77,10 @@
 #define DMLC_ENABLE_STD_THREAD DMLC_USE_CXX11
 #endif
 
+/*! \brief whether enable regex support, actually need g++-4.9 or higher*/
+#ifndef DMLC_USE_REGEX
+#define DMLC_USE_REGEX (__cplusplus >= 201103L || defined(_MSC_VER))
+#endif
 
 /*!
  * \brief Disable copy constructor and assignment operator.
