@@ -175,8 +175,8 @@ class FunctionRegEntryBase {
     return this->self();
   }
   /*!
-  * \brief Append list if arguments to the end.
-  * \param args Additional list of arguments.
+  * \brief Set the return type.
+  * \param type Return type of the function, could be Symbol or Symbol[]
   * \return reference to self.
   */
   inline EntryType &set_return_type(const std::string &type) {
