@@ -11,6 +11,7 @@
 #include <atomic>
 #include <queue>
 #include <mutex>
+#include <vector>
 #include <condition_variable>
 #include "dmlc/base.h"
 
@@ -104,8 +105,6 @@ class ConcurrentBlockingQueue {
   struct Entry {
     T data;
     int priority;
-    Entry(const T& data, int priority)
-        : data(data), priority(priority) {}
     inline bool operator<(const Entry &b) const {
       return priority < b.priority;
     }
@@ -116,7 +115,7 @@ class ConcurrentBlockingQueue {
   std::atomic<bool> exit_now_;
   int nwait_consumer_;
   // a priority queue
-  std::priority_queue<Entry> priority_queue_;
+  std::vector<Entry> priority_queue_;
   // a FIFO queue
   std::queue<T> fifo_queue_;
   /*!
@@ -152,7 +151,11 @@ void ConcurrentBlockingQueue<T, type>::Push(E&& e, int priority) {
       fifo_queue_.emplace(std::forward<E>(e));
       notify = nwait_consumer_ != 0;
     } else {
-      priority_queue_.emplace(std::forward<E>(e), priority);
+      Entry entry;
+      entry.data = std::move(e);
+      entry.priority = priority;
+      priority_queue_.push_back(std::move(entry));
+      std::push_heap(priority_queue_.begin(), priority_queue_.end());
       notify = nwait_consumer_ != 0;
     }
   }
@@ -182,8 +185,9 @@ bool ConcurrentBlockingQueue<T, type>::Pop(T* rv) {
       });
     --nwait_consumer_;
     if (!exit_now_.load()) {
-      *rv = std::move(priority_queue_.top().data);
-      priority_queue_.pop();
+      std::pop_heap(priority_queue_.begin(), priority_queue_.end());
+      *rv = std::move(priority_queue_.back().data);
+      priority_queue_.pop_back();
       return true;
     } else {
       return false;
