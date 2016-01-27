@@ -1,7 +1,12 @@
 // Copyright by Contributors
 #include <dmlc/logging.h>
+#include <dmlc/common.h>
 #include <algorithm>
 #include "./line_split.h"
+
+#if DMLC_USE_REGEX
+#include <regex>
+#endif
 
 namespace dmlc {
 namespace io {
@@ -74,15 +79,66 @@ InputSplitBase::~InputSplitBase(void) {
   // no need to delete filesystem, it was singleton
 }
 
-void InputSplitBase::InitInputFileInfo(const char *uri) {
-  // split by :
-  const char *dlm = ";";
-  std::string uri_ = uri;
-  char *p = std::strtok(BeginPtr(uri_), dlm);
-  std::vector<URI> vec;
+std::string InputSplitBase::StripEnd(std::string str, char ch) {
+  while (str.length() != 0 && str[str.length() - 1] == ch) {
+    str.resize(str.length() - 1);
+  }
+  return str;
+}
 
-  while (p != NULL) {
-    URI path(p);
+void InputSplitBase::InitInputFileInfo(const std::string& uri) {
+  // split by :
+  const char dlm = ';';
+  std::vector<std::string> file_list = Split(uri, dlm);
+  std::vector<URI> expanded_list;
+
+  // expand by match regex pattern.
+  for (size_t i = 0; i < file_list.size(); ++i) {
+    URI path(file_list[i].c_str());
+    size_t pos = path.name.rfind('/');
+    if (pos == std::string::npos || pos + 1 == path.name.length()) {
+      expanded_list.push_back(path);
+    } else {
+      URI dir = path;
+      dir.name = path.name.substr(0, pos);
+      std::vector<FileInfo> dfiles;
+      filesys_->ListDirectory(dir, &dfiles);
+      bool exact_match = false;
+      for (size_t i = 0; i < dfiles.size(); ++i) {
+        if (StripEnd(dfiles[i].path.name, '/') == StripEnd(path.name, '/')) {
+          expanded_list.push_back(dfiles[i].path);
+          exact_match = true;
+          break;
+        }
+      }
+#if DMLC_USE_REGEX
+      if (!exact_match) {
+        std::string spattern = path.name;
+        try {
+          std::regex pattern(spattern);
+          for (size_t i = 0; i < dfiles.size(); ++i) {
+            if (dfiles[i].type != kFile || dfiles[i].size == 0) continue;
+            std::string stripped = StripEnd(dfiles[i].path.name, '/');
+            std::smatch base_match;
+            if (std::regex_match(stripped, base_match, pattern)) {
+              for (size_t j = 0; j < base_match.size(); ++j) {
+                if (base_match[j].str() == stripped) {
+                  expanded_list.push_back(dfiles[i].path); break;
+                }
+              }
+            }
+          }
+        } catch (std::regex_error& e) {
+          LOG(FATAL) << e.what() << " bad regex " << spattern
+                     << "This could due to compiler version, g++-4.9 is needed";
+        }
+      }
+#endif  // DMLC_USE_REGEX
+    }
+  }
+
+  for (size_t i = 0; i < expanded_list.size(); ++i) {
+    const URI& path = expanded_list[i];
     FileInfo info = filesys_->GetPathInfo(path);
     if (info.type == kDirectory) {
       std::vector<FileInfo> dfiles;
@@ -97,8 +153,9 @@ void InputSplitBase::InitInputFileInfo(const char *uri) {
         files_.push_back(info);
       }
     }
-    p = std::strtok(NULL, dlm);
   }
+  CHECK_NE(files_.size(), 0)
+      << "Cannot find any files that matches the URI patternz " << uri;
 }
 
 size_t InputSplitBase::Read(void *ptr, size_t size) {
