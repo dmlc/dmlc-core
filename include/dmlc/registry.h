@@ -183,7 +183,7 @@ class FunctionRegEntryBase {
     return_type = type;
     return this->self();
   }
-  
+
  protected:
   /*!
    * \return reference of self as derived type
