@@ -126,6 +126,9 @@ class FunctionRegEntryBase {
   std::vector<ParamFieldInfo> arguments;
   /*! \brief Function body to create ProductType */
   FunctionType body;
+  /*! \brief Return type of the function */
+  std::string return_type;
+
   /*!
    * \brief Set the function body.
    * \param body Function body to set.
@@ -171,7 +174,15 @@ class FunctionRegEntryBase {
     arguments.insert(arguments.end(), args.begin(), args.end());
     return this->self();
   }
-
+  /*!
+  * \brief Append list if arguments to the end.
+  * \param args Additional list of arguments.
+  * \return reference to self.
+  */
+  inline EntryType &set_return_type(const std::string &type) {
+    return_type = type;
+    return this->self();
+  }
  protected:
   /*!
    * \return reference of self as derived type
