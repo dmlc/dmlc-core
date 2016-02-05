@@ -10,7 +10,6 @@
 #include "io/single_file_split.h"
 #include "io/filesys.h"
 #include "io/local_filesys.h"
-#include "io/threaded_input_split.h"
 #include "io/cached_input_split.h"
 
 #if DMLC_USE_HDFS
@@ -84,7 +83,7 @@ InputSplit* InputSplit::Create(const char *uri_,
   }
 #if DMLC_ENABLE_STD_THREAD
   if (spec.cache_file.length() == 0) {
-    return new ThreadedInputSplit(split);
+    return split;
   } else {
     return new CachedInputSplit(split, spec.cache_file.c_str());
   }

@@ -84,6 +84,9 @@ class CachedInputSplit : public InputSplit {
       iter_cached_.Recycle(&tmp_chunk_);
     }
   }
+  virtual void ResetPartition(unsigned part_index, unsigned num_parts) {
+    LOG(FATAL) << "ResetPartition is not supported in CachedInputSplit";
+  }
   virtual void HintChunkSize(size_t chunk_size) {
     buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
   }

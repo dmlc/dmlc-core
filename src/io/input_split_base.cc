@@ -12,8 +12,6 @@ namespace dmlc {
 namespace io {
 void InputSplitBase::Init(FileSystem *filesys,
                           const char *uri,
-                          unsigned rank,
-                          unsigned nsplit,
                           size_t align_bytes) {
   this->filesys_ = filesys;
   // initialize the path
@@ -25,10 +23,15 @@ void InputSplitBase::Init(FileSystem *filesys,
     CHECK(files_[i].size % align_bytes == 0)
         << "file do not align by " << align_bytes << " bytes";
   }
+  this->align_bytes_ = align_bytes_;
+}
+
+void InputSplitBase::ResetPartition(unsigned rank,
+                                    unsigned nsplit) {
   size_t ntotal = file_offset_.back();
   size_t nstep = (ntotal + nsplit - 1) / nsplit;
   // align the nstep to 4 bytes
-  nstep = ((nstep + align_bytes - 1) / align_bytes) * align_bytes;
+  nstep = ((nstep + align_bytes_ - 1) / align_bytes_) * align_bytes_;
   offset_begin_ = std::min(nstep * rank, ntotal);
   offset_end_ = std::min(nstep * (rank + 1), ntotal);
   offset_curr_ = offset_begin_;
@@ -39,6 +42,9 @@ void InputSplitBase::Init(FileSystem *filesys,
   file_ptr_end_ = std::upper_bound(file_offset_.begin(),
                                    file_offset_.end(),
                                    offset_end_) - file_offset_.begin() - 1;
+  if (fs_ != NULL) {
+    delete fs_; fs_ = NULL;
+  }
   // find the exact ending position
   if (offset_end_ != file_offset_[file_ptr_end_]) {
     CHECK(offset_end_ >file_offset_[file_ptr_end_]);
