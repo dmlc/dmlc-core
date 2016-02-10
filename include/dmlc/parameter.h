@@ -536,8 +536,8 @@ class FieldEntryBase : public FieldAccessEntry {
   virtual void SetDefault(void *head) const {
     if (!has_default_) {
       std::ostringstream os;
-      os << "Parameter " << key_
-         << " is not presented";
+      os << "Required parameter " << key_
+         << " of " << type_ << " is not presented";
       throw dmlc::ParamError(os.str());
     } else {
       this->Get(head) = default_value_;

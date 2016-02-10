@@ -188,6 +188,14 @@ class InputSplit {
   /*! \brief destructor*/
   virtual ~InputSplit(void) {}
   /*!
+   * \brief reset the Input split to a certain part id,
+   *  The InputSplit will be pointed to the head of the new specified segment.
+   *  This feature may not be supported by every implementation of InputSplit.
+   * \param part_index The part id of the new input.
+   * \param num_parts The total number of parts.
+   */
+  virtual void ResetPartition(unsigned part_index, unsigned num_parts) = 0;
+  /*!
    * \brief factory function:
    *  create input split given a uri
    * \param uri the uri of the input, can contain hdfs prefix

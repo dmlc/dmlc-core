@@ -34,8 +34,8 @@ class InputSplitBase : public InputSplit {
     // load chunk from split
     bool Load(InputSplitBase *split, size_t buffer_size);
   };
-  // 2MB
-  static const size_t kBufferSize = 1UL << 15UL;
+  // 128 MB
+  static const size_t kBufferSize = 16UL << 20UL;
   // destructor
   virtual ~InputSplitBase(void);
   // implement BeforeFirst
@@ -57,6 +57,8 @@ class InputSplitBase : public InputSplit {
     }
     return true;
   }
+  // implement ResetPartition.
+  virtual void ResetPartition(unsigned rank, unsigned nsplit);
   /*!
    * \brief read a chunk of data into buf
    *   the data can span multiple records,
@@ -90,6 +92,7 @@ class InputSplitBase : public InputSplit {
   // constructor
   InputSplitBase()
       : fs_(NULL),
+        align_bytes_(8),
         tmp_chunk_(kBufferSize),
         buffer_size_(kBufferSize) {}
   /*!
@@ -103,8 +106,6 @@ class InputSplitBase : public InputSplit {
    */
   void Init(FileSystem *fs,
             const char *uri,
-            unsigned rank,
-            unsigned nsplit,
             size_t align_bytes);
   // to be implemented by child class
   /*!
@@ -130,6 +131,8 @@ class InputSplitBase : public InputSplit {
   std::vector<FileInfo> files_;
   /*! \brief current input stream */
   SeekStream *fs_;
+  /*! \brief bytes to be aligned */
+  size_t align_bytes_;
   /*! \brief file pointer of which file to read on */
   size_t file_ptr_;
   /*! \brief file pointer where the end of file lies */
@@ -149,7 +152,9 @@ class InputSplitBase : public InputSplit {
   /*! \brief internal overflow buffer */
   std::string overflow_;
   /*! \brief initialize information in files */
-  void InitInputFileInfo(const char *uri);
+  void InitInputFileInfo(const std::string& uri);
+  /*! \brief strip continous chars in the end of str */
+  std::string StripEnd(std::string str, char ch);
   /*! \brief same as stream.Read */
   size_t Read(void *ptr, size_t size);
 };

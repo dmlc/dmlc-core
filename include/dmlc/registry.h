@@ -126,6 +126,9 @@ class FunctionRegEntryBase {
   std::vector<ParamFieldInfo> arguments;
   /*! \brief Function body to create ProductType */
   FunctionType body;
+  /*! \brief Return type of the function */
+  std::string return_type;
+
   /*!
    * \brief Set the function body.
    * \param body Function body to set.
@@ -169,6 +172,15 @@ class FunctionRegEntryBase {
    */
   inline EntryType &add_arguments(const std::vector<ParamFieldInfo> &args) {
     arguments.insert(arguments.end(), args.begin(), args.end());
+    return this->self();
+  }
+  /*!
+  * \brief Set the return type.
+  * \param type Return type of the function, could be Symbol or Symbol[]
+  * \return reference to self.
+  */
+  inline EntryType &set_return_type(const std::string &type) {
+    return_type = type;
     return this->self();
   }
 
