@@ -47,6 +47,10 @@ class SingleFileSplit : public InputSplit {
   virtual size_t Read(void *ptr, size_t size) {
     return std::fread(ptr, 1, size, fp_);
   }
+  virtual void ResetPartition(unsigned part_index, unsigned num_parts) {
+    CHECK(part_index == 0 && num_parts == 1);
+    this->BeforeFirst();
+  }
   virtual void Write(const void *ptr, size_t size) {
     LOG(FATAL) << "InputSplit do not support write";
   }

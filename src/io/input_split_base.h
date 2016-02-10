@@ -57,6 +57,8 @@ class InputSplitBase : public InputSplit {
     }
     return true;
   }
+  // implement ResetPartition.
+  virtual void ResetPartition(unsigned rank, unsigned nsplit);
   /*!
    * \brief read a chunk of data into buf
    *   the data can span multiple records,
@@ -90,6 +92,7 @@ class InputSplitBase : public InputSplit {
   // constructor
   InputSplitBase()
       : fs_(NULL),
+        align_bytes_(8),
         tmp_chunk_(kBufferSize),
         buffer_size_(kBufferSize) {}
   /*!
@@ -103,8 +106,6 @@ class InputSplitBase : public InputSplit {
    */
   void Init(FileSystem *fs,
             const char *uri,
-            unsigned rank,
-            unsigned nsplit,
             size_t align_bytes);
   // to be implemented by child class
   /*!
@@ -130,6 +131,8 @@ class InputSplitBase : public InputSplit {
   std::vector<FileInfo> files_;
   /*! \brief current input stream */
   SeekStream *fs_;
+  /*! \brief bytes to be aligned */
+  size_t align_bytes_;
   /*! \brief file pointer of which file to read on */
   size_t file_ptr_;
   /*! \brief file pointer where the end of file lies */

@@ -23,7 +23,8 @@ class LineSplitter : public InputSplitBase {
                const char *uri,
                unsigned rank,
                unsigned nsplit) {
-    this->Init(fs, uri, rank, nsplit, 1);
+    this->Init(fs, uri, 1);
+    this->ResetPartition(rank, nsplit);
   }
 
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk);
