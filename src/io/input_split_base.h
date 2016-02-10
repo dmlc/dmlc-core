@@ -34,7 +34,7 @@ class InputSplitBase : public InputSplit {
     // load chunk from split
     bool Load(InputSplitBase *split, size_t buffer_size);
   };
-  // 16 MB 
+  // 16 MB
   static const size_t kBufferSize = 2UL << 20UL;
   // destructor
   virtual ~InputSplitBase(void);
