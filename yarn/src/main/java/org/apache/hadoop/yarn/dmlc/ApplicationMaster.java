@@ -396,6 +396,8 @@ public class ApplicationMaster {
                 env.put(e.getKey(), e.getValue());
             }
         }
+        String nodeHost = container.getNodeId().getHost();
+        env.put("DMLC_NODE_HOST", nodeHost);
         env.put("DMLC_TASK_ID", String.valueOf(task.taskId));
         env.put("DMLC_ROLE", task.taskRole);
         env.put("DMLC_NUM_ATTEMPT", String.valueOf(task.attemptCounter));
