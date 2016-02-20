@@ -103,6 +103,9 @@ public class ApplicationMaster {
     private final Collection<TaskRecord> killedTasks = new java.util.LinkedList<TaskRecord>();
     // worker environment
     private final Map<String, String> env = new java.util.HashMap<String, String>();
+	
+	//add the blacklist
+	private Collection<String> blackList = new java.util.HashSet();
 
     public static void main(String[] args) throws Exception {
         new ApplicationMaster().run(args);
@@ -300,6 +303,22 @@ public class ApplicationMaster {
         }
     }
 
+
+
+	private synchronized void launchDummyTask(Container container){
+		ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
+		String new_command = "./run_hdfs_prog.py";
+		String cmd = new_command + " 1>"
+				+ ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"
+				+ " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
+				+ "/stderr";
+		ctx.setCommands(Collections.singletonList(cmd));
+		ctx.setTokens(setupTokens());
+		ctx.setLocalResources(this.workerResources);
+		synchronized (this){
+			this.nmClient.startContainerAsync(container, ctx);
+		}
+	}
     /**
      * launch the task on container
      * 
@@ -396,6 +415,8 @@ public class ApplicationMaster {
                 env.put(e.getKey(), e.getValue());
             }
         }
+        String nodeHost = container.getNodeId().getHost();
+        env.put("DMLC_NODE_HOST", nodeHost);
         env.put("DMLC_TASK_ID", String.valueOf(task.taskId));
         env.put("DMLC_ROLE", task.taskRole);
         env.put("DMLC_NUM_ATTEMPT", String.valueOf(task.attemptCounter));
@@ -424,6 +445,10 @@ public class ApplicationMaster {
      */
     private synchronized void freeUnusedContainers(
             Collection<Container> containers) {
+		if(containers.size() == 0) return;
+		for(Container c : containers){
+			launchDummyTask(c);
+		}
     }
 
     /**
@@ -438,7 +463,12 @@ public class ApplicationMaster {
         }
         Collection<Container> freelist = new java.util.LinkedList<Container>();
         for (Container c : containers) {
-            TaskRecord task;
+			if(blackList.contains(c.getNodeHttpAddress())){
+				launchDummyTask(c);
+				continue;
+			}            
+
+			TaskRecord task;
             task = pendingTasks.poll();
             if (task == null) {
                 freelist.add(c);
@@ -498,6 +528,11 @@ public class ApplicationMaster {
                             + userName, r.container.getNodeHttpAddress(),
                             r.container.getId()));
             r.attemptCounter += 1;
+
+			//stop the failed container and add it to blacklist
+			nmClient.stopContainerAsync(r.container.getId(), r.container.getNodeId());
+			blackList.add(r.container.getNodeHttpAddress());
+
             r.container = null;
             tasks.add(r);
             if (r.attemptCounter >= this.maxNumAttempt) {
