@@ -546,7 +546,7 @@ public class ApplicationMaster {
                         return;
                     }
                 } catch (Exception e) {
-                	LOG.warn(e.getMessage());
+                        LOG.warn(e.getMessage());
                 }
                 LOG.info("[DMLC] Task " + r.taskId + " exited with status "
                          + exstatus + " Diagnostics:"+ s.getDiagnostics());
@@ -621,7 +621,7 @@ public class ApplicationMaster {
         public void onStartContainerError(ContainerId cid, Throwable ex) {
             LOG.info("onStartContainerError Invoked: " + ex.getMessage());
             ApplicationMaster.this
-		.onStartContainerError(cid);
+                .onStartContainerError(cid);
         }
 
         @Override
