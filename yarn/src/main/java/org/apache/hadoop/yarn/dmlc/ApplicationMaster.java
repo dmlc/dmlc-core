@@ -358,7 +358,7 @@ public class ApplicationMaster {
             String[] arrPath = c.split("" + File.pathSeparatorChar);
             for (String ps : arrPath) {
                 if (ps.endsWith("*.jar") 
-					    || ps.endsWith("*") 
+                        || ps.endsWith("*") 
                         || ps.endsWith("/")) {
                     ps = ps.substring(0, ps.lastIndexOf('*'));
                     if (ps.startsWith("$") || ps.startsWith("%")) {
@@ -366,8 +366,8 @@ public class ApplicationMaster {
                         if (arr.length != 2) continue;
                         try {
                             String vname = isWindows ? 
-                            arr[0].substring(1, arr[0].length() - 1) :
-                            arr[0].substring(1);
+                                           arr[0].substring(1, arr[0].length() - 1) :
+                                           arr[0].substring(1);
                             String vv = System.getenv(vname);
                             if (isWindows) vv = vv.replace('\\', '/');
                                 ps = vv + '/' + arr[1];
@@ -655,7 +655,7 @@ public class ApplicationMaster {
         public void onStartContainerError(ContainerId cid, Throwable ex) {
             LOG.info("onStartContainerError Invoked: " + ex.getMessage());
             ApplicationMaster.this
-                .onStartContainerError(cid);
+               .onStartContainerError(cid);
         }
 
         @Override
