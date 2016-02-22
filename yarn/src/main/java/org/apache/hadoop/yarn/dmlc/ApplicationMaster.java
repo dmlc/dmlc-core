@@ -349,28 +349,28 @@ public class ApplicationMaster {
         // setup class path, this is kind of duplicated, ignoring
         String classPathStr = isWindows? "%CLASSPATH%" : "${CLASSPATH}";
         StringBuilder cpath = new StringBuilder(classPathStr 
-            + File.pathSeparatorChar 
-            + "./*");
+                       + File.pathSeparatorChar 
+                       + "./*");
         for (String c : conf.getStrings(
                 YarnConfiguration.YARN_APPLICATION_CLASSPATH,
                 YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-          if (isWindows) c = c.replace('\\', '/');
+            if (isWindows) c = c.replace('\\', '/');
             String[] arrPath = c.split("" + File.pathSeparatorChar);
             for (String ps : arrPath) {
                 if (ps.endsWith("*.jar") 
-                    || ps.endsWith("*") 
-                    || ps.endsWith("/")) {
+					    || ps.endsWith("*") 
+                        || ps.endsWith("/")) {
                     ps = ps.substring(0, ps.lastIndexOf('*'));
                     if (ps.startsWith("$") || ps.startsWith("%")) {
                         String[] arr =ps.split("/", 2);
                         if (arr.length != 2) continue;
                         try {
-                          String vname = isWindows ? 
-                              arr[0].substring(1, arr[0].length() - 1) :
-                              arr[0].substring(1);
-                          String vv = System.getenv(vname);
-                          if (isWindows) vv = vv.replace('\\', '/');
-                            ps = vv + '/' + arr[1];
+                            String vname = isWindows ? 
+                            arr[0].substring(1, arr[0].length() - 1) :
+                            arr[0].substring(1);
+                            String vv = System.getenv(vname);
+                            if (isWindows) vv = vv.replace('\\', '/');
+                                ps = vv + '/' + arr[1];
                         } catch (Exception e){
                             continue;
                         }
@@ -443,7 +443,7 @@ public class ApplicationMaster {
      * @param containers
      */
     private synchronized void freeUnusedContainers(
-        Collection<Container> containers) {
+            Collection<Container> containers) {
         if(containers.size() == 0) return;
         for(Container c : containers){
             launchDummyTask(c);
@@ -580,7 +580,7 @@ public class ApplicationMaster {
                         return;
                     }
                 } catch (Exception e) {
-                  LOG.warn(e.getMessage());
+                    LOG.warn(e.getMessage());
                 }
                 LOG.info("[DMLC] Task " + r.taskId + " exited with status "
                          + exstatus + " Diagnostics:"+ s.getDiagnostics());
@@ -655,7 +655,7 @@ public class ApplicationMaster {
         public void onStartContainerError(ContainerId cid, Throwable ex) {
             LOG.info("onStartContainerError Invoked: " + ex.getMessage());
             ApplicationMaster.this
-    .onStartContainerError(cid);
+                .onStartContainerError(cid);
         }
 
         @Override
