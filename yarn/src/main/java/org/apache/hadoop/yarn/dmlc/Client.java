@@ -253,7 +253,7 @@ public class Client {
         }
         this.initArgs(args);
         // Create yarnClient
-		final YarnClient yarnClient = YarnClient.createYarnClient();
+        final YarnClient yarnClient = YarnClient.createYarnClient();
         yarnClient.init(conf);
         yarnClient.start();
 
@@ -269,20 +269,20 @@ public class Client {
         final ApplicationId appId = appContext.getApplicationId();
        
 
-		// add response for Ctrl+C signal
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			public void run() {
-				LOG.info("interruption received, kill application");
-				try{
-					yarnClient.killApplication(appId);
-				}catch (Exception e){
-					System.out.println("yarn client exception");
-				}
-			}
-		});
-				
+        // add response for Ctrl+C signal
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                LOG.info("interruption received, kill application");
+                try{
+                    yarnClient.killApplication(appId);
+                }catch (Exception e){
+                    System.out.println("yarn client exception");
+                }
+             }
+        });
+        
 
-		// setup security token
+        // setup security token
         amContainer.setTokens(this.setupTokens());
         // setup cache-files and environment variables
         amContainer.setLocalResources(this.setupCacheFiles(appId));
