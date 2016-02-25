@@ -18,7 +18,7 @@ def main():
     hadoop_home = os.getenv('HADOOP_PREFIX') if hadoop_home is None else hadoop_home
     mode = os.getenv('DMLC_JOB_MODE')
 
-    assert mode is not None, 'need to have DMLC_MODE'
+    assert mode is not None, 'need to have DMLC_JOB_MODE'
 
     env = os.environ.copy()
     library_path = ['./']

@@ -18,7 +18,7 @@ To get full list of arguments, you can run
 dmlc-submit -h
 ```
 
-- ```--mode``` string, {'openmpi', 'yarn', 'local', 'mpich2', 'sge'}, default to ${DMLC_SUBMIT_MODE}
+- ```--mode``` string, {'mpi', 'yarn', 'local',  'sge'}, default to ${DMLC_SUBMIT_MODE}
   - Job submission mode.
 - ```--num-workers``` integer, required
   - Number of workers in the job.

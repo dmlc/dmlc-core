@@ -11,6 +11,17 @@ from . import tracker
 
 def submit(args):
     """Submission script with MPI."""
+    # decide MPI version.
+    (_, err) = subprocess.Popen('mpirun',
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE).communicate()
+    if 'Open MPI' in err:
+        mpi_version = 'openmpi'
+    elif 'mpich' in err:
+        mpi_version = 'mpich'
+    else:
+        raise RuntimeError('Unknown MPI Version')
+
     curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
     launcher = os.path.join(curr_path, 'launcher.py')
 
@@ -25,10 +36,10 @@ def submit(args):
         else:
             cmd = 'mpirun -n %d --hostfile %s ' % (nworker + nserver, args.mpi_host_file)
 
-        pass_envs['DMLC_MODE'] = args.mode
+        pass_envs['DMLC_JOB_MODE'] = args.mode
         for k, v in pass_envs.items():
             # for mpich2
-            if args.mode == 'mpich2':
+            if mpi_version == 'mpich':
                 cmd += ' -env %s %s' % (k, v)
             else:
                 cmd += ' -x %s=%s ' % (k, v)

@@ -70,7 +70,7 @@ def get_opts():
     """
     parser = argparse.ArgumentParser(description='DMLC job submission.')
     parser.add_argument('--mode', type=str,
-                        choices=['yarn', 'openmpi', 'mpich2', 'sge', 'local'],
+                        choices=['yarn', 'mpi', 'sge', 'local'],
                         help=('Number of worker proccess to be launched, when not specified,' +
                               'default to env variable ${DMLC_SUBMIT_MODE}.'))
     parser.add_argument('--num-workers', required=True, type=int,

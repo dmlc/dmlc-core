@@ -377,15 +377,21 @@ class PSTracker(object):
 def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
     if hostIP == 'auto':
         hostIP = 'ip'
+
     if hostIP == 'dns':
         hostIP = socket.getfqdn()
     elif hostIP == 'ip':
         from socket import gaierror
         try:
-            hostIP = get_some_ip(socket.getfqdn())
+            hostIP = socket.gethostbyname(socket.getfqdn())
         except gaierror:
-            logging.warn('get_some_ip(socket.getfqdn()) failed... trying on hostname()')
-            hostIP = get_some_ip(socket.gethostname())
+            logging.warn('gethostbyname(socket.getfqdn()) failed... trying on hostname()')
+            hostIP = socket.gethostbyname(socket.gethostname())
+        if hostIP.startswith("127."):
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # doesn't have to be reachable
+            s.connect(('10.255.255.255', 0))
+            hostIP = s.getsockname()[0]
 
     if nserver == 0:
         pscmd = None

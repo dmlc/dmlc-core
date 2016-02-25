@@ -44,7 +44,7 @@ def main():
         sge.submit(args)
     elif args.mode == 'yarn':
         yarn.submit(args)
-    elif args.mode in ['mpich2', 'openmpi']:
+    elif args.mode == 'mpi':
         mpi.submit(args)
     else:
         raise RuntimeError('Unknown submission mode %s' % args.mode)
