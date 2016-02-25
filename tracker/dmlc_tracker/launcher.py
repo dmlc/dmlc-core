@@ -31,6 +31,7 @@ def main():
 
     if cluster == 'sge':
         num_worker = int(env['DMLC_NUM_WORKER'])
+        task_id = int(env['DMLC_TASK_ID'])
         if task_id < num_worker:
             env['DMLC_ROLE'] = 'worker'
         else:

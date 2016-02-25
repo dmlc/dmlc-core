@@ -4,52 +4,59 @@ DMLC submission script, MPI version
 # pylint: disable=invalid-name
 from __future__ import absolute_import
 
-import os
 import subprocess
 from threading import Thread
 from . import tracker
 
-def submit(args):
-    """Submission script with MPI."""
+def get_mpi_env(envs):
+    """get the mpirun command for setting the envornment
+    support both openmpi and mpich2
+    """
     # decide MPI version.
     (_, err) = subprocess.Popen('mpirun',
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE).communicate()
+    cmd = ''
     if 'Open MPI' in err:
-        mpi_version = 'openmpi'
+        for k, v in envs.items():
+            cmd += ' -x %s=%s' % (k, str(v))
     elif 'mpich' in err:
-        mpi_version = 'mpich'
+        for k, v in envs.items():
+            cmd += ' -env %s %s' % (k, str(v))
     else:
         raise RuntimeError('Unknown MPI Version')
+    return cmd
 
-    curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-    launcher = os.path.join(curr_path, 'launcher.py')
 
+def submit(args):
+    """Submission script with MPI."""
     def mpi_submit(nworker, nserver, pass_envs):
         """Internal closure for job submission."""
-        env = os.environ.copy()
-        for k, v in pass_envs.items():
-            env[k] = str(v)
+        def run(prog):
+            """run the program"""
+            subprocess.check_call(prog, shell=True)
 
-        if args.mpi_host_file is None:
-            cmd = 'mpirun -n %d' % (nworker + nserver)
-        else:
-            cmd = 'mpirun -n %d --hostfile %s ' % (nworker + nserver, args.mpi_host_file)
+        cmd = ''
+        if args.mpi_host_file is not None:
+            cmd = '--hostfile %s ' % (args.mpi_host_file)
+        cmd += ' ' + ' '.join(args.command)
 
         pass_envs['DMLC_JOB_CLUSTER'] = 'mpi'
-        pass_envs['DMLC_MPI_VERSION'] = mpi_version
-        for k, v in pass_envs.items():
-            # for mpich2
-            if mpi_version == 'mpich':
-                cmd += ' -env %s %s' % (k, v)
-            else:
-                cmd += ' -x %s=%s ' % (k, v)
-        cmd += ' '
-        cmd += ' '.join(args.command)
 
-        thread = Thread(target=lambda: subprocess.check_call(cmd, shell=True, env=env), args=())
-        thread.setDaemon(True)
-        thread.start()
+        # start servers
+        if nserver > 0:
+            pass_envs['DMLC_ROLE'] = 'server'
+            prog = 'mpirun -n %d %s %s' % (nserver, get_mpi_env(pass_envs), cmd)
+            thread = Thread(target=run, args=(prog,))
+            thread.setDaemon(True)
+            thread.start()
+
+        if nworker > 0:
+            pass_envs['DMLC_ROLE'] = 'worker'
+            prog = 'mpirun -n %d %s %s' % (nworker, get_mpi_env(pass_envs), cmd)
+            thread = Thread(target=run, args=(prog,))
+            thread.setDaemon(True)
+            thread.start()
 
     tracker.submit(args.num_workers, args.num_servers,
                    fun_submit=mpi_submit,
