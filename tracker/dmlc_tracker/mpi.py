@@ -36,7 +36,8 @@ def submit(args):
         else:
             cmd = 'mpirun -n %d --hostfile %s ' % (nworker + nserver, args.mpi_host_file)
 
-        pass_envs['DMLC_JOB_MODE'] = args.mode
+        pass_envs['DMLC_JOB_CLUSTER'] = 'mpi'
+        pass_envs['DMLC_MPI_VERSION'] = mpi_version
         for k, v in pass_envs.items():
             # for mpich2
             if mpi_version == 'mpich':
@@ -44,7 +45,7 @@ def submit(args):
             else:
                 cmd += ' -x %s=%s ' % (k, v)
         cmd += ' '
-        cmd += launcher + ' ' + ' '.join(args.command)
+        cmd += ' '.join(args.command)
 
         thread = Thread(target=lambda: subprocess.check_call(cmd, shell=True, env=env), args=())
         thread.setDaemon(True)

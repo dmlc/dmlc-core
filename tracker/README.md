@@ -18,7 +18,7 @@ To get full list of arguments, you can run
 dmlc-submit -h
 ```
 
-- ```--mode``` string, {'mpi', 'yarn', 'local',  'sge'}, default to ${DMLC_SUBMIT_MODE}
+- ```--cluster``` string, {'mpi', 'yarn', 'local',  'sge'}, default to ${DMLC_SUBMIT_CLUSTER}
   - Job submission mode.
 - ```--num-workers``` integer, required
   - Number of workers in the job.

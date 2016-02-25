@@ -81,7 +81,7 @@ def yarn_submit(args, nworker, nserver, pass_env):
         LD_LIBRARY_PATH = env['LD_LIBRARY_PATH'] if 'LD_LIBRARY_PATH' in env else ''
         env['LD_LIBRARY_PATH'] = args.ship_libcxx + ':' + LD_LIBRARY_PATH
 
-    env['DMLC_JOB_MODE'] = 'yarn'
+    env['DMLC_JOB_CLUSTER'] = 'yarn'
     env['DMLC_WORKER_CORES'] = str(args.worker_cores)
     env['DMLC_WORKER_MEMORY_MB'] = str(args.worker_memory_mb)
     env['DMLC_SERVER_CORES'] = str(args.server_cores)

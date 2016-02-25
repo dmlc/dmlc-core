@@ -23,7 +23,7 @@ def submit(args):
     fo = open(runscript, 'w')
     fo.write('source ~/.bashrc\n')
     fo.write('export DMLC_TASK_ID=${SGE_TASK_ID}\n')
-    fo.write('export DMLC_JOB_MODE=sge\n')
+    fo.write('export DMLC_JOB_CLUSTER=sge\n')
     fo.write('\"$@\"\n')
     fo.close()
 

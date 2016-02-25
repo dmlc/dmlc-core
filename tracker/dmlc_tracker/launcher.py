@@ -16,27 +16,21 @@ def main():
     hdfs_home = os.getenv('HADOOP_HDFS_HOME')
     java_home = os.getenv('JAVA_HOME')
     hadoop_home = os.getenv('HADOOP_PREFIX') if hadoop_home is None else hadoop_home
-    mode = os.getenv('DMLC_JOB_MODE')
+    cluster = os.getenv('DMLC_JOB_CLUSTER')
 
-    assert mode is not None, 'need to have DMLC_JOB_MODE'
+    assert cluster is not None, 'need to have DMLC_JOB_CLUSTER'
 
     env = os.environ.copy()
     library_path = ['./']
     class_path = []
 
-    if mode == 'yarn':
+    if cluster == 'yarn':
         assert hadoop_home is not None, 'need to set HADOOP_HOME'
         assert hdfs_home is not None, 'need to set HADOOP_HDFS_HOME'
         assert java_home is not None, 'need to set JAVA_HOME'
 
-    if mode in ['mpich2', 'openmpi', 'sge']:
+    if cluster == 'sge':
         num_worker = int(env['DMLC_NUM_WORKER'])
-        if mode == 'openmpi':
-            task_id = int(env['OMPI_COMM_WORLD_RANK'])
-            env['DMLC_TASK_ID'] = str(task_id)
-        else:
-            task_id = int(env['DMLC_TASK_ID'])
-
         if task_id < num_worker:
             env['DMLC_ROLE'] = 'worker'
         else:

@@ -69,10 +69,10 @@ def get_opts():
         The set of files to be cached to local execution environment.
     """
     parser = argparse.ArgumentParser(description='DMLC job submission.')
-    parser.add_argument('--mode', type=str,
+    parser.add_argument('--cluster', type=str,
                         choices=['yarn', 'mpi', 'sge', 'local'],
-                        help=('Number of worker proccess to be launched, when not specified,' +
-                              'default to env variable ${DMLC_SUBMIT_MODE}.'))
+                        help=('Cluster type of this submission,' +
+                              'default to env variable ${DMLC_SUBMIT_CLUSTER}.'))
     parser.add_argument('--num-workers', required=True, type=int,
                         help='Number of worker proccess to be launched.')
     parser.add_argument('--worker-cores', default=1, type=int,
@@ -134,13 +134,13 @@ def get_opts():
     (args, unknown) = parser.parse_known_args()
     args.command += unknown
 
-    if args.mode is None:
-        args.mode = os.getenv('DMLC_SUBMIT_MODE', None)
+    if args.cluster is None:
+        args.cluster = os.getenv('DMLC_SUBMIT_CLUSTER', None)
 
-    if args.mode is None:
-        raise RuntimeError('--mode is not specified, ' +
+    if args.cluster is None:
+        raise RuntimeError('--cluster is not specified, ' +
                            'you can also specify the default behavior via ' +
-                           'environment variable DMLC_SUBMIT_MODE')
+                           'environment variable DMLC_SUBMIT_CLUSTER')
 
     args.worker_memory_mb = get_memory_mb(args.worker_memory)
     args.server_memory_mb = get_memory_mb(args.server_memory)

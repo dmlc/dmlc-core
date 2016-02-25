@@ -38,13 +38,13 @@ def main():
     args = opts.get_opts()
     config_logger(args)
 
-    if args.mode == 'local':
+    if args.cluster == 'local':
         local.submit(args)
-    elif args.mode == 'sge':
+    elif args.cluster == 'sge':
         sge.submit(args)
-    elif args.mode == 'yarn':
+    elif args.cluster == 'yarn':
         yarn.submit(args)
-    elif args.mode == 'mpi':
+    elif args.cluster == 'mpi':
         mpi.submit(args)
     else:
-        raise RuntimeError('Unknown submission mode %s' % args.mode)
+        raise RuntimeError('Unknown submission cluster type %s' % args.cluster)
