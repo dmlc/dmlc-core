@@ -34,6 +34,9 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 public class Client {
     // logger
     private static final Log LOG = LogFactory.getLog(Client.class);
@@ -253,7 +256,7 @@ public class Client {
         }
         this.initArgs(args);
         // Create yarnClient
-        final YarnClient yarnClient = YarnClient.createYarnClient();
+        YarnClient yarnClient = YarnClient.createYarnClient();
         yarnClient.init(conf);
         yarnClient.start();
 
@@ -266,22 +269,13 @@ public class Client {
         ApplicationSubmissionContext appContext = app
                 .getApplicationSubmissionContext();
         // Submit application
-        final ApplicationId appId = appContext.getApplicationId();
+        ApplicationId appId = appContext.getApplicationId();
        
-
-        // add response for Ctrl+C signal
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                LOG.info("interruption received, kill application");
-                try{
-                    yarnClient.killApplication(appId);
-                }catch (Exception e){
-                    System.out.println("yarn client exception");
-                }
-             }
-        });
+        //add ctrl+c signal handler
+        CtrlCHandler handler = new CtrlCHandler(appId, yarnClient);
+        Signal intSignal = new Signal("INT");
+        Signal.handle(intSignal, handler);
         
-
         // setup security token
         amContainer.setTokens(this.setupTokens());
         // setup cache-files and environment variables
@@ -335,6 +329,21 @@ public class Client {
         }
     }
 
+    class CtrlCHandler implements SignalHandler{
+        private ApplicationId appId;
+        private YarnClient yarnClient;
+        public CtrlCHandler(ApplicationId appId, YarnClient yarnClient){
+            this.appId = appId;
+            this.yarnClient = yarnClient;
+        }
+        public void handle(Signal signal){
+            try{
+                yarnClient.killApplication(appId);
+            }catch (Exception e){
+                System.out.println("yarn client exception");
+            }
+        }
+    }
     public static void main(String[] args) throws Exception {
         new Client().run(args);
     }

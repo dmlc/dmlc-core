@@ -601,11 +601,7 @@ public class ApplicationMaster {
                         return;
                     }
                 } catch (Exception e) {
-<<<<<<< HEAD:yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
                         LOG.warn(e.getMessage());
-=======
-                    LOG.warn(e.getMessage());
->>>>>>> upstream/master:tracker/yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
                 }
                 LOG.info("[DMLC] Task " + r.taskId + " exited with status "
                          + exstatus + " Diagnostics:"+ s.getDiagnostics());
@@ -680,11 +676,7 @@ public class ApplicationMaster {
         public void onStartContainerError(ContainerId cid, Throwable ex) {
             LOG.info("onStartContainerError Invoked: " + ex.getMessage());
             ApplicationMaster.this
-<<<<<<< HEAD:yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
                 .onStartContainerError(cid);
-=======
-               .onStartContainerError(cid);
->>>>>>> upstream/master:tracker/yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
         }
 
         @Override
