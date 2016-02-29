@@ -24,7 +24,8 @@ class RecordIOSplitter : public InputSplitBase {
                    const char *uri,
                    unsigned rank,
                    unsigned nsplit) {
-    this->Init(fs, uri, rank, nsplit, 4);
+    this->Init(fs, uri, 4);
+    this->ResetPartition(rank, nsplit);
   }
 
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk);

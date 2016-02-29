@@ -43,7 +43,7 @@ import org.apache.hadoop.security.token.Token;
 
 /**
  * application master for allocating resources of dmlc client
- * 
+ *
  * @author Tianqi Chen
  */
 public class ApplicationMaster {
@@ -54,10 +54,14 @@ public class ApplicationMaster {
     // hdfs handler
     private FileSystem dfs;
 
-    // number of cores allocated for each task
-    private int numVCores = 1;
-    // memory needed requested for the task
-    private int numMemoryMB = 10;
+    // number of cores allocated for each server task
+    private int workerCores = 1;
+    // number of cores allocated for each worker task
+    private int serverCores = 1;
+    // memory needed requested for the worker task
+    private int workerMemoryMB = 10;
+    // memory needed requested for the server task
+    private int serverMemoryMB = 10;
     // priority of the app master
     private int appPriority = 0;
     // total number of workers
@@ -104,6 +108,9 @@ public class ApplicationMaster {
     // worker environment
     private final Map<String, String> env = new java.util.HashMap<String, String>();
 
+    //add the blacklist
+    private Collection<String> blackList = new java.util.HashSet();
+
     public static void main(String[] args) throws Exception {
         new ApplicationMaster().run(args);
     }
@@ -114,7 +121,7 @@ public class ApplicationMaster {
         credentials = UserGroupInformation.getCurrentUser().getCredentials();
     }
 
-    
+
     /**
      * setup security token given current user
      * @return the ByeBuffer containing the security tokens
@@ -129,11 +136,11 @@ public class ApplicationMaster {
             throw new RuntimeException(e);  // TODO: FIXME
         }
     }
-    
+
 
     /**
      * get integer argument from environment variable
-     * 
+     *
      * @param name
      *            name of key
      * @param required
@@ -158,7 +165,7 @@ public class ApplicationMaster {
 
     /**
      * initialize from arguments and command lines
-     * 
+     *
      * @param args
      */
     private void initArgs(String args[]) throws IOException {
@@ -193,14 +200,16 @@ public class ApplicationMaster {
             r.setVisibility(LocalResourceVisibility.APPLICATION);
             workerResources.put(e.getKey(), r);
         }
-        numVCores = this.getEnvInteger("DMLC_CPU_VCORES", true, numVCores);
-        numMemoryMB = this.getEnvInteger("DMLC_MEMORY_MB", true, numMemoryMB);
+        workerCores = this.getEnvInteger("DMLC_WORKER_CORES", true, workerCores);
+        serverCores = this.getEnvInteger("DMLC_SERVER_CORES", true, serverCores);
+        workerMemoryMB = this.getEnvInteger("DMLC_WORKER_MEMORY_MB", true, workerMemoryMB);
+        serverMemoryMB = this.getEnvInteger("DMLC_SERVER_MEMORY_MB", true, serverMemoryMB);
         numWorker = this.getEnvInteger("DMLC_NUM_WORKER", true, numWorker);
         numServer = this.getEnvInteger("DMLC_NUM_SERVER", true, numServer);
         numTasks = numWorker + numServer;
         maxNumAttempt = this.getEnvInteger("DMLC_MAX_ATTEMPT", false,
                                            maxNumAttempt);
-        LOG.info("Try to start " + numServer + " Servers and " + numWorker + " Workers");	
+        LOG.info("Try to start " + numServer + " Servers and " + numWorker + " Workers");
     }
 
     /**
@@ -219,30 +228,40 @@ public class ApplicationMaster {
         RegisterApplicationMasterResponse response = this.rmClient
                 .registerApplicationMaster(this.appHostName,
                         this.appTrackerPort, this.appTrackerUrl);
-      
+
         boolean success = false;
         String diagnostics = "";
         try {
             // list of tasks that waits to be submit
             java.util.Collection<TaskRecord> tasks = new java.util.LinkedList<TaskRecord>();
             // add waiting tasks
-            for (int i = 0; i < this.numWorker; ++i) {              
+            for (int i = 0; i < this.numWorker; ++i) {
                 tasks.add(new TaskRecord(i, "worker"));
             }
-            for (int i = 0; i < this.numServer; ++i) {              
+            for (int i = 0; i < this.numServer; ++i) {
                 tasks.add(new TaskRecord(i, "server"));
             }
             Resource maxResource = response.getMaximumResourceCapability();
 
-            if (maxResource.getMemory() < this.numMemoryMB) {
-                LOG.warn("[DMLC] memory requested exceed bound "
+            if (maxResource.getMemory() < this.serverMemoryMB) {
+              LOG.warn("[DMLC] memory requested exceed bound "
                         + maxResource.getMemory());
-                this.numMemoryMB = maxResource.getMemory();
+                this.serverMemoryMB = maxResource.getMemory();
             }
-            if (maxResource.getVirtualCores() < this.numVCores) {
-                LOG.warn("[DMLC] memory requested exceed bound "
+            if (maxResource.getMemory() < this.workerMemoryMB) {
+              LOG.warn("[DMLC] memory requested exceed bound "
+                        + maxResource.getMemory());
+                this.workerMemoryMB = maxResource.getMemory();
+            }
+            if (maxResource.getVirtualCores() < this.workerCores) {
+               LOG.warn("[DMLC] cores requested exceed bound "
                         + maxResource.getVirtualCores());
-                this.numVCores = maxResource.getVirtualCores();
+               this.workerCores = maxResource.getVirtualCores();
+            }
+            if (maxResource.getVirtualCores() < this.serverCores) {
+              LOG.warn("[DMLC] cores requested exceed bound "
+                        + maxResource.getVirtualCores());
+                this.serverCores = maxResource.getVirtualCores();
             }
             this.submitTasks(tasks);
             LOG.info("[DMLC] ApplicationMaster started");
@@ -262,7 +281,7 @@ public class ApplicationMaster {
             LOG.info(diagnostics);
         } catch (Exception e) {
             diagnostics = e.toString();
-        } 
+        }
         rmClient.unregisterApplicationMaster(
                 success ? FinalApplicationStatus.SUCCEEDED
                         : FinalApplicationStatus.FAILED, diagnostics,
@@ -273,7 +292,7 @@ public class ApplicationMaster {
 
     /**
      * check if the job finishes
-     * 
+     *
      * @return whether we finished all the jobs
      */
     private synchronized boolean doneAllJobs() {
@@ -282,15 +301,20 @@ public class ApplicationMaster {
 
     /**
      * submit tasks to request containers for the tasks
-     * 
+     *
      * @param tasks
      *            a collection of tasks we want to ask container for
      */
     private synchronized void submitTasks(Collection<TaskRecord> tasks) {
         for (TaskRecord r : tasks) {
             Resource resource = Records.newRecord(Resource.class);
-            resource.setMemory(numMemoryMB);
-            resource.setVirtualCores(numVCores);
+            if (r.taskRole == "server") {
+              resource.setMemory(serverMemoryMB);
+              resource.setVirtualCores(serverCores);
+            } else {
+              resource.setMemory(workerMemoryMB);
+              resource.setVirtualCores(workerCores);
+            }
             Priority priority = Records.newRecord(Priority.class);
             priority.setPriority(this.appPriority);
             r.containerRequest = new ContainerRequest(resource, null, null,
@@ -300,9 +324,25 @@ public class ApplicationMaster {
         }
     }
 
+
+
+    private synchronized void launchDummyTask(Container container){
+        ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
+        String new_command = "./launcher.py";
+        String cmd = new_command + " 1>"
+            + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"
+            + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
+            + "/stderr";
+        ctx.setCommands(Collections.singletonList(cmd));
+        ctx.setTokens(setupTokens());
+        ctx.setLocalResources(this.workerResources);
+        synchronized (this){
+            this.nmClient.startContainerAsync(container, ctx);
+        }
+    }
     /**
      * launch the task on container
-     * 
+     *
      * @param container
      *            container to run the task
      * @param task
@@ -320,7 +360,7 @@ public class ApplicationMaster {
             + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
             + "/stderr";
         ctx.setCommands(Collections.singletonList(cmd));
-	// TODO: token was not right
+        // TODO: token was not right
         ctx.setTokens(setupTokens());
         LOG.info(workerResources);
         ctx.setLocalResources(this.workerResources);
@@ -329,29 +369,29 @@ public class ApplicationMaster {
         boolean isWindows = System.getProperty("os.name").startsWith("Windows");
         // setup class path, this is kind of duplicated, ignoring
         String classPathStr = isWindows? "%CLASSPATH%" : "${CLASSPATH}";
-        StringBuilder cpath = new StringBuilder(classPathStr 
-        		+ File.pathSeparatorChar 
-        		+ "./*");
+        StringBuilder cpath = new StringBuilder(classPathStr
+                       + File.pathSeparatorChar
+                       + "./*");
         for (String c : conf.getStrings(
                 YarnConfiguration.YARN_APPLICATION_CLASSPATH,
                 YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-        	if (isWindows) c = c.replace('\\', '/');
+            if (isWindows) c = c.replace('\\', '/');
             String[] arrPath = c.split("" + File.pathSeparatorChar);
             for (String ps : arrPath) {
-                if (ps.endsWith("*.jar") 
-                		|| ps.endsWith("*") 
-                		|| ps.endsWith("/")) {
+                if (ps.endsWith("*.jar")
+                        || ps.endsWith("*")
+                        || ps.endsWith("/")) {
                     ps = ps.substring(0, ps.lastIndexOf('*'));
                     if (ps.startsWith("$") || ps.startsWith("%")) {
                         String[] arr =ps.split("/", 2);
                         if (arr.length != 2) continue;
                         try {
-                        	String vname = isWindows ? 
-                        			arr[0].substring(1, arr[0].length() - 1) :
-                        			arr[0].substring(1);
-                        	String vv = System.getenv(vname);
-                        	if (isWindows) vv = vv.replace('\\', '/');
-                            ps = vv + '/' + arr[1];
+                            String vname = isWindows ?
+                                           arr[0].substring(1, arr[0].length() - 1) :
+                                           arr[0].substring(1);
+                            String vv = System.getenv(vname);
+                            if (isWindows) vv = vv.replace('\\', '/');
+                                ps = vv + '/' + arr[1];
                         } catch (Exception e){
                             continue;
                         }
@@ -396,6 +436,8 @@ public class ApplicationMaster {
                 env.put(e.getKey(), e.getValue());
             }
         }
+        String nodeHost = container.getNodeId().getHost();
+        env.put("DMLC_NODE_HOST", nodeHost);
         env.put("DMLC_TASK_ID", String.valueOf(task.taskId));
         env.put("DMLC_ROLE", task.taskRole);
         env.put("DMLC_NUM_ATTEMPT", String.valueOf(task.attemptCounter));
@@ -410,25 +452,28 @@ public class ApplicationMaster {
     }
     /**
      * free the containers that have not yet been launched
-     * 
+     *
      * @param containers
      */
     private synchronized void onStartContainerError(ContainerId cid) {
-	ApplicationMaster.this
-	    .handleFailure(Collections.singletonList(cid));
+        ApplicationMaster.this.handleFailure(Collections.singletonList(cid));
     }
     /**
      * free the containers that have not yet been launched
-     * 
+     *
      * @param containers
      */
     private synchronized void freeUnusedContainers(
             Collection<Container> containers) {
+        if(containers.size() == 0) return;
+        for(Container c : containers){
+            launchDummyTask(c);
+        }
     }
 
     /**
      * handle method for AMRMClientAsync.CallbackHandler container allocation
-     * 
+     *
      * @param containers
      */
     private synchronized void onContainersAllocated(List<Container> containers) {
@@ -438,6 +483,11 @@ public class ApplicationMaster {
         }
         Collection<Container> freelist = new java.util.LinkedList<Container>();
         for (Container c : containers) {
+            if(blackList.contains(c.getNodeHttpAddress())){
+			    launchDummyTask(c);
+                continue;
+		    }
+
             TaskRecord task;
             task = pendingTasks.poll();
             if (task == null) {
@@ -451,7 +501,7 @@ public class ApplicationMaster {
 
     /**
      * start aborting the job
-     * 
+     *
      * @param msg
      *            the fatal message
      */
@@ -464,7 +514,7 @@ public class ApplicationMaster {
                 nmClient.stopContainerAsync(r.container.getId(),
                         r.container.getNodeId());
                 r.abortRequested = true;
-                
+
                 this.killedTasks.add(r);
             }
         }
@@ -479,7 +529,7 @@ public class ApplicationMaster {
 
     /**
      * handle non fatal failures
-     * 
+     *
      * @param cid
      */
     private synchronized void handleFailure(Collection<ContainerId> failed) {
@@ -498,6 +548,11 @@ public class ApplicationMaster {
                             + userName, r.container.getNodeHttpAddress(),
                             r.container.getId()));
             r.attemptCounter += 1;
+
+            //stop the failed container and add it to blacklist
+            nmClient.stopContainerAsync(r.container.getId(), r.container.getNodeId());
+            blackList.add(r.container.getNodeHttpAddress());
+
             r.container = null;
             tasks.add(r);
             if (r.attemptCounter >= this.maxNumAttempt) {
@@ -514,7 +569,7 @@ public class ApplicationMaster {
 
     /**
      * handle method for AMRMClientAsync.CallbackHandler container allocation
-     * 
+     *
      * @param status
      *            list of status
      */
@@ -546,7 +601,11 @@ public class ApplicationMaster {
                         return;
                     }
                 } catch (Exception e) {
+<<<<<<< HEAD:yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
                         LOG.warn(e.getMessage());
+=======
+                    LOG.warn(e.getMessage());
+>>>>>>> upstream/master:tracker/yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
                 }
                 LOG.info("[DMLC] Task " + r.taskId + " exited with status "
                          + exstatus + " Diagnostics:"+ s.getDiagnostics());
@@ -621,7 +680,11 @@ public class ApplicationMaster {
         public void onStartContainerError(ContainerId cid, Throwable ex) {
             LOG.info("onStartContainerError Invoked: " + ex.getMessage());
             ApplicationMaster.this
+<<<<<<< HEAD:yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
                 .onStartContainerError(cid);
+=======
+               .onStartContainerError(cid);
+>>>>>>> upstream/master:tracker/yarn/src/main/java/org/apache/hadoop/yarn/dmlc/ApplicationMaster.java
         }
 
         @Override

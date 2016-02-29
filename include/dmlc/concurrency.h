@@ -27,7 +27,8 @@ class Spinlock {
     lock_.clear();
   }
 #else
-  Spinlock() = default;
+  Spinlock() : lock_(ATOMIC_FLAG_INIT) {
+  }
 #endif
   ~Spinlock() = default;
   /*!
@@ -40,11 +41,7 @@ class Spinlock {
   inline void unlock() noexcept(true);
 
  private:
-#ifdef _MSC_VER
   std::atomic_flag lock_;
-#else
-  std::atomic_flag lock_ = ATOMIC_FLAG_INIT;
-#endif
   /*!
    * \brief Disable copy and move.
    */
