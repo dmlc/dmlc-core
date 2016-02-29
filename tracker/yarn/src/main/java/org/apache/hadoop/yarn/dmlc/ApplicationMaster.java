@@ -601,7 +601,7 @@ public class ApplicationMaster {
                         return;
                     }
                 } catch (Exception e) {
-                        LOG.warn(e.getMessage());
+                    LOG.warn(e.getMessage());
                 }
                 LOG.info("[DMLC] Task " + r.taskId + " exited with status "
                          + exstatus + " Diagnostics:"+ s.getDiagnostics());
