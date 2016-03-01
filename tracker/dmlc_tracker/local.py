@@ -12,7 +12,7 @@ from . import tracker
 keepalive = """
 nrep=0
 rc=254
-while [ $rc -eq 254 ];
+while [ $rc -ne 0 ];
 do
     export DMLC_NUM_ATTEMPT=$nrep
     %s
@@ -39,7 +39,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
         if os.name == 'nt':
             env['DMLC_NUM_ATTEMPT'] = str(ntrial)
             ret = subprocess.call(cmd, shell=True, env=env)
-            if ret == 254:
+            if ret != 0:
                 ntrial += 1
                 continue
         else:
