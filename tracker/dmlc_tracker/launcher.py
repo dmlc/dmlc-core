@@ -6,6 +6,15 @@ import sys
 import os
 import subprocess
 
+def unzip_archives(ar_list, env):
+    for fname in ar_list:
+        if not os.path.exist(fname):
+            continue
+        if fname.endswith('.zip'):
+            subprocess.call(args=['unzip', fname], env=env)
+        elif fname.find('.tar') != -1:
+            subprocess.call(args=['tar', 'xf', fname], env=env)
+
 def main():
     """Main moduke of the launcher."""
     if len(sys.argv) < 2:
@@ -59,6 +68,10 @@ def main():
 
     LD_LIBRARY_PATH = env['LD_LIBRARY_PATH'] if 'LD_LIBRARY_PATH' in env else ''
     env['LD_LIBRARY_PATH'] = LD_LIBRARY_PATH + ':' + ':'.join(library_path)
+
+    # unzip the archives.
+    if 'DMLC_JOB_ARCHIVES' in env:
+        unzip_archives(env['DMLC_JOB_ARCHIVES'].split(':'), env)
 
     ret = subprocess.call(args=sys.argv[1:], env=env)
     sys.exit(ret)

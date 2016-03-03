@@ -58,6 +58,11 @@ def yarn_submit(args, nworker, nserver, pass_env):
     fset, new_command = opts.get_cache_file_set(args)
     fset.add(YARN_JAR_PATH)
     fset.add(YARN_BOOT_PY)
+    ar_list = []
+
+    for fname in args.archives:
+        fset.add(fname)
+        ar_list.append(os.path.basename(fname))
 
     JAVA_HOME = os.getenv('JAVA_HOME')
     if JAVA_HOME is None:
@@ -88,6 +93,7 @@ def yarn_submit(args, nworker, nserver, pass_env):
     env['DMLC_SERVER_MEMORY_MB'] = str(args.server_memory_mb)
     env['DMLC_NUM_WORKER'] = str(args.num_workers)
     env['DMLC_NUM_SERVER'] = str(args.num_servers)
+    env['DMLC_JOB_ARCHIVES'] = ':'.join(ar_list)
 
     for f in fset:
         cmd += ' -file %s' % f

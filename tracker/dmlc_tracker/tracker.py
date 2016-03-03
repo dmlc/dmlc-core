@@ -12,9 +12,11 @@ Tianqi Chen
 from __future__ import absolute_import
 
 import os
+import sys
 import socket
 import struct
 import subprocess
+import argparse
 import time
 import logging
 from threading import Thread
@@ -374,8 +376,9 @@ class PSTracker(object):
             return {'DMLC_PS_ROOT_URI': self.hostIP,
                     'DMLC_PS_ROOT_PORT': self.port}
 
-def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
-    if hostIP == 'auto':
+
+def get_host_ip(hostIP=None):
+    if hostIP is None or hostIP == 'auto':
         hostIP = 'ip'
 
     if hostIP == 'dns':
@@ -392,7 +395,10 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
             # doesn't have to be reachable
             s.connect(('10.255.255.255', 0))
             hostIP = s.getsockname()[0]
+    return hostIP
 
+
+def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
     if nserver == 0:
         pscmd = None
 
@@ -411,3 +417,58 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
     # start rabit tracker in another thread
     if nserver == 0:
         rabit.join()
+
+
+def start_rabit_tracker(args):
+    """Standalone function to start rabit tracker.
+
+    Parameters
+    ----------
+    args: arguments to start the rabit tracker.
+    """
+    envs = {'DMLC_NUM_WORKER' : args.num_workers,
+            'DMLC_NUM_SERVER' : args.num_servers}
+    rabit = RabitTracker(hostIP=get_host_ip(args.host_ip), nslave=args.num_workers)
+    envs.update(rabit.slave_envs())
+    rabit.start(args.num_workers)
+    sys.stdout.write('DMLC_TRACKER_ENV_START\n')
+    # simply write configuration to stdout
+    for k, v in envs.items():
+        sys.stdout.write('%s=%s\n' % (k, str(v)))
+    sys.stdout.write('DMLC_TRACKER_ENV_END\n')
+    sys.stdout.flush()
+    rabit.join()
+
+
+def main():
+    """Main function if tracker is executed in standalone mode."""
+    parser = argparse.ArgumentParser(description='Rabit Tracker start.')
+    parser.add_argument('--num-workers', required=True, type=int,
+                        help='Number of worker proccess to be launched.')
+    parser.add_argument('--num-servers', default=0, type=int,
+                        help='Number of server process to be launched. Only used in PS jobs.')
+    parser.add_argument('--host-ip', default=None, type=str,
+                        help=('Host IP addressed, this is only needed ' +
+                              'if the host IP cannot be automatically guessed.'))
+    parser.add_argument('--log-level', default='INFO', type=str,
+                        choices=['INFO', 'DEBUG'],
+                        help='Logging level of the logger.')
+    args = parser.parse_args()
+
+    fmt = '%(asctime)s %(levelname)s %(message)s'
+    if args.log_level == 'INFO':
+        level = logging.INFO
+    elif args.log_level == 'DEBUG':
+        level = logging.DEBUG
+    else:
+        raise RuntimeError("Unknown logging level %s" % args.log_level)
+
+    logging.basicConfig(format=fmt, level=level)
+
+    if args.num_servers == 0:
+        start_rabit_tracker(args)
+    else:
+        raise RuntimeError("Do not yet support start ps tracker in standalone mode.")
+
+if __name__ == "__main__":
+    main()

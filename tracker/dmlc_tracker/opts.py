@@ -117,6 +117,11 @@ def get_opts():
                         help=('The cached file list which will be copied to local environment,' +
                               ' You may need this option to cache additional files.' +
                               ' You  --auto-file-cache is off'))
+    parser.add_argument('--archives', default=[], action='append',
+                        help=('Same as cached files,' +
+                              ' but corresponds to archieve files that will be unziped locally,' +
+                              ' You can use this option to ship python libraries.' +
+                              ' Only valid in yarn jobs.'))
     parser.add_argument('--env', action='append', default=[],
                         help='Client and ApplicationMaster environment variables.')
     parser.add_argument('--yarn-app-classpath', type=str,
