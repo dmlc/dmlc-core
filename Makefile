@@ -20,7 +20,7 @@ CFLAGS+= -I$(DEPS_PATH)/include
 LDFLAGS+= -L$(DEPS_PATH)/lib
 endif
 
-.PHONY: clean all test lint doc example
+.PHONY: clean all test lint doc example pylint
 
 OBJ=line_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o
 
@@ -79,6 +79,9 @@ $(ALIB):
 
 lint:
 	python scripts/lint.py dmlc ${LINT_LANG} include src scripts
+
+pylint:
+	python scripts/lint.py dmlc ${LINT_LANG} tracker/dmlc_tracker
 
 doxygen:
 	doxygen doc/Doxyfile
