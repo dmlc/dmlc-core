@@ -8,7 +8,7 @@ import subprocess
 
 def unzip_archives(ar_list, env):
     for fname in ar_list:
-        if not os.path.exist(fname):
+        if not os.path.exists(fname):
             continue
         if fname.endswith('.zip'):
             subprocess.call(args=['unzip', fname], env=env)
