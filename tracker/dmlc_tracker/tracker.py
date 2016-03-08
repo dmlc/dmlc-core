@@ -404,7 +404,7 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
 
     envs = {'DMLC_NUM_WORKER' : nworker,
             'DMLC_NUM_SERVER' : nserver}
-
+    hostIP = get_host_ip(hostIP)
     rabit = RabitTracker(hostIP=hostIP, nslave=nworker)
     pserver = PSTracker(hostIP=hostIP, cmd=pscmd, envs=envs)
 
