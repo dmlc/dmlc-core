@@ -7,7 +7,7 @@
 #ifndef DMLC_DATA_LIBSVM_PARSER_H_
 #define DMLC_DATA_LIBSVM_PARSER_H_
 
-#include <dmlc/data.h>
+#include "dmlc/data.h"
 #include <cstring>
 #include "./row_block.h"
 #include "./text_parser.h"

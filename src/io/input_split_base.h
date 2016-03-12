@@ -7,7 +7,7 @@
 #ifndef DMLC_IO_INPUT_SPLIT_BASE_H_
 #define DMLC_IO_INPUT_SPLIT_BASE_H_
 
-#include <dmlc/io.h>
+#include "dmlc/io.h"
 #include <cstdio>
 #include <cstring>
 #include <vector>
@@ -34,7 +34,7 @@ class InputSplitBase : public InputSplit {
     // load chunk from split
     bool Load(InputSplitBase *split, size_t buffer_size);
   };
-  // 16 MB
+  // 16 MB 
   static const size_t kBufferSize = 2UL << 20UL;
   // destructor
   virtual ~InputSplitBase(void);

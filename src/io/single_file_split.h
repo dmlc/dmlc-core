@@ -7,8 +7,8 @@
 #ifndef DMLC_IO_SINGLE_FILE_SPLIT_H_
 #define DMLC_IO_SINGLE_FILE_SPLIT_H_
 
-#include <dmlc/io.h>
-#include <dmlc/logging.h>
+#include "dmlc/io.h"
+#include "dmlc/logging.h"
 #include <cstdio>
 #include <string>
 #include <algorithm>

@@ -7,8 +7,8 @@
 #ifndef DMLC_IO_RECORDIO_SPLIT_H_
 #define DMLC_IO_RECORDIO_SPLIT_H_
 
-#include <dmlc/io.h>
-#include <dmlc/recordio.h>
+#include "dmlc/io.h"
+#include "dmlc/recordio.h"
 #include <vector>
 #include <cstdio>
 #include <string>

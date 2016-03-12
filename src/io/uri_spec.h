@@ -9,7 +9,7 @@
 #ifndef DMLC_IO_URI_SPEC_H_
 #define DMLC_IO_URI_SPEC_H_
 
-#include <dmlc/common.h>
+#include "dmlc/common.h"
 #include <string>
 #include <sstream>
 #include <map>
