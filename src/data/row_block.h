@@ -8,9 +8,9 @@
 #ifndef DMLC_DATA_ROW_BLOCK_H_
 #define DMLC_DATA_ROW_BLOCK_H_
 
-#include <dmlc/io.h>
-#include <dmlc/logging.h>
-#include <dmlc/data.h>
+#include "dmlc/io.h"
+#include "dmlc/logging.h"
+#include "dmlc/data.h"
 #include <cstring>
 #include <vector>
 #include <limits>

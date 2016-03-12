@@ -1,9 +1,9 @@
 // Copyright by Contributors
-#include <dmlc/base.h>
-#include <dmlc/io.h>
-#include <dmlc/logging.h>
-#include <dmlc/data.h>
-#include <dmlc/registry.h>
+#include "dmlc/base.h"
+#include "dmlc/io.h"
+#include "dmlc/logging.h"
+#include "dmlc/data.h"
+#include "dmlc/registry.h"
 #include <cstring>
 #include <string>
 #include "io/uri_spec.h"

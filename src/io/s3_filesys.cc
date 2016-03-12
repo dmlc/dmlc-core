@@ -8,8 +8,8 @@ extern "C" {
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 }
-#include <dmlc/io.h>
-#include <dmlc/logging.h>
+#include "dmlc/io.h"
+#include "dmlc/logging.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

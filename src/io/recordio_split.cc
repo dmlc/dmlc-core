@@ -1,6 +1,6 @@
 // Copyright by Contributors
-#include <dmlc/recordio.h>
-#include <dmlc/logging.h>
+#include "dmlc/recordio.h"
+#include "dmlc/logging.h"
 #include <algorithm>
 #include "./recordio_split.h"
 

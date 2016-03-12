@@ -1,6 +1,6 @@
 // Copyright by Contributors
 
-#include <dmlc/logging.h>
+#include "dmlc/logging.h"
 #include <errno.h>
 extern "C" {
 #include <sys/stat.h>
