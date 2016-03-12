@@ -7,6 +7,12 @@
 #ifndef DMLC_TIMER_H_
 #define DMLC_TIMER_H_
 
+#include "base.h"
+
+#if DMLC_USE_CXX11
+#include <chrono>
+#endif
+
 #include <time.h>
 #ifdef __MACH__
 #include <mach/clock.h>
@@ -19,9 +25,10 @@ namespace dmlc {
  * \brief return time in seconds
  */
 inline double GetTime(void) {
-  // TODO(tqchen): use c++11 chrono when c++11 was available
-
-  #ifdef __MACH__
+  #if DMLC_USE_CXX11
+  return std::chrono::duration<double>(
+      std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  #elif defined __MACH__
   clock_serv_t cclock;
   mach_timespec_t mts;
   host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
