@@ -27,8 +27,7 @@ namespace dmlc {
 inline double GetTime(void) {
   #if DMLC_USE_CXX11
   return std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-  #else
-  #ifdef __MACH__
+  #elif __MACH__
   clock_serv_t cclock;
   mach_timespec_t mts;
   host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
