@@ -7,7 +7,7 @@
 #ifndef DMLC_IO_LINE_SPLIT_H_
 #define DMLC_IO_LINE_SPLIT_H_
 
-#include <dmlc/io.h>
+#include "dmlc/io.h"
 #include <vector>
 #include <cstdio>
 #include <string>

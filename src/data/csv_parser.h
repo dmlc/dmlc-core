@@ -7,8 +7,8 @@
 #ifndef DMLC_DATA_CSV_PARSER_H_
 #define DMLC_DATA_CSV_PARSER_H_
 
-#include <dmlc/data.h>
-#include <dmlc/parameter.h>
+#include "dmlc/data.h"
+#include "dmlc/parameter.h"
 #include <cstring>
 #include <map>
 #include <string>

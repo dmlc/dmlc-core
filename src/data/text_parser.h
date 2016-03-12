@@ -7,8 +7,8 @@
 #ifndef DMLC_DATA_TEXT_PARSER_H_
 #define DMLC_DATA_TEXT_PARSER_H_
 
-#include <dmlc/data.h>
-#include <dmlc/omp.h>
+#include "dmlc/data.h"
+#include "dmlc/omp.h"
 #include <vector>
 #include <cstring>
 #include <algorithm>

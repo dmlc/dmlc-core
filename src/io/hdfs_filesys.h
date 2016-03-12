@@ -7,7 +7,7 @@
 #ifndef DMLC_IO_HDFS_FILESYS_H_
 #define DMLC_IO_HDFS_FILESYS_H_
 extern "C" {
-#include <hdfs.h>
+#include "hdfs.h"
 }
 #include <vector>
 #include <string>
