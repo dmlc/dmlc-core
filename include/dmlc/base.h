@@ -110,6 +110,9 @@
 #if !defined(__GNUC__)
 #define fopen64 std::fopen
 #endif
+#if (defined __MINGW32__) || (defined __MINGW64__)
+#define fopen64 std::fopen
+#endif
 #ifdef _MSC_VER
 #if _MSC_VER < 1900
 // NOTE: sprintf_s is not equivalent to snprintf,
