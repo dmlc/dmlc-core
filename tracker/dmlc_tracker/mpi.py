@@ -4,7 +4,7 @@ DMLC submission script, MPI version
 # pylint: disable=invalid-name
 from __future__ import absolute_import
 
-import subprocess
+import subprocess, logging
 from threading import Thread
 from . import tracker
 
@@ -37,26 +37,31 @@ def submit(args):
             subprocess.check_call(prog, shell=True)
 
         cmd = ''
-        if args.mpi_host_file is not None:
-            cmd = '--hostfile %s ' % (args.mpi_host_file)
+        if args.host_file is not None:
+            cmd = '--hostfile %s ' % (args.host_file)
         cmd += ' ' + ' '.join(args.command)
 
         pass_envs['DMLC_JOB_CLUSTER'] = 'mpi'
 
-        # start servers
-        if nserver > 0:
-            pass_envs['DMLC_ROLE'] = 'server'
-            prog = 'mpirun -n %d %s %s' % (nserver, get_mpi_env(pass_envs), cmd)
-            thread = Thread(target=run, args=(prog,))
-            thread.setDaemon(True)
-            thread.start()
-
+        # start workers
         if nworker > 0:
+            logging.info('Start %d workers by mpirun' % nworker)
             pass_envs['DMLC_ROLE'] = 'worker'
             prog = 'mpirun -n %d %s %s' % (nworker, get_mpi_env(pass_envs), cmd)
             thread = Thread(target=run, args=(prog,))
             thread.setDaemon(True)
             thread.start()
+
+
+        # start servers
+        if nserver > 0:
+            logging.info('Start %d servers by mpirun' % nserver)
+            pass_envs['DMLC_ROLE'] = 'server'
+            prog = 'mpirun -n %d %s %s' % (nserver, get_mpi_env(pass_envs), cmd)
+            thread = Thread(target=run, args=(prog,))
+            # thread.setDaemon(True)
+            thread.start()
+
 
     tracker.submit(args.num_workers, args.num_servers,
                    fun_submit=mpi_submit,
