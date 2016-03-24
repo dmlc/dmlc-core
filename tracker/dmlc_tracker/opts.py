@@ -57,7 +57,7 @@ def get_memory_mb(mem_str):
         raise RuntimeError(msg)
 
 
-def get_opts():
+def get_opts(args=None):
     """Get options to launch the job.
 
     Returns
@@ -70,7 +70,7 @@ def get_opts():
     """
     parser = argparse.ArgumentParser(description='DMLC job submission.')
     parser.add_argument('--cluster', type=str,
-                        choices=['yarn', 'mpi', 'sge', 'local'],
+                        choices=['yarn', 'mpi', 'sge', 'local', 'ssh'],
                         help=('Cluster type of this submission,' +
                               'default to env variable ${DMLC_SUBMIT_CLUSTER}.'))
     parser.add_argument('--num-workers', required=True, type=int,
@@ -103,8 +103,8 @@ def get_opts():
     parser.add_argument('--hdfs-tempdir', default='/tmp', type=str,
                         help=('Temporary directory in HDFS, ' +
                               ' only needed in YARN mode.'))
-    parser.add_argument('--mpi-host-file', default=None, type=str,
-                        help=('List of host files, only needed in MPI mode.'))
+    parser.add_argument('--host-file', default=None, type=str,
+                        help=('The file contains the list of hostnames, needed for MPI and ssh.'))
     parser.add_argument('--sge-log-dir', default=None, type=str,
                         help=('Log directory of SGD jobs, only needed in SGE mode.'))
     parser.add_argument(
@@ -134,9 +134,12 @@ def get_opts():
                         help=('The path to the customized gcc lib folder.' +
                               'You can use this option to ship customized libstdc++' +
                               ' library to the workers.'))
+    parser.add_argument('--sync-dst-dir', type=str,
+                        help = 'if specificed, it will sync the current \
+                        directory into remote machines\'s SYNC_DST_DIR')
     parser.add_argument('command', nargs='+',
                         help='Command to be launched')
-    (args, unknown) = parser.parse_known_args()
+    (args, unknown) = parser.parse_known_args(args)
     args.command += unknown
 
     if args.cluster is None:
