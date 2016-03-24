@@ -59,7 +59,7 @@ def submit(args):
             pass_envs['DMLC_ROLE'] = 'server'
             prog = 'mpirun -n %d %s %s' % (nserver, get_mpi_env(pass_envs), cmd)
             thread = Thread(target=run, args=(prog,))
-            # thread.setDaemon(True)
+            thread.setDaemon(True)
             thread.start()
 
 
