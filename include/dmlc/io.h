@@ -11,6 +11,7 @@
 #include <istream>
 #include <ostream>
 #include <streambuf>
+#include "logging.h"
 
 // include uint64_t only to make io standalone
 #ifdef _MSC_VER
@@ -243,7 +244,7 @@ class ostream : public std::basic_ostream<char> {
     this->set_stream(stream);
   }
   // explictly synchronize the buffer
-  virtual ~ostream() {
+  virtual ~ostream() noexcept(true) {
     buf_.pubsync();
   }
   /*!
@@ -313,7 +314,7 @@ class istream : public std::basic_istream<char> {
       : std::basic_istream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
   }
-  virtual ~istream() {}
+  virtual ~istream() noexcept(true) {}
   /*!
    * \brief set internal stream to be stream, reset states
    * \param stream new stream as output
