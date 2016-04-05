@@ -29,7 +29,9 @@ struct Error : public std::runtime_error {
 }  // namespace dmlc
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
-#define noexcept(a)
+#define noexcept_true throw ()
+#define noexcept_false
+#define noexcept(a) noexcept_##a
 #endif
 
 #if DMLC_USE_CXX11
