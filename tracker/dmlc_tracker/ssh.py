@@ -22,6 +22,12 @@ def sync_dir(local_dir, slave_node, slave_dir):
 
 def get_env(pass_envs):
     envs = []
+    # get system envs
+    keys = ['LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']
+    for k in keys:
+        v = os.getenv(k)
+        if v is not None:
+            envs.append('export ' + k + '=' + v + ';')
     # get ass_envs
     for k, v in pass_envs.items():
         envs.append('export ' + str(k) + '=' + str(v) + ';')
@@ -59,7 +65,6 @@ def submit(args):
             node = hosts[i % len(hosts)]
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' \'' + prog + '\''
-            print prog
             thread = Thread(target = run, args=(prog,))
             thread.setDaemon(True)
             thread.start()

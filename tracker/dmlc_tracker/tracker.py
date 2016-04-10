@@ -405,19 +405,20 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
     envs = {'DMLC_NUM_WORKER' : nworker,
             'DMLC_NUM_SERVER' : nserver}
     hostIP = get_host_ip(hostIP)
-    rabit = RabitTracker(hostIP=hostIP, nslave=nworker)
-    pserver = PSTracker(hostIP=hostIP, cmd=pscmd, envs=envs)
 
-    envs.update(rabit.slave_envs())
-    envs.update(pserver.slave_envs())
-    rabit.start(nworker)
+    if nserver == 0:
+        rabit = RabitTracker(hostIP=hostIP, nslave=nworker)
+        envs.update(rabit.slave_envs())
+        rabit.start(nworker)
+    else:
+        pserver = PSTracker(hostIP=hostIP, cmd=pscmd, envs=envs)
+        envs.update(pserver.slave_envs())
     fun_submit(nworker, nserver, envs)
 
-    pserver.join()
-    # start rabit tracker in another thread
     if nserver == 0:
         rabit.join()
-
+    else:
+        pserver.join()
 
 def start_rabit_tracker(args):
     """Standalone function to start rabit tracker.
