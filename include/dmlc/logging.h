@@ -28,18 +28,6 @@ struct Error : public std::runtime_error {
 };
 }  // namespace dmlc
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#define noexcept_true throw ()
-#define noexcept_false
-#define noexcept(a) noexcept_##a
-#endif
-
-#if DMLC_USE_CXX11
-#define DMLC_THROW_EXCEPTION noexcept(false)
-#else
-#define DMLC_THROW_EXCEPTION
-#endif
-
 #if DMLC_USE_GLOG
 #include <glog/logging.h>
 

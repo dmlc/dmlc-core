@@ -154,6 +154,20 @@ typedef unsigned __int64 uint64_t;
 #include <string>
 #include <vector>
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define noexcept_true throw ()
+#define noexcept_false
+#define noexcept(a) noexcept_##a
+#endif
+
+#if DMLC_USE_CXX11
+#define DMLC_THROW_EXCEPTION noexcept(false)
+#define DMLC_NO_EXCEPTION  noexcept(true)
+#else
+#define DMLC_THROW_EXCEPTION
+#define DMLC_NO_EXCEPTION
+#endif
+
 /*! \brief namespace for dmlc */
 namespace dmlc {
 /*!
