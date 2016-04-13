@@ -23,7 +23,7 @@ void InputSplitBase::Init(FileSystem *filesys,
     CHECK(files_[i].size % align_bytes == 0)
         << "file do not align by " << align_bytes << " bytes";
   }
-  this->align_bytes_ = align_bytes_;
+  this->align_bytes_ = align_bytes;
 }
 
 void InputSplitBase::ResetPartition(unsigned rank,
