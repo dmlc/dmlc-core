@@ -10,7 +10,7 @@ ifndef LIBJVM
 	LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 endif
 
-ifndef NO_OPENMP
+ifneq ($(USE_OPENMP), 0)
 	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
 endif
