@@ -14,10 +14,10 @@ def sync_dir(local_dir, slave_node, slave_dir):
     """
     sync the working directory from root node into slave node
     """
-    remote = slave_node + ':' + slave_dir
+    remote = slave_node[0] + ':' + slave_dir
     logging.info('rsync %s -> %s', local_dir, remote)
-    prog = 'rsync -az --rsh="ssh -o StrictHostKeyChecking=no" %s %s' % (
-        local_dir, remote)
+    prog = 'rsync -az --rsh="ssh -o StrictHostKeyChecking=no -p %s" %s %s' % (
+        slave_node[1], local_dir, remote)
     subprocess.check_call([prog], shell = True)
 
 def get_env(pass_envs):
@@ -41,7 +41,15 @@ def submit(args):
     hosts=[]
     for h in tmp:
         if len(h.strip()) > 0:
-            hosts.append(h.strip())
+            # parse addresses of the form ip:port
+            h = h.strip()
+            i = h.find(":")
+            p = "22"
+            if i != -1:
+                p = h[i+1:]
+                h = h[:i]
+            # hosts now contain the pair ip, port
+            hosts.append((h, p))
 
     def ssh_submit(nworker, nserver, pass_envs):
         """
@@ -62,9 +70,9 @@ def submit(args):
         # launch jobs
         for i in range(nworker + nserver):
             pass_envs['DMLC_ROLE'] = 'server' if i < nserver else 'worker'
-            node = hosts[i % len(hosts)]
+            (node, port) = hosts[i % len(hosts)]
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
-            prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' \'' + prog + '\''
+            prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
             thread = Thread(target = run, args=(prog,))
             thread.setDaemon(True)
             thread.start()
