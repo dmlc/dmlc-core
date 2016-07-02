@@ -124,8 +124,8 @@ class any {
   template<typename T>
   class TypeInfo;
   // size of stack space, it takes 32 bytes for one any type.
-  static const int kStack = sizeof(void*) * 3;
-  static const int kAlign = sizeof(void*);
+  static const size_t kStack = sizeof(void*) * 3;
+  static const size_t kAlign = sizeof(void*);
   // container use dynamic storage only when space runs lager
   union Data {
     // stack space
