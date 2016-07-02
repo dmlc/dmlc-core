@@ -20,12 +20,16 @@ matrix:
 # dependent apt packages
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - doxygen
       - wget
       - git
       - libcurl4-openssl-dev
       - unzip
+      - gcc-4.8
+      - g++-4.8
 
 before_install:
   - export TRAVIS=scripts/travis
