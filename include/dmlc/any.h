@@ -16,20 +16,49 @@
 #include "./logging.h"
 
 namespace dmlc {
+// forward declare any;
+class any;
+
+/*!
+ * Get a  reference to content stored in the any as type T.
+ * This will cause an error if
+ * T does not match the type stored.
+ * This function is not part of std::any standard.
+ *
+ * \param src The source source any container.
+ * \return The reference of content
+ * \tparam T The type of the value to be fetched.
+ */
+template<typename T>
+inline T& get(any& src);  // NOLINT(*)
+
+/*!
+ * Get the const reference content stored in the any as type T.
+ * This will cause an error if
+ * T does not match the type stored.
+ * This function is not part of std::any standard.
+ *
+ * \param src The source source any container.
+ * \return The reference of content
+ * \tparam T The type of the value to be fetched.
+ */
+template<typename T>
+inline const T& get(const any& src);
+
 /*!
  * \brief An any class that is compatible to std::any in c++17.
- *  Provide an additional get function to get reference of the stored type.
  *
  * \code
  *   dmlc::any a = std::string("mydear"), b = 1;
  *   // get reference out and add it
  *   b.get<int>() += 1;
  *   // a is now string
- *   LOG(INFO) << a.get<std::string>();
+ *   LOG(INFO) << dmlc::get<std::string>(a);
  *   // a is now 2, the string stored will be properly destructed
  *   a = std::move(b);
- *   LOG(INFO) << a.get<int>();
+ *   LOG(INFO) << dmlc::get<int>(a);
  * \endcode
+ * \sa get
  */
 class any {
  public:
@@ -91,28 +120,6 @@ class any {
    * \return The type_info about the stored type.
    */
   inline const std::type_info& type() const;
-  /*!
-   * Get the const reference content stored in the any.
-   * This will cause an error if
-   * T does not match the type stored.
-   * This function is not part of std::any standard.
-   *
-   * \return The reference of content
-   * \tparam T The type of the value to be fetched.
-   */
-  template<typename T>
-  inline const T& get() const;
-  /*!
-   * Get the reference content stored in the any.
-   * This will cause an error if
-   * T does not match the type stored.
-   * This function is not part of std::any standard.
-   *
-   * \return The reference of content
-   * \tparam T The type of the value to be fetched.
-   */
-  template<typename T>
-  inline T& get();
 
  private:
   //! \cond Doxygen_Suppress
@@ -147,6 +154,11 @@ class any {
   struct data_on_stack {
     static const bool value = alignof(T) <= kAlign && sizeof(T) <= kStack;
   };
+  // declare friend with
+  template<typename T>
+  friend T& get(any& src);  // NOLINT(*)
+  template<typename T>
+  friend const T& get(const any& src);
   // internal construct function
   inline void construct(any&& other) noexcept;
   // internal construct function
@@ -255,15 +267,15 @@ inline void any::check_type() {
 }
 
 template<typename T>
-inline const T& any::get() const {
-  this->check_type<T>();
-  return *TypeInfo<T>::get_ptr(&data_);
+inline const T& get(const any& src) {
+  src.check_type<T>();
+  return *any::TypeInfo<T>::get_ptr(&(src.data_));
 }
 
 template<typename T>
-inline T& any::get() {
-  this->check_type<T>();
-  return *TypeInfo<T>::get_ptr(&data_);
+inline T& get(any& src) { // NOLINT(*)
+  src.check_type<T>();
+  return *any::TypeInfo<T>::get_ptr(&(src.data_));
 }
 
 template<typename T>
