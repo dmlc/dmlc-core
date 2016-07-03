@@ -30,7 +30,7 @@ class any;
  * \tparam T The type of the value to be fetched.
  */
 template<typename T>
-inline T& get(any& src);  // NOLINT(*)
+inline T& get_ref(any& src);  // NOLINT(*)
 
 /*!
  * Get the const reference content stored in the any as type T.
@@ -156,7 +156,7 @@ class any {
   };
   // declare friend with
   template<typename T>
-  friend T& get(any& src);  // NOLINT(*)
+  friend T& get_ref(any& src);  // NOLINT(*)
   template<typename T>
   friend const T& get(const any& src);
   // internal construct function
@@ -165,7 +165,7 @@ class any {
   inline void construct(const any& other) noexcept;
   // internal function to check if type is correct.
   template<typename T>
-  inline void check_type();
+  inline void check_type() const;
   // internal type specific information
   const Type* type_{nullptr};
   // internal data
@@ -257,7 +257,7 @@ inline const std::type_info& any::type() const {
 }
 
 template<typename T>
-inline void any::check_type() {
+inline void any::check_type() const {
   CHECK(type_ != nullptr)
       << "The any container is empty";
   CHECK(type_->ptype_info == &typeid(T))
@@ -273,7 +273,7 @@ inline const T& get(const any& src) {
 }
 
 template<typename T>
-inline T& get(any& src) { // NOLINT(*)
+inline T& get_ref(any& src) { // NOLINT(*)
   src.check_type<T>();
   return *any::TypeInfo<T>::get_ptr(&(src.data_));
 }
