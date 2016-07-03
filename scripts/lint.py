@@ -4,6 +4,7 @@
 
 Copyright by Contributors
 """
+from __future__ import print_function
 import codecs
 import sys
 import re
@@ -73,7 +74,7 @@ class LintHelper(object):
         (pylint_stdout, pylint_stderr) = epylint.py_run(
             ' '.join([str(path)] + self.pylint_opts), return_std=True)
         emap = {}
-        print pylint_stderr.read()
+        print(pylint_stderr.read())
         for line in pylint_stdout:
             sys.stderr.write(line)
             key = line.split(':')[-1].split('(')[0].strip()
@@ -153,7 +154,7 @@ def main():
     if file_type == 'cpp' or file_type == 'all':
         allow_type += [x for x in CXX_SUFFIX]
     allow_type = set(allow_type)
-    if os.name != 'nt':
+    if sys.version_info.major == 2 and os.name != 'nt':
         sys.stderr = codecs.StreamReaderWriter(sys.stderr,
                                                codecs.getreader('utf8'),
                                                codecs.getwriter('utf8'),
