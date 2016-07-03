@@ -30,7 +30,7 @@ class any;
  * \tparam T The type of the value to be fetched.
  */
 template<typename T>
-inline T& get_ref(any& src);  // NOLINT(*)
+inline T& get(any& src);  // NOLINT(*)
 
 /*!
  * Get the const reference content stored in the any as type T.
@@ -156,7 +156,7 @@ class any {
   };
   // declare friend with
   template<typename T>
-  friend T& get_ref(any& src);  // NOLINT(*)
+  friend T& get(any& src);  // NOLINT(*)
   template<typename T>
   friend const T& get(const any& src);
   // internal construct function
@@ -273,7 +273,7 @@ inline const T& get(const any& src) {
 }
 
 template<typename T>
-inline T& get_ref(any& src) { // NOLINT(*)
+inline T& get(any& src) { // NOLINT(*)
   src.check_type<T>();
   return *any::TypeInfo<T>::get_ptr(&(src.data_));
 }

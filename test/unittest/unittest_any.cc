@@ -14,7 +14,7 @@ TEST(Any, basics) {
   dict["vec"] = std::vector<int>{1,2,3};
   dict["shapex"] = std::string("xtyz");
   std::unordered_map<std::string, dmlc::any> dict2(std::move(dict));
-  dmlc::get_ref<int>(dict2["1"]) += 1;
+  dmlc::get<int>(dict2["1"]) += 1;
 
   CHECK_EQ(dmlc::get<int>(dict2["1"]), 2);
   CHECK_EQ(dmlc::get<std::vector<int> >(dict2["vec"])[1], 2);
