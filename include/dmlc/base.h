@@ -110,7 +110,7 @@
 #if !defined(__GNUC__)
 #define fopen64 std::fopen
 #endif
-#if (defined __MINGW32__) || (defined __MINGW64__)
+#if (defined __MINGW32__) && !(defined __MINGW64__)
 #define fopen64 std::fopen
 #endif
 #ifdef _MSC_VER
