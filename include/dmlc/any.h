@@ -51,7 +51,7 @@ inline const T& get(const any& src);
  * \code
  *   dmlc::any a = std::string("mydear"), b = 1;
  *   // get reference out and add it
- *   b.get<int>() += 1;
+ *   dmlc::get<int>(b) += 1;
  *   // a is now string
  *   LOG(INFO) << dmlc::get<std::string>(a);
  *   // a is now 2, the string stored will be properly destructed

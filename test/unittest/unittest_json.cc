@@ -53,6 +53,9 @@ class MyClass {
   int value_;
 };
 }
+
+DMLC_JSON_ENABLE_ANY(std::vector<std::string>, StrVector);
+
 // test json module
 TEST(JSON, basics) {
   using namespace json;
@@ -86,3 +89,24 @@ TEST(JSON, basics) {
   TestSaveLoad(std::list<MyClass> {MyClass("abc"), MyClass("def")});
 }
 
+
+TEST(JSON, any) {
+  dmlc::any x = std::vector<std::string>{"a", "b", "c"};
+
+  std::ostringstream os;
+  {
+    dmlc::any temp(x);
+    dmlc::JSONWriter writer(&os);
+    writer.Write(temp);
+  }
+
+  std::string json = os.str();
+  LOG(INFO) << json;
+  std::istringstream is(json);
+  dmlc::JSONReader reader(&is);
+  dmlc::any copy_data;
+  reader.Read(&copy_data);
+
+  ASSERT_EQ(dmlc::get<std::vector<std::string> >(x),
+            dmlc::get<std::vector<std::string> >(copy_data));
+}

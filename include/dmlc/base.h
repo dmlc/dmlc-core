@@ -82,6 +82,10 @@
 #define DMLC_USE_REGEX (__cplusplus >= 201103L || defined(_MSC_VER))
 #endif
 
+/*! \brief helper macro to generate string concat */
+#define DMLC_STR_CONCAT_(__x, __y) __x##__y
+#define DMLC_STR_CONCAT(__x, __y) DMLC_STR_CONCAT_(__x, __y)
+
 /*!
  * \brief Disable copy constructor and assignment operator.
  *
