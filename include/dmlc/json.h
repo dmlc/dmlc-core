@@ -328,7 +328,7 @@ class JSONObjectReadHelper {
  * \param KeyName The Type key assigned to the type, must be same during load.
  */
 #define DMLC_JSON_ENABLE_ANY(Type, KeyName)                             \
-  DMLC_STR_CONCAT(DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName), __COUNTER__) =
+  DMLC_STR_CONCAT(DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName), __COUNTER__) = \
     ::dmlc::json::AnyJSONManager::Global()->EnableType<Type>(#KeyName) \
 
 //! \cond Doxygen_Suppress
