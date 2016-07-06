@@ -194,6 +194,7 @@ class FunctionRegEntryBase {
 };
 
 /*!
+ * \def DMLC_REGISTRY_ENABLE
  * \brief Macro to enable the registry of EntryType.
  * This macro must be used under namespace dmlc, and only used once in cc file.
  * \param EntryType Type of registry entry
