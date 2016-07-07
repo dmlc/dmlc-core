@@ -16,14 +16,17 @@
 #include <map>
 #include <list>
 #include <utility>
-#include <typeindex>
-#include <typeinfo>
-#include <unordered_map>
 
-#include "./any.h"
 #include "./base.h"
 #include "./logging.h"
 #include "./type_traits.h"
+
+#if DMLC_USE_CXX11
+#include <typeindex>
+#include <typeinfo>
+#include <unordered_map>
+#include "./any.h"
+#endif  // DMLC_USE_CXX11
 
 namespace dmlc {
 /*!
@@ -317,7 +320,7 @@ class JSONObjectReadHelper {
 };
 
 #define DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName)                  \
-  static ::dmlc::json::AnyJSONManager&  __make_AnyJSONType ## _ ## KeyName ## __ \
+  static ::dmlc::json::AnyJSONManager&  __make_AnyJSONType ## _ ## KeyName ## __
 
 /*!
  * \def DMLC_JSON_ENABLE_ANY
@@ -449,10 +452,12 @@ template<typename V>
 struct Handler<std::map<std::string, V> > : public MapHandler<std::map<std::string, V> > {
 };
 
+#if DMLC_USE_CXX11
 template<typename V>
 struct Handler<std::unordered_map<std::string, V> >
     : public MapHandler<std::unordered_map<std::string, V> > {
 };
+#endif  // DMLC_USE_CXX11
 
 template<typename T>
 struct Handler {
@@ -470,6 +475,7 @@ struct Handler {
   }
 };
 
+#if DMLC_USE_CXX11
 // Manager to store json serialization strategy.
 class AnyJSONManager {
  public:
@@ -529,7 +535,7 @@ struct Handler<any> {
     std::type_index id = std::type_index(data.type());
     auto it = nmap.find(id);
     CHECK(it != nmap.end() && it->first == id)
-        << "Type " << id.name() << " has not been registered via DMLC_ANY_ENABLE_JSON";
+        << "Type " << id.name() << " has not been registered via DMLC_JSON_ENABLE_ANY";
     std::string type_name = it->second;
     AnyJSONManager::Entry e = AnyJSONManager::Global()->type_map_.at(type_name);
     writer->BeginArray(false);
@@ -547,13 +553,14 @@ struct Handler<any> {
         tmap = AnyJSONManager::Global()->type_map_;
     auto it = tmap.find(type_name);
     CHECK(it != tmap.end() && it->first == type_name)
-        << "Typename " << type_name << " has not been registered via DMLC_ANY_ENABLE_JSON";
+        << "Typename " << type_name << " has not been registered via DMLC_JSON_ENABLE_ANY";
     AnyJSONManager::Entry e = it->second;
     CHECK(reader->NextArrayItem()) << "invalid any json format";
     e.read(reader, data);
     CHECK(!reader->NextArrayItem()) << "invalid any json format";
   }
 };
+#endif  // DMLC_USE_CXX11
 
 }  // namespace json
 
