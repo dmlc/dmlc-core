@@ -596,7 +596,15 @@ inline void JSONReader::ReadString(std::string *out_str) {
   while (true) {
     ch = is_->get();
     if (ch == '\\') {
-      os << static_cast<char>(is_->get());
+      char sch = static_cast<char>(is_->get());
+      switch (sch) {
+        case 'r': os << "\r"; break;
+        case 'n': os << "\n"; break;
+        case '\\': os << "\\"; break;
+        case '\t': os << "\t"; break;
+        case '\"': os << "\""; break;
+        default: LOG(FATAL) << "unknown string escape \\" << sch;
+      }
     } else {
       if (ch == '\"') break;
       os << static_cast<char>(ch);
