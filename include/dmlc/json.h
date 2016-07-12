@@ -595,10 +595,10 @@ inline void JSONReader::ReadString(std::string *out_str) {
   std::ostringstream os;
   while (true) {
     ch = is_->get();
-    if (ch == '\"') break;
     if (ch == '\\') {
-      os << is_->get();
+      os << static_cast<char>(is_->get());
     } else {
+      if (ch == '\"') break;
       os << static_cast<char>(ch);
     }
     if (ch == EOF || ch == '\r' || ch == '\n') {
@@ -857,4 +857,3 @@ DeclareFieldInternal(const std::string &key, T *addr, bool optional) {
 //! \endcond
 }  // namespace dmlc
 #endif  // DMLC_JSON_H_
-
