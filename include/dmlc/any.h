@@ -88,13 +88,13 @@ class any {
    * \param other The other any to be copy or moved.
    * \return self
    */
-  inline any& operator=(any&& other) noexcept;
+  inline any& operator=(any&& other);
   /*!
    * \brief assign operator from other
    * \param other The other any to be copy or moved.
    * \return self
    */
-  inline any& operator=(const any& other) noexcept;
+  inline any& operator=(const any& other);
   /*!
    * \brief assign operator from any type.
    * \param other The other any to be copy or moved.
@@ -102,11 +102,11 @@ class any {
    * \return self
    */
   template<typename T>
-  inline any& operator=(T&& other) noexcept;
+  inline any& operator=(T&& other);
   /*!
    * \return whether the container is empty.
    */
-  inline bool empty() const noexcept;
+  inline bool empty() const;
   /*!
    * \return clear the content of container
    */
@@ -115,7 +115,7 @@ class any {
    * swap current content with other
    * \param other The other data to be swapped.
    */
-  inline void swap(any& other) noexcept; // NOLINT(*)
+  inline void swap(any& other); // NOLINT(*)
   /*!
    * \return The type_info about the stored type.
    */
@@ -160,9 +160,9 @@ class any {
   template<typename T>
   friend const T& get(const any& src);
   // internal construct function
-  inline void construct(any&& other) noexcept;
+  inline void construct(any&& other);
   // internal construct function
-  inline void construct(const any& other) noexcept;
+  inline void construct(const any& other);
   // internal function to check if type is correct.
   template<typename T>
   inline void check_type() const;
@@ -197,13 +197,13 @@ inline any::any(const any& other) {
   this->construct(other);
 }
 
-inline void any::construct(any&& other) noexcept {
+inline void any::construct(any&& other) {
   type_ = other.type_;
   data_ = other.data_;
   other.type_ = nullptr;
 }
 
-inline void any::construct(const any& other) noexcept {
+inline void any::construct(const any& other) {
   type_ = other.type_;
   if (type_ != nullptr) {
     type_->create_from_data(&data_, other.data_);
@@ -214,23 +214,23 @@ inline any::~any() {
   this->clear();
 }
 
-inline any& any::operator=(any&& other) noexcept {
+inline any& any::operator=(any&& other) {
   any(std::move(other)).swap(*this);
   return *this;
 }
 
-inline any& any::operator=(const any& other) noexcept {
+inline any& any::operator=(const any& other) {
   any(other).swap(*this);
   return *this;
 }
 
 template<typename T>
-inline any& any::operator=(T&& other) noexcept {
+inline any& any::operator=(T&& other) {
   any(std::forward<T>(other)).swap(*this);
   return *this;
 }
 
-inline void any::swap(any& other) noexcept { // NOLINT(*)
+inline void any::swap(any& other) { // NOLINT(*)
   std::swap(type_, other.type_);
   std::swap(data_, other.data_);
 }
@@ -244,7 +244,7 @@ inline void any::clear() {
   }
 }
 
-inline bool any::empty() const noexcept {
+inline bool any::empty() const {
   return type_ == nullptr;
 }
 
