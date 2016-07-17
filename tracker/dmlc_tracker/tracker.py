@@ -34,17 +34,17 @@ class ExSocket(object):
             chunk = self.sock.recv(min(nbytes - nread, 1024))
             nread += len(chunk)
             res.append(chunk)
-        return ''.join(res)
+        return b''.join(res)
     def recvint(self):
         return struct.unpack('@i', self.recvall(4))[0]
     def sendint(self, n):
         self.sock.sendall(struct.pack('@i', n))
     def sendstr(self, s):
         self.sendint(len(s))
-        self.sock.sendall(s)
+        self.sock.sendall(s.encode())
     def recvstr(self):
         slen = self.recvint()
-        return self.recvall(slen)
+        return self.recvall(slen).decode()
 
 # magic number used to verify existence of data
 kMagic = 0xff99
@@ -105,7 +105,7 @@ class SlaveEntry(object):
         while True:
             ngood = self.sock.recvint()
             goodset = set([])
-            for _ in xrange(ngood):
+            for _ in range(ngood):
                 goodset.add(self.sock.recvint())
             assert goodset.issubset(nnset)
             badset = nnset - goodset
@@ -167,7 +167,7 @@ class RabitTracker(object):
         rank = rank + 1
         ret = []
         if rank > 1:
-            ret.append(rank / 2 - 1)
+            ret.append(rank // 2 - 1)
         if rank * 2 - 1 < nslave:
             ret.append(rank * 2 - 1)
         if rank * 2 < nslave:
@@ -187,7 +187,7 @@ class RabitTracker(object):
         parent_map = {}
         for r in range(nslave):
             tree_map[r] = self.get_neighbor(r, nslave)
-            parent_map[r] = (r + 1) / 2 - 1
+            parent_map[r] = (r + 1) // 2 - 1
         return tree_map, parent_map
 
     def find_share_ring(self, tree_map, parent_map, r):
@@ -284,7 +284,7 @@ class RabitTracker(object):
                     nslave = s.world_size
                 tree_map, parent_map, ring_map = self.get_link_map(nslave)
                 # set of nodes that is pending for getting up
-                todo_nodes = range(nslave)
+                todo_nodes = list(range(nslave))
             else:
                 assert s.world_size == -1 or s.world_size == nslave
             if s.cmd == 'recover':
@@ -393,7 +393,7 @@ def get_host_ip(hostIP=None):
         if hostIP.startswith("127."):
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             # doesn't have to be reachable
-            s.connect(('10.255.255.255', 0))
+            s.connect(('10.255.255.255', 1))
             hostIP = s.getsockname()[0]
     return hostIP
 
