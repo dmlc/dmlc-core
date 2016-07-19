@@ -146,7 +146,7 @@ class RabitTracker(object):
                 self.port = port
                 break
             except socket.error as e:
-                if e.errno == 98:
+                if e.errno in {98, 48}:
                     continue
                 else:
                     raise
