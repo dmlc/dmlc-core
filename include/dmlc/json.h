@@ -482,12 +482,13 @@ class AnyJSONManager {
   template<typename T>
   inline AnyJSONManager& EnableType(const std::string& type_name) {  // NOLINT(*)
     std::type_index tp = std::type_index(typeid(T));
-    CHECK(type_map_.count(type_name) == 0)
-        << "Type name " << type_name << "already registered in registry";
     if (type_name_.count(tp) != 0) {
       CHECK(type_name_.at(tp) == type_name)
           << "Type has already been registered as another typename " << type_name_.at(tp);
+      return *this;
     }
+    CHECK(type_map_.count(type_name) == 0)
+        << "Type name " << type_name << " already registered in registry";
     Entry e;
     e.read = ReadAny<T>;
     e.write = WriteAny<T>;
