@@ -58,6 +58,11 @@
                         __cplusplus >= 201103L || defined(_MSC_VER))
 #endif
 
+/*! \brief strict CXX11 support */
+#ifndef DMLC_STRICT_CXX11
+#define DMLC_STRICT_CXX11 (__cplusplus >= 201103L || defined(_MSC_VER))
+#endif
+
 /// check if g++ is before 4.6
 #if DMLC_USE_CXX11 && defined(__GNUC__) && !defined(__clang_version__)
 #if __GNUC__ == 4 && __GNUC_MINOR__ < 6
