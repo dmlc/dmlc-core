@@ -25,7 +25,9 @@
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
+#if DMLC_STRICT_CXX11
 #include "./any.h"
+#endif  // DMLC_STRICT_CXX11
 #endif  // DMLC_USE_CXX11
 
 namespace dmlc {
@@ -475,7 +477,7 @@ struct Handler {
   }
 };
 
-#if DMLC_USE_CXX11
+#if DMLC_STRICT_CXX11
 // Manager to store json serialization strategy.
 class AnyJSONManager {
  public:
@@ -561,7 +563,7 @@ struct Handler<any> {
     CHECK(!reader->NextArrayItem()) << "invalid any json format";
   }
 };
-#endif  // DMLC_USE_CXX11
+#endif  // DMLC_STRICT_CXX11
 
 }  // namespace json
 
