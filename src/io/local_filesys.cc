@@ -35,7 +35,7 @@ class FileStream : public SeekStream {
         << "FileStream.Write incomplete";
   }
   virtual void Seek(size_t pos) {
-    std::fseek(fp_, static_cast<long>(pos), SEEK_SET);  // NOLINT(*)
+    CHECK(!std::fseek(fp_, static_cast<long>(pos), SEEK_SET));  // NOLINT(*)
   }
   virtual size_t Tell(void) {
     return std::ftell(fp_);
