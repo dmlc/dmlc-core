@@ -73,7 +73,8 @@ class RecordIOWriter {
    * \param stream the stream to be constructed
    */
   explicit RecordIOWriter(Stream *stream)
-      : stream_(stream), except_counter_(0) {
+      : stream_(stream), seek_stream_(dynamic_cast<SeekStream*>(stream)),
+        except_counter_(0) {
     CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
@@ -97,9 +98,16 @@ class RecordIOWriter {
     return except_counter_;
   }
 
+  inline size_t Tell(void) {
+    CHECK(seek_stream_ != NULL) << "The input stream is not seekable";
+    return seek_stream_->Tell();
+  }
+
  private:
   /*! \brief output stream */
   Stream *stream_;
+  /*! \brief seekable stream */
+  SeekStream *seek_stream_;
   /*! \brief counts the number of exceptions */
   size_t except_counter_;
 };
@@ -114,7 +122,8 @@ class RecordIOReader {
    * \param stream the stream to be constructed
    */
   explicit RecordIOReader(Stream *stream)
-      : stream_(stream), end_of_stream_(false) {
+      : stream_(stream), seek_stream_(dynamic_cast<SeekStream*>(stream)),
+        end_of_stream_(false) {
     CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
@@ -124,9 +133,16 @@ class RecordIOReader {
    */
   bool NextRecord(std::string *out_rec);
 
+  /*! \brief seek to certain position of the input stream */
+  inline void Seek(size_t pos) {
+    CHECK(seek_stream_ != NULL) << "The input stream is not seekable";
+    seek_stream_->Seek(pos);
+  }
+
  private:
   /*! \brief output stream */
   Stream *stream_;
+  SeekStream *seek_stream_;
   /*! \brief whether we are at end of stream */
   bool end_of_stream_;
 };
