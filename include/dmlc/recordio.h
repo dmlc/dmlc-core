@@ -98,6 +98,7 @@ class RecordIOWriter {
     return except_counter_;
   }
 
+  /*! \brief tell the current position of the input stream */
   inline size_t Tell(void) {
     CHECK(seek_stream_ != NULL) << "The input stream is not seekable";
     return seek_stream_->Tell();
