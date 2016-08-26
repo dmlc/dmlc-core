@@ -322,7 +322,8 @@ class JSONObjectReadHelper {
 };
 
 #define DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName)                  \
-  static ::dmlc::json::AnyJSONManager&  __make_AnyJSONType ## _ ## KeyName ## __
+  static DMLC_ATTRIBUTE_UNUSED ::dmlc::json::AnyJSONManager&   \
+  __make_AnyJSONType ## _ ## KeyName ## __
 
 /*!
  * \def DMLC_JSON_ENABLE_ANY
