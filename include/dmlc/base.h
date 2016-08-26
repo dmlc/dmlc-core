@@ -74,6 +74,7 @@
 #endif
 #endif
 
+
 /*!
  * \brief Enable std::thread related modules,
  *  Used to disable some module in mingw compile.
@@ -85,6 +86,13 @@
 /*! \brief whether enable regex support, actually need g++-4.9 or higher*/
 #ifndef DMLC_USE_REGEX
 #define DMLC_USE_REGEX (__cplusplus >= 201103L || defined(_MSC_VER))
+#endif
+
+/*! \brief helper macro to supress unused warning */
+#if defined(__GNUC__)
+#define DMLC_ATTRIBUTE_UNUSED __attribute__((unused))
+#else
+#define DMLC_ATTRIBUTE_UNUSED
 #endif
 
 /*! \brief helper macro to generate string concat */
