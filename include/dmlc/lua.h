@@ -29,16 +29,10 @@
 #ifndef DMLC_LUA_H_
 #define DMLC_LUA_H_
 
-#ifndef DMLC_USE_CUDA
-#define DMLC_USE_CUDA 1
-#endif
-
 extern "C" {
 #include <lua.h>
 #include <luaT.h>
 #include <lualib.h>
-#include <TH/THStorage.h>
-#include <TH/THTensor.h>
 }
 
 #include <string>
@@ -54,12 +48,6 @@ extern "C" {
 #include "./base.h"
 #include "./logging.h"
 #include "./thread_local.h"
-
-#if DMLC_USE_CUDA
-#include <THC/THCStorage.h>
-#include <THC/THCTensor.h>
-#include <THC/THCTensorCopy.h>
-#endif  // DMLC_USE_CUDA
 
 namespace dmlc {
 
@@ -286,44 +274,6 @@ class LuaState {
   /*! \brief internal lock about the state */
   std::mutex mutex_;
 };
-
-/*!
- * \brief create a new torch.[Type]Storage that shares space with given dptr.
- *  The space is managed by C++ side.
- *
- *  This function is sufficient to C++ and torch in Lua.
- *  We can Lua functions create tensor from the storage
- *  and copy data back into the storage.
- *
- * \param state The state to be managed
- * \param dptr The data pointer
- * \param size The number of elements in the dptr.
- * \tparam DataType The data type of storage, only float is supported.
- * \return LuaRef to a torch storage.
- */
-template<typename DataType>
-inline LuaRef THStorageSharedData(LuaState* state,
-                                  DataType* dptr,
-                                  size_t size);
-
-/*!
- * \brief create a new cutorch.[Type]Storage that shares space with given dptr.
- *  The space is managed by C++ side.
- *
- *  This function is sufficient to C++ and torch in Lua.
- *  We can Lua functions create tensor from the storage
- *  and copy data back into the storage.
- *
- * \param state The state to be managed
- * \param dptr The data pointer
- * \param size The number of elements in the dptr.
- * \tparam DataType The data type of storage, only float is supported.
- * \return LuaRef to a torch storage.
- */
-template<typename DataType>
-inline LuaRef THCStorageSharedData(LuaState* state,
-                                   DataType* dptr,
-                                   size_t size);
 
 // implementations after this line
 //! \cond Doxygen_Suppress
@@ -761,39 +711,6 @@ inline LuaRef LuaRef::operator[](size_t index) const {
   return ret;
 }
 
-template<>
-inline LuaRef THStorageSharedData<float>(LuaState* s,
-                                         float* dptr,
-                                         size_t size) {
-  THFloatStorage* storage = THFloatStorage_newWithData(dptr, size);
-  THFloatStorage_clearFlag(storage, TH_STORAGE_FREEMEM);
-  LuaRef ret;
-  s->PRun_([storage, &ret, s](lua_State* L) {
-      luaT_pushudata(L, storage, "torch.FloatStorage");
-      ret.SetByPopStack_(s);
-    });
-  return ret;
-}
-
-#if DMLC_USE_CUDA
-template<>
-inline LuaRef THCStorageSharedData<float>(LuaState* s,
-                                          float* dptr,
-                                          size_t size) {
-  LuaRef cutorch_state = (*s)["cutorch"]["_state"];
-  THCudaStorage* storage = THCudaStorage_newWithData(
-      cutorch_state.GetUDataPtr<THCState>(), dptr, size);
-  // bug in cutorch
-  THFloatStorage_clearFlag(
-      reinterpret_cast<THFloatStorage*>(storage), TH_STORAGE_FREEMEM);
-  LuaRef ret;
-  s->PRun_([storage, &ret, s](lua_State* L) {
-      luaT_pushudata(L, storage, "torch.CudaStorage");
-      ret.SetByPopStack_(s);
-    });
-  return ret;
-}
-#endif  // DMLC_USE_CUDA
 //! \endcond
 }  // namespace dmlc
 
