@@ -455,7 +455,10 @@ inline LuaState::LuaState() {
 }
 
 inline LuaState::~LuaState() {
-  lua_close(L_);
+  if (option_ != kThreadLocal && L_ != nullptr) {
+    // never close threadlocal, for save destruction.
+    lua_close(L_);
+  }
 }
 
 inline LuaState* LuaState::Create_(Option opt) {
