@@ -515,7 +515,11 @@ inline LuaRef LuaState::Eval(const char* lua_code) {
   LuaRef ret;
   this->PRun_([this, lua_code, &ret](lua_State* L) {
       luaL_loadstring(L, lua_code);
-      LUA_CALL(lua_pcall(L, 0, 1, 0));
+      CHECK_EQ(lua_pcall(L, 0, 1, 0), 0)
+          << "Lua call error: " << lua_tostring(L, -1) << '\n'
+          << "---------\n"
+          << lua_code
+          << "\n----------";
       ret.SetByPopStack_(this);
     });
   return ret;
