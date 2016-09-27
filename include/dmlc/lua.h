@@ -211,6 +211,12 @@ class LuaState {
    */
   inline LuaRef operator[](const std::string& key);
   /*!
+   * \brief Set the value to the global table.
+   * \param key The key of the global field.
+   * \param value The value to the set.
+   */
+  inline void SetGlobalField(const std::string& key, const LuaRef& value);
+  /*!
    *  Get a thread local version of lua state.
    *  The LuaState runs in thread local mode,
    *  all the LuaRef can only be run on the current thread.
@@ -542,6 +548,14 @@ inline LuaRef LuaState::operator[](const std::string& key) {
       ret.SetByPopStack_(this);
     });
   return ret;
+}
+
+inline void LuaState::SetGlobalField(
+    const std::string& key, const LuaRef& value) {
+  this->PRun_([this, &key, &value](lua_State* L) {
+      lua_rawgeti(L, LUA_REGISTRYINDEX, value.ref_);
+      lua_setglobal(L, key.c_str());
+    });
 }
 
 inline LuaRef::LuaRef(const LuaRef& other) {
