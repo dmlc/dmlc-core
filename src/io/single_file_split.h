@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <string>
 #include <algorithm>
+#include<sys/stat.h>
 
 #if defined(__FreeBSD__)
 #define fopen64 std::fopen
@@ -47,6 +48,11 @@ class SingleFileSplit : public InputSplit {
   }
   virtual void HintChunkSize(size_t chunk_size) {
     buffer_size_ = std::max(chunk_size, buffer_size_);
+  }
+  virtual size_t GetTotalSize(void) {
+    struct stat buf;
+    fstat(fileno(fp_), &buf);
+    return buf.st_size;
   }
   virtual size_t Read(void *ptr, size_t size) {
     return std::fread(ptr, 1, size, fp_);
