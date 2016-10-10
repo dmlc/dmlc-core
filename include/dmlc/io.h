@@ -150,6 +150,8 @@ class InputSplit {
    * \param chunk_size the chunk size
    */
   virtual void HintChunkSize(size_t chunk_size) {}
+  /*! \brief get the total size of the InputSplit */
+  virtual size_t GetTotalSize(void) = 0;
   /*! \brief reset the position of InputSplit to beginning */
   virtual void BeforeFirst(void) = 0;
   /*!

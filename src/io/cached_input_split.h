@@ -90,6 +90,9 @@ class CachedInputSplit : public InputSplit {
   virtual void HintChunkSize(size_t chunk_size) {
     buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
   }
+  virtual size_t GetTotalSize(void) {
+    return base_->GetTotalSize();
+  }
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
     auto *iter = iter_preproc_ != NULL ? iter_preproc_ : &iter_cached_;
