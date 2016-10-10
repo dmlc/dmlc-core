@@ -43,7 +43,7 @@ class InputSplitBase : public InputSplit {
   virtual void HintChunkSize(size_t chunk_size) {
     buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
   }
-  virtual size_t GetTotalSize(void){
+  virtual size_t GetTotalSize(void) {
     return file_offset_.back();
   }
   // implement next record

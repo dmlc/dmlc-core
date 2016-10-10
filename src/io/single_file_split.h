@@ -9,10 +9,10 @@
 
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <sys/stat.h>
 #include <cstdio>
 #include <string>
 #include <algorithm>
-#include<sys/stat.h>
 
 #if defined(__FreeBSD__)
 #define fopen64 std::fopen
