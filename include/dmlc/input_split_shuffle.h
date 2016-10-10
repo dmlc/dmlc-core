@@ -81,7 +81,21 @@ class InputSplitShuffle : public InputSplit {
     source_->ResetPartition(idx, nsplit * num_shuffle_parts_);
     cur_shuffle_idx_ = 0;
   }
-
+  /*!
+   * \brief constructor
+   * \param uri the uri of the input, can contain hdfs prefix
+   * \param part_index the part id of current input
+   * \param num_parts total number of splits
+   * \param type type of record
+   *   List of possible types: "text", "recordio"
+   *     - "text":
+   *         text file, each line is treated as a record
+   *         input split will split on '\\n' or '\\r'
+   *     - "recordio":
+   *         binary recordio file, see recordio.h
+   * \param number of shuffle chunks for each split
+   * \param the shuffle seed for chunk shuffling
+   */
   InputSplitShuffle(const char* uri,
                     unsigned part_index,
                     unsigned num_parts,
@@ -95,13 +109,31 @@ class InputSplitShuffle : public InputSplit {
     for (unsigned i = 0; i < num_shuffle_parts_; i++) {
       shuffle_indexes_.push_back(i);
     }
-    trnd_.seed(kRandMagic_ +  num_parts_ + num_shuffle_parts_ + shuffle_seed);
+    trnd_.seed(kRandMagic_ + part_index_ + num_parts_ + num_shuffle_parts_ +
+               shuffle_seed);
     std::shuffle(shuffle_indexes_.begin(), shuffle_indexes_.end(), trnd_);
     int idx = shuffle_indexes_[cur_shuffle_idx_] + part_index_ * num_shuffle_parts_;
     source_.reset(
         InputSplit::Create(uri, idx , num_parts_ * num_shuffle_parts_, type));
   }
-
+  /*!
+   * \brief factory function:
+   *  create input split with chunk shuffling given a uri
+   * \param uri the uri of the input, can contain hdfs prefix
+   * \param part_index the part id of current input
+   * \param num_parts total number of splits
+   * \param type type of record
+   *   List of possible types: "text", "recordio"
+   *     - "text":
+   *         text file, each line is treated as a record
+   *         input split will split on '\\n' or '\\r'
+   *     - "recordio":
+   *         binary recordio file, see recordio.h
+   * \param number of shuffle chunks for each split
+   * \param the shuffle seed for chunk shuffling
+   * \return a new input split
+   * \sa InputSplit::Type
+   */
   static InputSplit* Create(const char* uri,
                             unsigned part_index,
                             unsigned num_parts,
