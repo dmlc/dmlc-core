@@ -93,8 +93,8 @@ class InputSplitShuffle : public InputSplit {
    *         input split will split on '\\n' or '\\r'
    *     - "recordio":
    *         binary recordio file, see recordio.h
-   * \param number of shuffle chunks for each split
-   * \param the shuffle seed for chunk shuffling
+   * \param num_shuffle_parts number of shuffle chunks for each split
+   * \param shuffle_seed shuffle seed for chunk shuffling
    */
   InputSplitShuffle(const char* uri,
                     unsigned part_index,
@@ -129,8 +129,8 @@ class InputSplitShuffle : public InputSplit {
    *         input split will split on '\\n' or '\\r'
    *     - "recordio":
    *         binary recordio file, see recordio.h
-   * \param number of shuffle chunks for each split
-   * \param the shuffle seed for chunk shuffling
+   * \param num_shuffle_parts number of shuffle chunks for each split
+   * \param shuffle_seed shuffle seed for chunk shuffling
    * \return a new input split
    * \sa InputSplit::Type
    */
