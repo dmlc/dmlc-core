@@ -62,8 +62,10 @@ class URISpec {
       for (size_t i = 0; i < arg_list.size(); ++i) {
         std::istringstream is(arg_list[i]);
         std::pair<std::string, std::string> kv;
-        CHECK(std::getline(is, kv.first, '=')) << "Invalid uri argument format";
-        CHECK(std::getline(is, kv.second)) << "Invalid uri argument format";
+        CHECK(std::getline(is, kv.first, '=')) << "Invalid uri argument format"
+          << " for key in arg " << i + 1;
+        CHECK(std::getline(is, kv.second)) << "Invalid uri argument format"
+          << " for value in arg " << i + 1;
         this->args.insert(kv);
       }
     } else {
