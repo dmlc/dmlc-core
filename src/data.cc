@@ -48,7 +48,8 @@ inline Parser<IndexType> *
 CreateParser_(const char *uri_,
               unsigned part_index,
               unsigned num_parts,
-              const char *type) {
+              const char *type,
+              const std::map<std::string, std::string>& args) {
   std::string ptype = type;
   io::URISpec spec(uri_, part_index, num_parts);
   if (ptype == "auto") {
@@ -64,8 +65,12 @@ CreateParser_(const char *uri_,
   if (e == NULL) {
     LOG(FATAL) << "Unknown data type " << ptype;
   }
+  std::map<std::string, std::string> parser_args;
+  // `spec.args` is used only if the key is not present in `args`
+  parser_args.insert(args.begin(), args.end());
+  parser_args.insert(spec.args.begin(), spec.args.end());
   // create parser
-  return (*e->body)(spec.uri, spec.args, part_index, num_parts);
+  return (*e->body)(spec.uri, parser_args, part_index, num_parts);
 }
 
 template<typename IndexType>
@@ -73,11 +78,12 @@ inline RowBlockIter<IndexType> *
 CreateIter_(const char *uri_,
             unsigned part_index,
             unsigned num_parts,
-            const char *type) {
+            const char *type,
+            const std::map<std::string, std::string>& args) {
   using namespace std;
   io::URISpec spec(uri_, part_index, num_parts);
   Parser<IndexType> *parser = CreateParser_<IndexType>
-      (spec.uri.c_str(), part_index, num_parts, type);
+      (spec.uri.c_str(), part_index, num_parts, type, args);
   if (spec.cache_file.length() != 0) {
 #if DMLC_ENABLE_STD_THREAD
     return new DiskRowIter<IndexType>(parser, spec.cache_file.c_str(), true);
@@ -99,8 +105,9 @@ RowBlockIter<uint32_t> *
 RowBlockIter<uint32_t>::Create(const char *uri,
                                unsigned part_index,
                                unsigned num_parts,
-                               const char *type) {
-  return data::CreateIter_<uint32_t>(uri, part_index, num_parts, type);
+                               const char *type,
+                               const std::map<std::string, std::string>& args) {
+  return data::CreateIter_<uint32_t>(uri, part_index, num_parts, type, args);
 }
 
 template<>
@@ -108,8 +115,9 @@ RowBlockIter<uint64_t> *
 RowBlockIter<uint64_t>::Create(const char *uri,
                                unsigned part_index,
                                unsigned num_parts,
-                               const char *type) {
-  return data::CreateIter_<uint64_t>(uri, part_index, num_parts, type);
+                               const char *type,
+                               const std::map<std::string, std::string>& args) {
+  return data::CreateIter_<uint64_t>(uri, part_index, num_parts, type, args);
 }
 
 template<>
@@ -117,8 +125,9 @@ Parser<uint32_t> *
 Parser<uint32_t>::Create(const char *uri_,
                          unsigned part_index,
                          unsigned num_parts,
-                         const char *type) {
-  return data::CreateParser_<uint32_t>(uri_, part_index, num_parts, type);
+                         const char *type,
+                         const std::map<std::string, std::string>& args) {
+  return data::CreateParser_<uint32_t>(uri_, part_index, num_parts, type, args);
 }
 
 template<>
@@ -126,8 +135,9 @@ Parser<uint64_t> *
 Parser<uint64_t>::Create(const char *uri_,
                          unsigned part_index,
                          unsigned num_parts,
-                         const char *type) {
-  return data::CreateParser_<uint64_t>(uri_, part_index, num_parts, type);
+                         const char *type,
+                         const std::map<std::string, std::string>& args) {
+  return data::CreateParser_<uint64_t>(uri_, part_index, num_parts, type, args);
 }
 
 // registry

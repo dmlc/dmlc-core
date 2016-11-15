@@ -209,6 +209,7 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
    * \param part_index the part id of current input
    * \param num_parts total number of splits
    * \param type type of dataset can be: "libsvm", ...
+   * \param args additional args to pass to the parser
    *
    * \return the created data iterator
    */
@@ -216,7 +217,9 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
   Create(const char *uri,
          unsigned part_index,
          unsigned num_parts,
-         const char *type);
+         const char *type,
+         const std::map<std::string, std::string>& args =
+                 std::map<std::string, std::string>());
   /*! \return maximum feature dimension in the dataset */
   virtual size_t NumCol() const = 0;
 };
@@ -245,6 +248,7 @@ class Parser : public DataIter<RowBlock<IndexType> > {
   * \param part_index the part id of current input
   * \param num_parts total number of splits
   * \param type type of dataset can be: "libsvm", "auto", ...
+  * \param args additional args to pass to the parser
   *
   * When "auto" is passed, the type is decided by format argument string in URI.
   *
@@ -254,7 +258,9 @@ class Parser : public DataIter<RowBlock<IndexType> > {
   Create(const char *uri_,
          unsigned part_index,
          unsigned num_parts,
-         const char *type);
+         const char *type,
+         const std::map<std::string, std::string>& args =
+                 std::map<std::string, std::string>());
   /*! \return size of bytes read so far */
   virtual size_t BytesRead(void) const = 0;
   /*! \brief Factory type of the parser*/
