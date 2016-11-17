@@ -54,9 +54,9 @@ public class ApplicationMaster {
     // hdfs handler
     private FileSystem dfs;
 
-    // number of cores allocated for each server task
-    private int workerCores = 1;
     // number of cores allocated for each worker task
+    private int workerCores = 1;
+    // number of cores allocated for each server task
     private int serverCores = 1;
     // memory needed requested for the worker task
     private int workerMemoryMB = 10;
