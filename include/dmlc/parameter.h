@@ -385,6 +385,7 @@ class ParamManager {
         } else {
           if (option != parameter::kAllowUnknown) {
             if (option == parameter::kAllowHidden &&
+                it->first.length() > 4 &&
                 it->first.find("__") == 0 &&
                 it->first.rfind("__") == it->first.length()-2) {
               continue;
@@ -394,7 +395,7 @@ class ParamManager {
             os << "----------------\n";
             PrintDocString(os);
             throw dmlc::ParamError(os.str());
-          } 
+          }
         }
       }
     }
