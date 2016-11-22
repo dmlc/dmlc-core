@@ -37,7 +37,7 @@ before_install:
   - ${TRAVIS}/travis_osx_install.sh
 
 install:
-  - pip install cpplint pylint --user `whoami`
+  - pip install --user cpplint pylint
 
 script: ${TRAVIS}/travis_script.sh
 
