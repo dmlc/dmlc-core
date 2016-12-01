@@ -91,11 +91,7 @@ inline bool TextParserBase<IndexType>::
 FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   InputSplit::Blob chunk;
   if (!source_->NextChunk(&chunk)) return false;
-  int nthread;
-  #pragma omp parallel num_threads(nthread_)
-  {
-    nthread = omp_get_num_threads();
-  }
+  const int nthread = omp_get_max_threads();
   // reserve space for data
   data->resize(nthread);
   bytes_read_ += chunk.size;
