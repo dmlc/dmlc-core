@@ -27,6 +27,16 @@ class optional {
  public:
   optional() : val(nullptr) {}
   explicit optional(const T& value) : val(new T(value)) {}
+  optional (const optional<T>& other) {
+    if (other) {
+      val = new T(*other);
+    } else {
+      val = nullptr;
+    }
+  }
+  ~optional() {
+    if (val != nullptr) delete val;
+  }
   optional<T>& operator=(const T& value) {
     if (val != nullptr) {
       delete val;
