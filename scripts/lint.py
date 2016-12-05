@@ -24,9 +24,9 @@ class LintHelper(object):
         """Print summary of certain result map."""
         if len(result_map) == 0:
             return 0
-        npass = len([x for k, x in result_map.iteritems() if len(x) == 0])
+        npass = len([x for k, x in result_map.items() if len(x) == 0])
         strm.write('=====%d/%d %s files passed check=====\n' % (npass, len(result_map), ftype))
-        for fname, emap in result_map.iteritems():
+        for fname, emap in result_map.items():
             if len(emap) == 0:
                 continue
             strm.write('%s: %d Errors of %d Categories map=%s\n' % (
@@ -116,9 +116,8 @@ def get_header_guard_dmlc(filename):
     file_path_from_root = fileinfo.RepositoryName()
     inc_list = ['include', 'api', 'wrapper']
 
-    if file_path_from_root.find('src/') != -1 and _HELPER.project_name is not None:
-        idx = file_path_from_root.find('src/')
-        file_path_from_root = _HELPER.project_name +  file_path_from_root[idx + 3:]
+    if file_path_from_root.startswith('src') and _HELPER.project_name is not None:
+        file_path_from_root = re.sub('^src', _HELPER.project_name, file_path_from_root)
     else:
         for spath in inc_list:
             prefix = spath + os.sep
