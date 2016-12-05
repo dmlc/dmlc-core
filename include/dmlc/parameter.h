@@ -711,7 +711,7 @@ class FieldEntry<int>
       info.type = type_;
       PrintEnums(os);
       if (has_default_) {
-        os << ',' << "optional, default=";
+        os << ',' << " optional, default=";
         PrintDefaultValueString(os);
       } else {
         os << ", required";

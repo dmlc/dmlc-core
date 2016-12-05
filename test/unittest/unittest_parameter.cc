@@ -31,7 +31,7 @@ TEST(Parameter, doc) {
     "    A str.\n"
     "a_bool : boolean, optional, default=True\n"
     "    Name of the net.\n"
-    "a_enum : {'a', 'b'},optional, default='a'\n"
+    "a_enum : {'a', 'b'}, optional, default='a'\n"
     "    A enum.\n");
 }
 
