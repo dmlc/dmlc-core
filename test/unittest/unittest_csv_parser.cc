@@ -65,8 +65,29 @@ TEST(CSVParser, with_label) {
   ASSERT_TRUE(parser->Next());
   dmlc::RowBlock<unsigned> block = parser->Value();
   ASSERT_EQ(block.size, 2);
-  EXPECT_EQ(block.label[0], 0);
-  EXPECT_EQ(block.label[1], 1);
+  EXPECT_EQ(block[0].label, 0);
+  EXPECT_EQ(block[1].label, 1);
+  EXPECT_EQ(block[0].length, 3);
+  EXPECT_EQ(block[0].length, block[1].length);
+  EXPECT_EQ(block.weight, nullptr);
+  EXPECT_FLOAT_EQ(block[0].weight, 1);
+  EXPECT_FLOAT_EQ(block[1].weight, 1);
+
+  std::remove(tmp_file.c_str());
+}
+
+TEST(CSVParser, with_weight) {
+  std::string tmp_file = CreateTempCSV();
+  std::unique_ptr<dmlc::Parser<unsigned> > parser(
+      dmlc::Parser<unsigned>::Create((tmp_file + "?weight_column=1").c_str(),
+                                     0, 1, "csv"));
+
+  parser->BeforeFirst();
+  ASSERT_TRUE(parser->Next());
+  dmlc::RowBlock<unsigned> block = parser->Value();
+  ASSERT_EQ(block.size, 2);
+  EXPECT_FLOAT_EQ(block[0].weight, 0.1);
+  EXPECT_FLOAT_EQ(block[1].weight, 0.2);
   EXPECT_EQ(block[0].length, 3);
   EXPECT_EQ(block[0].length, block[1].length);
 

@@ -22,12 +22,15 @@ namespace data {
 struct CSVParserParam : public Parameter<CSVParserParam> {
   std::string format;
   int label_column;
+  int weight_column;
   // declare parameters
   DMLC_DECLARE_PARAMETER(CSVParserParam) {
     DMLC_DECLARE_FIELD(format).set_default("csv")
         .describe("File format.");
     DMLC_DECLARE_FIELD(label_column).set_default(-1)
         .describe("Column index that will put into label.");
+    DMLC_DECLARE_FIELD(weight_column).set_default(-1)
+        .describe("Column index that will put into weight.");
   }
 };
 
@@ -84,6 +87,8 @@ ParseBlock(char *begin,
       p = endptr;
       if (column_index == param_.label_column) {
         label = v;
+      } else if (column_index == param_.weight_column) {
+        out->weight.push_back(v);
       } else {
         out->value.push_back(v);
         out->index.push_back(idx++);
@@ -99,6 +104,7 @@ ParseBlock(char *begin,
     out->offset.push_back(out->index.size());
   }
   CHECK(out->label.size() + 1 == out->offset.size());
+  CHECK(out->weight.size() == 0 || out->weight.size() + 1 == out->offset.size());
 }
 }  // namespace data
 }  // namespace dmlc
