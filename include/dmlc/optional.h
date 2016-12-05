@@ -38,14 +38,13 @@ class optional {
   /*! \brief construct an optional object with value */
   explicit optional(const T& value) {
     is_none = false;
-    *reinterpret_cast<T*>(&val) = value;
+    new (&val) T(value);
   }
   /*! \brief construct an optional object with another optional object */
   optional(const optional<T>& other) {
     is_none = other.is_none;
     if (!is_none) {
-      *reinterpret_cast<T*>(&val) =
-          *reinterpret_cast<const T*>(&other.val);
+      new (&val) T(other.value());
     }
   }
   /*! \brief deconstructor */
@@ -54,36 +53,30 @@ class optional {
       reinterpret_cast<T*>(&val)->~T();
     }
   }
+  /*! \brief swap two optional */
+  void swap(optional<T>& other) {
+    std::swap(val, other.val);
+    std::swap(is_none, other.is_none);
+  }
   /*! \brief set this object to hold value
    *  \param value the value to hold
    */
   optional<T>& operator=(const T& value) {
-    if (!is_none) {
-      reinterpret_cast<T*>(&val)->~T();
-    }
-    is_none = false;
-    *reinterpret_cast<T*>(&val) = value;
+    (optional<T>(value)).swap(*this);
     return *this;
   }
   /*! \brief set this object to hold the same value with other
    *  \param other the other object
    */
   optional<T>& operator=(const optional<T> &other) {
-    if (!is_none) {
-      reinterpret_cast<T*>(&val)->~T();
-    }
-    *reinterpret_cast<T*>(&val) =
-        *reinterpret_cast<const T*>(&other.val);
+    (optional<T>(other)).swap(*this);
     return *this;
   }
   /*! \brief clear the value this object is holding.
    *         optional<T> x = nullopt;
    */
   optional<T>& operator=(nullopt_t) {
-    if (!is_none) {
-      reinterpret_cast<T*>(&val)->~T();
-      is_none = true;
-    }
+    (optional<T>()).swap(*this);
     return *this;
   }
   /*! \brief non-const dereference operator */
@@ -110,7 +103,7 @@ class optional {
   // whether this is none
   bool is_none;
   // on stack storage of value
-  typename std::aligned_storage<sizeof(T), sizeof(void*)>::type val;
+  typename std::aligned_storage<sizeof(T), alignof(T)>::type val;
 };
 
 /*! \brief serialize an optional object to string.

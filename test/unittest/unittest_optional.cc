@@ -16,6 +16,10 @@ TEST(Optional, basics) {
   CHECK_EQ(x.value(), 1);
   x = dmlc::nullopt;
   CHECK(!bool(x));
+  x = 1;
+  dmlc::optional<int> y;
+  y = x;
+  CHECK_EQ(y.value(), 1);
 }
 
 TEST(Optional, parsing) {
