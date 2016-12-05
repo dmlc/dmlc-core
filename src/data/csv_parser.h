@@ -23,6 +23,7 @@ struct CSVParserParam : public Parameter<CSVParserParam> {
   std::string format;
   int label_column;
   int weight_column;
+  int num_header_rows;
   // declare parameters
   DMLC_DECLARE_PARAMETER(CSVParserParam) {
     DMLC_DECLARE_FIELD(format).set_default("csv")
@@ -31,6 +32,8 @@ struct CSVParserParam : public Parameter<CSVParserParam> {
         .describe("Column index that will put into label.");
     DMLC_DECLARE_FIELD(weight_column).set_default(-1)
         .describe("Column index that will put into weight.");
+    DMLC_DECLARE_FIELD(num_header_rows).set_default(0).set_lower_bound(0)
+        .describe("Number of header rows to ignore.");
   }
 };
 
@@ -71,6 +74,19 @@ ParseBlock(char *begin,
   out->Clear();
   char * lbegin = begin;
   char * lend = lbegin;
+
+  // Ignore the initial rows if asked
+  for (int rows_to_ignore = param_.num_header_rows;
+       rows_to_ignore > 0 && lbegin != end;
+       --rows_to_ignore) {
+    // get line end
+    lend = lbegin + 1;
+    while (lend != end && *lend != '\n' && *lend != '\r') ++lend;
+    // skip empty lines
+    while ((*lend == '\n' || *lend == '\r') && lend != end) ++lend;
+    lbegin = lend;
+  }
+
   while (lbegin != end) {
     // get line end
     lend = lbegin + 1;

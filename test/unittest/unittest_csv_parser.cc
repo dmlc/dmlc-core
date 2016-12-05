@@ -93,3 +93,17 @@ TEST(CSVParser, with_weight) {
 
   std::remove(tmp_file.c_str());
 }
+
+TEST(CSVParser, skip_header_rows) {
+  std::string tmp_file = CreateTempCSV();
+  std::unique_ptr<dmlc::Parser<unsigned> > parser(
+      dmlc::Parser<unsigned>::Create((tmp_file + "?num_header_rows=1").c_str(),
+                                     0, 1, "csv"));
+
+  parser->BeforeFirst();
+  ASSERT_TRUE(parser->Next());
+  dmlc::RowBlock<unsigned> block = parser->Value();
+  ASSERT_EQ(block.size, 1);
+
+  std::remove(tmp_file.c_str());
+}
