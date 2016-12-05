@@ -41,7 +41,7 @@ class optional {
     *reinterpret_cast<T*>(&val) = value;
   }
   /*! \brief construct an optional object with another optional object */
-  optional (const optional<T>& other) {
+  optional(const optional<T>& other) {
     is_none = other.is_none;
     if (!is_none) {
       *reinterpret_cast<T*>(&val) =
@@ -87,7 +87,7 @@ class optional {
     return *this;
   }
   /*! \brief non-const dereference operator */
-  T& operator*() {
+  T& operator*() {  // NOLINT(*)
     return *reinterpret_cast<T*>(&val);
   }
   /*! \brief const dereference operator */
@@ -105,11 +105,12 @@ class optional {
   }
   /*! \brief whether this object is holding a value */
   explicit operator bool() const { return !is_none; }
+
  private:
   // whether this is none
   bool is_none;
   // on stack storage of value
-  std::aligned_storage<sizeof(T), sizeof(void*)> val;
+  typename std::aligned_storage<sizeof(T), sizeof(void*)>::type val;
 };
 
 /*! \brief serialize an optional object to string.
@@ -123,7 +124,7 @@ class optional {
  */
 template<typename T>
 std::ostream &operator<<(std::ostream &os, const optional<T> &t) {
-  if (bool(t)) {
+  if (t) {
     os << *t;
   } else {
     os << "None";
@@ -164,6 +165,6 @@ std::istream &operator>>(std::istream &is, optional<T> &t) {
 
 DMLC_DECLARE_TYPE_NAME(optional<int>, "optional<int>");
 
-}  // namespace optional
+}  // namespace dmlc
 
 #endif  // DMLC_OPTIONAL_H_
