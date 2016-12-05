@@ -11,6 +11,7 @@
 #include <type_traits>
 #endif
 #include <string>
+#include <vector>
 
 namespace dmlc {
 /*!
@@ -155,6 +156,7 @@ DMLC_DECLARE_TYPE_NAME(int, "int");
 DMLC_DECLARE_TYPE_NAME(uint32_t, "int (non-negative)");
 DMLC_DECLARE_TYPE_NAME(uint64_t, "long (non-negative)");
 DMLC_DECLARE_TYPE_NAME(std::string, "string");
+DMLC_DECLARE_TYPE_NAME(std::vector<int>, "vector<int>");
 DMLC_DECLARE_TYPE_NAME(bool, "boolean");
 
 template<typename Then, typename Else>
