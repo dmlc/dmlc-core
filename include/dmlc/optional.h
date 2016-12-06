@@ -15,13 +15,14 @@
 #include "./type_traits.h"
 
 namespace dmlc {
-/* \brief dummy type for assign null to optional */
+/*! \brief dummy type for assign null to optional */
 struct nullopt_t {
+  /*! \brief dummy constructor */
   constexpr nullopt_t(int) {}
 };
 
-// Assign null to optional: optional<T> x = nullopt;
-constexpr nullopt_t nullopt(0);
+/*! Assign null to optional: optional<T> x = nullopt; */
+constexpr const nullopt_t nullopt = nullopt_t(0);
 
 /*!
  * \brief c++17 compatible optional class.
@@ -60,6 +61,7 @@ class optional {
   }
   /*! \brief set this object to hold value
    *  \param value the value to hold
+   *  \return return self to support chain assignment
    */
   optional<T>& operator=(const T& value) {
     (optional<T>(value)).swap(*this);
@@ -67,6 +69,7 @@ class optional {
   }
   /*! \brief set this object to hold the same value with other
    *  \param other the other object
+   *  \return return self to support chain assignment
    */
   optional<T>& operator=(const optional<T> &other) {
     (optional<T>(other)).swap(*this);
@@ -114,6 +117,10 @@ class optional {
  *    x = 0;
  *    std::cout << x;  // 0
  *  \endcode
+ *
+ *  \param os output stream
+ *  \param t source optional<T> object
+ *  \return output stream
  */
 template<typename T>
 std::ostream &operator<<(std::ostream &os, const optional<T> &t) {
@@ -137,6 +144,10 @@ std::ostream &operator<<(std::ostream &os, const optional<T> &t) {
  *    std::istringstream is2(s2);
  *    s2 >> x;  // x == optional<int>()
  *  \endcode
+ *
+ *  \param is input stream
+ *  \param t target optional<T> object
+ *  \return input stream
  */
 template<typename T>
 std::istream &operator>>(std::istream &is, optional<T> &t) {
@@ -156,7 +167,8 @@ std::istream &operator>>(std::istream &is, optional<T> &t) {
   return is;
 }
 
-DMLC_DECLARE_TYPE_NAME(optional<int>, "optional<int>");
+/*! \brief description for optional int */
+DMLC_DECLARE_TYPE_NAME(optional<int>, "int or None");
 
 }  // namespace dmlc
 
