@@ -304,7 +304,7 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
   if (at_end_ && expect_file_size_ != 0 &&
       curr_bytes_ != expect_file_size_) {
     int nretry = 0;
-    CHECK_EQ(buffer_.length(), 0);
+    CHECK_EQ(buffer_.length(), 0U);
     while (true) {
       LOG(ERROR) << "Re-establishing connection to Amazon S3, retry " << nretry;
       size_t rec_curr_bytes = curr_bytes_;
@@ -824,10 +824,10 @@ void ListObjects(const URI &path,
 S3FileSystem::S3FileSystem() {
   const char *keyid = getenv("AWS_ACCESS_KEY_ID");
   const char *seckey = getenv("AWS_SECRET_ACCESS_KEY");
-  if (keyid == NULL) {
+  if (keyid == NULL || !*keyid) {
     LOG(FATAL) << "Need to set enviroment variable AWS_ACCESS_KEY_ID to use S3";
   }
-  if (seckey == NULL) {
+  if (seckey == NULL || !*seckey) {
     LOG(FATAL) << "Need to set enviroment variable AWS_SECRET_ACCESS_KEY to use S3";
   }
   aws_access_id_ = keyid;

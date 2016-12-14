@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8.7)
 
 project(dmlccore C CXX)
 
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
 include(cmake/Utils.cmake)
@@ -9,8 +13,9 @@ include(cmake/Utils.cmake)
 
 # Options
 dmlccore_option(USE_HDFS "Build with HDFS support" OFF)
-dmlccore_option(USE_S3 "Build with S3 support" OFF)
 dmlccore_option(USE_AZURE "Build with AZURE support" OFF)
+dmlccore_option(USE_S3 "Build with S3 support" OFF)
+dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 
 # include path
 include_directories("include")
@@ -36,7 +41,7 @@ if(USE_S3)
  include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
  list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_LIBRARY})
 
- find_package(CRYPTO REQUIRED)
+ find_package(Crypto REQUIRED)
  include_directories(SYSTEM ${CRYPTO_INCLUDE_DIR})
  list(APPEND dmlccore_LINKER_LIBS ${CRYPTO_LIBRARY})
 
@@ -49,6 +54,19 @@ if(USE_AZURE)
   add_definitions(-DDMLC_USE_AZURE=1)
 else()
   add_definitions(-DDMLC_USE_AZURE=0)
+endif()
+
+# Older stdc++ enable c++11 items
+add_definitions(-D__USE_XOPEN2K8)
+
+if(USE_OPENMP)
+ FIND_PACKAGE(OpenMP REQUIRED)
+ if(OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+ endif()
 endif()
 
 # compile
@@ -72,7 +90,7 @@ else(MSVC)
   endif()
   if(SUPPORT_MSSE2)
   	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2")
-  endif() 
+  endif()
   set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS})
 endif(MSVC)
 
@@ -85,7 +103,7 @@ if(OPENMP_FOUND)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-FILE(GLOB SOURCE "src/*.cc")
+FILE(GLOB SOURCE "src/*.cc" "include/*")
 list(APPEND SOURCE "src/io/line_split.cc")
 list(APPEND SOURCE "src/io/recordio_split.cc")
 list(APPEND SOURCE "src/io/input_split_base.cc")
@@ -103,6 +121,14 @@ endif()
 
 add_library(dmlccore ${SOURCE})
 target_link_libraries(dmlccore ${dmlccore_LINKER_LIBS})
+
+# ---[ Install Includes
+if(INSTALL_INCLUDE_DIR)
+  add_custom_command(TARGET dmlccore POST_BUILD
+    COMMAND COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/include ${INSTALL_INCLUDE_DIR}/
+    )
+endif()
 
 # ---[ Linter target
 if(MSVC)

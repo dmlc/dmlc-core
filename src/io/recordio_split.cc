@@ -25,8 +25,8 @@ size_t RecordIOSplitter::SeekRecordBegin(Stream *fi) {
 }
 const char* RecordIOSplitter::FindLastRecordBegin(const char *begin,
                                                   const char *end) {
-  CHECK_EQ((reinterpret_cast<size_t>(begin) & 3UL), 0);
-  CHECK_EQ((reinterpret_cast<size_t>(end) & 3UL), 0);
+  CHECK_EQ((reinterpret_cast<size_t>(begin) & 3UL), 0U);
+  CHECK_EQ((reinterpret_cast<size_t>(end) & 3UL), 0U);
   const uint32_t *pbegin = reinterpret_cast<const uint32_t *>(begin);
   const uint32_t *p = reinterpret_cast<const uint32_t *>(end);
   CHECK(p >= pbegin + 2);
@@ -45,8 +45,8 @@ bool RecordIOSplitter::ExtractNextRecord(Blob *out_rec, Chunk *chunk) {
   if (chunk->begin == chunk->end) return false;
   CHECK(chunk->begin + 2 * sizeof(uint32_t) <= chunk->end)
       << "Invalid RecordIO Format";
-  CHECK_EQ((reinterpret_cast<size_t>(chunk->begin) & 3UL), 0);
-  CHECK_EQ((reinterpret_cast<size_t>(chunk->end) & 3UL), 0);
+  CHECK_EQ((reinterpret_cast<size_t>(chunk->begin) & 3UL), 0U);
+  CHECK_EQ((reinterpret_cast<size_t>(chunk->end) & 3UL), 0U);
   uint32_t *p = reinterpret_cast<uint32_t *>(chunk->begin);
   uint32_t cflag = RecordIOWriter::DecodeFlag(p[1]);
   uint32_t clen = RecordIOWriter::DecodeLength(p[1]);

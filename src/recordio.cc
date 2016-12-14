@@ -83,8 +83,8 @@ bool RecordIOReader::NextRecord(std::string *out_rec) {
 
 // helper function to find next recordio head
 inline char *FindNextRecordIOHead(char *begin, char *end) {
-  CHECK_EQ((reinterpret_cast<size_t>(begin) & 3UL),  0);
-  CHECK_EQ((reinterpret_cast<size_t>(end) & 3UL), 0);
+  CHECK_EQ((reinterpret_cast<size_t>(begin) & 3UL),  0U);
+  CHECK_EQ((reinterpret_cast<size_t>(end) & 3UL), 0U);
   uint32_t *p = reinterpret_cast<uint32_t *>(begin);
   uint32_t *pend = reinterpret_cast<uint32_t *>(end);
   for (; p + 1 < pend; ++p) {

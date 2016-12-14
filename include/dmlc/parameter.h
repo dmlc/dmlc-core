@@ -758,7 +758,7 @@ class FieldEntry<int>
   // override print default
   virtual void PrintValue(std::ostream &os, int value) const {  // NOLINT(*)
     if (is_enum_) {
-      CHECK_NE(enum_back_map_.count(value), 0)
+      CHECK_NE(enum_back_map_.count(value), 0U)
           << "Value not found in enum declared";
       os << enum_back_map_.at(value);
     } else {

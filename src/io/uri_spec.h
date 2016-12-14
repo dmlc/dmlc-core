@@ -53,7 +53,7 @@ class URISpec {
       }
       this->cache_file = os.str();
     } else {
-      CHECK_EQ(name_cache.size(), 1)
+      CHECK_EQ(name_cache.size(), 1U)
           << "only one `#` is allowed in file path for cachefile specification";
     }
     std::vector<std::string> name_args = Split(name_cache[0], '?');
@@ -69,7 +69,7 @@ class URISpec {
         this->args.insert(kv);
       }
     } else {
-      CHECK_EQ(name_args.size(), 1)
+      CHECK_EQ(name_args.size(), 1U)
           << "only one `#` is allowed in file path for cachefile specification";
     }
     this->uri = name_args[0];

@@ -49,7 +49,7 @@ ifndef LINT_LANG
 endif
 
 
-ALIB=libdmlc.a
+ALIB=$(LIB_DIR)/libdmlc.a
 all: $(ALIB) test
 
 include test/dmlc_test.mk
@@ -73,7 +73,7 @@ data.o: src/data.cc
 recordio.o: src/recordio.cc
 config.o: src/config.cc
 
-libdmlc.a: $(OBJ)
+$(LIB_DIR)/libdmlc.a: $(OBJ)
 
 
 $(BIN) :
