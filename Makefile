@@ -1,5 +1,3 @@
-ROOTDIR = $(CURDIR)
-
 ifndef config
 	ifneq ("$(wildcard ./config.mk)","")
 		config = config.mk
@@ -10,10 +8,6 @@ endif
 # use customized config file
 include $(config)
 include make/dmlc.mk
-
-ifndef LIB_DIR
-	LIB_DIR = $(ROOTDIR)
-endif
 
 # this is the common build script for dmlc lib
 export LDFLAGS= -pthread -lm
@@ -55,7 +49,7 @@ ifndef LINT_LANG
 endif
 
 
-ALIB=$(LIB_DIR)/libdmlc.a
+ALIB=libdmlc.a
 all: $(ALIB) test
 
 include test/dmlc_test.mk
@@ -79,7 +73,7 @@ data.o: src/data.cc
 recordio.o: src/recordio.cc
 config.o: src/config.cc
 
-$(LIB_DIR)/libdmlc.a: $(OBJ)
+libdmlc.a: $(OBJ)
 
 
 $(BIN) :
