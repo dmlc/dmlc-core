@@ -821,63 +821,67 @@ class FieldEntry<std::vector<int> >
   // override set
   virtual void Set(void *head, const std::string &value) const {
     std::istringstream is(value);
-    // get (
+    int num_brackets = 0, num_range = 0;
     while (true) {
       char ch = is.peek();
-      if (isdigit(ch)) {
-        int idx;
-        if (is >> idx) {
-          this->Get(head).assign(&idx, &idx + 1);
-        }
-        if (!is.fail()) {  // Ensure there was no data after this
-          while (!is.eof()) {
-            int ch = is.get();
-            if (ch == EOF) break;
-            if (!isspace(ch)) Parent::Set(head, value);
-          }
-        }
-        return;
-      }
-      is.get();
-      if (ch == '(')
+      if (isdigit(ch)) break;
+      if (ch == '(') {
+        is.get();
+        num_brackets += 1;
         break;
-      if (!isspace(ch)) {
-        Parent::Set(head, value);
       }
+      if (!isspace(ch)) Parent::Set(head, value);
+      is.get();
     }
     int idx;
     std::vector<int> tmp;
     while (is >> idx) {
       tmp.push_back(idx);
-      char ch;
-      do {
-        ch = is.get();
-      } while (isspace(ch));
-      if (ch == 'L') {
-        ch = is.get();
+      if (num_range > 0) {  // Need to use last 2 values and add the range
+        int startv = tmp[tmp.size() - 2], endv = idx;
+        tmp.pop_back();  // Remove last value and add the range
+        for (int ival = startv + 1; ival <= endv; ++ival) {
+          tmp.push_back(ival);
+        }
+        num_range -= 1;
       }
-      if (ch == ',') {
-        while (true) {
-          ch = is.peek();
-          if (isspace(ch)) {
-            is.get();
-            continue;
-          }
-          if (ch == ')') {
-            is.get();
-            break;
-          }
+      while (true && !is.eof()) {  // Wait till next non-space
+        if (isspace(is.peek())) {
+          is.get();
+        } else {
           break;
         }
-        if (ch == ')')
+      }
+      if (is.eof()) break;  // break after last int (no bracket)
+      char ch = is.peek();
+      if (ch == ',') {
+        is.get();
+        while (true && !is.eof()) {  // Wait till next non-space
+          if (isspace(is.peek())) {
+            is.get();
+          } else {
+            break;
+          }
+        }
+        if (is.eof()) break;  // break after comma (no bracket)
+        ch = is.peek();
+        if (ch == ')') {
+          num_brackets -= 1;
+          is.get();
           break;
+        }
+      } else if (ch == '-') {
+        num_range += 1;
+        is.get();
       } else if (ch == ')') {
+        num_brackets -= 1;
+        is.get();
         break;
       } else {
         Parent::Set(head, value);
       }
     }
-    if (is.fail()) {
+    if (is.fail() || num_brackets != 0 || num_range != 0) {
       Parent::Set(head, value);
     }
     this->Get(head).assign(tmp.begin(), tmp.end());

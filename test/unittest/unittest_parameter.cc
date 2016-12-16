@@ -102,18 +102,27 @@ TEST(Parameter, a_int_vector) {
   TestParam param;
   std::map<std::string, std::string> kwargs;
   std::vector<int> expected = {1, 2, 3};
+
+  // tests for a complete vector
   param.Init(kwargs);
   EXPECT_EQ(param.a_int_vector.size(), 0);
-  kwargs["a_int_vector"] = "10";
-  param.Init(kwargs);
-  ASSERT_EQ(param.a_int_vector.size(), 1);
-  ASSERT_EQ(param.a_int_vector[0], 10);
   kwargs["a_int_vector"] = "(1,2,3)";
   param.Init(kwargs);
   EXPECT_EQ(param.a_int_vector, expected);
   kwargs["a_int_vector"] = " ( 1 , 2 , 3 ) ";
   param.Init(kwargs);
   EXPECT_EQ(param.a_int_vector, expected);
+  kwargs["a_int_vector"] = " ( 1 , 2 , 3 , ) ";
+  param.Init(kwargs);
+  EXPECT_EQ(param.a_int_vector, expected);
+  kwargs["a_int_vector"] = "1,2,3";
+  param.Init(kwargs);
+  EXPECT_EQ(param.a_int_vector, expected);
+  kwargs["a_int_vector"] = "1,2,3";
+  param.Init(kwargs);
+  EXPECT_EQ(param.a_int_vector, expected);
+
+  // tests for a single valued vector
   kwargs["a_int_vector"] = "(10,)";
   param.Init(kwargs);
   EXPECT_EQ(param.a_int_vector.size(), 1);
@@ -122,11 +131,34 @@ TEST(Parameter, a_int_vector) {
   param.Init(kwargs);
   EXPECT_EQ(param.a_int_vector.size(), 1);
   ASSERT_EQ(param.a_int_vector[0], 10);
+  kwargs["a_int_vector"] = "10";
+  param.Init(kwargs);
+  ASSERT_EQ(param.a_int_vector.size(), 1);
+  ASSERT_EQ(param.a_int_vector[0], 10);
 
-  kwargs["a_int_vector"] = "1,2,3";
+  // vector ranges
+  kwargs["a_int_vector"] = "1-2,3";
+  param.Init(kwargs);
+  EXPECT_EQ(param.a_int_vector, expected);
+  kwargs["a_int_vector"] = "1 - 3";
+  param.Init(kwargs);
+  EXPECT_EQ(param.a_int_vector, expected);
+  kwargs["a_int_vector"] = "1 - 2  , 3";
+  param.Init(kwargs);
+  EXPECT_EQ(param.a_int_vector, expected);
+  kwargs["a_int_vector"] = "(1-2,3)";
+  param.Init(kwargs);
+  EXPECT_EQ(param.a_int_vector, expected);
+
+  // invalid vectors
+  kwargs["a_int_vector"] = "(1,2";
   EXPECT_ANY_THROW(param.Init(kwargs));
   kwargs["a_int_vector"] = "()";
   EXPECT_ANY_THROW(param.Init(kwargs));
   kwargs["a_int_vector"] = "";
+  EXPECT_ANY_THROW(param.Init(kwargs));
+  kwargs["a_int_vector"] = ",1";
+  EXPECT_ANY_THROW(param.Init(kwargs));
+  kwargs["a_int_vector"] = "1,,2";
   EXPECT_ANY_THROW(param.Init(kwargs));
 }
