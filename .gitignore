@@ -40,3 +40,4 @@ config.mk
 .clang_complete
 deps
 recommonmark
+build

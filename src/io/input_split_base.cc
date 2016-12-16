@@ -160,7 +160,7 @@ void InputSplitBase::InitInputFileInfo(const std::string& uri) {
       }
     }
   }
-  CHECK_NE(files_.size(), 0)
+  CHECK_NE(files_.size(), 0U)
       << "Cannot find any files that matches the URI patternz " << uri;
 }
 
