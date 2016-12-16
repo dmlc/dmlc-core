@@ -91,9 +91,8 @@ inline bool TextParserBase<IndexType>::
 FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   InputSplit::Blob chunk;
   if (!source_->NextChunk(&chunk)) return false;
-  const int nthread = omp_get_max_threads();
   // reserve space for data
-  data->resize(nthread);
+  data->resize(nthread_);
   bytes_read_ += chunk.size;
   CHECK_NE(chunk.size, 0);
   char *head = reinterpret_cast<char*>(chunk.dptr);
@@ -101,12 +100,12 @@ FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   {
     // threadid
     int tid = omp_get_thread_num();
-    size_t nstep = (chunk.size + nthread - 1) / nthread;
+    size_t nstep = (chunk.size + nthread_ - 1) / nthread_;
     size_t sbegin = std::min(tid * nstep, chunk.size);
     size_t send = std::min((tid + 1) * nstep, chunk.size);
     char *pbegin = BackFindEndLine(head + sbegin, head);
     char *pend;
-    if (tid + 1 == nthread) {
+    if (tid + 1 == nthread_) {
       pend = head + send;
     } else {
       pend = BackFindEndLine(head + send, head);
