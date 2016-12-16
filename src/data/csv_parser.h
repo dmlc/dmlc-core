@@ -60,6 +60,13 @@ class CSVParser : public TextParserBase<IndexType> {
       : TextParserBase<IndexType>(source, nthread) {
     param_.Init(args);
     CHECK_EQ(param_.format, "csv");
+    for (std::vector<int>::iterator ival = param_.ignore_columns.begin();
+         ival != param_.ignore_columns.end(); ++ival) {
+      CHECK_NE(*ival, param_.label_column) <<
+        "the column index " << *ival << " has been marked as label and ignored";
+      CHECK_NE(*ival, param_.weight_column) <<
+        "the column index " << *ival << " has been marked as weight and ignored";
+    }
   }
 
  protected:

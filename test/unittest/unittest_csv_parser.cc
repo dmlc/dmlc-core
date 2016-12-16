@@ -8,8 +8,8 @@ std::string CreateTempCSV() {
   std::string tmp_file = std::tmpnam(nullptr);
   std::ofstream fo;
   fo.open(tmp_file);
-  fo << "0,0.1,100L,05\n";
-  fo << "1,0.2,100U,10\n";
+  fo << "0 ,00.1, 100L, 05\n";
+  fo << "1 , 0.2, 100U, 10\n";
   fo.close();
   return tmp_file;
 }
@@ -128,6 +128,21 @@ TEST(CSVParser, ignore_columns) {
     EXPECT_FLOAT_EQ(block[0].value[j], row1[j]);
     EXPECT_FLOAT_EQ(block[1].value[j], row2[j]);
   }
+
+  std::remove(tmp_file.c_str());
+}
+
+TEST(CSVParser, invalid_args) {
+  std::string tmp_file = CreateTempCSV();
+
+  EXPECT_ANY_THROW(dmlc::Parser<unsigned>::Create(
+    (tmp_file + "?format=notcsv").c_str(), 0, 1, "csv"));
+
+  EXPECT_ANY_THROW(dmlc::Parser<unsigned>::Create(
+    (tmp_file + "?ignore_columns=(1,2)&label_column=1").c_str(), 0, 1, "csv"));
+
+  EXPECT_ANY_THROW(dmlc::Parser<unsigned>::Create(
+    (tmp_file + "?ignore_columns=(1,2)&weight_column=1").c_str(), 0, 1, "csv"));
 
   std::remove(tmp_file.c_str());
 }
