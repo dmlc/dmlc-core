@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <dmlc/optional.h>
+#include <dmlc/parameter.h>
 #include <gtest/gtest.h>
 
 
@@ -50,4 +51,33 @@ TEST(Optional, parsing) {
     is >> x;
     CHECK_EQ(x.value(), 1);
   }
+}
+
+struct OptionalParam : public dmlc::Parameter<OptionalParam> {
+  dmlc::optional<int> none;
+  dmlc::optional<int> one;
+  dmlc::optional<int> def;
+
+  DMLC_DECLARE_PARAMETER(OptionalParam) {
+    DMLC_DECLARE_FIELD(none)
+    .add_enum("one", 1);
+    DMLC_DECLARE_FIELD(one)
+    .add_enum("one", 1);
+    DMLC_DECLARE_FIELD(def)
+    .add_enum("one", 1)
+    .set_default(dmlc::optional<int>());
+  }
+};
+
+DMLC_REGISTER_PARAMETER(OptionalParam);
+
+TEST(Optional, add_enum) {
+  OptionalParam param;
+  std::map<std::string, std::string> kwargs;
+  kwargs["none"] = "None";
+  kwargs["one"] = "one";
+  param.Init(kwargs);
+  CHECK(!param.none);
+  CHECK_EQ(param.one.value(), 1);
+  CHECK(!param.def);
 }
