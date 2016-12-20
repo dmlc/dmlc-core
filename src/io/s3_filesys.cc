@@ -178,6 +178,22 @@ size_t WriteStringCallback(char *buf, size_t size, size_t count, void *fp) {
   return size;
 }
 
+std::string getEndpoint(std::string region_name){
+  // using if elseif chain switching region_name
+
+  if(region_name == "us-east-1"){
+    return "s3.amazonaws.com";
+  }else if(region_name == "cn-north-1"){
+    return "s3.cn-north-1.amazonaws.com.cn";
+  }else{
+    std::string result_endpoint = std::string("s3-");
+    result_endpoint.append(region_name);
+    result_endpoint.append(".amazonaws.com");
+    return result_endpoint;
+  }
+}
+
+
 // useful callback for reading memory
 struct ReadStringStream {
   const char *dptr;
@@ -304,7 +320,7 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
   if (at_end_ && expect_file_size_ != 0 &&
       curr_bytes_ != expect_file_size_) {
     int nretry = 0;
-    CHECK_EQ(buffer_.length(), 0U);
+    CHECK_EQ(buffer_.length(), 0);
     while (true) {
       LOG(ERROR) << "Re-establishing connection to Amazon S3, retry " << nretry;
       size_t rec_curr_bytes = curr_bytes_;
@@ -449,8 +465,9 @@ class ReadStream : public CURLReadStreamBase {
   ReadStream(const URI &path,
              const std::string &aws_id,
              const std::string &aws_key,
+             const std::string &aws_region,
              size_t file_size)
-      : path_(path), aws_id_(aws_id), aws_key_(aws_key) {
+      : path_(path), aws_id_(aws_id), aws_key_(aws_key), aws_region_(aws_region) {
     this->expect_file_size_ = file_size;
   }
   virtual ~ReadStream(void) {}
@@ -465,7 +482,8 @@ class ReadStream : public CURLReadStreamBase {
   // path we are reading
   URI path_;
   // aws access key and id
-  std::string aws_id_, aws_key_;
+  std::string aws_id_, aws_key_, aws_region_;
+
 };
 
 // initialize the reader at begin bytes
@@ -482,8 +500,16 @@ void ReadStream::InitRequest(size_t begin_bytes,
   std::ostringstream result;
   sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
   sdate << "Date: " << date;
-  surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
-       << RemoveBeginSlash(path_.name);
+
+  if (path_.host.find('.',0) == std::string::npos && aws_region_ == "us-east-1"){
+    //for backword compatibility, use virtual host style if no period in host and no region was set. 
+    surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
+         << RemoveBeginSlash(path_.name);
+  }else {
+    surl << "https://" << getEndpoint(aws_region_) << '/' << path_.host << '/' 
+         << RemoveBeginSlash(path_.name);
+  }
+ 
   srange << "Range: bytes=" << begin_bytes << "-";
   *slist = curl_slist_append(*slist, sdate.str().c_str());
   *slist = curl_slist_append(*slist, srange.str().c_str());
@@ -518,9 +544,10 @@ class WriteStream : public Stream {
  public:
   WriteStream(const URI &path,
               const std::string &aws_id,
-              const std::string &aws_key)
+              const std::string &aws_key,
+              const std::string &aws_region)
       : path_(path), aws_id_(aws_id),
-        aws_key_(aws_key), closed_(false) {
+        aws_key_(aws_key), aws_region_(aws_region),closed_(false) {
     const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
     if (buz != NULL) {
       max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
@@ -561,7 +588,7 @@ class WriteStream : public Stream {
   // path we are reading
   URI path_;
   // aws access key and id
-  std::string aws_id_, aws_key_;
+  std::string aws_id_, aws_key_, aws_region_;
   // easy curl handle used for the request
   CURL *ecurl_;
   // upload_id used by AWS
@@ -637,8 +664,15 @@ void WriteStream::Run(const std::string &method,
   std::ostringstream rheader, rdata;
   sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
   sdate << "Date: " << date;
-  surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
-       << RemoveBeginSlash(path_.name) << args;
+
+  if (path_.host.find('.',0) == std::string::npos && aws_region_ == "us-east-1"){
+     //for backword compatibility, use virtual host style if no period in host and no region was set. 
+    surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
+         << RemoveBeginSlash(path_.name) << args;
+  } else {
+    surl << "https://" << getEndpoint(aws_region_) << '/' << path_.host << '/' 
+         << RemoveBeginSlash(path_.name) << args;
+  }
   scontent << "Content-Type: " << content_type;
   // list
   curl_slist *slist = NULL;
@@ -751,6 +785,7 @@ void WriteStream::Finish(void) {
 void ListObjects(const URI &path,
                  const std::string aws_id,
                  const std::string aws_key,
+                 const std::string aws_region, //this parameter will be directly used. not passed to aws_region_ .
                  std::vector<FileInfo> *out_list) {
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
@@ -763,8 +798,16 @@ void ListObjects(const URI &path,
   std::ostringstream result;
   sauth << "Authorization: AWS " << aws_id << ":" << signature;
   sdate << "Date: " << date;
-  surl << "https://" << path.host << ".s3.amazonaws.com"
-       << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+
+  if (path.host.find('.',0) == std::string::npos && aws_region == "us-east-1"){
+     //for backword compatibility, use virtual host style if no period in host and no region was set. 
+    surl << "https://" << path.host << ".s3.amazonaws.com"
+         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+  } else {
+    //please notice that aws_region is used here directly from the parameter. 
+    surl << "https://" << getEndpoint(aws_region) << "/" << path.host 
+        << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+  }
   // make request
   CURL *curl = curl_easy_init();
   curl_slist *slist = NULL;
@@ -824,12 +867,24 @@ void ListObjects(const URI &path,
 S3FileSystem::S3FileSystem() {
   const char *keyid = getenv("AWS_ACCESS_KEY_ID");
   const char *seckey = getenv("AWS_SECRET_ACCESS_KEY");
-  if (keyid == NULL || !*keyid) {
+  const char *region = getenv("AWS_REGION");
+  if (keyid == NULL) {
     LOG(FATAL) << "Need to set enviroment variable AWS_ACCESS_KEY_ID to use S3";
   }
-  if (seckey == NULL || !*seckey) {
+  if (seckey == NULL) {
     LOG(FATAL) << "Need to set enviroment variable AWS_SECRET_ACCESS_KEY to use S3";
   }
+
+  if (region == NULL){
+    LOG(WARNING) << "No AWS Region set, using default region us-east-1";
+    aws_region_ = "us-east-1";
+  } else if (strcmp(region, "") == 0 ){
+    LOG(WARNING) << "AWS Region was set to empty string, using default region us-east-1";
+    aws_region_ = "us-east-1";
+  }else {
+    aws_region_ = region;
+  }
+
   aws_access_id_ = keyid;
   aws_secret_key_ = seckey;
 }
@@ -847,7 +902,7 @@ bool S3FileSystem::TryGetPathInfo(const URI &path_, FileInfo *out_info) {
     path.name.resize(path.name.length() - 1);
   }
   std::vector<FileInfo> files;
-  s3::ListObjects(path,  aws_access_id_, aws_secret_key_, &files);
+  s3::ListObjects(path,  aws_access_id_, aws_secret_key_, aws_region_, &files);
   std::string pdir = path.name + '/';
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
@@ -873,14 +928,14 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
       << " S3FileSystem.ListDirectory";
   if (path.name[path.name.length() - 1] == '/') {
     s3::ListObjects(path, aws_access_id_,
-                    aws_secret_key_, out_list);
+                    aws_secret_key_, aws_region_, out_list);
     return;
   }
   std::vector<FileInfo> files;
   std::string pdir = path.name + '/';
   out_list->clear();
   s3::ListObjects(path, aws_access_id_,
-                  aws_secret_key_, &files);
+                  aws_secret_key_, aws_region_, &files);
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
       CHECK(files[i].type == kFile);
@@ -890,7 +945,7 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
     if (files[i].path.name == pdir) {
       CHECK(files[i].type == kDirectory);
       s3::ListObjects(files[i].path, aws_access_id_,
-                      aws_secret_key_, out_list);
+                      aws_secret_key_, aws_region_, out_list);
       return;
     }
   }
@@ -902,7 +957,7 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
     return OpenForRead(path, allow_null);
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
     CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
-    return new s3::WriteStream(path, aws_access_id_, aws_secret_key_);
+    return new s3::WriteStream(path, aws_access_id_, aws_secret_key_, aws_region_);
   } else {
     LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;
     return NULL;
@@ -917,7 +972,7 @@ SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
   FileInfo info;
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
-    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_, info.size);
+    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_, aws_region_, info.size);
   } else {
     CHECK(allow_null) << " S3FileSystem: fail to open \"" << path.str() << "\"";
     return NULL;
