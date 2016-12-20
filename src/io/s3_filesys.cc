@@ -178,14 +178,14 @@ size_t WriteStringCallback(char *buf, size_t size, size_t count, void *fp) {
   return size;
 }
 
-std::string getEndpoint(std::string region_name){
+std::string getEndpoint(std::string region_name) {
   // using if elseif chain switching region_name
 
-  if(region_name == "us-east-1"){
+  if (region_name == "us-east-1") {
     return "s3.amazonaws.com";
-  }else if(region_name == "cn-north-1"){
+  } else if (region_name == "cn-north-1") {
     return "s3.cn-north-1.amazonaws.com.cn";
-  }else{
+  } else {
     std::string result_endpoint = std::string("s3-");
     result_endpoint.append(region_name);
     result_endpoint.append(".amazonaws.com");
@@ -483,7 +483,6 @@ class ReadStream : public CURLReadStreamBase {
   URI path_;
   // aws access key and id
   std::string aws_id_, aws_key_, aws_region_;
-
 };
 
 // initialize the reader at begin bytes
@@ -501,15 +500,15 @@ void ReadStream::InitRequest(size_t begin_bytes,
   sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
   sdate << "Date: " << date;
 
-  if (path_.host.find('.',0) == std::string::npos && aws_region_ == "us-east-1"){
-    //for backword compatibility, use virtual host style if no period in host and no region was set. 
+  if (path_.host.find('.', 0) == std::string::npos && aws_region_ == "us-east-1") {
+    // for backword compatibility, use virtual host style if no period in host and no region was set.
     surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
          << RemoveBeginSlash(path_.name);
-  }else {
-    surl << "https://" << getEndpoint(aws_region_) << '/' << path_.host << '/' 
+  } else {
+    surl << "https://" << getEndpoint(aws_region_) << '/' << path_.host << '/'
          << RemoveBeginSlash(path_.name);
   }
- 
+
   srange << "Range: bytes=" << begin_bytes << "-";
   *slist = curl_slist_append(*slist, sdate.str().c_str());
   *slist = curl_slist_append(*slist, srange.str().c_str());
@@ -547,7 +546,7 @@ class WriteStream : public Stream {
               const std::string &aws_key,
               const std::string &aws_region)
       : path_(path), aws_id_(aws_id),
-        aws_key_(aws_key), aws_region_(aws_region),closed_(false) {
+        aws_key_(aws_key), aws_region_(aws_region), closed_(false) {
     const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
     if (buz != NULL) {
       max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
@@ -665,12 +664,12 @@ void WriteStream::Run(const std::string &method,
   sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
   sdate << "Date: " << date;
 
-  if (path_.host.find('.',0) == std::string::npos && aws_region_ == "us-east-1"){
-     //for backword compatibility, use virtual host style if no period in host and no region was set. 
+  if (path_.host.find('.', 0) == std::string::npos && aws_region_ == "us-east-1") {
+    // for backword compatibility, use virtual host if no period in host and no region was set.
     surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
          << RemoveBeginSlash(path_.name) << args;
   } else {
-    surl << "https://" << getEndpoint(aws_region_) << '/' << path_.host << '/' 
+    surl << "https://" << getEndpoint(aws_region_) << '/' << path_.host << '/'
          << RemoveBeginSlash(path_.name) << args;
   }
   scontent << "Content-Type: " << content_type;
@@ -785,7 +784,7 @@ void WriteStream::Finish(void) {
 void ListObjects(const URI &path,
                  const std::string aws_id,
                  const std::string aws_key,
-                 const std::string aws_region, //this parameter will be directly used. not passed to aws_region_ .
+                 const std::string aws_region,
                  std::vector<FileInfo> *out_list) {
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
@@ -799,14 +798,13 @@ void ListObjects(const URI &path,
   sauth << "Authorization: AWS " << aws_id << ":" << signature;
   sdate << "Date: " << date;
 
-  if (path.host.find('.',0) == std::string::npos && aws_region == "us-east-1"){
-     //for backword compatibility, use virtual host style if no period in host and no region was set. 
+  if (path.host.find('.', 0) == std::string::npos && aws_region == "us-east-1") {
+    // for backword compatibility, use virtual host if no period in host and no region was set.
     surl << "https://" << path.host << ".s3.amazonaws.com"
          << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   } else {
-    //please notice that aws_region is used here directly from the parameter. 
-    surl << "https://" << getEndpoint(aws_region) << "/" << path.host 
-        << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+    surl << "https://" << getEndpoint(aws_region) << "/" << path.host
+         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   }
   // make request
   CURL *curl = curl_easy_init();
@@ -875,13 +873,13 @@ S3FileSystem::S3FileSystem() {
     LOG(FATAL) << "Need to set enviroment variable AWS_SECRET_ACCESS_KEY to use S3";
   }
 
-  if (region == NULL){
+  if (region == NULL) {
     LOG(WARNING) << "No AWS Region set, using default region us-east-1";
     aws_region_ = "us-east-1";
-  } else if (strcmp(region, "") == 0 ){
+  } else if (strcmp(region, "") == 0) {
     LOG(WARNING) << "AWS Region was set to empty string, using default region us-east-1";
     aws_region_ = "us-east-1";
-  }else {
+  } else {
     aws_region_ = region;
   }
 
