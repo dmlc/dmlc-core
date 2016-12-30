@@ -15,10 +15,16 @@
 #include "./type_traits.h"
 
 namespace dmlc {
+
 /*! \brief dummy type for assign null to optional */
 struct nullopt_t {
+#if defined(_MSC_VER) && _MSC_VER < 1900
+  /*! \brief dummy constructor */
+  explicit nullopt_t(int) {}
+#else
   /*! \brief dummy constructor */
   constexpr nullopt_t(int) {}
+#endif
 };
 
 /*! Assign null to optional: optional<T> x = nullopt; */

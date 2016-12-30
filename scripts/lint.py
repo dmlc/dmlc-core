@@ -121,7 +121,7 @@ def get_header_guard_dmlc(filename):
         file_path_from_root = _HELPER.project_name +  file_path_from_root[idx + 3:]
     else:
         for spath in inc_list:
-            prefix = spath + os.sep
+            prefix = spath + '/'
             if file_path_from_root.startswith(prefix):
                 file_path_from_root = re.sub('^' + prefix, '', file_path_from_root)
                 break
