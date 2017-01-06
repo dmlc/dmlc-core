@@ -857,7 +857,7 @@ inline void JSONObjectReadHelper::ReaderFunction(JSONReader *reader, void *addr)
 template<typename T>
 inline void JSONObjectReadHelper::
 DeclareFieldInternal(const std::string &key, T *addr, bool optional) {
-  CHECK_EQ(map_.count(key), 0)
+  CHECK_EQ(map_.count(key), 0U)
       << "Adding duplicate field " << key;
   Entry e;
   e.func = ReaderFunction<T>;
