@@ -869,7 +869,7 @@ class FieldEntry<optional<int> >
       if (!value) {
         os << "None";
       } else {
-        CHECK_NE(enum_back_map_.count(value.value()), 0UL)
+        CHECK_NE(enum_back_map_.count(value.value()), 0U)
             << "Value not found in enum declared";
         os << enum_back_map_.at(value.value());
       }
