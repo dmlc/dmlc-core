@@ -97,7 +97,7 @@ FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   bytes_read_ += chunk.size;
   CHECK_NE(chunk.size, 0U);
   char *head = reinterpret_cast<char*>(chunk.dptr);
-  #pragma omp parallel num_threads(nthread_)
+  #pragma omp parallel num_threads(nthread)
   {
     // threadid
     int tid = omp_get_thread_num();
