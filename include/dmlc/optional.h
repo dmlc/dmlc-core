@@ -20,10 +20,10 @@ namespace dmlc {
 struct nullopt_t {
 #if defined(_MSC_VER) && _MSC_VER < 1900
   /*! \brief dummy constructor */
-  explicit nullopt_t(int) {}
+  explicit nullopt_t(int a) {}
 #else
   /*! \brief dummy constructor */
-  constexpr nullopt_t(int) {}
+  constexpr nullopt_t(int a) {}
 #endif
 };
 

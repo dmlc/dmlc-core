@@ -25,7 +25,7 @@
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
-#if DMLC_STRICT_CXX11
+#if DMLC_STRICT_CXX11 && DMLC_ENABLE_RTTI
 #include "./any.h"
 #endif  // DMLC_STRICT_CXX11
 #endif  // DMLC_USE_CXX11
@@ -478,7 +478,7 @@ struct Handler {
   }
 };
 
-#if DMLC_STRICT_CXX11
+#if DMLC_STRICT_CXX11 && DMLC_ENABLE_RTTI
 // Manager to store json serialization strategy.
 class AnyJSONManager {
  public:
