@@ -71,6 +71,11 @@
 #define DMLC_STRICT_CXX11 (__cplusplus >= 201103L || defined(_MSC_VER))
 #endif
 
+/*! \brief whether RTTI is enabled */
+#ifndef DMLC_ENABLE_RTTI
+#define DMLC_ENABLE_RTTI 1
+#endif
+
 /// check if g++ is before 4.6
 #if DMLC_USE_CXX11 && defined(__GNUC__) && !defined(__clang_version__)
 #if __GNUC__ == 4 && __GNUC_MINOR__ < 6

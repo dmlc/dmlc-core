@@ -42,6 +42,7 @@ extern "C" {
 #include <memory>
 #include <vector>
 #include <utility>
+#include <algorithm>
 #include <unordered_map>
 #include <type_traits>
 
