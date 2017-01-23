@@ -73,6 +73,9 @@ class S3FileSystem : public FileSystem {
   std::string aws_access_id_;
   /*! \brief AWS secret key */
   std::string aws_secret_key_;
+  /*! \brief AWS region*/
+  std::string aws_region_;
+
   /*!
    * \brief try to get information about a path
    * \param path the path to the file
