@@ -501,7 +501,8 @@ void ReadStream::InitRequest(size_t begin_bytes,
   sdate << "Date: " << date;
 
   if (path_.host.find('.', 0) == std::string::npos && aws_region_ == "us-east-1") {
-    // for backword compatibility, use virtual host style if no period in host and no region was set.
+    // for backword compatibility, use virtual host style if no
+    // period in host and no region was set.
     surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
          << RemoveBeginSlash(path_.name);
   } else {
