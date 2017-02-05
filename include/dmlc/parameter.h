@@ -953,7 +953,7 @@ class FieldEntry<bool>
 #if DMLC_USE_CXX11
 template <>
 class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
-public:
+ public:
   // parent
   typedef FieldEntryNumeric<FieldEntry<float>, float> Parent;
   // override set
@@ -974,7 +974,7 @@ public:
 template <>
 class FieldEntry<double>
     : public FieldEntryNumeric<FieldEntry<double>, double> {
-public:
+ public:
   // parent
   typedef FieldEntryNumeric<FieldEntry<double>, double> Parent;
   // override set
@@ -989,7 +989,7 @@ public:
     }
   }
 };
-#endif // DMLC_USE_CXX11
+#endif  // DMLC_USE_CXX11
 
 }  // namespace parameter
 //! \endcond
