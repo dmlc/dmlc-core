@@ -70,6 +70,10 @@ def submit(args):
         # launch jobs
         for i in range(nworker + nserver):
             pass_envs['DMLC_ROLE'] = 'server' if i < nserver else 'worker'
+            if i < nserver:
+                pass_envs['DMLC_SERVER_ID'] = i
+            else:
+                pass_envs['DMLC_WORKER_ID'] = i - nserver
             (node, port) = hosts[i % len(hosts)]
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
