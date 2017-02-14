@@ -249,7 +249,7 @@ class LogMessageFatal : public LogMessage {
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
   ~LogMessageFatal() {
 #if DMLC_LOG_STACK_TRACE
-    const int MAX_STACK_SIZE = 256;
+    const int MAX_STACK_SIZE = 10;
     void *stack[MAX_STACK_SIZE];
 
     int nframes = backtrace(stack, MAX_STACK_SIZE);
@@ -280,7 +280,7 @@ class LogMessageFatal {
   std::ostringstream &stream() { return log_stream_; }
   ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    const int MAX_STACK_SIZE = 256;
+    const int MAX_STACK_SIZE = 10;
     void *stack[MAX_STACK_SIZE];
 
     int nframes = backtrace(stack, MAX_STACK_SIZE);

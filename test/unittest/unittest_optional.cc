@@ -56,6 +56,7 @@ TEST(Optional, parsing) {
 struct OptionalParam : public dmlc::Parameter<OptionalParam> {
   dmlc::optional<int> none;
   dmlc::optional<int> one;
+  dmlc::optional<int> long_one;
   dmlc::optional<int> def;
 
   DMLC_DECLARE_PARAMETER(OptionalParam) {
@@ -63,6 +64,7 @@ struct OptionalParam : public dmlc::Parameter<OptionalParam> {
     .add_enum("one", 1);
     DMLC_DECLARE_FIELD(one)
     .add_enum("one", 1);
+    DMLC_DECLARE_FIELD(long_one);
     DMLC_DECLARE_FIELD(def)
     .add_enum("one", 1)
     .set_default(dmlc::optional<int>());
@@ -76,8 +78,10 @@ TEST(Optional, add_enum) {
   std::map<std::string, std::string> kwargs;
   kwargs["none"] = "None";
   kwargs["one"] = "one";
+  kwargs["long_one"] = "1L";
   param.Init(kwargs);
   CHECK(!param.none);
   CHECK_EQ(param.one.value(), 1);
+  CHECK_EQ(param.long_one.value(), 1);
   CHECK(!param.def);
 }
