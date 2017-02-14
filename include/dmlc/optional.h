@@ -167,6 +167,7 @@ std::istream &operator>>(std::istream &is, optional<T> &t) {
     T x;
     is >> x;
     t = x;
+    if (std::is_integral<T>::value && !is.eof() && is.peek() == 'L') is.get();
   } else {
     t = nullopt;
   }
