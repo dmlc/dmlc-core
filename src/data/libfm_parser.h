@@ -94,4 +94,4 @@ ParseBlock(char *begin,
 
 }  // namespace data
 }  // namespace dmlc
-#endif  // DMLC_DATA_LIBSVM_PARSER_H_
+#endif  // DMLC_DATA_LIBFM_PARSER_H_

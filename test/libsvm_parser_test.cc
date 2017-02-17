@@ -21,12 +21,9 @@ int main(int argc, char *argv[]) {
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;
   size_t num_ex = 0;
-  std::cout << "begin parse " << argv[1] << std::endl;
   while (parser.Next()) {
     bytes_read  = parser.BytesRead();
-    std::cout << "read bytes " << bytes_read << std::endl;
     num_ex += parser.Value().size;
-    std::cout << "batch size " << num_ex << std::endl;
     double tdiff = GetTime() - tstart;
     if (bytes_read >= bytes_expect) {
       printf("%lu examples, %lu MB read, %g MB/sec\n",
