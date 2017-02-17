@@ -1,13 +1,12 @@
-// test reading speed from a InputSplit
 #include <cstdlib>
 #include <cstdio>
 #include <dmlc/io.h>
 #include <dmlc/timer.h>
-#include "../src/data/libsvm_parser.h"
+#include "../src/data/libfm_parser.h"
 
 int main(int argc, char *argv[]) {
   if (argc < 5) {
-    printf("Usage: <libsvm> partid npart nthread\n");
+    printf("Usage: <libfm> partid npart nthread\n");
     return 0;
   }
   using namespace dmlc;
@@ -16,17 +15,15 @@ int main(int argc, char *argv[]) {
                                          atoi(argv[3]),
                                          "text");
   int nthread = atoi(argv[4]);
-  data::LibSVMParser<unsigned> parser(split, nthread);
+  data::LibFMParser<unsigned> parser(split, nthread);
   double tstart = GetTime();
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;
   size_t num_ex = 0;
-  std::cout << "begin parse " << argv[1] << std::endl;
   while (parser.Next()) {
     bytes_read  = parser.BytesRead();
-    std::cout << "read bytes " << bytes_read << std::endl;
     num_ex += parser.Value().size;
-    std::cout << "batch size " << num_ex << std::endl;
+    std::cout << "read bytes:" << bytes_read << " batch size:" << num_ex << std::endl;
     double tdiff = GetTime() - tstart;
     if (bytes_read >= bytes_expect) {
       printf("%lu examples, %lu MB read, %g MB/sec\n",

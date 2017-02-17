@@ -31,10 +31,14 @@ struct RowBlockContainer {
   std::vector<real_t> label;
   /*! \brief array[size] weight of each instance */
   std::vector<real_t> weight;
+  /*! \brief field index */
+  std::vector<IndexType> field;
   /*! \brief feature index */
   std::vector<IndexType> index;
   /*! \brief feature value */
   std::vector<real_t> value;
+  /*! \brief maximum value of field */
+  IndexType max_field;
   /*! \brief maximum value of index */
   IndexType max_index;
   // constructor
@@ -57,7 +61,8 @@ struct RowBlockContainer {
   /*! \brief clear the container */
   inline void Clear(void) {
     offset.clear(); offset.push_back(0);
-    label.clear(); index.clear(); value.clear(); weight.clear();
+    label.clear(); field.clear(); index.clear(); value.clear(); weight.clear();
+    max_field = 0;
     max_index = 0;
   }
   /*! \brief size of the data */
@@ -69,6 +74,7 @@ struct RowBlockContainer {
     return offset.size() * sizeof(size_t) +
         label.size() * sizeof(real_t) +
         weight.size() * sizeof(real_t) +
+        field.size() * sizeof(IndexType) +
         index.size() * sizeof(IndexType) +
         value.size() * sizeof(real_t);
   }
@@ -82,6 +88,11 @@ struct RowBlockContainer {
     label.push_back(row.label);
     weight.push_back(row.weight);
     for (size_t i = 0; i < row.length; ++i) {
+      CHECK_LE(row.field[i], std::numeric_limits<IndexType>::max())
+          << "field exceed numeric bound of current type";
+      IndexType field_id = static_cast<IndexType>(row.field[i]);
+      field.push_back(field_id);
+      max_field = std::max(max_field, field_id);
       CHECK_LE(row.index[i], std::numeric_limits<IndexType>::max())
           << "index exceed numeric bound of current type";
       IndexType findex = static_cast<IndexType>(row.index[i]);
@@ -110,9 +121,16 @@ struct RowBlockContainer {
       weight.insert(weight.end(), batch.weight, batch.weight + batch.size);
     }
     size_t ndata = batch.offset[batch.size] - batch.offset[0];
+    field.resize(field.size() + ndata);
+    IndexType *fhead = BeginPtr(field) + offset.back();
     index.resize(index.size() + ndata);
     IndexType *ihead = BeginPtr(index) + offset.back();
     for (size_t i = 0; i < ndata; ++i) {
+      CHECK_LE(batch.field[i], std::numeric_limits<IndexType>::max())
+          << "field  exceed numeric bound of current type";
+      IndexType field_id = static_cast<IndexType>(batch.field[i]);
+      fhead[i] = field_id;
+      max_field = std::max(max_field, field_id);
       CHECK_LE(batch.index[i], std::numeric_limits<IndexType>::max())
           << "index  exceed numeric bound of current type";
       IndexType findex = static_cast<IndexType>(batch.index[i]);
@@ -147,6 +165,7 @@ RowBlockContainer<IndexType>::GetBlock(void) const {
   data.offset = BeginPtr(offset);
   data.label = BeginPtr(label);
   data.weight = BeginPtr(weight);
+  data.field = BeginPtr(field);
   data.index = BeginPtr(index);
   data.value = BeginPtr(value);
   return data;
@@ -157,8 +176,10 @@ RowBlockContainer<IndexType>::Save(Stream *fo) const {
   fo->Write(offset);
   fo->Write(label);
   fo->Write(weight);
+  fo->Write(field);
   fo->Write(index);
   fo->Write(value);
+  fo->Write(&max_field, sizeof(IndexType));
   fo->Write(&max_index, sizeof(IndexType));
 }
 template<typename IndexType>
@@ -167,8 +188,10 @@ RowBlockContainer<IndexType>::Load(Stream *fi) {
   if (!fi->Read(&offset)) return false;
   CHECK(fi->Read(&label)) << "Bad RowBlock format";
   CHECK(fi->Read(&weight)) << "Bad RowBlock format";
+  CHECK(fi->Read(&field)) << "Bad RowBlock format";
   CHECK(fi->Read(&index)) << "Bad RowBlock format";
   CHECK(fi->Read(&value)) << "Bad RowBlock format";
+  CHECK(fi->Read(&max_field, sizeof(IndexType))) << "Bad RowBlock format";
   CHECK(fi->Read(&max_index, sizeof(IndexType))) << "Bad RowBlock format";
   return true;
 }

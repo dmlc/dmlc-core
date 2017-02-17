@@ -11,6 +11,7 @@
 #include "data/basic_row_iter.h"
 #include "data/disk_row_iter.h"
 #include "data/libsvm_parser.h"
+#include "data/libfm_parser.h"
 #include "data/csv_parser.h"
 
 namespace dmlc {
@@ -26,6 +27,21 @@ CreateLibSVMParser(const std::string& path,
   InputSplit* source = InputSplit::Create(
       path.c_str(), part_index, num_parts, "text");
   ParserImpl<IndexType> *parser = new LibSVMParser<IndexType>(source, 2);
+#if DMLC_ENABLE_STD_THREAD
+  parser = new ThreadedParser<IndexType>(parser);
+#endif
+  return parser;
+}
+
+template<typename IndexType>
+Parser<IndexType> *
+CreateLibFMParser(const std::string& path,
+                   const std::map<std::string, std::string>& args,
+                   unsigned part_index,
+                   unsigned num_parts) {
+  InputSplit* source = InputSplit::Create(
+      path.c_str(), part_index, num_parts, "text");
+  ParserImpl<IndexType> *parser = new LibFMParser<IndexType>(source, 2);
 #if DMLC_ENABLE_STD_THREAD
   parser = new ThreadedParser<IndexType>(parser);
 #endif
@@ -135,6 +151,9 @@ DMLC_REGISTRY_ENABLE(ParserFactoryReg<uint32_t>);
 DMLC_REGISTRY_ENABLE(ParserFactoryReg<uint64_t>);
 DMLC_REGISTER_DATA_PARSER(uint32_t, libsvm, data::CreateLibSVMParser<uint32_t>);
 DMLC_REGISTER_DATA_PARSER(uint64_t, libsvm, data::CreateLibSVMParser<uint64_t>);
+
+DMLC_REGISTER_DATA_PARSER(uint32_t, libfm, data::CreateLibFMParser<uint32_t>);
+DMLC_REGISTER_DATA_PARSER(uint64_t, libfm, data::CreateLibFMParser<uint64_t>);
 
 DMLC_REGISTER_DATA_PARSER(uint32_t, csv, data::CreateCSVParser<uint32_t>);
 

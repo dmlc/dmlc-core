@@ -251,6 +251,55 @@ inline int ParsePair(const char * begin, const char * end,
   v2 = Str2Type<T2>(p, q);
   return 2;
 }
+
+/**
+* \brief Parse colon seperated triple v1:v2[:v3]
+* \param begin: pointer to string
+* \param end: one past end of string
+* \param parseEnd: end string of parsed string
+* \param v1: first value in the pair
+* \param v2: second value in the pair
+* \output number of values parsed
+*/
+template<typename T1, typename T2, typename T3>
+inline int ParseTriple(const char * begin, const char * end,
+                     const char ** endptr, T1 &v1, T2 &v2, T3 &v3) { // NOLINT(*)
+  const char * p = begin;
+  while (p != end && !isdigitchars(*p)) ++p;
+  if (p == end) {
+    *endptr = end;
+    return 0;
+  }
+  const char * q = p;
+  while (q != end && isdigitchars(*q)) ++q;
+  v1 = Str2Type<T1>(p, q);
+  p = q;
+  while (p != end && isblank(*p)) ++p;
+  if (p == end || *p != ':') {
+    // only v1
+    *endptr = p;
+    return 1;
+  }
+  p++;
+  while (p != end && !isdigitchars(*p)) ++p;
+  q = p;
+  while (q != end && isdigitchars(*q)) ++q;
+  v2 = Str2Type<T2>(p, q);
+  p = q;
+  while (p != end && isblank(*p)) ++p;
+  if (p == end || *p != ':') {
+    // only v1:v2
+    *endptr = p;
+    return 2;
+  }
+  p++;
+  while (p != end && !isdigitchars(*p)) ++p;
+  q = p;
+  while (q != end && isdigitchars(*q)) ++q;
+  *endptr = q;
+  v3 = Str2Type<T3>(p, q);
+  return 3;
+}
 }  // namespace data
 }  // namespace dmlc
 #endif  // DMLC_DATA_STRTONUM_H_
