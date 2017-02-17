@@ -257,8 +257,9 @@ inline int ParsePair(const char * begin, const char * end,
 * \param begin: pointer to string
 * \param end: one past end of string
 * \param parseEnd: end string of parsed string
-* \param v1: first value in the pair
-* \param v2: second value in the pair
+* \param v1: first value in the triple
+* \param v2: second value in the triple
+* \param v3: third value in the triple
 * \output number of values parsed
 */
 template<typename T1, typename T2, typename T3>
