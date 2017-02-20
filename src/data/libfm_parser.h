@@ -2,7 +2,7 @@
  *  Copyright (c) 2017 by Contributors
  * \file libfm_parser.h
  * \brief iterator parser to parse libfm format
- * \author Jinpeng Liu
+ * \author formath
  */
 #ifndef DMLC_DATA_LIBFM_PARSER_H_
 #define DMLC_DATA_LIBFM_PARSER_H_
