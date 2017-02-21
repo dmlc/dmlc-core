@@ -333,7 +333,11 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
     inst.weight = 1.0f;
   }
   inst.length = offset[rowid + 1] - offset[rowid];
-  inst.field = field + offset[rowid];
+  if (field != NULL) {
+    inst.field = field + offset[rowid];
+  } else {
+    inst.field = NULL;
+  }
   inst.index = index + offset[rowid];
   if (value == NULL) {
     inst.value = NULL;

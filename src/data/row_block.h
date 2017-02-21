@@ -87,12 +87,16 @@ struct RowBlockContainer {
   inline void Push(Row<I> row) {
     label.push_back(row.label);
     weight.push_back(row.weight);
+    if (row.field != NULL) {
+      for (size_t i = 0; i < row.length; ++i) {
+        CHECK_LE(row.field[i], std::numeric_limits<IndexType>::max())
+            << "field exceed numeric bound of current type";
+        IndexType field_id = static_cast<IndexType>(row.field[i]);
+        field.push_back(field_id);
+        max_field = std::max(max_field, field_id);
+    }
+    }
     for (size_t i = 0; i < row.length; ++i) {
-      CHECK_LE(row.field[i], std::numeric_limits<IndexType>::max())
-          << "field exceed numeric bound of current type";
-      IndexType field_id = static_cast<IndexType>(row.field[i]);
-      field.push_back(field_id);
-      max_field = std::max(max_field, field_id);
       CHECK_LE(row.index[i], std::numeric_limits<IndexType>::max())
           << "index exceed numeric bound of current type";
       IndexType findex = static_cast<IndexType>(row.index[i]);
@@ -121,16 +125,20 @@ struct RowBlockContainer {
       weight.insert(weight.end(), batch.weight, batch.weight + batch.size);
     }
     size_t ndata = batch.offset[batch.size] - batch.offset[0];
-    field.resize(field.size() + ndata);
-    IndexType *fhead = BeginPtr(field) + offset.back();
+    if (batch.field != NULL) {
+      field.resize(field.size() + ndata);
+      IndexType *fhead = BeginPtr(field) + offset.back();
+      for (size_t i = 0; i < ndata; ++i) {
+        CHECK_LE(batch.field[i], std::numeric_limits<IndexType>::max())
+            << "field  exceed numeric bound of current type";
+        IndexType field_id = static_cast<IndexType>(batch.field[i]);
+        fhead[i] = field_id;
+        max_field = std::max(max_field, field_id);
+      }
+    }
     index.resize(index.size() + ndata);
     IndexType *ihead = BeginPtr(index) + offset.back();
     for (size_t i = 0; i < ndata; ++i) {
-      CHECK_LE(batch.field[i], std::numeric_limits<IndexType>::max())
-          << "field  exceed numeric bound of current type";
-      IndexType field_id = static_cast<IndexType>(batch.field[i]);
-      fhead[i] = field_id;
-      max_field = std::max(max_field, field_id);
       CHECK_LE(batch.index[i], std::numeric_limits<IndexType>::max())
           << "index  exceed numeric bound of current type";
       IndexType findex = static_cast<IndexType>(batch.index[i]);
