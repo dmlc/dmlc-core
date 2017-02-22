@@ -18,6 +18,9 @@ export MPICXX = mpicxx
 # Note: to build shared library(so files), fPIC is required
 WITH_FPIC = 1
 
+# whether use openmp during compile
+USE_OPENMP = 0
+
 # whether use HDFS support during compile
 USE_HDFS = 0
 
