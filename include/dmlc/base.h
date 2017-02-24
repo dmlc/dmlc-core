@@ -62,13 +62,20 @@
 
 /*! \brief whether or not use c++11 support */
 #ifndef DMLC_USE_CXX11
-#define DMLC_USE_CXX11 (defined(__GXX_EXPERIMENTAL_CXX0X__) ||\
-                        __cplusplus >= 201103L || defined(_MSC_VER))
+#if defined(__GXX_EXPERIMENTAL_CXX0X__) || defined(_MSC_VER)
+#define DMLC_USE_CXX11 1
+#else
+#define DMLC_USE_CXX11 (__cplusplus >= 201103L)
+#endif
 #endif
 
 /*! \brief strict CXX11 support */
 #ifndef DMLC_STRICT_CXX11
-#define DMLC_STRICT_CXX11 (__cplusplus >= 201103L || defined(_MSC_VER))
+#if defined(_MSC_VER)
+#define DMLC_STRICT_CXX11 1
+#else
+#define DMLC_STRICT_CXX11 (__cplusplus >= 201103L)
+#endif
 #endif
 
 /*! \brief whether RTTI is enabled */
@@ -98,7 +105,7 @@
 
 /*! \brief whether enable regex support, actually need g++-4.9 or higher*/
 #ifndef DMLC_USE_REGEX
-#define DMLC_USE_REGEX (__cplusplus >= 201103L || defined(_MSC_VER))
+#define DMLC_USE_REGEX DMLC_STRICT_CXX11
 #endif
 
 /*! \brief helper macro to supress unused warning */
