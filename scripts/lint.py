@@ -74,7 +74,8 @@ class LintHelper(object):
         (pylint_stdout, pylint_stderr) = epylint.py_run(
             ' '.join([str(path)] + self.pylint_opts), return_std=True)
         emap = {}
-        # generate too many unuseful information, disabled  it
+        # generate too many "No config file found, using default configuration",
+        # so disable it
         # print(pylint_stderr.read())
         for line in pylint_stdout:
             if 'locally-disabled' in line or 'locally-enabled' in line:
