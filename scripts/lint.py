@@ -74,8 +74,12 @@ class LintHelper(object):
         (pylint_stdout, pylint_stderr) = epylint.py_run(
             ' '.join([str(path)] + self.pylint_opts), return_std=True)
         emap = {}
-        print(pylint_stderr.read())
+        # generate too many "No config file found, using default configuration",
+        # so disable it
+        # print(pylint_stderr.read())
         for line in pylint_stdout:
+            if 'locally-disabled' in line or 'locally-enabled' in line:
+                continue
             sys.stderr.write(line)
             key = line.split(':')[-1].split('(')[0].strip()
             if key not in self.pylint_cats:
@@ -84,7 +88,6 @@ class LintHelper(object):
                 emap[key] = 1
             else:
                 emap[key] += 1
-        sys.stderr.write('\n')
         self.python_map[str(path)] = emap
 
     def print_summary(self, strm):
