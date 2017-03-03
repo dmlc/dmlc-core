@@ -22,7 +22,7 @@ dmlc-submit -h
   - Job submission mode.
 - ```--num-workers``` integer, required
   - Number of workers in the job.
-- ```--num-servers```` integer, default=0
+- ```--num-servers``` integer, default=0
   - Number of servers in the job.
 - ```--worker-cores``` integer, default=1
   - Number of cores needed to be allocated for worker job.

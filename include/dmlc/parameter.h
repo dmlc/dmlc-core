@@ -960,7 +960,7 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
   virtual void Set(void *head, const std::string &value) const {
     try {
       this->Get(head) = std::stof(value);
-    } catch (const std::invalid_argument &ia) {
+    } catch (const std::invalid_argument &) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_ << " expect " << type_
          << " but value=\'" << value << '\'';
@@ -981,7 +981,7 @@ class FieldEntry<double>
   virtual void Set(void *head, const std::string &value) const {
     try {
       this->Get(head) = std::stod(value);
-    } catch (const std::invalid_argument &ia) {
+    } catch (const std::invalid_argument &) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_ << " expect " << type_
          << " but value=\'" << value << '\'';
