@@ -146,7 +146,7 @@ def main():
     """Main entry function."""
     parser = argparse.ArgumentParser(description="lint source codes")
     parser.add_argument('project', help='project name')
-    parser.add_argument('filetype', choices=['python','cpp','all'],
+    parser.add_argument('filetype', choices=['python', 'cpp', 'all'],
                         help='source code type')
     parser.add_argument('path', nargs='+', help='path to traverse')
     parser.add_argument('--pylint-rc', default=None,
