@@ -39,7 +39,7 @@ if(USE_S3)
 
  find_package(OpenSSL REQUIRED)
  include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
- list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_LIBRARY})
+ list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_LIBRARY} ${OPENSSL_LIBRARIES})
 
  find_package(Crypto REQUIRED)
  include_directories(SYSTEM ${CRYPTO_INCLUDE_DIR})
@@ -121,13 +121,13 @@ if(USE_AZURE)
   list(APPEND SOURCE "src/io/azure_filesys.cc")
 endif()
 
-add_library(dmlccore ${SOURCE})
+add_library(dmlccore SHARED ${SOURCE})
 target_link_libraries(dmlccore ${dmlccore_LINKER_LIBS})
 
 # ---[ Install Includes
 if(INSTALL_INCLUDE_DIR)
   add_custom_command(TARGET dmlccore POST_BUILD
-    COMMAND COMMAND ${CMAKE_COMMAND} -E copy_directory
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${PROJECT_SOURCE_DIR}/include ${INSTALL_INCLUDE_DIR}/
     )
 endif()
