@@ -4,6 +4,7 @@
 
 Copyright by Contributors
 """
+import argparse
 from __future__ import print_function
 import codecs
 import sys
@@ -12,7 +13,6 @@ import os
 import cpplint
 from cpplint import _cpplint_state
 from pylint import epylint
-import argparse
 
 CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h', 'cu', 'hpp'])
 PYTHON_SUFFIX = set(['py'])
