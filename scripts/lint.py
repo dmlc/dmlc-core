@@ -4,8 +4,8 @@
 
 Copyright by Contributors
 """
-import argparse
 from __future__ import print_function
+import argparse
 import codecs
 import sys
 import re
