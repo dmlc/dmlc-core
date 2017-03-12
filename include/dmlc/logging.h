@@ -57,7 +57,7 @@ inline void InitLogging(const char* argv0) {
 #endif
 
 namespace dmlc {
-inline void InitLogging(const char* argv0) {
+inline void InitLogging(const char*) {
   // DO NOTHING
 }
 
