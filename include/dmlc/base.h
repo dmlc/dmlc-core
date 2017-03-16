@@ -78,6 +78,20 @@
 #endif
 #endif
 
+/*! \brief Whether cxx11 thread local is supported */
+#ifndef DMLC_CXX11_THREAD_LOCAL
+#if defined(_MSC_VER)
+#if (_MSC_VER >= 1900)
+#define DMLC_CXX11_THREAD_LOCAL 1
+#else
+#define DMLC_CXX11_THREAD_LOCAL 0
+#endif
+#else
+#define DMLC_CXX11_THREAD_LOCAL (__cplusplus >= 201103L)
+#endif
+#endif
+
+
 /*! \brief whether RTTI is enabled */
 #ifndef DMLC_ENABLE_RTTI
 #define DMLC_ENABLE_RTTI 1
