@@ -118,7 +118,7 @@ if(USE_AZURE)
   list(APPEND SOURCE "src/io/azure_filesys.cc")
 endif()
 
-add_library(dmlccore SHARED ${SOURCE})
+add_library(dmlccore ${SOURCE})
 target_link_libraries(dmlccore ${dmlccore_LINKER_LIBS})
 
 # ---[ Install Includes
