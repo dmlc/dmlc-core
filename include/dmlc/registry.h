@@ -189,6 +189,11 @@ class FunctionRegEntryBase {
     info.type = type;
     info.type_info_str = info.type;
     info.description = description;
+    /*! \brief Check that this is not a duplicate argument */
+    DCHECK_EQ(std::find_if(arguments.begin(), arguments.end(),
+                           [&name](const ParamFieldInfo& i)  {
+                            return name == i.name;
+                          }) == arguments.end(), true);
     arguments.push_back(info);
     return this->self();
   }
