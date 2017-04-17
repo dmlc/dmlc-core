@@ -55,6 +55,11 @@
 #define DMLC_USE_S3 0
 #endif
 
+/*! \brief whether compile with Azure support */
+#ifndef DMLC_USE_AZURE
+#define DMLC_USE_AZURE 0
+#endif
+
 /*! \brief whether or not use parameter server */
 #ifndef DMLC_USE_PS
 #define DMLC_USE_PS 0

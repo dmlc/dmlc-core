@@ -68,14 +68,23 @@ else
 	DMLC_CFLAGS+= -DDMLC_USE_S3=0
 endif
 
+# setup Azure
+ifeq ($(USE_AZURE),1)
+	DMLC_CFLAGS+= -DDMLC_USE_AZURE=1
+	DMLC_LDFLAGS+= -lcurl -lssl -lcrypto
+else
+	DMLC_CFLAGS+= -DDMLC_USE_AZURE=0
+endif
+
 ifeq ($(USE_GLOG), 1)
 	DMLC_CFLAGS += -DDMLC_USE_GLOG=1
 	DMLC_LDFLAGS += -lglog
 endif
 
+# setup Azure
 ifeq ($(USE_AZURE),1)
 	DMLC_CFLAGS+= -DDMLC_USE_AZURE=1
-	DMLC_LDFLAGS+= -lazurestorage
+	DMLC_LDFLAGS+= -lazurestorage -lcpprest
 else
 	DMLC_CFLAGS+= -DDMLC_USE_AZURE=0
 endif

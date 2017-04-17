@@ -41,4 +41,4 @@ BUILD_TEST=0
 GTEST_PATH=
 
 # path to third-party dependences such as glog
-DEPS_PATH=
+DEPS_PATH=deps

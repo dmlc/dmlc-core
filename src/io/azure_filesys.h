@@ -2,7 +2,7 @@
  *  Copyright (c) 2015 by Contributors
  * \file azure_filesys.h
  * \brief Azure access module
- * \author Mu Li
+ * \author Kamran Munshi
  */
 #ifndef DMLC_IO_AZURE_FILESYS_H_
 #define DMLC_IO_AZURE_FILESYS_H_
@@ -17,19 +17,16 @@ namespace io {
 /*! \brief Microsoft Azure Blob filesystem */
 class AzureFileSystem : public FileSystem {
  public:
-  virtual ~AzureFileSystem() {}
+  virtual ~AzureFileSystem() {
+  }
 
-  virtual FileInfo GetPathInfo(const URI &path) { return FileInfo(); }
+  virtual FileInfo GetPathInfo(const URI &path);
 
   virtual void ListDirectory(const URI &path, std::vector<FileInfo> *out_list);
 
-  virtual Stream *Open(const URI &path, const char* const flag, bool allow_null) {
-    return NULL;
-  }
+  virtual Stream *Open(const URI &path, const char* flag, bool allow_null);
 
-  virtual SeekStream *OpenForRead(const URI &path, bool allow_null) {
-    return NULL;
-  }
+  virtual SeekStream *OpenForRead(const URI &path, bool allow_null);
 
   /*!
    * \brief get a singleton of AzureFileSystem when needed
@@ -49,6 +46,8 @@ class AzureFileSystem : public FileSystem {
 
   /*! \brief Azure storage account key */
   std::string azure_key_;
+
+  bool TryGetPathInfo(const URI &path, FileInfo *info);
 };
 
 }  // namespace io
