@@ -69,6 +69,16 @@ struct RowBlockContainer {
   inline size_t Size(void) const {
     return offset.size() - 1;
   }
+  /*! \brief size of the data */
+  inline real_t Instance_num(void) const {
+    real_t sum = 0;
+    for (size_t i = 0 ; i < weight.size(); ++i) {
+         sum +=(weight[i]-1);
+    }
+    sum += (offset.size() - 1);
+    return sum;
+  }
+
   /*! \return estimation of memory cost of this container */
   inline size_t MemCostBytes(void) const {
     return offset.size() * sizeof(size_t) +
