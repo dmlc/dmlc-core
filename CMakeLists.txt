@@ -117,16 +117,21 @@ if(USE_AZURE)
   list(APPEND SOURCE "src/io/azure_filesys.cc")
 endif()
 
-add_library(dmlccore ${SOURCE})
-target_link_libraries(dmlccore ${dmlccore_LINKER_LIBS})
+add_library(dmlc ${SOURCE})
+target_link_libraries(dmlc ${dmlccore_LINKER_LIBS})
 
 # ---[ Install Includes
 if(INSTALL_INCLUDE_DIR)
-  add_custom_command(TARGET dmlccore POST_BUILD
+  add_custom_command(TARGET dmlc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${PROJECT_SOURCE_DIR}/include ${INSTALL_INCLUDE_DIR}/
     )
 endif()
+
+# ---[ Install the archive static lib and header files
+install(TARGETS dmlc ARCHIVE DESTINATION lib) 
+install(DIRECTORY include DESTINATION .)
+install(DIRECTORY doc DESTINATION .)
 
 # ---[ Linter target
 if(MSVC)
