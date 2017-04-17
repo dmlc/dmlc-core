@@ -64,7 +64,8 @@ class Registry {
     EntryType* e = fmap_.at(key_name);
     if (fmap_.count(alias)) {
       CHECK_EQ(e, fmap_.at(alias))
-          << "Entry " << e->name << " already registered under different entry";
+          << "Trying to register alias " << alias << " for key " << key_name
+          << " but " << alias << " is already taken";
     } else {
       fmap_[alias] = e;
     }
