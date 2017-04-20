@@ -9,18 +9,6 @@ import logging
 from threading import Thread
 from . import tracker
 
-keepalive = """
-nrep=0
-rc=254
-while [ $rc -ne 0 ];
-do
-    export DMLC_NUM_ATTEMPT=$nrep
-    %s
-    rc=$?;
-    nrep=$((nrep+1));
-done
-"""
-
 def exec_cmd(cmd, role, taskid, pass_env):
     """Execute the command line command."""
     if cmd[0].find('/') == -1 and os.path.exists(cmd[0]) and os.name != 'nt':
@@ -34,17 +22,11 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env['DMLC_ROLE'] = role
     env['DMLC_JOB_CLUSTER'] = 'local'
 
-    ntrial = 0
     while True:
         if os.name == 'nt':
-            env['DMLC_NUM_ATTEMPT'] = str(ntrial)
             ret = subprocess.call(cmd, shell=True, env=env)
-            if ret != 0:
-                ntrial += 1
-                continue
         else:
-            bash = keepalive % (cmd)
-            ret = subprocess.call(bash, shell=True, executable='bash', env=env)
+            ret = subprocess.call(cmd, shell=True, executable='bash', env=env)
         if ret == 0:
             logging.debug('Thread %d exit with 0', taskid)
             return
