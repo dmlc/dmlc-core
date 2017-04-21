@@ -70,7 +70,7 @@ def get_opts(args=None):
     """
     parser = argparse.ArgumentParser(description='DMLC job submission.')
     parser.add_argument('--cluster', type=str,
-                        choices=['yarn', 'mpi', 'sge', 'local', 'ssh'],
+                        choices=['yarn', 'mpi', 'sge', 'local', 'ssh', 'mesos'],
                         help=('Cluster type of this submission,' +
                               'default to env variable ${DMLC_SUBMIT_CLUSTER}.'))
     parser.add_argument('--num-workers', required=True, type=int,
@@ -130,6 +130,8 @@ def get_opts(args=None):
     parser.add_argument('--yarn-app-dir', type=str,
                         default=os.path.join(os.path.dirname(__file__), os.pardir, 'yarn'),
                         help=('Directory to YARN appmaster. Only used in YARN mode.'))
+    parser.add_argument('--mesos-master', type=str,
+                        help=('Mesos master, default to ${MESOS_MASTER}')),
     parser.add_argument('--ship-libcxx', default=None, type=str,
                         help=('The path to the customized gcc lib folder.' +
                               'You can use this option to ship customized libstdc++' +
