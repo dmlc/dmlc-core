@@ -182,7 +182,10 @@ inline any::any(T&& other) {
                   "Any can only hold value that is copy constructable");
     type_ = TypeInfo<DT>::get_type();
     if (data_on_stack<DT>::value) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wplacement-new"
       new (&(data_.stack)) DT(std::forward<T>(other));
+#pragma GCC diagnostic pop
     } else {
       data_.pheap = new DT(std::forward<T>(other));
     }
