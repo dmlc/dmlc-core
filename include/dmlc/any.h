@@ -183,7 +183,9 @@ inline any::any(T&& other) {
     type_ = TypeInfo<DT>::get_type();
     if (data_on_stack<DT>::value) {
 #pragma GCC diagnostic push
+#if 6 <= __GNUC__
 #pragma GCC diagnostic ignored "-Wplacement-new"
+#endif
       new (&(data_.stack)) DT(std::forward<T>(other));
 #pragma GCC diagnostic pop
     } else {
