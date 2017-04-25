@@ -54,6 +54,7 @@ inline void InitLogging(const char* argv0) {
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4722)
+#pragma warning(disable : 4068)
 #endif
 
 namespace dmlc {
