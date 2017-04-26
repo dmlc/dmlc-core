@@ -17,6 +17,17 @@ from pylint import epylint
 CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h', 'cu', 'hpp'])
 PYTHON_SUFFIX = set(['py'])
 
+def filepath_enumerate(paths):
+    out = []
+    for path in paths:
+        if os.path.isfile(path):
+            out.append(path)
+        else:
+            for root, dirs, files in os.walk(path):
+                for name in files:
+                    out.append(os.path.join(root, name))
+    return out
+
 class LintHelper(object):
     """Class to help runing the lint and records summary"""
 
@@ -149,6 +160,8 @@ def main():
     parser.add_argument('filetype', choices=['python', 'cpp', 'all'],
                         help='source code type')
     parser.add_argument('path', nargs='+', help='path to traverse')
+    parser.add_argument('--exclude_path', nargs='+', default=[],
+                        help='exclude this path, and all subfolders if path is a folder')
     parser.add_argument('--pylint-rc', default=None,
                         help='pylint rc file')
     args = parser.parse_args()
@@ -168,14 +181,18 @@ def main():
                                                codecs.getreader('utf8'),
                                                codecs.getwriter('utf8'),
                                                'replace')
+    # get excluded files
+    excluded_paths = filepath_enumerate(args.exclude_path)
     for path in args.path:
         if os.path.isfile(path):
-            process(path, allow_type)
+            if path not in excluded_paths:
+                process(path, allow_type)
         else:
             for root, dirs, files in os.walk(path):
                 for name in files:
-                    process(os.path.join(root, name), allow_type)
-
+                    file_path = os.path.join(root, name)
+                    if file_path not in excluded_paths:
+                        process(file_path, allow_type)
     nerr = _HELPER.print_summary(sys.stderr)
     sys.exit(nerr > 0)
 
