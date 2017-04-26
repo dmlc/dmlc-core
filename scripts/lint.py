@@ -17,6 +17,18 @@ from pylint import epylint
 CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h', 'cu', 'hpp'])
 PYTHON_SUFFIX = set(['py'])
 
+def filepath_enumerate(paths):
+    """Enumerate the file paths of all subfiles of the list of paths"""
+    out = []
+    for path in paths:
+        if os.path.isfile(path):
+            out.append(path)
+        else:
+            for root, dirs, files in os.walk(path):
+                for name in files:
+                    out.append(os.path.join(root, name))
+    return out
+
 class LintHelper(object):
     """Class to help runing the lint and records summary"""
 
@@ -171,15 +183,7 @@ def main():
                                                codecs.getwriter('utf8'),
                                                'replace')
     # get excluded files
-    excluded_paths = []
-    for path in args.exclude_path:
-        if os.path.isfile(path):
-            excluded_paths.append(path)
-        else:
-            for root, dirs, files in os.walk(path):
-                for name in files:
-                    excluded_paths.append(os.path.join(root, name))
-    # run the linter on each file not in excluded_paths
+    excluded_paths = filepath_enumerate(args.exclude_path)
     for path in args.path:
         if os.path.isfile(path):
             if path not in excluded_paths:
