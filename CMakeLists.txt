@@ -129,7 +129,7 @@ if(INSTALL_INCLUDE_DIR)
 endif()
 
 # ---[ Install the archive static lib and header files
-install(TARGETS dmlc ARCHIVE DESTINATION lib) 
+install(TARGETS dmlc ARCHIVE DESTINATION lib LIBRARY DESTINATION lib)
 install(DIRECTORY include DESTINATION .)
 install(DIRECTORY doc DESTINATION .)
 
