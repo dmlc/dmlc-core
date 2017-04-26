@@ -22,6 +22,10 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env['DMLC_ROLE'] = role
     env['DMLC_JOB_CLUSTER'] = 'local'
 
+    num_retry = 0
+    if 'DMLC_NUM_ATTEMPT' in env:
+        num_retry = env['DMLC_NUM_ATTEMPT']
+
     while True:
         if os.name == 'nt':
             ret = subprocess.call(cmd, shell=True, env=env)
@@ -31,6 +35,9 @@ def exec_cmd(cmd, role, taskid, pass_env):
             logging.debug('Thread %d exit with 0', taskid)
             return
         else:
+            num_retry -= 1
+            if num_retry >= 0:
+                continue
             if os.name == 'nt':
                 sys.exit(-1)
             else:
