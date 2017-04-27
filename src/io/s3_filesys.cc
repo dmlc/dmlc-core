@@ -320,7 +320,7 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
   if (at_end_ && expect_file_size_ != 0 &&
       curr_bytes_ != expect_file_size_) {
     int nretry = 0;
-    CHECK_EQ(buffer_.length(), 0);
+    CHECK_EQ(buffer_.length(), 0U);
     while (true) {
       LOG(ERROR) << "Re-establishing connection to Amazon S3, retry " << nretry;
       size_t rec_curr_bytes = curr_bytes_;

@@ -54,10 +54,11 @@ inline void InitLogging(const char* argv0) {
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4722)
+#pragma warning(disable : 4068)
 #endif
 
 namespace dmlc {
-inline void InitLogging(const char* argv0) {
+inline void InitLogging(const char*) {
   // DO NOTHING
 }
 
@@ -87,12 +88,15 @@ class LogCheckError {
     dmlc::LogMessageFatal(__FILE__, __LINE__).stream()                \
       << "Check failed: " << #x " " #op " " #y << *(_check_err.str)
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
 DEFINE_CHECK_FUNC(_LT, <)
 DEFINE_CHECK_FUNC(_GT, >)
 DEFINE_CHECK_FUNC(_LE, <=)
 DEFINE_CHECK_FUNC(_GE, >=)
 DEFINE_CHECK_FUNC(_EQ, ==)
 DEFINE_CHECK_FUNC(_NE, !=)
+#pragma GCC diagnostic pop
 
 // Always-on checking
 #define CHECK(x)                                           \
