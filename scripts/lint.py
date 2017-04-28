@@ -66,6 +66,7 @@ class LintHelper(object):
                                       '-build/namespaces',
                                       '-build/include,',
                                       '+build/include_what_you_use',
+                                      '-build/header_guard',
                                       '+build/include_order']))
         cpplint._SetCountingStyle('toplevel')
         cpplint._line_length = 100
