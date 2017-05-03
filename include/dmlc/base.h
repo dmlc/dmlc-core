@@ -228,7 +228,7 @@ namespace dmlc {
  */
 template<typename T>
 inline T *BeginPtr(std::vector<T> &vec) {  // NOLINT(*)
-  if (vec.size() == 0) {
+  if (vec.empty()) {
     return NULL;
   } else {
     return &vec[0];
@@ -241,7 +241,7 @@ inline T *BeginPtr(std::vector<T> &vec) {  // NOLINT(*)
  */
 template<typename T>
 inline const T *BeginPtr(const std::vector<T> &vec) {
-  if (vec.size() == 0) {
+  if (vec.empty()) {
     return NULL;
   } else {
     return &vec[0];
@@ -253,7 +253,7 @@ inline const T *BeginPtr(const std::vector<T> &vec) {
  * \return beginning address of a string
  */
 inline char* BeginPtr(std::string &str) {  // NOLINT(*)
-  if (str.length() == 0) return NULL;
+  if (str.empty()) return NULL;
   return &str[0];
 }
 /*!
@@ -262,7 +262,7 @@ inline char* BeginPtr(std::string &str) {  // NOLINT(*)
  * \return beginning address of a string
  */
 inline const char* BeginPtr(const std::string &str) {
-  if (str.length() == 0) return NULL;
+  if (str.empty()) return NULL;
   return &str[0];
 }
 }  // namespace dmlc

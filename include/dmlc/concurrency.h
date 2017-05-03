@@ -146,15 +146,14 @@ void ConcurrentBlockingQueue<T, type>::Push(E&& e, int priority) {
     std::lock_guard<std::mutex> lock{mutex_};
     if (type == ConcurrentQueueType::kFIFO) {
       fifo_queue_.emplace(std::forward<E>(e));
-      notify = nwait_consumer_ != 0;
     } else {
       Entry entry;
       entry.data = std::move(e);
       entry.priority = priority;
       priority_queue_.push_back(std::move(entry));
       std::push_heap(priority_queue_.begin(), priority_queue_.end());
-      notify = nwait_consumer_ != 0;
     }
+    notify = nwait_consumer_ != 0;
   }
   if (notify) cv_.notify_one();
 }
