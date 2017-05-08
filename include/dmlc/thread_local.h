@@ -15,11 +15,11 @@ namespace dmlc {
 
 // macro hanlding for threadlocal variables
 #ifdef __GNUC__
-  #define MX_TREAD_LOCAL __thread
+  #define MX_THREAD_LOCAL __thread
 #elif __STDC_VERSION__ >= 201112L
-  #define  MX_TREAD_LOCAL _Thread_local
+  #define  MX_THREAD_LOCAL _Thread_local
 #elif defined(_MSC_VER)
-  #define MX_TREAD_LOCAL __declspec(thread)
+  #define MX_THREAD_LOCAL __declspec(thread)
 #endif
 
 #if DMLC_CXX11_THREAD_LOCAL == 0
@@ -40,7 +40,7 @@ class ThreadLocalStore {
     static thread_local T inst;
     return &inst;
 #else
-    static MX_TREAD_LOCAL T* ptr = nullptr;
+    static MX_THREAD_LOCAL T* ptr = nullptr;
     if (ptr == nullptr) {
       ptr = new T();
       Singleton()->RegisterDelete(ptr);
