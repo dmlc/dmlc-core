@@ -308,6 +308,17 @@ struct Handler<std::basic_string<T> > {
   }
 };
 
+template<typename T>
+struct Handler<const std::basic_string<T> > {
+  inline static void Write(Stream *strm, const std::basic_string<T> &data) {
+    IfThenElse<dmlc::is_pod<T>::value,
+               PODStringHandler<T>,
+               UndefinedSerializerFor<T>,
+               const std::basic_string<T> >
+    ::Write(strm, data);
+  }
+};
+
 template<typename TA, typename TB>
 struct Handler<std::pair<TA, TB> > {
   inline static void Write(Stream *strm, const std::pair<TA, TB> &data) {
