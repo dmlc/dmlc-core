@@ -188,17 +188,15 @@ struct PairHandler {
 };
 
 // set type handler that can handle most collection type case
-template<typename ContainerType>
+template<typename ContainerType, typename ElemType>
 struct CollectionHandler {
   inline static void Write(Stream *strm, const ContainerType &data) {
-    typedef typename ContainerType::value_type ElemType;
     // dump data to vector
     std::vector<ElemType> vdata(data.begin(), data.end());
     // serialize the vector
     Handler<std::vector<ElemType> >::Write(strm, vdata);
   }
   inline static bool Read(Stream *strm, ContainerType *data) {
-    typedef typename ContainerType::value_type ElemType;
     std::vector<ElemType> vdata;
     if (!Handler<std::vector<ElemType> >::Read(strm, &vdata)) return false;
     data->clear();
@@ -308,17 +306,6 @@ struct Handler<std::basic_string<T> > {
   }
 };
 
-template<typename T>
-struct Handler<const std::basic_string<T> > {
-  inline static void Write(Stream *strm, const std::basic_string<T> &data) {
-    IfThenElse<dmlc::is_pod<T>::value,
-               PODStringHandler<T>,
-               UndefinedSerializerFor<T>,
-               const std::basic_string<T> >
-    ::Write(strm, data);
-  }
-};
-
 template<typename TA, typename TB>
 struct Handler<std::pair<TA, TB> > {
   inline static void Write(Stream *strm, const std::pair<TA, TB> &data) {
@@ -339,22 +326,22 @@ struct Handler<std::pair<TA, TB> > {
 
 template<typename K, typename V>
 struct Handler<std::map<K, V> >
-    : public CollectionHandler<std::map<K, V> > {
+    : public CollectionHandler<std::map<K, V>, std::pair<K, V> > {
 };
 
 template<typename K, typename V>
 struct Handler<std::multimap<K, V> >
-    : public CollectionHandler<std::multimap<K, V> > {
+    : public CollectionHandler<std::multimap<K, V>, std::pair<K, V> > {
 };
 
 template<typename T>
 struct Handler<std::set<T> >
-    : public CollectionHandler<std::set<T> > {
+    : public CollectionHandler<std::set<T>, T> {
 };
 
 template<typename T>
 struct Handler<std::multiset<T> >
-    : public CollectionHandler<std::multiset<T> > {
+    : public CollectionHandler<std::multiset<T>, T> {
 };
 
 template<typename T>
@@ -370,22 +357,22 @@ struct Handler<std::deque<T> >
 #if DMLC_USE_CXX11
 template<typename K, typename V>
 struct Handler<std::unordered_map<K, V> >
-    : public CollectionHandler<std::unordered_map<K, V> > {
+    : public CollectionHandler<std::unordered_map<K, V>, std::pair<K, V> > {
 };
 
 template<typename K, typename V>
 struct Handler<std::unordered_multimap<K, V> >
-    : public CollectionHandler<std::unordered_multimap<K, V> > {
+    : public CollectionHandler<std::unordered_multimap<K, V>, std::pair<K, V> > {
 };
 
 template<typename T>
 struct Handler<std::unordered_set<T> >
-    : public CollectionHandler<std::unordered_set<T> > {
+    : public CollectionHandler<std::unordered_set<T>, T> {
 };
 
 template<typename T>
 struct Handler<std::unordered_multiset<T> >
-    : public CollectionHandler<std::unordered_multiset<T> > {
+    : public CollectionHandler<std::unordered_multiset<T>, T> {
 };
 #endif
 //! \endcond
