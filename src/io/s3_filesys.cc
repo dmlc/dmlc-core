@@ -465,6 +465,7 @@ class ReadStream : public CURLReadStreamBase {
   ReadStream(const URI &path,
              const std::string &aws_id,
              const std::string &aws_key,
+             const std::string &aws_secret_token,
              const std::string &aws_region,
              size_t file_size)
       : path_(path), aws_id_(aws_id), aws_key_(aws_key), aws_region_(aws_region) {
@@ -482,7 +483,7 @@ class ReadStream : public CURLReadStreamBase {
   // path we are reading
   URI path_;
   // aws access key and id
-  std::string aws_id_, aws_key_, aws_region_;
+  std::string aws_id_, aws_key_, aws_secret_token_, aws_region_;
 };
 
 // initialize the reader at begin bytes
@@ -491,6 +492,9 @@ void ReadStream::InitRequest(size_t begin_bytes,
                              curl_slist **slist) {
   // initialize the curl request
   std::vector<std::string> amz;
+  if (aws_security_token_ != "") {
+    amz.push_back("x-amz-security-token: " + aws_security_token_);
+  }
   std::string date = GetDateString();
   std::string signature = Sign(aws_key_, "GET", "", "", date, amz,
                                std::string("/") + path_.host + '/' + RemoveBeginSlash(path_.name));
@@ -545,9 +549,10 @@ class WriteStream : public Stream {
   WriteStream(const URI &path,
               const std::string &aws_id,
               const std::string &aws_key,
+              const std::string &aws_security_token,
               const std::string &aws_region)
       : path_(path), aws_id_(aws_id),
-        aws_key_(aws_key), aws_region_(aws_region), closed_(false) {
+        aws_key_(aws_key), aws_security_token_(aws_security_token), aws_region_(aws_region), closed_(false) {
     const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
     if (buz != NULL) {
       max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
@@ -588,7 +593,7 @@ class WriteStream : public Stream {
   // path we are reading
   URI path_;
   // aws access key and id
-  std::string aws_id_, aws_key_, aws_region_;
+  std::string aws_id_, aws_key_, aws_security_token_, aws_region_;
   // easy curl handle used for the request
   CURL *ecurl_;
   // upload_id used by AWS
@@ -652,6 +657,9 @@ void WriteStream::Run(const std::string &method,
                       std::string *out_data) {
   // initialize the curl request
   std::vector<std::string> amz;
+  if (aws_security_token_ != "") {
+    amz.push_back("x-amz-security-token: " + aws_security_token_);
+  }
   std::string md5str = ComputeMD5(data);
   std::string date = GetDateString();
   std::string signature = Sign(aws_key_, method.c_str(), md5str,
@@ -785,11 +793,15 @@ void WriteStream::Finish(void) {
 void ListObjects(const URI &path,
                  const std::string aws_id,
                  const std::string aws_key,
+                 const std::string aws_security_token,
                  const std::string aws_region,
                  std::vector<FileInfo> *out_list) {
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
   std::vector<std::string> amz;
+  if (aws_security_token != "") {
+    amz.push_back("x-amz-security-token: " + aws_security_token);
+  }
   std::string date = GetDateString();
   std::string signature = Sign(aws_key, "GET", "", "", date, amz,
                                std::string("/") + path.host + "/");
@@ -866,6 +878,7 @@ void ListObjects(const URI &path,
 S3FileSystem::S3FileSystem() {
   const char *keyid = getenv("AWS_ACCESS_KEY_ID");
   const char *seckey = getenv("AWS_SECRET_ACCESS_KEY");
+  const char *token = getenv("AWS_SECURITY_TOKEN");
   const char *region = getenv("AWS_REGION");
   if (keyid == NULL) {
     LOG(FATAL) << "Need to set enviroment variable AWS_ACCESS_KEY_ID to use S3";
@@ -886,6 +899,14 @@ S3FileSystem::S3FileSystem() {
 
   aws_access_id_ = keyid;
   aws_secret_key_ = seckey;
+
+  if (token != NULL) {
+    aws_security_token_ = token;
+  }
+}
+
+std::vector<std::string> S3FileSystem::GenerateAWSRequestHeaders() {
+
 }
 
 void S3FileSystem::SetCredentials(const std::string& aws_access_id,
@@ -901,7 +922,7 @@ bool S3FileSystem::TryGetPathInfo(const URI &path_, FileInfo *out_info) {
     path.name.resize(path.name.length() - 1);
   }
   std::vector<FileInfo> files;
-  s3::ListObjects(path,  aws_access_id_, aws_secret_key_, aws_region_, &files);
+  s3::ListObjects(path,  aws_access_id_, aws_secret_key_, aws_security_token_, aws_region_, &files);
   std::string pdir = path.name + '/';
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
@@ -927,14 +948,14 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
       << " S3FileSystem.ListDirectory";
   if (path.name[path.name.length() - 1] == '/') {
     s3::ListObjects(path, aws_access_id_,
-                    aws_secret_key_, aws_region_, out_list);
+                    aws_secret_key_, aws_security_token_, aws_region_, out_list);
     return;
   }
   std::vector<FileInfo> files;
   std::string pdir = path.name + '/';
   out_list->clear();
   s3::ListObjects(path, aws_access_id_,
-                  aws_secret_key_, aws_region_, &files);
+                  aws_secret_key_, aws_security_token_, aws_region_, &files);
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
       CHECK(files[i].type == kFile);
@@ -944,7 +965,7 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
     if (files[i].path.name == pdir) {
       CHECK(files[i].type == kDirectory);
       s3::ListObjects(files[i].path, aws_access_id_,
-                      aws_secret_key_, aws_region_, out_list);
+                      aws_secret_key_, aws_security_token_, aws_region_, out_list);
       return;
     }
   }
@@ -956,7 +977,7 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
     return OpenForRead(path, allow_null);
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
     CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
-    return new s3::WriteStream(path, aws_access_id_, aws_secret_key_, aws_region_);
+    return new s3::WriteStream(path, aws_access_id_, aws_secret_key_, aws_security_token_, aws_region_);
   } else {
     LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;
     return NULL;
@@ -971,7 +992,7 @@ SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
   FileInfo info;
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
-    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_, aws_region_, info.size);
+    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_, aws_security_token_, aws_region_, info.size);
   } else {
     CHECK(allow_null) << " S3FileSystem: fail to open \"" << path.str() << "\"";
     return NULL;
