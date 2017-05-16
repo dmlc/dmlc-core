@@ -465,10 +465,10 @@ class ReadStream : public CURLReadStreamBase {
   ReadStream(const URI &path,
              const std::string &aws_id,
              const std::string &aws_key,
-             const std::string &aws_secret_token,
+             const std::string &aws_security_token,
              const std::string &aws_region,
              size_t file_size)
-      : path_(path), aws_id_(aws_id), aws_key_(aws_key), aws_region_(aws_region) {
+      : path_(path), aws_id_(aws_id), aws_key_(aws_key), aws_security_token_(aws_security_token), aws_region_(aws_region) {
     this->expect_file_size_ = file_size;
   }
   virtual ~ReadStream(void) {}
@@ -483,7 +483,7 @@ class ReadStream : public CURLReadStreamBase {
   // path we are reading
   URI path_;
   // aws access key and id
-  std::string aws_id_, aws_key_, aws_secret_token_, aws_region_;
+  std::string aws_id_, aws_key_, aws_security_token_, aws_region_;
 };
 
 // initialize the reader at begin bytes
@@ -903,10 +903,6 @@ S3FileSystem::S3FileSystem() {
   if (token != NULL) {
     aws_security_token_ = token;
   }
-}
-
-std::vector<std::string> S3FileSystem::GenerateAWSRequestHeaders() {
-
 }
 
 void S3FileSystem::SetCredentials(const std::string& aws_access_id,
