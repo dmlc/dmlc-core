@@ -468,7 +468,8 @@ class ReadStream : public CURLReadStreamBase {
              const std::string &aws_session_token,
              const std::string &aws_region,
              size_t file_size)
-      : path_(path), aws_id_(aws_id), aws_key_(aws_key), aws_session_token_(aws_session_token), aws_region_(aws_region) {
+      : path_(path), aws_id_(aws_id), aws_key_(aws_key), aws_session_token_(aws_session_token),
+        aws_region_(aws_region) {
     this->expect_file_size_ = file_size;
   }
   virtual ~ReadStream(void) {}
@@ -555,8 +556,8 @@ class WriteStream : public Stream {
               const std::string &aws_key,
               const std::string &aws_session_token,
               const std::string &aws_region)
-      : path_(path), aws_id_(aws_id),
-        aws_key_(aws_key), aws_session_token_(aws_session_token), aws_region_(aws_region), closed_(false) {
+      : path_(path), aws_id_(aws_id), aws_key_(aws_key), aws_session_token_(aws_session_token),
+        aws_region_(aws_region), closed_(false) {
     const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
     if (buz != NULL) {
       max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
@@ -985,7 +986,8 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
     return OpenForRead(path, allow_null);
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
     CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
-    return new s3::WriteStream(path, aws_access_id_, aws_secret_key_, aws_session_token_, aws_region_);
+    return new s3::WriteStream(path, aws_access_id_, aws_secret_key_, aws_session_token_,
+                               aws_region_);
   } else {
     LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;
     return NULL;
@@ -1000,7 +1002,8 @@ SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
   FileInfo info;
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
-    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_, aws_session_token_, aws_region_, info.size);
+    return new s3::ReadStream(path, aws_access_id_, aws_secret_key_, aws_session_token_,
+                              aws_region_, info.size);
   } else {
     CHECK(allow_null) << " S3FileSystem: fail to open \"" << path.str() << "\"";
     return NULL;
