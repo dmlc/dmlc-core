@@ -519,7 +519,9 @@ void ReadStream::InitRequest(size_t begin_bytes,
   *slist = curl_slist_append(*slist, sdate.str().c_str());
   *slist = curl_slist_append(*slist, srange.str().c_str());
   *slist = curl_slist_append(*slist, sauth.str().c_str());
-  *slist = curl_slist_append(*slist, stoken.str().c_str());
+  if (aws_security_token_ != "") {
+    *slist = curl_slist_append(*slist, stoken.str().c_str());
+  }
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPHEADER, *slist) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
@@ -688,8 +690,10 @@ void WriteStream::Run(const std::string &method,
   // list
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
-  slist = curl_slist_append(slist, stoken.str().c_str());
   slist = curl_slist_append(slist, scontent.str().c_str());
+  if (aws_security_token_ != "") {
+    slist = curl_slist_append(slist, stoken.str().c_str());
+  }
   if (md5str.length() != 0) {
     smd5 << "Content-MD5: " << md5str;
     slist = curl_slist_append(slist, smd5.str().c_str());
@@ -829,7 +833,9 @@ void ListObjects(const URI &path,
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
   slist = curl_slist_append(slist, sauth.str().c_str());
-  slist = curl_slist_append(slist, stoken.str().c_str());
+  if (aws_security_token != "") {
+    slist = curl_slist_append(slist, stoken.str().c_str());
+  }
   CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
