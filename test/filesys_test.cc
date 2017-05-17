@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <dmlc/logging.h>
 #include <dmlc/io.h>
+#include <dmlc/endian.h>
 #include "../src/io/filesys.h"
 
 int main(int argc, char *argv[]) {
