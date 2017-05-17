@@ -493,16 +493,17 @@ void ReadStream::InitRequest(size_t begin_bytes,
   // initialize the curl request
   std::vector<std::string> amz;
   if (aws_security_token_ != "") {
-    amz.push_back("x-amz-security-token: " + aws_security_token_);
+    amz.push_back("x-amz-security-token:" + aws_security_token_);
   }
   std::string date = GetDateString();
   std::string signature = Sign(aws_key_, "GET", "", "", date, amz,
                                std::string("/") + path_.host + '/' + RemoveBeginSlash(path_.name));
   // generate headers
-  std::ostringstream sauth, sdate, surl, srange;
+  std::ostringstream sauth, sdate, stoken, surl, srange;
   std::ostringstream result;
   sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
   sdate << "Date: " << date;
+  stoken << "x-amz-security-token: " << aws_security_token_;
 
   if (path_.host.find('.', 0) == std::string::npos && aws_region_ == "us-east-1") {
     // for backword compatibility, use virtual host style if no
@@ -518,6 +519,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   *slist = curl_slist_append(*slist, sdate.str().c_str());
   *slist = curl_slist_append(*slist, srange.str().c_str());
   *slist = curl_slist_append(*slist, sauth.str().c_str());
+  *slist = curl_slist_append(*slist, stoken.str().c_str());
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPHEADER, *slist) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
@@ -658,7 +660,7 @@ void WriteStream::Run(const std::string &method,
   // initialize the curl request
   std::vector<std::string> amz;
   if (aws_security_token_ != "") {
-    amz.push_back("x-amz-security-token: " + aws_security_token_);
+    amz.push_back("x-amz-security-token:" + aws_security_token_);
   }
   std::string md5str = ComputeMD5(data);
   std::string date = GetDateString();
@@ -668,10 +670,11 @@ void WriteStream::Run(const std::string &method,
                                RemoveBeginSlash(path_.name) + args);
 
   // generate headers
-  std::ostringstream sauth, sdate, surl, scontent, smd5;
+  std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
   std::ostringstream rheader, rdata;
   sauth << "Authorization: AWS " << aws_id_ << ":" << signature;
   sdate << "Date: " << date;
+  stoken << "x-amz-security-token: " << aws_security_token_;
 
   if (path_.host.find('.', 0) == std::string::npos && aws_region_ == "us-east-1") {
     // for backword compatibility, use virtual host if no period in host and no region was set.
@@ -685,6 +688,7 @@ void WriteStream::Run(const std::string &method,
   // list
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
+  slist = curl_slist_append(slist, stoken.str().c_str());
   slist = curl_slist_append(slist, scontent.str().c_str());
   if (md5str.length() != 0) {
     smd5 << "Content-MD5: " << md5str;
@@ -800,16 +804,17 @@ void ListObjects(const URI &path,
   out_list->clear();
   std::vector<std::string> amz;
   if (aws_security_token != "") {
-    amz.push_back("x-amz-security-token: " + aws_security_token);
+    amz.push_back("x-amz-security-token:" + aws_security_token);
   }
   std::string date = GetDateString();
   std::string signature = Sign(aws_key, "GET", "", "", date, amz,
                                std::string("/") + path.host + "/");
 
-  std::ostringstream sauth, sdate, surl;
+  std::ostringstream sauth, sdate, stoken, surl;
   std::ostringstream result;
   sauth << "Authorization: AWS " << aws_id << ":" << signature;
   sdate << "Date: " << date;
+  stoken << "x-amz-security-token: " << aws_security_token;
 
   if (path.host.find('.', 0) == std::string::npos && aws_region == "us-east-1") {
     // for backword compatibility, use virtual host if no period in host and no region was set.
@@ -824,6 +829,7 @@ void ListObjects(const URI &path,
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
   slist = curl_slist_append(slist, sauth.str().c_str());
+  slist = curl_slist_append(slist, stoken.str().c_str());
   CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
