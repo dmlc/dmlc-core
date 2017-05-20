@@ -73,6 +73,8 @@ class S3FileSystem : public FileSystem {
   std::string aws_access_id_;
   /*! \brief AWS secret key */
   std::string aws_secret_key_;
+  /*! \brief AWS session token */
+  std::string aws_session_token_;
   /*! \brief AWS region*/
   std::string aws_region_;
 
