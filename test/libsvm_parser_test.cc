@@ -16,7 +16,8 @@ int main(int argc, char *argv[]) {
                                          atoi(argv[3]),
                                          "text");
   int nthread = atoi(argv[4]);
-  data::LibSVMParser<unsigned> parser(split, nthread);
+  std::map<std::string, std::string> args;
+  data::LibSVMParser<unsigned> parser(split, args, nthread);
   double tstart = GetTime();
   size_t bytes_read = 0;
   size_t bytes_expect = 10UL << 20UL;

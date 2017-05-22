@@ -9,12 +9,28 @@
 
 #include <dmlc/data.h>
 #include <cstring>
+#include <map>
+#include <vector>
+#include <string>
 #include "./row_block.h"
 #include "./text_parser.h"
 #include "./strtonum.h"
 
 namespace dmlc {
 namespace data {
+
+struct LibSVMParserParam : public Parameter<LibSVMParserParam> {
+  std::string format;
+  std::vector<int> ignore_columns;
+  // declare parameters
+  DMLC_DECLARE_PARAMETER(LibSVMParserParam) {
+    DMLC_DECLARE_FIELD(format).set_default("libsvm")
+        .describe("File format.");
+    DMLC_DECLARE_FIELD(ignore_columns).set_default(std::vector<int>())
+        .describe("Column indices that should be ignored.");
+  }
+};
+
 /*!
  * \brief Text parser that parses the input lines
  * and returns rows in input data
@@ -23,13 +39,20 @@ template <typename IndexType>
 class LibSVMParser : public TextParserBase<IndexType> {
  public:
   explicit LibSVMParser(InputSplit *source,
+                        const std::map<std::string, std::string>& args,
                         int nthread)
-      : TextParserBase<IndexType>(source, nthread) {}
+      : TextParserBase<IndexType>(source, nthread) {
+    param_.Init(args);
+    CHECK_EQ(param_.format, "libsvm");
+  }
 
  protected:
   virtual void ParseBlock(char *begin,
                           char *end,
                           RowBlockContainer<IndexType> *out);
+
+ private:
+  LibSVMParserParam param_;
 };
 
 template <typename IndexType>
@@ -40,6 +63,19 @@ ParseBlock(char *begin,
   out->Clear();
   char * lbegin = begin;
   char * lend = lbegin;
+
+  // convert to a dense vector for faster searching
+  int max_ignored_col = 0;
+  if (param_.ignore_columns.size() != 0) {
+    max_ignored_col = 1 + *std::max_element(
+      param_.ignore_columns.begin(), param_.ignore_columns.end());
+  }
+  std::vector<bool> ignore_cols(max_ignored_col, false);
+  for (std::vector<int>::iterator it = param_.ignore_columns.begin();
+       it != param_.ignore_columns.end(); ++it) {
+    ignore_cols[*it] = true;
+  }
+
   while (lbegin != end) {
     // get line end
     lend = lbegin + 1;
@@ -69,7 +105,7 @@ ParseBlock(char *begin,
       IndexType featureId;
       real_t value;
       int r = ParsePair<IndexType, real_t>(p, lend, &q, featureId, value);
-      if (r < 1) {
+      if (r < 1 || (featureId < ignore_cols.size() && ignore_cols[featureId])) {
         p = q;
         continue;
       }

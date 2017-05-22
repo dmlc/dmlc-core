@@ -516,26 +516,10 @@ class FieldEntryBase : public FieldAccessEntry {
   typedef TEntry EntryType;
   // implement set value
   virtual void Set(void *head, const std::string &value) const {
-    std::istringstream is(value);
-    is >> this->Get(head);
-    if (!is.fail()) {
-      while (!is.eof()) {
-        int ch = is.get();
-        if (ch == EOF) {
-          is.clear(); break;
-        }
-        if (!isspace(ch)) {
-          is.setstate(std::ios::failbit); break;
-        }
-      }
-    }
-
-    if (is.fail()) {
-      std::ostringstream os;
-      os << "Invalid Parameter format for " << key_
-         << " expect " << type_ << " but value=\'" << value<< '\'';
-      throw dmlc::ParamError(os.str());
-    }
+    std::ostringstream os;
+    os << "Invalid Parameter format for " << key_
+       << " expect " << type_ << " but value=\'" << value<< '\'';
+    throw dmlc::ParamError(os.str());
   }
   virtual std::string GetStringValue(void *head) const {
     std::ostringstream os;
@@ -598,9 +582,7 @@ class FieldEntryBase : public FieldAccessEntry {
 
  protected:
   // print the value
-  virtual void PrintValue(std::ostream &os, DType value) const { // NOLINT(*)
-    os << value;
-  }
+  virtual void PrintValue(std::ostream &os, DType value) const {}
   virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     PrintValue(os, default_value_);
   }
@@ -618,8 +600,35 @@ class FieldEntryBase : public FieldAccessEntry {
 
 // parameter base for numeric types that have range
 template<typename TEntry, typename DType>
-class FieldEntryNumeric
-    : public FieldEntryBase<TEntry, DType> {
+class FieldEntryStream : public FieldEntryBase<TEntry, DType> {
+ public:
+  virtual void Set(void *head, const std::string &value) const {
+    std::istringstream is(value);
+    is >> this->Get(head);
+    if (!is.fail()) {
+      while (!is.eof()) {
+        int ch = is.get();
+        if (ch == EOF) {
+          is.clear(); break;
+        }
+        if (!isspace(ch)) {
+          is.setstate(std::ios::failbit); break;
+        }
+      }
+    }
+    if (is.fail()) {
+      FieldEntryBase<TEntry, DType>::Set(head, value);
+    }
+  }
+ protected:
+  virtual void PrintValue(std::ostream &os, DType value) const { // NOLINT(*)
+    os << value;
+  }
+};
+
+// parameter base for numeric types that have range
+template<typename TEntry, typename DType>
+class FieldEntryNumeric : public FieldEntryStream<TEntry, DType> {
  public:
   FieldEntryNumeric()
       : has_begin_(false), has_end_(false) {}
@@ -636,7 +645,7 @@ class FieldEntryNumeric
   }
   // consistency check for numeric ranges
   virtual void Check(void *head) const {
-    FieldEntryBase<TEntry, DType>::Check(head);
+    FieldEntryStream<TEntry, DType>::Check(head);
     DType v = this->Get(head);
     if (has_begin_ && has_end_) {
       if (v < begin_ || v > end_) {
@@ -665,22 +674,26 @@ class FieldEntryNumeric
   DType begin_, end_;
 };
 
+template<typename TEntry, typename DType>
+struct GetFieldEntryParent : public IfThenElseType<dmlc::is_arithmetic<DType>::value,
+                                                   FieldEntryNumeric<TEntry, DType>,
+                                                   FieldEntryStream<TEntry, DType> >::Type {};
+
+template<typename TEntry>
+struct GetFieldEntryParent<TEntry, std::vector<int> > : \
+  public FieldEntryBase<TEntry, std::vector<int> > {};
+
 /*!
  * \brief FieldEntry defines parsing and checking behavior of DType.
  * This class can be specialized to implement specific behavior of more settings.
  * \tparam DType the data type of the entry.
  */
 template<typename DType>
-class FieldEntry :
-      public IfThenElseType<dmlc::is_arithmetic<DType>::value,
-                            FieldEntryNumeric<FieldEntry<DType>, DType>,
-                            FieldEntryBase<FieldEntry<DType>, DType> >::Type {
-};
+class FieldEntry : public GetFieldEntryParent<FieldEntry<DType>, DType> {};
 
 // specialize define for int(enum)
 template<>
-class FieldEntry<int>
-    : public FieldEntryNumeric<FieldEntry<int>, int> {
+class FieldEntry<int> : public FieldEntryNumeric<FieldEntry<int>, int> {
  public:
   // construct
   FieldEntry<int>() : is_enum_(false) {}
@@ -712,7 +725,7 @@ class FieldEntry<int>
       info.type = type_;
       PrintEnums(os);
       if (has_default_) {
-        os << ',' << "optional, default=";
+        os << ',' << " optional, default=";
         PrintDefaultValueString(os);
       } else {
         os << ", required";
@@ -894,10 +907,10 @@ class FieldEntry<optional<int> >
 // specialize define for string
 template<>
 class FieldEntry<std::string>
-    : public FieldEntryBase<FieldEntry<std::string>, std::string> {
+    : public FieldEntryStream<FieldEntry<std::string>, std::string> {
  public:
   // parent class
-  typedef FieldEntryBase<FieldEntry<std::string>, std::string> Parent;
+  typedef FieldEntryStream<FieldEntry<std::string>, std::string> Parent;
   // override set
   virtual void Set(void *head, const std::string &value) const {
     this->Get(head) = value;
@@ -908,13 +921,97 @@ class FieldEntry<std::string>
   }
 };
 
-// specialize define for bool
+// specialize define for vector<int>
 template<>
-class FieldEntry<bool>
-    : public FieldEntryBase<FieldEntry<bool>, bool> {
+class FieldEntry<std::vector<int> >
+    : public FieldEntryBase<FieldEntry<std::vector<int> >, std::vector<int> > {
  public:
   // parent class
-  typedef FieldEntryBase<FieldEntry<bool>, bool> Parent;
+  typedef FieldEntryBase<FieldEntry<std::vector<int> >, std::vector<int> > Parent;
+  // override set
+  virtual void Set(void *head, const std::string &value) const {
+    std::istringstream is(value);
+    // get (
+    while (true) {
+      char ch = is.peek();
+      if (isdigit(ch)) {
+        int idx;
+        if (is >> idx) {
+          this->Get(head).assign(&idx, &idx + 1);
+        }
+        if (!is.fail()) {  // Ensure there was no data after this
+          while (!is.eof()) {
+            int ch = is.get();
+            if (ch == EOF) break;
+            if (!isspace(ch)) Parent::Set(head, value);
+          }
+        }
+        return;
+      }
+      is.get();
+      if (ch == '(')
+        break;
+      if (!isspace(ch)) {
+        Parent::Set(head, value);
+      }
+    }
+    int idx;
+    std::vector<int> tmp;
+    while (is >> idx) {
+      tmp.push_back(idx);
+      char ch;
+      do {
+        ch = is.get();
+      } while (isspace(ch));
+      if (ch == 'L') {
+        ch = is.get();
+      }
+      if (ch == ',') {
+        while (true) {
+          ch = is.peek();
+          if (isspace(ch)) {
+            is.get();
+            continue;
+          }
+          if (ch == ')') {
+            is.get();
+            break;
+          }
+          break;
+        }
+        if (ch == ')')
+          break;
+      } else if (ch == ')') {
+        break;
+      } else {
+        Parent::Set(head, value);
+      }
+    }
+    if (is.fail()) {
+      Parent::Set(head, value);
+    }
+    this->Get(head).assign(tmp.begin(), tmp.end());
+  }
+  // override print default
+  virtual void PrintValue(std::ostream &os, std::vector<int> value) const {  // NOLINT(*)
+    os << '(';
+    for (std::vector<int>::const_iterator it = value.begin();
+         it != value.end(); ++it) {
+      if (it != value.begin()) os << ',';
+      os << *it;
+    }
+    // python style tuple
+    if (value.size() == 1) os << ',';
+    os << ')';
+  }
+};
+
+// specialize define for bool
+template<>
+class FieldEntry<bool> : public FieldEntryStream<FieldEntry<bool>, bool> {
+ public:
+  // parent class
+  typedef FieldEntryStream<FieldEntry<bool>, bool> Parent;
   // override set
   virtual void Set(void *head, const std::string &value) const {
     std::string lower_case; lower_case.resize(value.length());
@@ -929,10 +1026,7 @@ class FieldEntry<bool>
     } else if (lower_case == "0") {
       ref = false;
     } else {
-      std::ostringstream os;
-      os << "Invalid Parameter format for " << key_
-         << " expect " << type_ << " but value=\'" << value<< '\'';
-      throw dmlc::ParamError(os.str());
+      FieldEntryBase<FieldEntry<bool>, bool>::Set(head, value);
     }
   }
 
