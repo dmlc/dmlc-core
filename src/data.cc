@@ -26,7 +26,7 @@ CreateLibSVMParser(const std::string& path,
                    unsigned num_parts) {
   InputSplit* source = InputSplit::Create(
       path.c_str(), part_index, num_parts, "text");
-  ParserImpl<IndexType> *parser = new LibSVMParser<IndexType>(source, 2);
+  ParserImpl<IndexType> *parser = new LibSVMParser<IndexType>(source, args, 2);
 #if DMLC_ENABLE_STD_THREAD
   parser = new ThreadedParser<IndexType>(parser);
 #endif
@@ -107,6 +107,7 @@ CreateIter_(const char *uri_,
 }
 
 DMLC_REGISTER_PARAMETER(CSVParserParam);
+DMLC_REGISTER_PARAMETER(LibSVMParserParam);
 }  // namespace data
 
 // template specialization
