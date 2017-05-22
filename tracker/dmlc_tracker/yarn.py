@@ -127,5 +127,3 @@ def submit(args):
     tracker.submit(args.num_workers, args.num_servers,
                    fun_submit=yarn_submit_pass,
                    pscmd=(' '.join([YARN_BOOT_PY] + args.command)))
-    for thread in submit_thread:
-        thread.join()
