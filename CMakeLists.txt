@@ -131,9 +131,13 @@ if(INSTALL_INCLUDE_DIR)
 endif()
 
 # ---[ Install the archive static lib and header files
-install(TARGETS dmlc ARCHIVE DESTINATION lib LIBRARY DESTINATION lib) 
-install(DIRECTORY include DESTINATION .)
-install(DIRECTORY doc DESTINATION .)
+include(GNUInstallDirs)
+install(TARGETS dmlc
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/${PROJECT_NAME})
 
 # ---[ Linter target
 if(MSVC)
