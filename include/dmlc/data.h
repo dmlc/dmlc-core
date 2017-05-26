@@ -70,9 +70,9 @@ template<typename IndexType>
 class Row {
  public:
   /*! \brief label of the instance */
-  real_t label;
+  const real_t *label;
   /*! \brief weight of the instance */
-  real_t weight;
+  const real_t *weight;
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
@@ -326,11 +326,11 @@ inline Row<IndexType>
 RowBlock<IndexType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType> inst;
-  inst.label = label[rowid];
+  inst.label = label + rowid;
   if (weight != NULL) {
-    inst.weight = weight[rowid];
+    inst.weight = weight + rowid;
   } else {
-    inst.weight = 1.0f;
+    inst.weight = NULL;
   }
   inst.length = offset[rowid + 1] - offset[rowid];
   if (field != NULL) {
