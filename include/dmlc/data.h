@@ -70,9 +70,9 @@ template<typename IndexType>
 class Row {
  public:
   /*! \brief label of the instance */
-  real_t label;
+  const real_t *label;
   /*! \brief weight of the instance */
-  real_t weight;
+  const real_t *weight;
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
@@ -109,6 +109,19 @@ class Row {
    */
   inline real_t get_value(size_t i) const {
     return value == NULL ? 1.0f : value[i];
+  }
+  /*!
+   * \return the label of the instance
+   */
+  inline real_t get_label() const {
+    return *label;
+  }
+  /*!
+   * \return the weight of the instance, this function is always
+   *  safe even when weight == NULL
+   */
+  inline real_t get_weight() const {
+    return weight == NULL ? 1.0f : *weight;
   }
   /*!
    * \brief helper function to compute dot product of current
@@ -326,11 +339,11 @@ inline Row<IndexType>
 RowBlock<IndexType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType> inst;
-  inst.label = label[rowid];
+  inst.label = label + rowid;
   if (weight != NULL) {
-    inst.weight = weight[rowid];
+    inst.weight = weight + rowid;
   } else {
-    inst.weight = 1.0f;
+    inst.weight = NULL;
   }
   inst.length = offset[rowid + 1] - offset[rowid];
   if (field != NULL) {
