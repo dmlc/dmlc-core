@@ -85,8 +85,8 @@ struct RowBlockContainer {
    */
   template<typename I>
   inline void Push(Row<I> row) {
-    label.push_back(row.label);
-    weight.push_back(row.weight);
+    label.push_back(row.get_label());
+    weight.push_back(row.get_weight());
     if (row.field != NULL) {
       for (size_t i = 0; i < row.length; ++i) {
         CHECK_LE(row.field[i], std::numeric_limits<IndexType>::max())

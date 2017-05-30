@@ -111,6 +111,19 @@ class Row {
     return value == NULL ? 1.0f : value[i];
   }
   /*!
+   * \return the label of the instance
+   */
+  inline real_t get_label() const {
+    return *label;
+  }
+  /*!
+   * \return the weight of the instance, this function is always
+   *  safe even when weight == NULL
+   */
+  inline real_t get_weight() const {
+    return weight == NULL ? 1.0f : *weight;
+  }
+  /*!
    * \brief helper function to compute dot product of current
    * \param weight the dense array of weight we want to product
    * \param size the size of the weight vector
