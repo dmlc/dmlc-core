@@ -55,7 +55,13 @@ ifeq ($(USE_HDFS),1)
 	else
 		DMLC_LDFLAGS+= $(HDFS_LIB_PATH)/libhdfs.a
 	endif
-	DMLC_LDFLAGS += -L$(LIBJVM) -ljvm -Wl,-rpath=$(LIBJVM)
+
+	DMLC_LDFLAGS += -L$(LIBJVM) -ljvm
+	ifeq ($(UNAME), Darwin)
+		DMLC_LDFLAGS += -Wl,-rpath,$(LIBJVM)
+	else
+		DMLC_LDFLAGS += -Wl,-rpath=$(LIBJVM)
+	endif
 else
 	DMLC_CFLAGS+= -DDMLC_USE_HDFS=0
 endif
