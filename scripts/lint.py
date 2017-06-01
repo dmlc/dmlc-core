@@ -128,7 +128,7 @@ def get_header_guard_dmlc(filename):
     """
     fileinfo = cpplint.FileInfo(filename)
     file_path_from_root = fileinfo.RepositoryName()
-    inc_list = ['include', 'api', 'wrapper']
+    inc_list = ['include', 'api', 'wrapper', 'contrib']
     if os.name == 'nt':
         inc_list.append("mshadow")
 
