@@ -42,3 +42,6 @@ GTEST_PATH=
 
 # path to third-party dependences such as glog
 DEPS_PATH=
+
+# whether to use gnu++11 (cygwin need this turned on to avoid compile error)
+USE_GNU11=0

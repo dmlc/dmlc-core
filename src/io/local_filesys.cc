@@ -17,7 +17,7 @@ extern "C" {
 
 #include "./local_filesys.h"
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__CYGWIN__)
 #define fopen64 std::fopen
 #endif
 
