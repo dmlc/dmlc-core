@@ -1,9 +1,7 @@
 // Copyright by Contributors
+#include <dmlc/logging.h>
 #include <algorithm>
 #include <limits>
-
-#include <dmlc/logging.h>
-
 #include "./hdfs_filesys.h"
 
 namespace dmlc {
