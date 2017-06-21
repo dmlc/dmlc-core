@@ -72,7 +72,7 @@ class LogCheckError {
 };
 
 #ifndef DMLC_GLOG_DEFINED
-  
+
 #define DEFINE_CHECK_FUNC(name, op)                               \
   template <typename X, typename Y>                               \
   inline LogCheckError LogCheck##name(const X& x, const Y& y) {   \
@@ -173,7 +173,7 @@ DEFINE_CHECK_FUNC(_NE, !=)
 // Poor man version of LOG_EVERY_N
 #define LOG_EVERY_N(severity, n) LOG(severity)
 
-#endif // DMLC_GLOG_DEFINED
+#endif  // DMLC_GLOG_DEFINED
 
 class DateLogger {
  public:
