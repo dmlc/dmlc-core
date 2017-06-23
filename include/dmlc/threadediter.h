@@ -288,6 +288,7 @@ Init(std::function<bool(DType **)> next,
   // procedure running in prodcuer
   // run producer thread
   auto producer_fun = [this, next, beforefirst] () {
+    beforefirst();
     while (true) {
       DType *cell = NULL;
       {
