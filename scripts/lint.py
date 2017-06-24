@@ -136,6 +136,9 @@ def get_header_guard_dmlc(filename):
         idx = file_path_from_root.find('src/')
         file_path_from_root = _HELPER.project_name +  file_path_from_root[idx + 3:]
     else:
+        idx =  file_path_from_root.find("include/")
+        if idx != -1:
+            file_path_from_root = file_path_from_root[idx + 8:]
         for spath in inc_list:
             prefix = spath + '/'
             if file_path_from_root.startswith(prefix):
