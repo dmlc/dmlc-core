@@ -609,7 +609,7 @@ inline void JSONReader::ReadString(std::string *out_str) {
         case 'r': os << "\r"; break;
         case 'n': os << "\n"; break;
         case '\\': os << "\\"; break;
-        case '\t': os << "\t"; break;
+        case 't': os << "\t"; break;
         case '\"': os << "\""; break;
         default: LOG(FATAL) << "unknown string escape \\" << sch;
       }
