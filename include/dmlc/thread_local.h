@@ -23,7 +23,7 @@ namespace dmlc {
 #endif
 
 #if DMLC_CXX11_THREAD_LOCAL == 0
-#pragma message("Warning: CXX11 thread_local is not formally supported");
+#pragma message("Warning: CXX11 thread_local is not formally supported")
 #endif
 
 /*!
