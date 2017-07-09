@@ -120,6 +120,9 @@ class any {
    * \return The type_info about the stored type.
    */
   inline const std::type_info& type() const;
+  /*! \brief Construct value of type T inplace */
+  template<typename T, typename... Args>
+  inline void construct(Args&&... args);
 
  private:
   //! \cond Doxygen_Suppress
@@ -212,6 +215,22 @@ inline void any::construct(const any& other) {
   type_ = other.type_;
   if (type_ != nullptr) {
     type_->create_from_data(&data_, other.data_);
+  }
+}
+
+template<typename T, typename... Args>
+inline void any::construct(Args&&... args) {
+  typedef typename std::decay<T>::type DT;
+  type_ = TypeInfo<DT>::get_type();
+  if (data_on_stack<DT>::value) {
+#pragma GCC diagnostic push
+#if 6 <= __GNUC__
+#pragma GCC diagnostic ignored "-Wplacement-new"
+#endif
+    new (&(data_.stack)) DT(std::forward<Args>(args)...);
+#pragma GCC diagnostic pop
+  } else {
+    data_.pheap = new DT(std::forward<Args>(args)...);
   }
 }
 
