@@ -14,7 +14,7 @@ import cpplint
 from cpplint import _cpplint_state
 from pylint import epylint
 
-CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h', 'cu', 'hpp', 'cuh'])
+CXX_SUFFIX = set(['cc', 'c', 'cpp', 'h', 'cu', 'hpp'])
 PYTHON_SUFFIX = set(['py'])
 
 def filepath_enumerate(paths):
