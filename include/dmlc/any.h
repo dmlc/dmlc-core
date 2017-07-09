@@ -220,6 +220,7 @@ inline void any::construct(const any& other) {
 
 template<typename T, typename... Args>
 inline void any::construct(Args&&... args) {
+  clear();
   typedef typename std::decay<T>::type DT;
   type_ = TypeInfo<DT>::get_type();
   if (data_on_stack<DT>::value) {
