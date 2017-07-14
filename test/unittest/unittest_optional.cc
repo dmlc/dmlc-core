@@ -166,6 +166,7 @@ TEST(Optional, parsing_bool) {
 struct OptionalParamBool : public dmlc::Parameter<OptionalParamBool> {
   dmlc::optional<bool> none;
   dmlc::optional<bool> none_with_default;
+  dmlc::optional<bool> set_to_none;
 
   DMLC_DECLARE_PARAMETER(OptionalParamBool) {
     DMLC_DECLARE_FIELD(none);
@@ -179,7 +180,7 @@ DMLC_REGISTER_PARAMETER(OptionalParamBool);
 
 TEST(Optional, bool_in_struct) {
   OptionalParamBool param;
-  CHECK(!param.none());
+  CHECK(!param.none);
   // With optional<bool>, the following explicit approach avoids confusion.
   CHECK(param.none.IsNone());
   CHECK(!param.none_with_default);
