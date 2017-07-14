@@ -217,6 +217,7 @@ inline std::istream &operator>>(std::istream &is, optional<bool> &t) {
 
 /*! \brief description for optional int */
 DMLC_DECLARE_TYPE_NAME(optional<int>, "int or None");
+/*! \brief description for optional bool */
 DMLC_DECLARE_TYPE_NAME(optional<bool>, "boolean or None");
 
 }  // namespace dmlc
