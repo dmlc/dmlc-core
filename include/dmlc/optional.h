@@ -109,7 +109,7 @@ class optional {
   /*! \brief whether this object is holding a value */
   explicit operator bool() const { return !is_none; }
   /*! \brief alternate, more-explicit check of object value */
-  const bool IsNone() const { return is_none; }
+  bool IsNone() const { return is_none; }
 
  private:
   // whether this is none

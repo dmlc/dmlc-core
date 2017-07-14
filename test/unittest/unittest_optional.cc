@@ -107,6 +107,7 @@ TEST(Optional, basics_bool) {
 
 TEST(Optional, parsing_bool) {
   dmlc::optional<bool> x;
+  dmlc::optional<bool> y;
   {
     std::ostringstream os;
     os << x;
@@ -160,6 +161,13 @@ TEST(Optional, parsing_bool) {
     std::istringstream is(zero);
     is >> x;
     CHECK_EQ(x.value(), 0);
+  }
+
+  {
+    std::istringstream is("false true");
+    is >> x >> y;
+    CHECK_EQ(x.value(), 0);
+    CHECK_EQ(y.value(), 1);
   }
 }
 
