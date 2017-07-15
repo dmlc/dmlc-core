@@ -123,11 +123,10 @@ static std::string Sign(const std::string &key,
 
 static std::string ComputeMD5(const std::string &buf) {
   if (buf.length() == 0) return "";
-  const int kLen = 128 / 8;
-  unsigned char md[kLen];
+  unsigned char md[MD5_DIGEST_LENGTH];
   MD5(reinterpret_cast<const unsigned char *>(buf.c_str()),
       buf.length(), md);
-  return Base64(md, kLen);
+  return Base64(md, MD5_DIGEST_LENGTH);
 }
 // remove the beginning slash at name
 inline const char *RemoveBeginSlash(const std::string &name) {
