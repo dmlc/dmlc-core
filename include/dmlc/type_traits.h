@@ -100,7 +100,7 @@ struct has_saveload {
  * For example, IfThenElseType<true, int, float>::Type will give int
  * \tparam cond the condition
  * \tparam Then the typename to be returned if cond is true
- * \tparam The typename to be returned if cond is false
+ * \tparam Else typename to be returned if cond is false
 */
 template<bool cond, typename Then, typename Else>
 struct IfThenElseType;
