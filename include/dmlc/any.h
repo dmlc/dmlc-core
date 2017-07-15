@@ -108,7 +108,7 @@ class any {
    */
   inline bool empty() const;
   /*!
-   * \return clear the content of container
+   * \brief clear the content of container
    */
   inline void clear();
   /*!
