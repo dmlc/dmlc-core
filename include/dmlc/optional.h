@@ -108,8 +108,8 @@ class optional {
   }
   /*! \brief whether this object is holding a value */
   explicit operator bool() const { return !is_none; }
-  /*! \brief alternate, more-explicit check of object value */
-  bool IsNone() const { return is_none; }
+  /*! \brief whether this object is holding a value (alternate form). */
+  bool has_value() const { return operator bool(); }
 
  private:
   // whether this is none
@@ -197,8 +197,14 @@ std::istream &operator>>(std::istream &is, optional<T> &t) {
  *  \return input stream
  */
 inline std::istream &operator>>(std::istream &is, optional<bool> &t) {
+  // Discard initial whitespace
+  while (isspace(is.peek()))
+    is.get();
+  // Extract chars that might be valid into a separate string, stopping
+  // on whitespace or other non-alphanumerics such as ",)]".
   std::string s;
-  is >> s;
+  while (isalnum(is.peek()))
+    s.push_back(is.get());
 
   if (!is.fail()) {
     std::transform(s.begin(), s.end(), s.begin(), ::tolower);

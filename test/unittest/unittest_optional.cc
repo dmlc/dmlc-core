@@ -190,7 +190,7 @@ TEST(Optional, bool_in_struct) {
   OptionalParamBool param;
   CHECK(!param.none);
   // With optional<bool>, the following explicit approach avoids confusion.
-  CHECK(param.none.IsNone());
+  CHECK(!param.none.has_value());
   CHECK(!param.none_with_default);
   std::map<std::string, std::string> kwargs;
   // Assign new logical values, testing string assignment
@@ -202,5 +202,5 @@ TEST(Optional, bool_in_struct) {
   CHECK(!param.none.value());
   CHECK(param.none_with_default);
   CHECK(param.none_with_default.value());
-  CHECK(param.set_to_none.IsNone());
+  CHECK(!param.set_to_none.has_value());
 }
