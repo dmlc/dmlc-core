@@ -81,8 +81,7 @@ class ThreadedInputSplit : public InputSplit {
     return base_->GetTotalSize();
   }
 
-  virtual void ResetPartition(unsigned part_index, unsigned num_parts)
-  {
+  virtual void ResetPartition(unsigned part_index, unsigned num_parts) {
     base_->ResetPartition(part_index, num_parts);
     this->BeforeFirst();
   }
