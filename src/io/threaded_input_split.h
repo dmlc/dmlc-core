@@ -29,7 +29,7 @@ class ThreadedInputSplit : public InputSplit {
   explicit ThreadedInputSplit(InputSplitBase *base)
       : buffer_size_(InputSplitBase::kBufferSize),
         base_(base), tmp_chunk_(NULL) {
-    iter_.set_max_capacity(8);
+    iter_.set_max_capacity(2);
     // initalize the iterator
     iter_.Init([this](InputSplitBase::Chunk **dptr) {
         if (*dptr == NULL) {
@@ -75,6 +75,15 @@ class ThreadedInputSplit : public InputSplit {
       if (!iter_.Next(&tmp_chunk_)) return false;
     }
     return true;
+  }
+
+  virtual size_t GetTotalSize(void) {
+    return base_->GetTotalSize();
+  }
+
+  virtual void ResetPartition(unsigned part_index, unsigned num_parts) {
+    base_->ResetPartition(part_index, num_parts);
+    this->BeforeFirst();
   }
 
  private:
