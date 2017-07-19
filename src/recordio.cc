@@ -7,7 +7,7 @@
 
 
 namespace dmlc {
-// implemmentation
+// implementation
 void RecordIOWriter::WriteRecord(const void *buf, size_t size) {
   CHECK(size < (1 << 29U))
       << "RecordIO only accept record less than 2^29 bytes";
