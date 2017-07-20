@@ -156,7 +156,7 @@ class InputSplit {
   virtual void BeforeFirst(void) = 0;
   /*!
    * \brief get the next record, the returning value
-   *   is valid until next call to NextRecord or NextChunk
+   *   is valid until next call to NextRecord, NextChunk or NextBatch
    *   caller can modify the memory content of out_rec
    *
    *   For text, out_rec contains a single line
@@ -176,7 +176,7 @@ class InputSplit {
    *
    *  This function ensures there won't be partial record in the chunk
    *  caller can modify the memory content of out_chunk,
-   *  the memory is valid until next call to NextRecord or NextChunk
+   *  the memory is valid until next call to NextRecord, NextChunk or NextBatch
    *
    *  Usually NextRecord is sufficient, NextChunk can be used by some
    *  multi-threaded parsers to parse the input content
@@ -188,6 +188,28 @@ class InputSplit {
    * \sa RecordIOChunkReader to parse recordio content from out_chunk
    */
   virtual bool NextChunk(Blob *out_chunk) = 0;
+  /*!
+   * \brief get a chunk of memory that can contain multiple records,
+   *  with hint for how many records is needed,
+   *  the caller needs to parse the content of the resulting chunk,
+   *  for text file, out_chunk can contain data of multiple lines
+   *  for recordio, out_chunk can contain multiple records(including headers)
+   *
+   *  This function ensures there won't be partial record in the chunk
+   *  caller can modify the memory content of out_chunk,
+   *  the memory is valid until next call to NextRecord, NextChunk or NextBatch
+   *
+   *
+   * \param out_chunk used to store the result
+   * \param n_records used as a hint for how many records should be returned, may be ignored
+   * \return true if we can successfully get next record
+   *     false if we reached end of split
+   * \sa InputSplit::Create for definition of record
+   * \sa RecordIOChunkReader to parse recordio content from out_chunk
+   */
+  virtual bool NextBatch(Blob *out_chunk, size_t n_records) {
+    return NextChunk(out_chunk);
+  }
   /*! \brief destructor*/
   virtual ~InputSplit(void) {}
   /*!
@@ -215,6 +237,30 @@ class InputSplit {
    * \sa InputSplit::Type
    */
   static InputSplit* Create(const char *uri,
+                            unsigned part_index,
+                            unsigned num_parts,
+                            const char *type);
+  /*!
+   * \brief factory function:
+   *  create input split given a uri for input and index
+   * \param uri the uri of the input, can contain hdfs prefix
+   * \param index_uri the uri of the index, can contain hdfs prefix
+   * \param part_index the part id of current input
+   * \param num_parts total number of splits
+   * \param type type of record
+   *   List of possible types: "text", "recordio"
+   *     - "text":
+   *         text file, each line is treated as a record
+   *         input split will split on '\\n' or '\\r'
+   *     - "recordio":
+   *         binary recordio file, see recordio.h
+   *     - "indexed_recordio":
+   *         indexed version of binary recordio file, see recordio.h
+   * \return a new input split
+   * \sa InputSplit::Type
+   */
+  static InputSplit* Create(const char *uri,
+                            const char *index_uri,
                             unsigned part_index,
                             unsigned num_parts,
                             const char *type);

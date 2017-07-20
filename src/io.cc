@@ -7,6 +7,7 @@
 #include "io/uri_spec.h"
 #include "io/line_split.h"
 #include "io/recordio_split.h"
+#include "io/indexed_recordio_split.h"
 #include "io/single_file_split.h"
 #include "io/filesys.h"
 #include "io/local_filesys.h"
@@ -63,6 +64,14 @@ InputSplit* InputSplit::Create(const char *uri_,
                                unsigned part,
                                unsigned nsplit,
                                const char *type) {
+    return Create(uri_, nullptr, part, nsplit, type);
+}
+
+InputSplit* InputSplit::Create(const char *uri_,
+                               const char *index_uri_,
+                               unsigned part,
+                               unsigned nsplit,
+                               const char *type) {
   using namespace std;
   using namespace dmlc::io;
   // allow cachefile in format path#cachefile
@@ -76,6 +85,14 @@ InputSplit* InputSplit::Create(const char *uri_,
   if (!strcmp(type, "text")) {
     split =  new LineSplitter(FileSystem::GetInstance(path),
                               spec.uri.c_str(), part, nsplit);
+  } else if (!strcmp(type, "indexed_recordio")) {
+      if (index_uri_ != nullptr) {
+      io::URISpec index_spec(index_uri_, part, nsplit);
+    split =  new IndexedRecordIOSplitter(FileSystem::GetInstance(path),
+                                  spec.uri.c_str(), index_spec.uri.c_str(), part, nsplit);
+      } else {
+        LOG(FATAL) << "need to pass index file to use IndexedRecordIO";
+      }
   } else if (!strcmp(type, "recordio")) {
     split =  new RecordIOSplitter(FileSystem::GetInstance(path),
                                   spec.uri.c_str(), part, nsplit);
@@ -84,7 +101,7 @@ InputSplit* InputSplit::Create(const char *uri_,
   }
 #if DMLC_ENABLE_STD_THREAD
   if (spec.cache_file.length() == 0) {
-    return new ThreadedInputSplit(split);
+    return split; // TODO: go back to threaded split after testing
   } else {
     return new CachedInputSplit(split, spec.cache_file.c_str());
   }
