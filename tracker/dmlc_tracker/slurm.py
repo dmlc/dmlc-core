@@ -60,6 +60,6 @@ def submit(args):
           thread.start()
 
 
-        tracker.submit(args.num_workers, args.num_servers,
-                       fun_submit=mpi_submit,
-                       pscmd=(' '.join(args.command)))
+    tracker.submit(args.num_workers, args.num_servers,
+                   fun_submit=mpi_submit,
+                   pscmd=(' '.join(args.command)))
