@@ -35,6 +35,7 @@ config.mk
 *.swo
 *.swn
 *.csv
+.vimrc
 
 # Emacs
 .clang_complete
