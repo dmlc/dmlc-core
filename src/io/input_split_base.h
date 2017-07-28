@@ -27,7 +27,7 @@ class InputSplitBase : public InputSplit {
   struct Chunk {
     char *begin;
     char *end;
-    std::vector<size_t> data;
+    std::vector<uint32_t> data;
     explicit Chunk(size_t buffer_size)
         : begin(NULL), end(NULL),
           data(buffer_size + 1) {}
@@ -43,7 +43,7 @@ class InputSplitBase : public InputSplit {
   // implement BeforeFirst
   virtual void BeforeFirst(void);
   virtual void HintChunkSize(size_t chunk_size) {
-    buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
+    buffer_size_ = std::max(chunk_size / sizeof(uint32_t), buffer_size_);
   }
   virtual size_t GetTotalSize(void) {
     return file_offset_.back();

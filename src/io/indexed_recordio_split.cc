@@ -23,7 +23,7 @@ void IndexedRecordIOSplitter::ResetPartition(unsigned rank, unsigned nsplit) {
   } else {
     offset_end_ = ntotalbytes;
     index_end_ = index_.size();
-    index_.push_back(std::make_pair(index_end_, 0));
+    index_.push_back(std::make_pair(offset_end_, 0));
   }
   offset_curr_ = offset_begin_;
   file_ptr_ = std::upper_bound(file_offset_.begin(),
@@ -56,8 +56,6 @@ void IndexedRecordIOSplitter::ReadIndexFile(FileSystem *fs, const std::string& i
       index_.push_back(std::make_pair(temp[j], temp[j + 1] - temp[j]));
     }
     index_.push_back(std::make_pair(temp.back(), file_offset_.back() - temp.back()));
-
-    std::cout << index_.size() << std::endl;
   }
 }
 
@@ -176,7 +174,7 @@ bool IndexedRecordIOSplitter::NextBatch(Blob *out_chunk, size_t batch_size) {
       }
     } else {
       size_t last = std::min(current_index_ + batch_size, index_end_);
-      buffer_size_ = index_[last].first - index_[current_index_].first;
+      buffer_size_ = (index_[last].first - index_[current_index_].first)/INDEXED_RECORDIO_ALIGN;
       current_index_ = last;
       if (!tmp_chunk_.Load(this, buffer_size_)) return false;
     }
@@ -192,7 +190,7 @@ void IndexedRecordIOSplitter::BeforeFirst(void) {
     }
     std::shuffle(permutation_.begin(), permutation_.end(), rnd_);
   }
-
+  current_index_ = index_begin_;
   InputSplitBase::BeforeFirst();
 }
 

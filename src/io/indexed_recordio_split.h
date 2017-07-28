@@ -2,7 +2,6 @@
  *  Copyright (c) 2017 by Contributors
  * \file indexed_recordio_split.h
  * \brief input split that splits indexed recordio files
- * \author Przemyslaw Tredak
  */
 #ifndef DMLC_IO_INDEXED_RECORDIO_SPLIT_H_
 #define DMLC_IO_INDEXED_RECORDIO_SPLIT_H_
@@ -19,6 +18,7 @@
 
 namespace dmlc {
 namespace io {
+const unsigned INDEXED_RECORDIO_ALIGN = 4;
 /*! \brief class that splits the recordIO file by record */
 class IndexedRecordIOSplitter : public InputSplitBase {
  public:
@@ -27,7 +27,7 @@ class IndexedRecordIOSplitter : public InputSplitBase {
                           const char *index_uri,
                           unsigned rank,
                           unsigned nsplit) {
-    this->Init(fs, uri, 4);
+    this->Init(fs, uri, INDEXED_RECORDIO_ALIGN);
     this->ReadIndexFile(fs, index_uri);
     this->ResetPartition(rank, nsplit);
     this->shuffle_ = false;
