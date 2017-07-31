@@ -37,6 +37,7 @@ void IndexedRecordIOSplitter::ResetPartition(unsigned rank, unsigned nsplit) {
   }
   fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
   current_index_ = index_begin_;
+  n_overflow_ = 0;
   this->BeforeFirst();
 }
 
@@ -154,12 +155,11 @@ bool IndexedRecordIOSplitter::NextChunk(Blob *out_chunk) {
   return this->NextBatch(out_chunk, batch_size_);
 }
 
-bool IndexedRecordIOSplitter::NextBatch(Blob *out_chunk, size_t batch_size) {
-  while (!ExtractNextChunk(out_chunk, &tmp_chunk_)) {
+bool IndexedRecordIOSplitter::NextBatchEx(Chunk *chunk, size_t n_records) {
     if (shuffle_) {
       bool ret = true;
       size_t n_read = 0;
-      while (n_read < batch_size) {
+      while (n_read < n_records) {
         size_t offset = index_[permutation_[current_index_]].first;
         buffer_size_ = index_[permutation_[current_index_]].second;
         ++current_index_;
@@ -173,11 +173,24 @@ bool IndexedRecordIOSplitter::NextBatch(Blob *out_chunk, size_t batch_size) {
         else return n_read > 0;
       }
     } else {
-      size_t last = std::min(current_index_ + batch_size, index_end_);
+      size_t last;
+      if (n_overflow_ == 0) {
+        last = std::min(current_index_ + n_records, index_end_);
+        n_overflow_ = current_index_ + n_records - last;
+      } else {
+        last = std::min(current_index_ + n_overflow_, index_end_);
+        n_overflow_ = current_index_ + n_overflow_ - last;
+      }
       buffer_size_ = (index_[last].first - index_[current_index_].first)/INDEXED_RECORDIO_ALIGN;
       current_index_ = last;
-      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
+      return chunk->Load(this, buffer_size_);
     }
+    return true;
+}
+
+bool IndexedRecordIOSplitter::NextBatch(Blob *out_chunk, size_t batch_size) {
+  while (!ExtractNextChunk(out_chunk, &tmp_chunk_)) {
+    if(!NextBatchEx(&tmp_chunk_, batch_size)) return false;
   }
   return true;
 }

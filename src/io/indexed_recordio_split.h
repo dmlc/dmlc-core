@@ -26,12 +26,13 @@ class IndexedRecordIOSplitter : public InputSplitBase {
                           const char *uri,
                           const char *index_uri,
                           unsigned rank,
-                          unsigned nsplit) {
+                          unsigned nsplit,
+                          const size_t batch_size) {
     this->Init(fs, uri, INDEXED_RECORDIO_ALIGN);
     this->ReadIndexFile(fs, index_uri);
     this->ResetPartition(rank, nsplit);
     this->shuffle_ = false;
-    this->batch_size_ = 256;
+    this->batch_size_ = batch_size;
   }
 
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) override;
@@ -53,6 +54,10 @@ class IndexedRecordIOSplitter : public InputSplitBase {
   void SetBatchSize(int batch_size) {
     this->batch_size_ = batch_size;
   }
+  virtual bool NextChunkEx(Chunk *out_chunk) override {
+    return NextBatchEx(out_chunk, batch_size_);
+  }
+  virtual bool NextBatchEx(Chunk *out_chunk, size_t n_records) override;
 
  protected:
   virtual size_t SeekRecordBegin(Stream *fi) override;
@@ -68,6 +73,7 @@ class IndexedRecordIOSplitter : public InputSplitBase {
   size_t index_begin_;
   size_t index_end_;
   size_t batch_size_;
+  size_t n_overflow_;
   const int kRandMagic = 111;
   std::mt19937 rnd_;
   

@@ -51,14 +51,14 @@ class InputSplitBase : public InputSplit {
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
     while (!ExtractNextRecord(out_rec, &tmp_chunk_)) {
-      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
+      if (!NextChunkEx(&tmp_chunk_)) return false;
     }
     return true;
   }
   // implement next chunk
   virtual bool NextChunk(Blob *out_chunk) {
     while (!ExtractNextChunk(out_chunk, &tmp_chunk_)) {
-      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
+      if (!NextChunkEx(&tmp_chunk_)) return false;
     }
     return true;
   }
@@ -92,6 +92,23 @@ class InputSplitBase : public InputSplit {
    *    false if the chunk is already finishes its life
    */
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) = 0;
+  /*!
+   * \brief fill the given
+   *  chunk with new data without using internal
+   *  temporary chunk
+   */
+  virtual bool NextChunkEx(Chunk *chunk) {
+    if (!chunk->Load(this, buffer_size_)) return false;
+    return true;
+  }
+  /*!
+   * \brief fill the given
+   *  chunk with new batch of data without using internal
+   *  temporary chunk
+   */
+  virtual bool NextBatchEx(Chunk *chunk, size_t n_records) {
+    return NextChunkEx(chunk);
+  }
 
  protected:
   /*! \brief FileSystem */

@@ -71,7 +71,8 @@ InputSplit* InputSplit::Create(const char *uri_,
                                const char *index_uri_,
                                unsigned part,
                                unsigned nsplit,
-                               const char *type) {
+                               const char *type,
+                               const size_t batch_size) {
   using namespace std;
   using namespace dmlc::io;
   // allow cachefile in format path#cachefile
@@ -89,7 +90,8 @@ InputSplit* InputSplit::Create(const char *uri_,
       if (index_uri_ != nullptr) {
       io::URISpec index_spec(index_uri_, part, nsplit);
     split =  new IndexedRecordIOSplitter(FileSystem::GetInstance(path),
-                                  spec.uri.c_str(), index_spec.uri.c_str(), part, nsplit);
+                                  spec.uri.c_str(), index_spec.uri.c_str(), part, nsplit,
+                                  batch_size);
       } else {
         LOG(FATAL) << "need to pass index file to use IndexedRecordIO";
       }
@@ -101,7 +103,7 @@ InputSplit* InputSplit::Create(const char *uri_,
   }
 #if DMLC_ENABLE_STD_THREAD
   if (spec.cache_file.length() == 0) {
-    return split; // TODO: go back to threaded split after testing
+    return new ThreadedInputSplit(split, batch_size);
   } else {
     return new CachedInputSplit(split, spec.cache_file.c_str());
   }

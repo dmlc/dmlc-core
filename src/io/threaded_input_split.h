@@ -26,8 +26,9 @@ class ThreadedInputSplit : public InputSplit {
    * \brief constructor
    * \param base an base object to define how to read data
    */
-  explicit ThreadedInputSplit(InputSplitBase *base)
+  explicit ThreadedInputSplit(InputSplitBase *base, const size_t batch_size)
       : buffer_size_(InputSplitBase::kBufferSize),
+        batch_size_(batch_size),
         base_(base), tmp_chunk_(NULL) {
     iter_.set_max_capacity(2);
     // initalize the iterator
@@ -35,7 +36,7 @@ class ThreadedInputSplit : public InputSplit {
         if (*dptr == NULL) {
           *dptr = new InputSplitBase::Chunk(buffer_size_);
         }
-        return (*dptr)->Load(base_, buffer_size_);
+        return base_->NextBatchEx(*dptr, batch_size_);
       },
       [base]() { base->BeforeFirst(); });
   }
@@ -52,7 +53,7 @@ class ThreadedInputSplit : public InputSplit {
     }
   }
   virtual void HintChunkSize(size_t chunk_size) {
-    buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
+    buffer_size_ = std::max(chunk_size / sizeof(uint32_t), buffer_size_);
   }
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
@@ -89,6 +90,8 @@ class ThreadedInputSplit : public InputSplit {
  private:
   /*! \brief internal buffer size */
   size_t buffer_size_;
+  /*! \brief batch size */
+  size_t batch_size_;
   /*! \brief the place where we get the data */
   InputSplitBase *base_;
   /*! \brief backend thread iterator */

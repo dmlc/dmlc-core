@@ -263,7 +263,8 @@ class InputSplit {
                             const char *index_uri,
                             unsigned part_index,
                             unsigned num_parts,
-                            const char *type);
+                            const char *type,
+                            const size_t batch_size = 256);
 };
 
 /*!
