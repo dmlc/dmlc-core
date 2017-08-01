@@ -233,7 +233,7 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
 }
 
 bool InputSplitBase::Chunk::Load(InputSplitBase *split, size_t buffer_size) {
-    data.resize(buffer_size + 1);
+  data.resize(buffer_size + 1);
   while (true) {
     // leave one tail chunk
     size_t size = (data.size() - 1) * sizeof(uint32_t);
@@ -251,22 +251,20 @@ bool InputSplitBase::Chunk::Load(InputSplitBase *split, size_t buffer_size) {
   return true;
 }
 
-//TODO 
 bool InputSplitBase::Chunk::Append(InputSplitBase *split, size_t buffer_size) {
-  if (buffer_size + 1 > data.size()) {
-    data.resize(buffer_size + 1);
-  }
+  size_t previous_size = end - begin;
+  data.resize(data.size() + buffer_size);
   while (true) {
     // leave one tail chunk
-    size_t size = (data.size() - 1) * sizeof(uint32_t);
+    size_t size = buffer_size * sizeof(uint32_t);
     // set back to 0 for string safety
     data.back() = 0;
-    if (!split->ReadChunk(BeginPtr(data), &size)) return false;
+    if (!split->ReadChunk(BeginPtr(data) + previous_size, &size)) return false;
     if (size == 0) {
       data.resize(data.size() * 2);
     } else {
       begin = reinterpret_cast<char *>(BeginPtr(data));
-      end = begin + size;
+      end = begin + previous_size + size;
       break;
     }
   }

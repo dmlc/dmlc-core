@@ -47,7 +47,7 @@ class IndexedRecordIOSplitter : public InputSplitBase {
     }
     return true;
   }
-  void SetShuffle(bool shuffle);
+  virtual void SetShuffle(bool shuffle) override;
   void SetRandomSeed(size_t seed) {
     rnd_.seed(kRandMagic + seed);
   }

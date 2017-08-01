@@ -210,6 +210,11 @@ class InputSplit {
   virtual bool NextBatch(Blob *out_chunk, size_t n_records) {
     return NextChunk(out_chunk);
   }
+  virtual void SetShuffle(bool shuffle) {
+    if (shuffle) {
+      LOG(WARNING) << "shuffle option not supported by this InputSplit, ignoring";
+    }
+  }
   /*! \brief destructor*/
   virtual ~InputSplit(void) {}
   /*!

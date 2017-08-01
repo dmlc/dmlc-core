@@ -160,16 +160,25 @@ bool IndexedRecordIOSplitter::NextBatchEx(Chunk *chunk, size_t n_records) {
       bool ret = true;
       size_t n_read = 0;
       while (n_read < n_records) {
-        size_t offset = index_[permutation_[current_index_]].first;
+        offset_curr_ = index_[permutation_[current_index_]].first;
         buffer_size_ = index_[permutation_[current_index_]].second;
-        ++current_index_;
-        //TODO: prepare for reading from offset
+        size_t new_file_ptr = std::upper_bound(file_offset_.begin(),
+                               file_offset_.end(),
+                               offset_curr_) - file_offset_.begin() - 1;
+        if (new_file_ptr != file_ptr_) {
+          delete fs_;
+          file_ptr_ = new_file_ptr;
+          fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
+        }
         if (n_read == 0) {
           ret = ret and tmp_chunk_.Load(this, buffer_size_);
         } else {
           ret = ret and tmp_chunk_.Append(this, buffer_size_);
         }
-        if (ret) ++n_read;
+        if (ret) {
+          ++n_read;
+          ++current_index_;
+        }
         else return n_read > 0;
       }
     } else {
@@ -208,7 +217,9 @@ void IndexedRecordIOSplitter::BeforeFirst(void) {
 }
 
 void IndexedRecordIOSplitter::SetShuffle(bool shuffle) {
-  LOG(FATAL) << "Not implemented yet";
+  shuffle_ = shuffle;
+  n_overflow_ = 0;
+  BeforeFirst();
 }
 
 }  // namespace io
