@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <string>
 #include <cstring>
-#include <map>
+#include <utility>
 #include <random>
 #include "./input_split_base.h"
 
@@ -27,44 +27,46 @@ class IndexedRecordIOSplitter : public InputSplitBase {
                           const char *index_uri,
                           unsigned rank,
                           unsigned nsplit,
-                          const size_t batch_size) {
+                          const size_t batch_size,
+                          const bool shuffle,
+                          const int seed = 0) {
+    this->shuffle_ = shuffle;
+    if (shuffle) SetRandomSeed(seed);
+    this->batch_size_ = batch_size;
     this->Init(fs, uri, INDEXED_RECORDIO_ALIGN);
     this->ReadIndexFile(fs, index_uri);
     this->ResetPartition(rank, nsplit);
-    this->shuffle_ = false;
-    this->batch_size_ = batch_size;
   }
 
-  virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) override;
-  virtual bool ReadChunk(void *buf, size_t *size) override;
-  virtual bool NextChunk(Blob *out_chunk) override;
-  virtual void BeforeFirst(void) override;
-  virtual bool NextBatch(Blob *out_chunk, size_t n_records) override;
-  virtual bool NextRecord(Blob *out_rec) override {
+  bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) override;
+  bool ReadChunk(void *buf, size_t *size) override;
+  bool NextChunk(Blob *out_chunk) override;
+  void BeforeFirst(void) override;
+  bool NextBatch(Blob *out_chunk, size_t n_records) override;
+  bool NextRecord(Blob *out_rec) override {
     while (!ExtractNextRecord(out_rec, &tmp_chunk_)) {
       if (!tmp_chunk_.Load(this, buffer_size_)) return false;
       ++current_index_;
     }
     return true;
   }
-  virtual void SetShuffle(bool shuffle) override;
   void SetRandomSeed(size_t seed) {
     rnd_.seed(kRandMagic + seed);
   }
   void SetBatchSize(int batch_size) {
     this->batch_size_ = batch_size;
   }
-  virtual bool NextChunkEx(Chunk *out_chunk) override {
+  bool NextChunkEx(Chunk *out_chunk) override {
     return NextBatchEx(out_chunk, batch_size_);
   }
-  virtual bool NextBatchEx(Chunk *out_chunk, size_t n_records) override;
+  bool NextBatchEx(Chunk *out_chunk, size_t n_records) override;
 
  protected:
-  virtual size_t SeekRecordBegin(Stream *fi) override;
-  virtual const char*
+  size_t SeekRecordBegin(Stream *fi) override;
+  const char*
   FindLastRecordBegin(const char *begin, const char *end) override;
   virtual void ReadIndexFile(FileSystem *fs, const std::string& index_uri);
-  virtual void ResetPartition(unsigned rank, unsigned nsplit) override;
+  void ResetPartition(unsigned rank, unsigned nsplit) override;
 
   std::vector<std::pair<size_t, size_t> > index_;
   std::vector<size_t> permutation_;
@@ -76,8 +78,7 @@ class IndexedRecordIOSplitter : public InputSplitBase {
   size_t n_overflow_;
   const int kRandMagic = 111;
   std::mt19937 rnd_;
-  
 };
 }  // namespace io
 }  // namespace dmlc
-#endif  // DMLC_IO_RECORDIO_SPLIT_H_
+#endif  // DMLC_IO_INDEXED_RECORDIO_SPLIT_H_

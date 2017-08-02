@@ -259,7 +259,8 @@ bool InputSplitBase::Chunk::Append(InputSplitBase *split, size_t buffer_size) {
     size_t size = buffer_size * sizeof(uint32_t);
     // set back to 0 for string safety
     data.back() = 0;
-    if (!split->ReadChunk(BeginPtr(data) + previous_size, &size)) return false;
+    if (!split->ReadChunk(reinterpret_cast<char *>(BeginPtr(data)) + previous_size, &size))
+      return false;
     if (size == 0) {
       data.resize(data.size() * 2);
     } else {

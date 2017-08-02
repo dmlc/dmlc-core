@@ -87,10 +87,6 @@ class ThreadedInputSplit : public InputSplit {
     this->BeforeFirst();
   }
 
-  virtual void SetShuffle(bool shuffle) {
-    base_->SetShuffle(shuffle);
-  }
-
  private:
   /*! \brief internal buffer size */
   size_t buffer_size_;

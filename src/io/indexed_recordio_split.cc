@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <fstream>
 #include "./indexed_recordio_split.h"
-#include <iostream>
 
 namespace dmlc {
 namespace io {
@@ -43,7 +42,8 @@ void IndexedRecordIOSplitter::ResetPartition(unsigned rank, unsigned nsplit) {
 
 void IndexedRecordIOSplitter::ReadIndexFile(FileSystem *fs, const std::string& index_uri) {
   std::vector<URI> expanded_list = this->ConvertToURIs(index_uri);
-  CHECK_EQ(expanded_list.size(), 1ul) << "IndexedRecordIOSplitter does not support multiple index files";
+  CHECK_EQ(expanded_list.size(), 1ul)
+    << "IndexedRecordIOSplitter does not support multiple index files";
   for (size_t i = 0; i < expanded_list.size(); ++i) {
     const URI& path = expanded_list[i];
     std::ifstream index_file(path.str());
@@ -159,27 +159,40 @@ bool IndexedRecordIOSplitter::NextBatchEx(Chunk *chunk, size_t n_records) {
     if (shuffle_) {
       bool ret = true;
       size_t n_read = 0;
-      while (n_read < n_records) {
-        offset_curr_ = index_[permutation_[current_index_]].first;
-        buffer_size_ = index_[permutation_[current_index_]].second;
-        size_t new_file_ptr = std::upper_bound(file_offset_.begin(),
-                               file_offset_.end(),
-                               offset_curr_) - file_offset_.begin() - 1;
-        if (new_file_ptr != file_ptr_) {
-          delete fs_;
-          file_ptr_ = new_file_ptr;
-          fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
-        }
-        if (n_read == 0) {
-          ret = ret and tmp_chunk_.Load(this, buffer_size_);
+      size_t n = n_overflow_ == 0?n_records:n_overflow_;
+      while (n_read < n) {
+        if (current_index_ < permutation_.size()) {
+          offset_curr_ = index_[permutation_[current_index_]].first;
+          buffer_size_ = index_[permutation_[current_index_]].second/sizeof(uint32_t);
+          size_t new_file_ptr = std::upper_bound(file_offset_.begin(),
+                                 file_offset_.end(),
+                                 offset_curr_) - file_offset_.begin() - 1;
+          if (new_file_ptr != file_ptr_) {
+            delete fs_;
+            file_ptr_ = new_file_ptr;
+            fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
+          }
+          fs_->Seek(offset_curr_ - file_offset_[file_ptr_]);
+          if (n_read == 0) {
+            ret = ret && chunk->Load(this, buffer_size_);
+          } else {
+            ret = ret && chunk->Append(this, buffer_size_);
+          }
+          if (ret) {
+            ++n_read;
+            ++current_index_;
+          } else {
+            break;
+          }
         } else {
-          ret = ret and tmp_chunk_.Append(this, buffer_size_);
+          break;
         }
-        if (ret) {
-          ++n_read;
-          ++current_index_;
-        }
-        else return n_read > 0;
+      }
+      if (n_read > 0) {
+        n_overflow_ = n - n_read;
+        return true;
+      } else {
+        return false;
       }
     } else {
       size_t last;
@@ -199,7 +212,7 @@ bool IndexedRecordIOSplitter::NextBatchEx(Chunk *chunk, size_t n_records) {
 
 bool IndexedRecordIOSplitter::NextBatch(Blob *out_chunk, size_t batch_size) {
   while (!ExtractNextChunk(out_chunk, &tmp_chunk_)) {
-    if(!NextBatchEx(&tmp_chunk_, batch_size)) return false;
+    if (!NextBatchEx(&tmp_chunk_, batch_size)) return false;
   }
   return true;
 }
@@ -211,16 +224,11 @@ void IndexedRecordIOSplitter::BeforeFirst(void) {
       permutation_.push_back(i);
     }
     std::shuffle(permutation_.begin(), permutation_.end(), rnd_);
+    current_index_ = 0;
+  } else {
+    current_index_ = index_begin_;
   }
-  current_index_ = index_begin_;
   InputSplitBase::BeforeFirst();
 }
-
-void IndexedRecordIOSplitter::SetShuffle(bool shuffle) {
-  shuffle_ = shuffle;
-  n_overflow_ = 0;
-  BeforeFirst();
-}
-
 }  // namespace io
 }  // namespace dmlc

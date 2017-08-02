@@ -72,6 +72,8 @@ InputSplit* InputSplit::Create(const char *uri_,
                                unsigned part,
                                unsigned nsplit,
                                const char *type,
+                               const bool shuffle,
+                               const int seed,
                                const size_t batch_size) {
   using namespace std;
   using namespace dmlc::io;
@@ -91,7 +93,7 @@ InputSplit* InputSplit::Create(const char *uri_,
       io::URISpec index_spec(index_uri_, part, nsplit);
     split =  new IndexedRecordIOSplitter(FileSystem::GetInstance(path),
                                   spec.uri.c_str(), index_spec.uri.c_str(), part, nsplit,
-                                  batch_size);
+                                  batch_size, shuffle, seed);
       } else {
         LOG(FATAL) << "need to pass index file to use IndexedRecordIO";
       }

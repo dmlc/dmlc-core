@@ -210,11 +210,6 @@ class InputSplit {
   virtual bool NextBatch(Blob *out_chunk, size_t n_records) {
     return NextChunk(out_chunk);
   }
-  virtual void SetShuffle(bool shuffle) {
-    if (shuffle) {
-      LOG(WARNING) << "shuffle option not supported by this InputSplit, ignoring";
-    }
-  }
   /*! \brief destructor*/
   virtual ~InputSplit(void) {}
   /*!
@@ -269,6 +264,8 @@ class InputSplit {
                             unsigned part_index,
                             unsigned num_parts,
                             const char *type,
+                            const bool shuffle = false,
+                            const int seed = 0,
                             const size_t batch_size = 256);
 };
 
