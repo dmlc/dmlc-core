@@ -227,12 +227,14 @@ class InputSplit {
    * \param part_index the part id of current input
    * \param num_parts total number of splits
    * \param type type of record
-   *   List of possible types: "text", "recordio"
+   *   List of possible types: "text", "recordio", "indexed_recordio"
    *     - "text":
    *         text file, each line is treated as a record
    *         input split will split on '\\n' or '\\r'
    *     - "recordio":
    *         binary recordio file, see recordio.h
+   *     - "indexed_recordio":
+   *         binary recordio file with index, see recordio.h
    * \return a new input split
    * \sa InputSplit::Type
    */
@@ -248,14 +250,22 @@ class InputSplit {
    * \param part_index the part id of current input
    * \param num_parts total number of splits
    * \param type type of record
-   *   List of possible types: "text", "recordio"
+   *   List of possible types: "text", "recordio", "indexed_recordio"
    *     - "text":
    *         text file, each line is treated as a record
    *         input split will split on '\\n' or '\\r'
    *     - "recordio":
    *         binary recordio file, see recordio.h
    *     - "indexed_recordio":
-   *         indexed version of binary recordio file, see recordio.h
+   *         binary recordio file with index, see recordio.h
+   * \param shuffle whether to shuffle the output from the InputSplit,
+   *                supported only by "indexed_recordio" type.
+   *                Defaults to "false"
+   * \param seed random seed to use in conjunction with the "shuffle"
+   *             option. Defaults to 0
+   * \param batch_size a hint to InputSplit what is the intended number
+   *                   of examples return per batch. Used only by
+   *                   "indexed_recordio" type
    * \return a new input split
    * \sa InputSplit::Type
    */
