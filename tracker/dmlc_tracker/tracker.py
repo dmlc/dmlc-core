@@ -330,6 +330,9 @@ class RabitTracker(object):
         while self.thread.isAlive():
             self.thread.join(100)
 
+    def alive(self):
+        return self.thread.isAlive()
+
 class PSTracker(object):
     """
     Tracker module for PS
@@ -376,6 +379,12 @@ class PSTracker(object):
             return {'DMLC_PS_ROOT_URI': self.hostIP,
                     'DMLC_PS_ROOT_PORT': self.port}
 
+    def alive(self):
+        if self.cmd is not None:
+            return self.thread.isAlive()
+        else:
+            return False
+
 
 def get_host_ip(hostIP=None):
     if hostIP is None or hostIP == 'auto':
@@ -410,10 +419,13 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
         rabit = RabitTracker(hostIP=hostIP, nslave=nworker)
         envs.update(rabit.slave_envs())
         rabit.start(nworker)
+        if rabit.alive():
+           fun_submit(nworker, nserver, envs) 
     else:
         pserver = PSTracker(hostIP=hostIP, cmd=pscmd, envs=envs)
         envs.update(pserver.slave_envs())
-    fun_submit(nworker, nserver, envs)
+        if pserver.alive():
+            fun_submit(nworker, nserver, envs)
 
     if nserver == 0:
         rabit.join()
