@@ -135,6 +135,9 @@ def get_header_guard_dmlc(filename):
     if file_path_from_root.find('src/') != -1 and _HELPER.project_name is not None:
         idx = file_path_from_root.find('src/')
         file_path_from_root = _HELPER.project_name +  file_path_from_root[idx + 3:]
+    elif file_path_from_root.find('plugin/') != -1:
+        idx = file_path_from_root.find('plugin/')
+        file_path_from_root = 'PLUGIN_' +  file_path_from_root[idx + 7:]
     else:
         idx = file_path_from_root.find("include/")
         if idx != -1:
