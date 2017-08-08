@@ -24,7 +24,7 @@ struct SecondParam : public dmlc::Parameter<SecondParam> {
   int num_data;
   // declare parameters in header file
   DMLC_DECLARE_PARAMETER(SecondParam) {
-    DMLC_DECLARE_FIELD(num_data).set_range(0, 1000)
+    DMLC_DECLARE_FIELD(num_data).set_range(0, 1000).set_default(0)
         .describe("Number of data points");
   }
 };
@@ -59,6 +59,12 @@ int main(int argc, char *argv[]) {
   printf("Unknown parameters:\n");
   for (size_t i = 0; i < unknown.size(); ++i) {
     printf("%s=%s\n", unknown[i].first.c_str(), unknown[i].second.c_str());
+  }
+
+  param.InitAndUpdate(&kwargs);
+  printf("kwargs\n-----\n");
+  for (auto it = kwargs.begin(); it != kwargs.end(); ++it) {
+    printf("kwargs.%s=%s\n", it->first.c_str(), it->second.c_str());
   }
 
   std::ostringstream os;
