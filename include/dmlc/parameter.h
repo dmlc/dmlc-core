@@ -150,6 +150,19 @@ struct Parameter {
     return unknown;
   }
   /*!
+   * \brief initialize the parameter by keyword arguments.
+   *  Also update kwargs with default values if not specified.
+   *
+   * \param kwargs map of keyword arguments, or vector of pairs
+   * \tparam Container container type
+   * \throw ParamError when something go wrong.
+   */
+  template<typename Container>
+  inline void InitAndUpdate(Container* kwargs) {
+    PType::__MANAGER__()->RunInitAndUpdate(static_cast<PType*>(this),
+                                           kwargs);
+  }
+  /*!
    * \brief Return a dictionary representation of the parameters
    * \return A dictionary that maps key -> value
    */
@@ -356,6 +369,45 @@ class ParamManager {
         entry_map_.find(key);
     if (it == entry_map_.end()) return NULL;
     return it->second;
+  }
+  /*!
+   * \brief set parameter by keyword arguments, also set defaults back to kwargs
+   * \param head head to the parameter field.
+   * \param kwargs The map containing the argumets.
+   * \tparam TMap The string to string map container.
+   * \throw ParamError when there is unknown argument and unknown_args == NULL, or required argument is missing.
+   */
+  template<typename TMap>
+  inline void RunInitAndUpdate(void* head, TMap* kwargs) {
+    std::set<FieldAccessEntry*> selected_args;
+    for (typename TMap::const_iterator it = kwargs->begin();
+         it != kwargs->end(); ++it) {
+      FieldAccessEntry *e = Find(it->first);
+      if (e != NULL) {
+        e->Set(head, it->second);
+        e->Check(head);
+        selected_args.insert(e);
+      } else {
+        if (it->first.length() > 4 &&
+            it->first.find("__") == 0 &&
+            it->first.rfind("__") == it->first.length() - 2) {
+          continue;
+        }
+        std::ostringstream os;
+        os << "Cannot find argument \'" << it->first << "\', Possible Arguments:\n";
+        os << "----------------\n";
+        PrintDocString(os);
+        throw dmlc::ParamError(os.str());
+      }
+    }
+
+    for (std::map<std::string, FieldAccessEntry*>::const_iterator it = entry_map_.begin();
+         it != entry_map_.end(); ++it) {
+      if (selected_args.count(it->second) == 0) {
+        it->second->SetDefault(head);
+        (*kwargs)[it->first] = it->second->GetStringValue(head);
+      }
+    }
   }
   /*!
    * \brief set parameter by keyword arguments.
