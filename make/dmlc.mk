@@ -18,12 +18,20 @@ endif
 # Mac OS X does not support "-lrt" flag
 ifeq ($(OS), Windows_NT)
 	UNAME=Windows
+	MACHINE=Windows
 else 
 	UNAME=$(shell uname)
+	MACHINE=$(shell $(CC) -dumpmachine)
 endif
 
-ifeq ($(UNAME), Linux)
-    DMLC_LDFLAGS += -lrt
+ifeq (-android, $(findstring -android,$(MACHINE)))
+#$(info $$MACHINE is [${MACHINE}])
+#$(info detected ANDROID)
+else
+ifeq (-linux, $(findstring -linux,$(MACHINE)))
+#$(info detected Linux)
+        DMLC_LDFLAGS += -lrt
+endif
 endif
 
 # handle fpic options
