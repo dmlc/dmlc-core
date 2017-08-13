@@ -42,7 +42,7 @@
  * enabled on linux when using gcc.
  */
 #if (!defined(DMLC_LOG_STACK_TRACE) && defined(__GNUC__) && !defined(__MINGW32__)\
-     && !(defined __MINGW64__))
+     && !(defined __MINGW64__) && !(defined __ANDROID__))
 #define DMLC_LOG_STACK_TRACE 1
 #endif
 
@@ -156,15 +156,15 @@
 #  endif
 #endif
 
-///
-/// code block to handle optionally loading
-///
-#if !defined(__GNUC__)
+#if !defined(__GNUC__) || (defined __ANDROID__) || ((defined __MINGW32__) && !(defined __MINGW64__))
 #define fopen64 std::fopen
 #endif
-#if (defined __MINGW32__) && !(defined __MINGW64__)
+
+#ifdef __APPLE__
+#define off64_t off_t
 #define fopen64 std::fopen
 #endif
+
 #ifdef _MSC_VER
 #if _MSC_VER < 1900
 // NOTE: sprintf_s is not equivalent to snprintf,
@@ -179,10 +179,6 @@
 #endif
 #endif
 
-#ifdef __APPLE__
-#define off64_t off_t
-#define fopen64 std::fopen
-#endif
 
 extern "C" {
 #include <sys/types.h>
