@@ -88,7 +88,7 @@ class CachedInputSplit : public InputSplit {
     LOG(FATAL) << "ResetPartition is not supported in CachedInputSplit";
   }
   virtual void HintChunkSize(size_t chunk_size) {
-    buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
+    buffer_size_ = std::max(chunk_size / sizeof(uint32_t), buffer_size_);
   }
   virtual size_t GetTotalSize(void) {
     return base_->GetTotalSize();
@@ -154,7 +154,7 @@ inline void CachedInputSplit:: InitPreprocIter(void) {
         *dptr = new InputSplitBase::Chunk(buffer_size_);
       }
       auto *p = *dptr;
-      if (!p->Load(base_, buffer_size_)) return false;
+      if (!base_->NextChunkEx(p)) return false;
       // after loading, save to disk
       size_t size = p->end - p->begin;
       fo_->Write(&size, sizeof(size));

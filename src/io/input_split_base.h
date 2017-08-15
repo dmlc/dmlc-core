@@ -27,12 +27,14 @@ class InputSplitBase : public InputSplit {
   struct Chunk {
     char *begin;
     char *end;
-    std::vector<size_t> data;
+    std::vector<uint32_t> data;
     explicit Chunk(size_t buffer_size)
         : begin(NULL), end(NULL),
           data(buffer_size + 1) {}
     // load chunk from split
     bool Load(InputSplitBase *split, size_t buffer_size);
+    // append to chunk
+    bool Append(InputSplitBase *split, size_t buffer_size);
   };
   // 16 MB
   static const size_t kBufferSize = 2UL << 20UL;
@@ -41,7 +43,7 @@ class InputSplitBase : public InputSplit {
   // implement BeforeFirst
   virtual void BeforeFirst(void);
   virtual void HintChunkSize(size_t chunk_size) {
-    buffer_size_ = std::max(chunk_size / sizeof(size_t), buffer_size_);
+    buffer_size_ = std::max(chunk_size / sizeof(uint32_t), buffer_size_);
   }
   virtual size_t GetTotalSize(void) {
     return file_offset_.back();
@@ -49,14 +51,14 @@ class InputSplitBase : public InputSplit {
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
     while (!ExtractNextRecord(out_rec, &tmp_chunk_)) {
-      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
+      if (!NextChunkEx(&tmp_chunk_)) return false;
     }
     return true;
   }
   // implement next chunk
   virtual bool NextChunk(Blob *out_chunk) {
     while (!ExtractNextChunk(out_chunk, &tmp_chunk_)) {
-      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
+      if (!NextChunkEx(&tmp_chunk_)) return false;
     }
     return true;
   }
@@ -73,7 +75,7 @@ class InputSplitBase : public InputSplit {
    *   after the function returns, it stores the size of the chunk
    * \return whether end of file was reached
    */
-  bool ReadChunk(void *buf, size_t *size);
+  virtual bool ReadChunk(void *buf, size_t *size);
   /*!
    * \brief extract next chunk from the chunk
    * \param out_chunk the output record
@@ -90,14 +92,53 @@ class InputSplitBase : public InputSplit {
    *    false if the chunk is already finishes its life
    */
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) = 0;
+  /*!
+   * \brief fill the given
+   *  chunk with new data without using internal
+   *  temporary chunk
+   */
+  virtual bool NextChunkEx(Chunk *chunk) {
+    if (!chunk->Load(this, buffer_size_)) return false;
+    return true;
+  }
+  /*!
+   * \brief fill the given
+   *  chunk with new batch of data without using internal
+   *  temporary chunk
+   */
+  virtual bool NextBatchEx(Chunk *chunk, size_t n_records) {
+    return NextChunkEx(chunk);
+  }
 
  protected:
+  /*! \brief FileSystem */
+  FileSystem *filesys_;
+  /*! \brief byte-offset of each file */
+  std::vector<size_t> file_offset_;
+  /*! \brief get the current offset */
+  size_t offset_curr_;
+  /*! \brief beginning of offset */
+  size_t offset_begin_;
+  /*! \brief end of the offset */
+  size_t offset_end_;
+  /*! \brief information about files */
+  std::vector<FileInfo> files_;
+  /*! \brief current input stream */
+  SeekStream *fs_;
+  /*! \brief file pointer of which file to read on */
+  size_t file_ptr_;
+  /*! \brief file pointer where the end of file lies */
+  size_t file_ptr_end_;
+  /*! \brief temporal chunk */
+  Chunk tmp_chunk_;
+  /*! \brief buffer size */
+  size_t buffer_size_;
   // constructor
   InputSplitBase()
       : fs_(NULL),
-        align_bytes_(8),
         tmp_chunk_(kBufferSize),
-        buffer_size_(kBufferSize) {}
+        buffer_size_(kBufferSize),
+        align_bytes_(8) {}
   /*!
    * \brief intialize the base before doing anything
    * \param fs the filesystem ptr
@@ -127,39 +168,20 @@ class InputSplitBase : public InputSplit {
   virtual const char*
   FindLastRecordBegin(const char *begin, const char *end) = 0;
 
+  /*! \brief split string list of files into vector of URIs */
+  std::vector<URI> ConvertToURIs(const std::string& uri);
+  /*! \brief same as stream.Read */
+  size_t Read(void *ptr, size_t size);
+
  private:
-  /*! \brief FileSystem */
-  FileSystem *filesys_;
-  /*! \brief information about files */
-  std::vector<FileInfo> files_;
-  /*! \brief current input stream */
-  SeekStream *fs_;
   /*! \brief bytes to be aligned */
   size_t align_bytes_;
-  /*! \brief file pointer of which file to read on */
-  size_t file_ptr_;
-  /*! \brief file pointer where the end of file lies */
-  size_t file_ptr_end_;
-  /*! \brief get the current offset */
-  size_t offset_curr_;
-  /*! \brief beginning of offset */
-  size_t offset_begin_;
-  /*! \brief end of the offset */
-  size_t offset_end_;
-  /*! \brief temporal chunk */
-  Chunk tmp_chunk_;
-  /*! \brief buffer size */
-  size_t buffer_size_;
-  /*! \brief byte-offset of each file */
-  std::vector<size_t> file_offset_;
   /*! \brief internal overflow buffer */
   std::string overflow_;
   /*! \brief initialize information in files */
   void InitInputFileInfo(const std::string& uri);
   /*! \brief strip continous chars in the end of str */
   std::string StripEnd(std::string str, char ch);
-  /*! \brief same as stream.Read */
-  size_t Read(void *ptr, size_t size);
 };
 }  // namespace io
 }  // namespace dmlc

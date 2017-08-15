@@ -92,7 +92,7 @@ std::string InputSplitBase::StripEnd(std::string str, char ch) {
   return str;
 }
 
-void InputSplitBase::InitInputFileInfo(const std::string& uri) {
+std::vector<URI> InputSplitBase::ConvertToURIs(const std::string& uri) {
   // split by :
   const char dlm = ';';
   std::vector<std::string> file_list = Split(uri, dlm);
@@ -142,7 +142,11 @@ void InputSplitBase::InitInputFileInfo(const std::string& uri) {
 #endif  // DMLC_USE_REGEX
     }
   }
+  return expanded_list;
+}
 
+void InputSplitBase::InitInputFileInfo(const std::string& uri) {
+  std::vector<URI> expanded_list = this->ConvertToURIs(uri);
   for (size_t i = 0; i < expanded_list.size(); ++i) {
     const URI& path = expanded_list[i];
     FileInfo info = filesys_->GetPathInfo(path);
@@ -161,7 +165,7 @@ void InputSplitBase::InitInputFileInfo(const std::string& uri) {
     }
   }
   CHECK_NE(files_.size(), 0U)
-      << "Cannot find any files that matches the URI patternz " << uri;
+      << "Cannot find any files that matches the URI pattern " << uri;
 }
 
 size_t InputSplitBase::Read(void *ptr, size_t size) {
@@ -229,12 +233,10 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
 }
 
 bool InputSplitBase::Chunk::Load(InputSplitBase *split, size_t buffer_size) {
-  if (buffer_size + 1 > data.size()) {
-    data.resize(buffer_size + 1);
-  }
+  data.resize(buffer_size + 1);
   while (true) {
     // leave one tail chunk
-    size_t size = (data.size() - 1) * sizeof(size_t);
+    size_t size = (data.size() - 1) * sizeof(uint32_t);
     // set back to 0 for string safety
     data.back() = 0;
     if (!split->ReadChunk(BeginPtr(data), &size)) return false;
@@ -243,6 +245,27 @@ bool InputSplitBase::Chunk::Load(InputSplitBase *split, size_t buffer_size) {
     } else {
       begin = reinterpret_cast<char *>(BeginPtr(data));
       end = begin + size;
+      break;
+    }
+  }
+  return true;
+}
+
+bool InputSplitBase::Chunk::Append(InputSplitBase *split, size_t buffer_size) {
+  size_t previous_size = end - begin;
+  data.resize(data.size() + buffer_size);
+  while (true) {
+    // leave one tail chunk
+    size_t size = buffer_size * sizeof(uint32_t);
+    // set back to 0 for string safety
+    data.back() = 0;
+    if (!split->ReadChunk(reinterpret_cast<char *>(BeginPtr(data)) + previous_size, &size))
+      return false;
+    if (size == 0) {
+      data.resize(data.size() * 2);
+    } else {
+      begin = reinterpret_cast<char *>(BeginPtr(data));
+      end = begin + previous_size + size;
       break;
     }
   }
