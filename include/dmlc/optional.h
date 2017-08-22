@@ -235,10 +235,14 @@ DMLC_DECLARE_TYPE_NAME(optional<bool>, "boolean or None");
 }  // namespace dmlc
 
 namespace std {
-/* \brief std hash function for optional */
+/*! \brief std hash function for optional */
 template<typename T>
 struct hash<dmlc::optional<T> > {
-  /* \brief returns hash of the optional value */
+  /*!
+   * \brief returns hash of the optional value.
+   * \param val value.
+   * \return hash code.
+   */
   size_t operator()(const dmlc::optional<T>& val) const {
     std::hash<bool> hash_bool;
     size_t res = hash_bool(val.has_value());
