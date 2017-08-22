@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "./base.h"
+#include "./common.h"
 #include "./logging.h"
 #include "./type_traits.h"
 
@@ -96,6 +97,11 @@ class optional {
   /*! \brief const dereference operator */
   const T& operator*() const {
     return *reinterpret_cast<const T*>(&val);
+  }
+  /*! \brief equal comparison */
+  bool operator==(const optional<T>& other) const {
+    return this->is_none == other.is_none &&
+           (this->is_none == true || this->value() == other.value());
   }
   /*! \brief return the holded value.
    *         throws std::logic_error if holding no value
@@ -227,5 +233,25 @@ DMLC_DECLARE_TYPE_NAME(optional<int>, "int or None");
 DMLC_DECLARE_TYPE_NAME(optional<bool>, "boolean or None");
 
 }  // namespace dmlc
+
+namespace std {
+/*! \brief std hash function for optional */
+template<typename T>
+struct hash<dmlc::optional<T> > {
+  /*!
+   * \brief returns hash of the optional value.
+   * \param val value.
+   * \return hash code.
+   */
+  size_t operator()(const dmlc::optional<T>& val) const {
+    std::hash<bool> hash_bool;
+    size_t res = hash_bool(val.has_value());
+    if (val.has_value()) {
+      res = dmlc::HashCombine(res, val.value());
+    }
+    return res;
+  }
+};
+}  // namespace std
 
 #endif  // DMLC_OPTIONAL_H_
