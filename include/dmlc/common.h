@@ -26,6 +26,24 @@ inline std::vector<std::string> Split(const std::string& s, char delim) {
   }
   return ret;
 }
+
+/*!
+ * \brief hash an object and combines the key with previous keys
+ */
+template<typename T>
+inline size_t HashCombine(size_t key, const T& value) {
+  std::hash<T> hash_func;
+  return key ^ (hash_func(value) + 0x9e3779b9 + (key << 6) + (key >> 2));
+}
+
+/*!
+ * \brief specialize for size_t
+ */
+template<>
+inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
+  return key ^ (value + 0x9e3779b9 + (key << 6) + (key >> 2));
+}
+
 }  // namespace dmlc
 
 #endif  // DMLC_COMMON_H_
