@@ -10,18 +10,20 @@ ifndef LIBJVM
 	LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 endif
 
-ifneq ($(USE_OPENMP), 0)
-	DMLC_CFLAGS += -fopenmp
-	DMLC_LDFLAGS += -fopenmp
-endif
-
 # Mac OS X does not support "-lrt" flag
 ifeq ($(OS), Windows_NT)
 	UNAME=Windows
 	MACHINE=Windows
-else 
+else
 	UNAME=$(shell uname)
 	MACHINE=$(shell $(CC) -dumpmachine)
+endif
+
+ifneq ($(USE_OPENMP), 0)
+ifneq ($(UNAME), Darwin)
+	DMLC_CFLAGS += -fopenmp
+	DMLC_LDFLAGS += -fopenmp
+endif
 endif
 
 ifeq (-android, $(findstring -android,$(MACHINE)))
