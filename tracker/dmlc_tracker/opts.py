@@ -70,7 +70,7 @@ def get_opts(args=None):
     """
     parser = argparse.ArgumentParser(description='DMLC job submission.')
     parser.add_argument('--cluster', type=str,
-                        choices=['yarn', 'mpi', 'sge', 'local', 'ssh', 'mesos'],
+                        choices=['yarn', 'slurm', 'mpi', 'sge', 'local', 'ssh', 'mesos'],
                         help=('Cluster type of this submission,' +
                               'default to env variable ${DMLC_SUBMIT_CLUSTER}.'))
     parser.add_argument('--num-workers', required=True, type=int,
@@ -141,6 +141,12 @@ def get_opts(args=None):
                         directory into remote machines\'s SYNC_DST_DIR')
     parser.add_argument('command', nargs='+',
                         help='Command to be launched')
+    parser.add_argument('--slurm-worker-nodes', default=None, type=int,
+                        help=('Number of nodes on which workers are run. Used only in SLURM mode.' +
+                              'If not explicitly set, it defaults to number of workers.'))
+    parser.add_argument('--slurm-server-nodes', default=None, type=int,
+                        help=('Number of nodes on which parameter servers are run. Used only in SLURM mode.' +
+                              'If not explicitly set, it defaults to number of parameter servers.'))
     (args, unknown) = parser.parse_known_args(args)
     args.command += unknown
 
