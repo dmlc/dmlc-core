@@ -13,7 +13,7 @@ def unzip_archives(ar_list, env):
         if fname.endswith('.zip'):
             subprocess.call(args=['unzip', fname], env=env)
         elif fname.find('.tar') != -1:
-            subprocess.call(args=['tar', 'xf', fname], env=env)
+            subprocess.call(args=['tar', '-xf', fname], env=env)
 
 def main():
     """Main moduke of the launcher."""
