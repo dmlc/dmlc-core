@@ -82,11 +82,9 @@
 /*! \brief Whether cxx11 thread local is supported */
 #ifndef DMLC_CXX11_THREAD_LOCAL
 #if defined(_MSC_VER)
-#if (_MSC_VER >= 1900)
-#define DMLC_CXX11_THREAD_LOCAL 1
-#else
-#define DMLC_CXX11_THREAD_LOCAL 0
-#endif
+#define DMLC_CXX11_THREAD_LOCAL (_MSC_VER >= 1900)
+#elif defined(__clang__)
+#define DMLC_CXX11_THREAD_LOCAL (__has_feature(cxx_thread_local))
 #else
 #define DMLC_CXX11_THREAD_LOCAL (__cplusplus >= 201103L)
 #endif
