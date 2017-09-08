@@ -9,6 +9,7 @@
 // this code depends on c++11
 #if DMLC_USE_CXX11
 #include <atomic>
+#include <deque>
 #include <queue>
 #include <mutex>
 #include <vector>
@@ -66,7 +67,7 @@ class ConcurrentBlockingQueue {
   ConcurrentBlockingQueue();
   ~ConcurrentBlockingQueue() = default;
   /*!
-   * \brief Push element into the queue.
+   * \brief Push element to the end of the queue.
    * \param e Element to push into.
    * \param priority the priority of the element, only used for priority queue.
    *            The higher the priority is, the better.
@@ -77,6 +78,20 @@ class ConcurrentBlockingQueue {
    */
   template <typename E>
   void Push(E&& e, int priority = 0);
+
+  /*!
+   * \brief Push element to the front of the queue. Only works for FIFO queue.
+   *        For priority queue it is the same as Push.
+   * \param e Element to push into.
+   * \param priority the priority of the element, only used for priority queue.
+   *            The higher the priority is, the better.
+   * \tparam E the element type
+   *
+   * It will copy or move the element into the queue, depending on the type of
+   * the parameter.
+   */
+  template <typename E>
+  void PushFront(E&& e, int priority = 0);
   /*!
    * \brief Pop element from the queue.
    * \param rv Element popped.
@@ -114,7 +129,7 @@ class ConcurrentBlockingQueue {
   // a priority queue
   std::vector<Entry> priority_queue_;
   // a FIFO queue
-  std::queue<T> fifo_queue_;
+  std::deque<T> fifo_queue_;
   /*!
    * \brief Disable copy and move.
    */
@@ -145,7 +160,32 @@ void ConcurrentBlockingQueue<T, type>::Push(E&& e, int priority) {
   {
     std::lock_guard<std::mutex> lock{mutex_};
     if (type == ConcurrentQueueType::kFIFO) {
-      fifo_queue_.emplace(std::forward<E>(e));
+      fifo_queue_.emplace_back(std::forward<E>(e));
+      notify = nwait_consumer_ != 0;
+    } else {
+      Entry entry;
+      entry.data = std::move(e);
+      entry.priority = priority;
+      priority_queue_.push_back(std::move(entry));
+      std::push_heap(priority_queue_.begin(), priority_queue_.end());
+      notify = nwait_consumer_ != 0;
+    }
+  }
+  if (notify) cv_.notify_one();
+}
+
+template <typename T, ConcurrentQueueType type>
+template <typename E>
+void ConcurrentBlockingQueue<T, type>::PushFront(E&& e, int priority) {
+  static_assert(std::is_same<typename std::remove_cv<
+                                 typename std::remove_reference<E>::type>::type,
+                             T>::value,
+                "Types must match.");
+  bool notify;
+  {
+    std::lock_guard<std::mutex> lock{mutex_};
+    if (type == ConcurrentQueueType::kFIFO) {
+      fifo_queue_.emplace_front(std::forward<E>(e));
       notify = nwait_consumer_ != 0;
     } else {
       Entry entry;
@@ -170,7 +210,7 @@ bool ConcurrentBlockingQueue<T, type>::Pop(T* rv) {
     --nwait_consumer_;
     if (!exit_now_.load()) {
       *rv = std::move(fifo_queue_.front());
-      fifo_queue_.pop();
+      fifo_queue_.pop_front();
       return true;
     } else {
       return false;
