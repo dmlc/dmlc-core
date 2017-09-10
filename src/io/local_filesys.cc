@@ -17,7 +17,7 @@ extern "C" {
 
 #include "./local_filesys.h"
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && DMLC_USE_FOPEN64
 #define fopen64 std::fopen
 #endif
 
@@ -146,7 +146,11 @@ SeekStream *LocalFileSystem::Open(const URI &path,
     std::string flag = mode;
     if (flag == "w") flag = "wb";
     if (flag == "r") flag = "rb";
+#if DMLC_USE_FOPEN64
     fp = fopen64(fname, flag.c_str());
+#else
+    fp = fopen(fname, flag.c_str());
+#endif
   }
   if (fp != NULL) {
     return new FileStream(fp, use_stdio);

@@ -14,7 +14,7 @@
 #include <string>
 #include <algorithm>
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && DMLC_USE_FOPEN64
 #define fopen64 std::fopen
 #endif
 
@@ -35,7 +35,11 @@ class SingleFileSplit : public InputSplit {
 #endif
     }
     if (!use_stdin_) {
+#if DMLC_USE_FOPEN64
       fp_ = fopen64(fname, "rb");
+#else
+      fp_ = fopen(fname, "rb");
+#endif
       CHECK(fp_ != NULL) << "SingleFileSplit: fail to open " << fname;
     }
     buffer_.resize(kBufferSize);

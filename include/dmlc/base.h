@@ -96,6 +96,11 @@
 #define DMLC_ENABLE_RTTI 1
 #endif
 
+/*! \brief whether use fopen64 */
+#ifndef DMLC_USE_FOPEN64
+#define DMLC_USE_FOPEN64 1
+#endif
+
 /// check if g++ is before 4.6
 #if DMLC_USE_CXX11 && defined(__GNUC__) && !defined(__clang_version__)
 #if __GNUC__ == 4 && __GNUC_MINOR__ < 6
@@ -154,13 +159,16 @@
 #  endif
 #endif
 
-#if !defined(__GNUC__) || (defined __ANDROID__) || ((defined __MINGW32__) && !(defined __MINGW64__))
+#if DMLC_USE_FOPEN64 && \
+  (!defined(__GNUC__) || (defined __ANDROID__) || ((defined __MINGW32__) && !(defined __MINGW64__)))
 #define fopen64 std::fopen
 #endif
 
 #ifdef __APPLE__
-#define off64_t off_t
-#define fopen64 std::fopen
+#  define off64_t off_t
+#  if DMLC_USE_FOPEN64
+#    define fopen64 std::fopen
+#  endif
 #endif
 
 #ifdef _MSC_VER
