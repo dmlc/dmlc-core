@@ -148,8 +148,8 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-The secrete lies in the function ```DMLC_DECLARE_PARAMETER(MyParam)```, this is an macro defined in the parameter module.
-If we expand the micro, the code roughly becomes the following code.
+The secret lies in the function ```DMLC_DECLARE_PARAMETER(MyParam)```, this is a macro defined in the parameter module.
+If we expand the macro, the code roughly becomes the following code.
 
 ```c++
 struct Parameter<MyParam> {
