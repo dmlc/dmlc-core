@@ -147,10 +147,12 @@ class InputSplitBase : public InputSplit {
    * \param nsplit number of splits
    * \param align_bytes the head split must be multiple of align_bytes
    *   this also checks if file size are multiple of align_bytes
+   * \param recurse_directories recursively travese directories
    */
   void Init(FileSystem *fs,
             const char *uri,
-            size_t align_bytes);
+            size_t align_bytes,
+            const bool recurse_directories = false);
   // to be implemented by child class
   /*!
    * \brief seek to the beginning of the first record
@@ -179,7 +181,8 @@ class InputSplitBase : public InputSplit {
   /*! \brief internal overflow buffer */
   std::string overflow_;
   /*! \brief initialize information in files */
-  void InitInputFileInfo(const std::string& uri);
+  void InitInputFileInfo(const std::string& uri,
+                         const bool recurse_directories);
   /*! \brief strip continous chars in the end of str */
   std::string StripEnd(std::string str, char ch);
 };

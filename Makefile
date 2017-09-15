@@ -30,7 +30,7 @@ endif
 
 .PHONY: clean all test lint doc example pylint
 
-OBJ=line_split.o indexed_recordio_split.o recordio_split.o input_split_base.o io.o local_filesys.o data.o recordio.o config.o
+OBJ=line_split.o indexed_recordio_split.o recordio_split.o input_split_base.o io.o filesys.o local_filesys.o data.o recordio.o config.o
 
 ifeq ($(USE_HDFS), 1)
 	OBJ += hdfs_filesys.o
@@ -65,6 +65,7 @@ line_split.o: src/io/line_split.cc
 recordio_split.o: src/io/recordio_split.cc
 indexed_recordio_split.o: src/io/indexed_recordio_split.cc
 input_split_base.o: src/io/input_split_base.cc
+filesys.o: src/io/filesys.cc
 hdfs_filesys.o: src/io/hdfs_filesys.cc
 s3_filesys.o: src/io/s3_filesys.cc
 azure_filesys.o: src/io/azure_filesys.cc

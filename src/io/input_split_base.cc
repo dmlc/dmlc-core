@@ -12,10 +12,11 @@ namespace dmlc {
 namespace io {
 void InputSplitBase::Init(FileSystem *filesys,
                           const char *uri,
-                          size_t align_bytes) {
+                          size_t align_bytes,
+                          const bool recurse_directories) {
   this->filesys_ = filesys;
   // initialize the path
-  this->InitInputFileInfo(uri);
+  this->InitInputFileInfo(uri, recurse_directories);
   file_offset_.resize(files_.size() + 1);
   file_offset_[0] = 0;
   for (size_t i = 0; i < files_.size(); ++i) {
@@ -145,14 +146,19 @@ std::vector<URI> InputSplitBase::ConvertToURIs(const std::string& uri) {
   return expanded_list;
 }
 
-void InputSplitBase::InitInputFileInfo(const std::string& uri) {
+void InputSplitBase::InitInputFileInfo(const std::string& uri,
+                                       const bool recurse_directories) {
   std::vector<URI> expanded_list = this->ConvertToURIs(uri);
   for (size_t i = 0; i < expanded_list.size(); ++i) {
     const URI& path = expanded_list[i];
     FileInfo info = filesys_->GetPathInfo(path);
     if (info.type == kDirectory) {
       std::vector<FileInfo> dfiles;
-      filesys_->ListDirectory(info.path, &dfiles);
+      if (!recurse_directories) {
+        filesys_->ListDirectory(info.path, &dfiles);
+      } else {
+        filesys_->ListDirectoryRecursive(info.path, &dfiles);
+      }
       for (size_t i = 0; i < dfiles.size(); ++i) {
         if (dfiles[i].size != 0 && dfiles[i].type == kFile) {
           files_.push_back(dfiles[i]);

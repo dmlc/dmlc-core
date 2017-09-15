@@ -74,7 +74,8 @@ InputSplit* InputSplit::Create(const char *uri_,
                                const char *type,
                                const bool shuffle,
                                const int seed,
-                               const size_t batch_size) {
+                               const size_t batch_size,
+                               const bool recurse_directories) {
   using namespace std;
   using namespace dmlc::io;
   // allow cachefile in format path#cachefile
@@ -99,7 +100,8 @@ InputSplit* InputSplit::Create(const char *uri_,
       }
   } else if (!strcmp(type, "recordio")) {
     split =  new RecordIOSplitter(FileSystem::GetInstance(path),
-                                  spec.uri.c_str(), part, nsplit);
+                                  spec.uri.c_str(), part, nsplit,
+                                  recurse_directories);
   } else {
     LOG(FATAL) << "unknown input split type " << type;
   }

@@ -266,6 +266,7 @@ class InputSplit {
    * \param batch_size a hint to InputSplit what is the intended number
    *                   of examples return per batch. Used only by
    *                   "indexed_recordio" type
+   * \param recurse_directories whether to recursively traverse directories
    * \return a new input split
    * \sa InputSplit::Type
    */
@@ -276,7 +277,8 @@ class InputSplit {
                             const char *type,
                             const bool shuffle = false,
                             const int seed = 0,
-                            const size_t batch_size = 256);
+                            const size_t batch_size = 256,
+                            const bool recurse_directories = false);
 };
 
 /*!
