@@ -60,6 +60,12 @@ int main(int argc, char *argv[]) {
   for (size_t i = 0; i < unknown.size(); ++i) {
     printf("%s=%s\n", unknown[i].first.c_str(), unknown[i].second.c_str());
   }
+  printf("------\n");
+  std::unordered_map<std::string, std::string> dict;
+  param.UpdateDict(&dict);
+  for (const auto &kv : dict) {
+    printf("dict.%s=%s\n", kv.first.c_str(), kv.second.c_str());
+  }
 
   std::ostringstream os;
   dmlc::JSONWriter writer(&os);
