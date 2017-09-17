@@ -149,6 +149,17 @@ struct Parameter {
                                   &unknown, parameter::kAllowUnknown);
     return unknown;
   }
+
+  /*!
+   * \brief Update the dict with values stored in parameter.
+   *
+   * \param dict The dictionary to be updated.
+   * \tparam Container container type
+   */
+  template<typename Container>
+  inline void UpdateDict(Container *dict) const {
+    PType::__MANAGER__()->UpdateDict(this->head(), dict);
+  }
   /*!
    * \brief Return a dictionary representation of the parameters
    * \return A dictionary that maps key -> value
@@ -482,6 +493,19 @@ class ParamManager {
       ret.push_back(std::make_pair(it->first, it->second->GetStringValue(head)));
     }
     return ret;
+  }
+  /*!
+   * \brief Update the dictionary with values in parameter.
+   * \param head the head of the struct.
+   * \tparam Container The container type
+   * \return the parameter dictionary.
+   */
+  template<typename Container>
+  inline void UpdateDict(void * head, Container* dict) const {
+    for (std::map<std::string, FieldAccessEntry*>::const_iterator
+            it = entry_map_.begin(); it != entry_map_.end(); ++it) {
+      (*dict)[it->first] = it->second->GetStringValue(head);
+    }
   }
 
  private:
