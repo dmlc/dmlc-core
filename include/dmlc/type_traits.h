@@ -80,6 +80,7 @@ struct is_arithmetic {
  * \tparam T the type to query
  * \return a const string of typename.
  */
+template<typename T>
 struct type_name_helper {
     static inline std::string value();
 };
@@ -87,6 +88,7 @@ struct type_name_helper {
 template<typename T>
 inline std::string type_name() {
   return type_name_helper<T>::value();
+}
 
 /*!
  * \brief whether a type have save/load function
