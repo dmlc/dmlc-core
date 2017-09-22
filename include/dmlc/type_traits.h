@@ -80,10 +80,13 @@ struct is_arithmetic {
  * \tparam T the type to query
  * \return a const string of typename.
  */
+struct type_name_helper {
+    static inline std::string value();
+};
+
 template<typename T>
-inline const char* type_name() {
-  return "";
-}
+inline std::string type_name() {
+  return type_name_helper<T>::value();
 
 /*!
  * \brief whether a type have save/load function
@@ -115,8 +118,10 @@ struct IfThenElseType;
 /*! \brief macro to quickly declare traits information */
 #define DMLC_DECLARE_TYPE_NAME(Type, Name)            \
   template<>                                          \
-  inline const char* type_name<Type>() {              \
-    return Name;                                      \
+  struct type_name_helper<Type> {                     \
+    static inline std::string value() {               \
+      return Name;                                    \
+    }                                                 \
   }
 
 //! \cond Doxygen_Suppress
