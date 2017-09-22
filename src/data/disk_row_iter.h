@@ -123,13 +123,15 @@ BuildCache(Parser<IndexType> *parser) {
       bytes_read = bytes_read >> 20UL;
       LOG(INFO) << bytes_read << "MB read,"
                 << bytes_read / tdiff << " MB/sec";
-      data.Save(fo);
-      data.Clear();
       num_col_ = std::max(num_col_,
                           static_cast<size_t>(data.max_index) + 1);
+      data.Save(fo);
+      data.Clear();
     }
   }
   if (data.Size() != 0) {
+    num_col_ = std::max(num_col_,
+                        static_cast<size_t>(data.max_index) + 1);
     data.Save(fo);
   }
   delete fo;
