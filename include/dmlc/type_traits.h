@@ -76,15 +76,25 @@ struct is_arithmetic {
 };
 
 /*!
+ * \brief helper class to construct a string that represents type name
+ * 
+ * Specialized this class to defined type name of custom types
+ *
+ * \tparam T the type to query
+ */
+template<typename T>
+struct type_name_helper {
+  /*!
+   * \return a string of typename.
+   */
+  static inline std::string value();
+};
+
+/*!
  * \brief the string representation of type name
  * \tparam T the type to query
  * \return a const string of typename.
  */
-template<typename T>
-struct type_name_helper {
-    static inline std::string value();
-};
-
 template<typename T>
 inline std::string type_name() {
   return type_name_helper<T>::value();
