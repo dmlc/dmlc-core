@@ -77,7 +77,7 @@ struct is_arithmetic {
 
 /*!
  * \brief helper class to construct a string that represents type name
- * 
+ *
  * Specialized this class to defined type name of custom types
  *
  * \tparam T the type to query
@@ -87,7 +87,9 @@ struct type_name_helper {
   /*!
    * \return a string of typename.
    */
-  static inline std::string value();
+  static inline std::string value() {
+    return "";
+  }
 };
 
 /*!
