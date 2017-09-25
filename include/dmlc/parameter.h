@@ -963,11 +963,7 @@ class FieldEntry<bool>
  protected:
   // print default string
   virtual void PrintValue(std::ostream &os, bool value) const {  // NOLINT(*)
-    if (value) {
-      os << "True";
-    } else {
-      os << "False";
-    }
+    os << static_cast<int>(value);
   }
 };
 
