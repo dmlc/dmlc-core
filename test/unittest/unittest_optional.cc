@@ -2,8 +2,6 @@
 
 #include <iostream>
 #include <vector>
-#include <string>
-#include <memory>
 #include <dmlc/optional.h>
 #include <dmlc/parameter.h>
 #include <gtest/gtest.h>
@@ -73,6 +71,15 @@ struct OptionalParamInt : public dmlc::Parameter<OptionalParamInt> {
 
 DMLC_REGISTER_PARAMETER(OptionalParamInt);
 
+struct LearningRateParam : public dmlc::Parameter<LearningRateParam> {
+  float learning_rate;
+  DMLC_DECLARE_PARAMETER(LearningRateParam) {
+    DMLC_DECLARE_FIELD(learning_rate).set_default(0.01);
+  }
+};
+
+DMLC_REGISTER_PARAMETER(LearningRateParam);
+
 TEST(Optional, add_enum_int) {
   OptionalParamInt param;
   std::map<std::string, std::string> kwargs;
@@ -103,6 +110,16 @@ TEST(Optional, basics_bool) {
   x = false;
   y = x;
   CHECK_EQ(y.value(), false);
+}
+
+TEST(Optional, parsing_small_float) {
+  LearningRateParam param;
+  std::map<std::string, std::string> kwargs;
+  kwargs["learning_rate"] = "9.4039548065783e-39";
+  EXPECT_THROW(
+      param.Init(kwargs),
+      dmlc::ParamError
+  );
 }
 
 TEST(Optional, parsing_bool) {
