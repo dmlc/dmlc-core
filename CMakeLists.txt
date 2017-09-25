@@ -142,3 +142,7 @@ if(MSVC)
 endif()
 set(LINT_DIRS include src scripts)
 add_custom_target(dmlc_lint COMMAND ${CMAKE_COMMAND} -DMSVC=${MSVC} -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}  -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR} -DLINT_DIRS=${LINT_DIRS} -DPROJECT_NAME=dmlc -P ${PROJECT_SOURCE_DIR}/cmake/lint.cmake)
+
+# Setup testing
+include(CTest)
+add_subdirectory(test/unittest)

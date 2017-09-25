@@ -2,8 +2,6 @@
 
 #include <iostream>
 #include <vector>
-#include <string>
-#include <memory>
 #include <dmlc/optional.h>
 #include <dmlc/parameter.h>
 #include <gtest/gtest.h>
