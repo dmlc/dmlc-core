@@ -127,8 +127,8 @@ class Row {
   }
 
   /*!
-   * \return the weight of the instance, this function is always
-   *  safe even when weight == NULL
+   * \return the qid of the instance, this function is always
+   *  safe even when qid == NULL
    */
   inline real_t get_qid() const {
     return qid == NULL ? 1.0f : *qid;
