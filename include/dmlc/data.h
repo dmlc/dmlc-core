@@ -219,9 +219,9 @@ struct RowBlock {
       ret.weight = NULL;
     }
     if (qid != NULL) {
-        ret.qid = qid + begin;
+      ret.qid = qid + begin;
     } else {
-        ret.qid = NULL;
+      ret.qid = NULL;
     }
     ret.offset = offset + begin;
     ret.field = field;

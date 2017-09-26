@@ -64,7 +64,7 @@ ParseBlock(char *begin,
       out->offset.push_back(out->index.size());
     }
     out->label.push_back(label);
-    // parse qid:sessionId
+    // parse qid:id
     p = q;
     while (p != end && *p == ' ') ++p;
     if (p != lend && (strncmp(p, "qid:",4)==0))  {
