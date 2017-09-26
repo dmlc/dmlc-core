@@ -175,6 +175,7 @@ DMLC_DECLARE_TYPE_NAME(uint32_t, "int (non-negative)");
 DMLC_DECLARE_TYPE_NAME(uint64_t, "long (non-negative)");
 DMLC_DECLARE_TYPE_NAME(std::string, "string");
 DMLC_DECLARE_TYPE_NAME(bool, "boolean");
+DMLC_DECLARE_TYPE_NAME(void*, "ptr");
 
 template<typename Then, typename Else>
 struct IfThenElseType<true, Then, Else> {
