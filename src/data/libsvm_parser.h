@@ -66,8 +66,9 @@ ParseBlock(char *begin,
     out->label.push_back(label);
     // parse qid:id
     p = q;
-    if (p != lend && (strncmp(p, " qid:",5)==0 || strncmp(p-5, " qid:",5)==0))  {
-      p += 5;
+    while (p != end && *p == ' ') ++p;
+    if (p != lend && (strncmp(p, "qid:",4)==0))  {
+      p += 4;
       real_t tmp;
       int r = ParsePair<real_t, real_t>(p, lend, &q, qid, tmp);
       if ( r == 1) {
