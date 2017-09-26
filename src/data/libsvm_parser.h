@@ -49,6 +49,7 @@ ParseBlock(char *begin,
     const char * q = NULL;
     real_t label;
     real_t weight;
+    real_t qid;
     int r = ParsePair<real_t, real_t>(p, lend, &q, label, weight);
     if (r < 1) {
       // empty line
@@ -63,8 +64,18 @@ ParseBlock(char *begin,
       out->offset.push_back(out->index.size());
     }
     out->label.push_back(label);
-    // parse feature[:value]
+    // parse qid:id
     p = q;
+    if (p != lend && strncmp(p, " qid:",5)==0)  {
+      p += 5;
+      real_t tmp;
+      int r = ParsePair<real_t, real_t>(p, lend, &q, qid, tmp);
+      if ( r == 1) {
+        out->qid.push_back(qid);
+      }
+      p = q;
+    }
+    // parse feature[:value]
     while (p != lend) {
       IndexType featureId;
       real_t value;
