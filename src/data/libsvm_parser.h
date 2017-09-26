@@ -67,11 +67,11 @@ ParseBlock(char *begin,
     // parse qid:id
     p = q;
     while (p != end && *p == ' ') ++p;
-    if (p != lend && (strncmp(p, "qid:",4)==0))  {
+    if (p != lend && (strncmp(p, "qid:", 4) == 0))  {
       p += 4;
       real_t tmp;
       int r = ParsePair<real_t, real_t>(p, lend, &q, qid, tmp);
-      if ( r == 1) {
+      if (r == 1) {
         out->qid.push_back(qid);
       }
       p = q;
