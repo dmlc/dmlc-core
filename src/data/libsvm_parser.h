@@ -49,7 +49,6 @@ ParseBlock(char *begin,
     const char * q = NULL;
     real_t label;
     real_t weight;
-    real_t qid;
     int r = ParsePair<real_t, real_t>(p, lend, &q, label, weight);
     if (r < 1) {
       // empty line
@@ -65,12 +64,13 @@ ParseBlock(char *begin,
     }
     out->label.push_back(label);
     // parse qid:id
+    size_t qid;
     p = q;
     while (p != end && *p == ' ') ++p;
     if (p != lend && (strncmp(p, "qid:", 4) == 0))  {
       p += 4;
       real_t tmp;
-      int r = ParsePair<real_t, real_t>(p, lend, &q, qid, tmp);
+      int r = ParsePair<size_t, real_t>(p, lend, &q, qid, tmp);
       if (r == 1) {
         out->qid.push_back(qid);
       }

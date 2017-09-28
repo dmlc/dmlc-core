@@ -32,7 +32,7 @@ struct RowBlockContainer {
   /*! \brief array[size] weight of each instance */
   std::vector<real_t> weight;
   /*! \brief array[size] session-id of each instance */
-  std::vector<real_t> qid;
+  std::vector<size_t> qid;
   /*! \brief field index */
   std::vector<IndexType> field;
   /*! \brief feature index */
@@ -76,7 +76,7 @@ struct RowBlockContainer {
     return offset.size() * sizeof(size_t) +
         label.size() * sizeof(real_t) +
         weight.size() * sizeof(real_t) +
-        qid.size() * sizeof(real_t) +
+        qid.size() * sizeof(size_t) +
         field.size() * sizeof(IndexType) +
         index.size() * sizeof(IndexType) +
         value.size() * sizeof(real_t);
@@ -90,7 +90,7 @@ struct RowBlockContainer {
   inline void Push(Row<I> row) {
     label.push_back(row.get_label());
     weight.push_back(row.get_weight());
-    qid.push_back(row.get_weight());
+    qid.push_back(row.get_qid());
     if (row.field != NULL) {
       for (size_t i = 0; i < row.length; ++i) {
         CHECK_LE(row.field[i], std::numeric_limits<IndexType>::max())

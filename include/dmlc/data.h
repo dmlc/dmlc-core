@@ -74,7 +74,7 @@ class Row {
   /*! \brief weight of the instance */
   const real_t *weight;
   /*! \brief session-id of the instance */
-  const real_t *qid;
+  const size_t *qid;
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
@@ -130,8 +130,8 @@ class Row {
    * \return the qid of the instance, this function is always
    *  safe even when qid == NULL
    */
-  inline real_t get_qid() const {
-    return qid == NULL ? 1.0f : *qid;
+  inline size_t get_qid() const {
+    return qid == NULL ? -1 : *qid;
   }
   /*!
    * \brief helper function to compute dot product of current
@@ -178,7 +178,7 @@ struct RowBlock {
   /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
   const real_t *weight;
   /*! \brief With session-id: array[size] label of each instance, otherwise nullptr */
-  const real_t *qid;
+  const size_t *qid;
   /*! \brief field id*/
   const IndexType *field;
   /*! \brief feature index */
@@ -195,7 +195,7 @@ struct RowBlock {
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(real_t));
     if (weight != NULL) cost += size * sizeof(real_t);
-    if (qid != NULL) cost += size * sizeof(real_t);
+    if (qid != NULL) cost += size * sizeof(size_t);
     size_t ndata = offset[size] - offset[0];
     if (field != NULL) cost += ndata * sizeof(IndexType);
     if (index != NULL) cost += ndata * sizeof(IndexType);
