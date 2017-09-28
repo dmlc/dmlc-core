@@ -131,7 +131,7 @@ class Row {
    *  safe even when qid == NULL
    */
   inline size_t get_qid() const {
-    return qid == NULL ? -1 : *qid;
+    return qid == NULL ? 0 : *qid;
   }
   /*!
    * \brief helper function to compute dot product of current
