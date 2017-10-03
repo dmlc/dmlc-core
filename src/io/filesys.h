@@ -97,6 +97,13 @@ class FileSystem {
    */
   virtual void ListDirectory(const URI &path, std::vector<FileInfo> *out_list) = 0;
   /*!
+   * \brief list files in a directory recursively using ListDirectory
+   * \param path to the file
+   * \param out_list the output information about the files
+   */
+  virtual void ListDirectoryRecursive(const URI &path,
+                                      std::vector<FileInfo> *out_list);
+  /*!
    * \brief open a stream
    * \param path path to file
    * \param uri the uri of the input, can contain hdfs prefix

@@ -107,6 +107,7 @@ list(APPEND SOURCE "src/io/line_split.cc")
 list(APPEND SOURCE "src/io/recordio_split.cc")
 list(APPEND SOURCE "src/io/indexed_recordio_split.cc")
 list(APPEND SOURCE "src/io/input_split_base.cc")
+list(APPEND SOURCE "src/io/filesys.cc")
 list(APPEND SOURCE "src/io/local_filesys.cc")
 
 if(USE_HDFS)
