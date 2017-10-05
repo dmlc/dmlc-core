@@ -40,10 +40,18 @@ class FileStream : public SeekStream {
         << "FileStream.Write incomplete";
   }
   virtual void Seek(size_t pos) {
+#ifndef _MSC_VER
     CHECK(!std::fseek(fp_, static_cast<long>(pos), SEEK_SET));  // NOLINT(*)
+#else
+    CHECK(!_fseeki64(fp_, pos, SEEK_SET);
+#endif
   }
   virtual size_t Tell(void) {
+#ifndef _MSC_VER
     return std::ftell(fp_);
+#else
+    return _ftelli64(fp_);
+#endif
   }
   virtual bool AtEnd(void) const {
     return std::feof(fp_) != 0;
