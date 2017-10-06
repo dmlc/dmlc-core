@@ -43,7 +43,7 @@ class FileStream : public SeekStream {
 #ifndef _MSC_VER
     CHECK(!std::fseek(fp_, static_cast<long>(pos), SEEK_SET));  // NOLINT(*)
 #else
-    CHECK(!_fseeki64(fp_, pos, SEEK_SET);
+    CHECK(!_fseeki64(fp_, pos, SEEK_SET));
 #endif
   }
   virtual size_t Tell(void) {
