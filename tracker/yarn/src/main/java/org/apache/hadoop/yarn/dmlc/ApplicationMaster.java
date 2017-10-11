@@ -62,8 +62,10 @@ public class ApplicationMaster {
     private int workerMemoryMB = 10;
     // memory needed requested for the server task
     private int serverMemoryMB = 10;
-    // priority of the app master
-    private int appPriority = 0;
+    // priority of the workers tasks
+    private int workerPriority = 1;
+    // priority of the server nodes
+    private int serverPriority = 2;
     // total number of workers
     private int numWorker = 1;
     // total number of server
@@ -308,15 +310,16 @@ public class ApplicationMaster {
     private synchronized void submitTasks(Collection<TaskRecord> tasks) {
         for (TaskRecord r : tasks) {
             Resource resource = Records.newRecord(Resource.class);
+            Priority priority = Records.newRecord(Priority.class);
             if (r.taskRole == "server") {
               resource.setMemory(serverMemoryMB);
               resource.setVirtualCores(serverCores);
+              priority.setPriority(this.serverPriority);
             } else {
               resource.setMemory(workerMemoryMB);
               resource.setVirtualCores(workerCores);
+              priority.setPriority(this.workerPriority);
             }
-            Priority priority = Records.newRecord(Priority.class);
-            priority.setPriority(this.appPriority);
             r.containerRequest = new ContainerRequest(resource, null, null,
                     priority);
             rmClient.addContainerRequest(r.containerRequest);
