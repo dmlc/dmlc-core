@@ -8,6 +8,7 @@
 
 #include <dmlc/io.h>
 #include <dmlc/recordio.h>
+#include <dmlc/parameter.h>
 #include <vector>
 #include <cstdio>
 #include <string>
@@ -36,6 +37,7 @@ class IndexedRecordIOSplitter : public InputSplitBase {
     this->Init(fs, uri, INDEXED_RECORDIO_ALIGN);
     this->ReadIndexFile(fs, index_uri);
     this->ResetPartition(rank, nsplit);
+    this->shuffle_group_size_ = dmlc::GetEnv("DMLC_INDEXED_RECORDIO_SHUFFLE_GROUP_SIZE", 1);
   }
 
   bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) override;
@@ -71,6 +73,7 @@ class IndexedRecordIOSplitter : public InputSplitBase {
   std::vector<std::pair<size_t, size_t> > index_;
   std::vector<size_t> permutation_;
   bool shuffle_;
+  size_t shuffle_group_size_;
   size_t current_index_;
   size_t index_begin_;
   size_t index_end_;

@@ -162,17 +162,20 @@ bool IndexedRecordIOSplitter::NextBatchEx(Chunk *chunk, size_t n_records) {
       size_t n = n_overflow_ == 0?n_records:n_overflow_;
       while (n_read < n) {
         if (current_index_ < permutation_.size()) {
-          offset_curr_ = index_[permutation_[current_index_]].first;
-          buffer_size_ = index_[permutation_[current_index_]].second/sizeof(uint32_t);
-          size_t new_file_ptr = std::upper_bound(file_offset_.begin(),
-                                 file_offset_.end(),
-                                 offset_curr_) - file_offset_.begin() - 1;
-          if (new_file_ptr != file_ptr_) {
-            delete fs_;
-            file_ptr_ = new_file_ptr;
-            fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
+          size_t current = permutation_[current_index_];
+          buffer_size_ = index_[current].second/sizeof(uint32_t);
+          if (offset_curr_ != index_[current].first) {
+            offset_curr_ = index_[current].first;
+            size_t new_file_ptr = std::upper_bound(file_offset_.begin(),
+                                   file_offset_.end(),
+                                   offset_curr_) - file_offset_.begin() - 1;
+            if (new_file_ptr != file_ptr_) {
+              delete fs_;
+              file_ptr_ = new_file_ptr;
+              fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
+            }
+            fs_->Seek(offset_curr_ - file_offset_[file_ptr_]);
           }
-          fs_->Seek(offset_curr_ - file_offset_[file_ptr_]);
           if (n_read == 0) {
             ret = ret && chunk->Load(this, buffer_size_);
           } else {
@@ -220,10 +223,17 @@ bool IndexedRecordIOSplitter::NextBatch(Blob *out_chunk, size_t batch_size) {
 void IndexedRecordIOSplitter::BeforeFirst(void) {
   if (shuffle_) {
     permutation_.clear();
-    for (size_t i = index_begin_; i < index_end_; ++i) {
-      permutation_.push_back(i);
+    std::vector<size_t> perm_temp;
+    for (size_t i = index_begin_; i < index_end_; i += shuffle_group_size_) {
+      perm_temp.push_back(i);
     }
-    std::shuffle(permutation_.begin(), permutation_.end(), rnd_);
+    std::shuffle(perm_temp.begin(), perm_temp.end(), rnd_);
+    for (size_t i = 0; i < perm_temp.size(); ++i) {
+      for (size_t j = 0; j < shuffle_group_size_; ++j) {
+        if (perm_temp[i] + j < index_end_)
+          permutation_.push_back(perm_temp[i] + j);
+      }
+    }
     current_index_ = 0;
   } else {
     current_index_ = index_begin_;
