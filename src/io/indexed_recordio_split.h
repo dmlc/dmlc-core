@@ -33,11 +33,11 @@ class IndexedRecordIOSplitter : public InputSplitBase {
                           const int seed = 0) {
     this->shuffle_ = shuffle;
     if (shuffle) SetRandomSeed(seed);
+    this->shuffle_group_size_ = dmlc::GetEnv("DMLC_INDEXED_RECORDIO_SHUFFLE_GROUP_SIZE", 1);
     this->batch_size_ = batch_size;
     this->Init(fs, uri, INDEXED_RECORDIO_ALIGN);
     this->ReadIndexFile(fs, index_uri);
     this->ResetPartition(rank, nsplit);
-    this->shuffle_group_size_ = dmlc::GetEnv("DMLC_INDEXED_RECORDIO_SHUFFLE_GROUP_SIZE", 1);
   }
 
   bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) override;
