@@ -17,8 +17,11 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <utility>
+#include <vector>
 #include "./data.h"
 #include "./logging.h"
+#include "concurrency.h"
 
 namespace dmlc {
 /*!
@@ -391,6 +394,248 @@ inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
     notify = nwait_producer_ != 0 && !produce_end_;
   }
   if (notify) producer_cond_.notify_one();
+}
+
+/*!
+ * \brief ThreadedIter's multi producer version
+ *  a iterator that was backed by multi threads
+ *  to pull and process data eagerly from multi producer into a bounded buffer
+ *  the consumer can pull the data at its own rate
+ *
+ *  NOTE: the max memory size which MultiThreadedIter internal used is
+ *  base.capacity() * SourceType.size +
+ *  (queue_capacity_ + thread_num_) * SourceType.size +
+ *  (queue_capacity_ + thread_num_) * Dtype.size
+ *
+ *  vs ThreadedIter: use a ThreadedIter<SourceType> as the origin source
+ *  data iterator
+ *
+ * \tparam DType the type of data blob we support
+ * \tparam SourceType the type of source data
+ * \tparam base the origin source data iterator
+ * \tparam queue_capacity maximum size of the queue
+ */
+template<typename DType, typename SourceType>
+class MultiThreadedIter : public DataIter<DType> {
+ public:
+  explicit MultiThreadedIter(ThreadedIter<SourceType>* base,
+                             size_t thread_num,
+                             size_t queue_capacity) :
+      out_data_(nullptr),
+      loader_(base),
+      thread_num_(thread_num),
+      force_stopped_(false),
+      null_cell_num_(0),
+      queue_(nullptr),
+      queue_capacity_(queue_capacity){
+        CHECK(loader_.get() != nullptr);
+      }
+
+  /*! \brief destructor */
+  virtual ~MultiThreadedIter(void) {
+    Destroy();
+  }
+
+  /*!
+   * \brief destroy all the related resources
+   *  this is equivalent to destructor, can be used
+   *  to destroy the threaditer when user think it is
+   *  appropriate, it is safe to call this multiple times
+   */
+  inline void Destroy(void);
+  /*!
+   * \brief initialize the producers and start the threads
+   *  pass in two function(closure) of producer to represent the producer
+   *   NOTE: the closure must remain valid until the MultiThreadedIter destructs
+   * \param next the function called to get next element
+   */
+  inline void Init(std::function<bool(DType**, SourceType*, int)> next,
+                   std::function<void()> beforefirst);
+
+  /*!
+   * \brief get the next data, this function is not threadsafe
+   *  NOTE: this function is not threadsafe
+   * \param out_dptr used to hold the pointer to the record
+   *  after the function call, the caller takes ownership of the pointer
+   *  the caller can call recycle to return ownership back to the threaditer
+   *  so that the pointer can be re-used
+   * \return true if there is next record, false if we reach the end
+   * \sa Recycle
+   */
+  inline bool Next(DType **out_dptr);
+
+  /*!
+   * \brief adapt the iterator interface's Next
+   *  NOTE: the call to this function is not threadsafe
+   * \return true if there is next record, false if we reach the end
+   */
+  inline bool Next(void) {
+    if (out_data_ != nullptr) {
+      Recycle(&out_data_);
+    }
+    return Next(&out_data_);
+  }
+
+  /*!
+   * \brief recycle the data cell, this function is threadsafe
+   * the threaditer can reuse the data cell for future data loading
+   * \param inout_dptr pointer to the dptr to recycle, after the function call
+   *        the content of inout_dptr will be set to NULL
+   */
+  inline void Recycle(DType **inout_dptr) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    free_cells_.push(*inout_dptr);
+    *inout_dptr = nullptr;
+  }
+
+  /*!
+   * \brief adapt the iterator interface's Value
+   *  NOTE: the call to this function is not threadsafe
+   *  use the other Next instead
+   */
+  virtual const DType &Value(void) const {
+    CHECK(out_data_ != nullptr) << "Calling Value at beginning or end?";
+    return *out_data_;
+  }
+
+  /*! \brief set the iterator before first location */
+  virtual void BeforeFirst(void);
+
+ private:
+  typedef std::pair<DType*, SourceType*> CellType;
+
+  /*! \brief the current output cell */
+  DType* out_data_;
+  /*! \brief the source data loader */
+  std::unique_ptr<ThreadedIter<SourceType> > loader_;
+  /*! \brief internal mutex */
+  std::mutex mutex_;
+  /*! \brief the producer thread num */
+  size_t thread_num_;
+  /*! \brief whether force stop producer threads */
+  bool force_stopped_;
+  /*! \brief null cell num which used to judge source file end */
+  size_t null_cell_num_;
+  /*! \brief threads that run the producer */
+  std::vector<std::unique_ptr<std::thread>> producer_threads_;
+  /*! \brief producer thread body */
+  std::function<void(int)> producer_thread_body_;
+  /*! \brief internal queue of producer */
+  std::unique_ptr<ConcurrentBlockingQueue<CellType> > queue_;
+  /*! \brief maximum queue size */
+  size_t queue_capacity_;
+  /*! \brief free cells that can be used */
+  std::queue<DType*> free_cells_;
+  /*! \brief custom before first function */
+  std::function<void()> before_first_;
+};
+
+template<typename DType, typename SourceType>
+inline void MultiThreadedIter<DType, SourceType>::Init(
+    std::function<bool(DType**, SourceType*, int)> next,
+    std::function<void()> before_first) {
+  queue_.reset(new ConcurrentBlockingQueue<CellType>(queue_capacity_));
+  before_first_ = before_first;
+  producer_thread_body_ = [this, next] (int tid) {
+                            while (true) {
+                              SourceType *source_data;
+                              if (!loader_->Next(&source_data) || force_stopped_) {
+                                queue_->Push(CellType(nullptr, nullptr));
+                                return;
+                              }
+                              // get free cell
+                              DType* cell = nullptr;
+                              {
+                                std::lock_guard<std::mutex> lock(mutex_);
+                                if (free_cells_.size() != 0) {
+                                  cell = free_cells_.front();
+                                  free_cells_.pop();
+                                }
+                              }
+                              // next
+                              next(&cell, source_data, tid);
+                              queue_->Push(CellType(cell, source_data));
+                            }
+                          };
+  producer_threads_.resize(thread_num_);
+  for (size_t tid = 0; tid < thread_num_; tid++) {
+    producer_threads_[tid].reset(new std::thread([this, tid]() { producer_thread_body_(tid); }));
+  }
+}
+
+template<typename DType, typename SourceType>
+inline bool MultiThreadedIter<DType, SourceType>::Next(DType **out_dptr) {
+  if (null_cell_num_ >= thread_num_) return false;
+  CellType cell(nullptr, nullptr);
+  while (queue_->Pop(&cell)) {
+    if (cell.first != nullptr) {
+      *out_dptr = cell.first;
+      // recycle source data
+      loader_->Recycle(&cell.second);
+      return true;
+    }
+    null_cell_num_++;
+    if (null_cell_num_ == thread_num_) {
+      return false;
+    }
+  }
+  return false;
+}
+
+template<typename DType, typename SourceType>
+inline void MultiThreadedIter<DType, SourceType>::Destroy(void) {
+  if (force_stopped_) return;
+  force_stopped_ = true;
+  queue_->SignalForKill();
+  for (size_t tid = 0; tid < thread_num_; tid++) {
+    if (producer_threads_[tid].get() == nullptr) continue;
+    producer_threads_[tid]->join();
+    producer_threads_[tid].reset();
+  }
+  loader_->Destroy();
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    while (free_cells_.size() != 0) {
+      delete free_cells_.front();
+      free_cells_.pop();
+    }
+  }
+  while (queue_->Size() > 0) {
+    CellType cell(nullptr, nullptr);
+    if (queue_->Pop(&cell)) {
+      delete cell.first;
+      delete cell.second;
+    } else {
+      break;
+    }
+  }
+  if (out_data_ != nullptr) {
+    delete out_data_;
+    out_data_ = nullptr;
+  }
+}
+
+template<typename DType, typename SourceType>
+void MultiThreadedIter<DType, SourceType>::BeforeFirst(void) {
+  // stop all thread
+  force_stopped_ = true;
+  while (Next()) {}  // pop queue_
+  for (size_t tid = 0; tid < thread_num_; tid++) {
+    if (producer_threads_[tid].get() == nullptr) continue;
+    producer_threads_[tid]->join();
+    producer_threads_[tid].reset();
+  }
+  while (Next()) {}
+
+  // reset producer
+  before_first_();
+  loader_->BeforeFirst();
+  force_stopped_ = false;
+  null_cell_num_ = 0;
+  producer_threads_.resize(thread_num_);
+  for (size_t tid = 0; tid < thread_num_; tid++) {
+    producer_threads_[tid].reset(new std::thread([this, tid]() { producer_thread_body_(tid); }));
+  }
 }
 }  // namespace dmlc
 #endif  // DMLC_USE_CXX11

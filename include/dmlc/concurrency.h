@@ -64,7 +64,7 @@ template <typename T,
           ConcurrentQueueType type = ConcurrentQueueType::kFIFO>
 class ConcurrentBlockingQueue {
  public:
-  ConcurrentBlockingQueue();
+  ConcurrentBlockingQueue(int max_capacity = -1);
   ~ConcurrentBlockingQueue() = default;
   /*!
    * \brief Push element to the end of the queue.
@@ -126,6 +126,11 @@ class ConcurrentBlockingQueue {
   std::condition_variable cv_;
   std::atomic<bool> exit_now_;
   int nwait_consumer_;
+
+  int max_capacity_;
+  int nwait_provider_;
+  std::condition_variable cv_can_push_;
+
   // a priority queue
   std::vector<Entry> priority_queue_;
   // a FIFO queue
@@ -146,8 +151,9 @@ inline void Spinlock::unlock() noexcept(true) {
 }
 
 template <typename T, ConcurrentQueueType type>
-ConcurrentBlockingQueue<T, type>::ConcurrentBlockingQueue()
-    : exit_now_{false}, nwait_consumer_{0} {}
+ConcurrentBlockingQueue<T, type>::ConcurrentBlockingQueue(
+    int max_capacity) : exit_now_{false}, nwait_consumer_{0},
+    max_capacity_{max_capacity}, nwait_provider_{0} {}
 
 template <typename T, ConcurrentQueueType type>
 template <typename E>
@@ -156,13 +162,25 @@ void ConcurrentBlockingQueue<T, type>::Push(E&& e, int priority) {
                                  typename std::remove_reference<E>::type>::type,
                              T>::value,
                 "Types must match.");
-  bool notify;
+  bool notify = false;
   {
-    std::lock_guard<std::mutex> lock{mutex_};
+    std::unique_lock<std::mutex> lock{mutex_};
     if (type == ConcurrentQueueType::kFIFO) {
+      ++nwait_provider_;
+      cv_can_push_.wait(lock, [this] {
+          return  (max_capacity_ < 1) || exit_now_.load() ||
+              (static_cast<int>(fifo_queue_.size()) < max_capacity_);
+      });
+      --nwait_provider_;
       fifo_queue_.emplace_back(std::forward<E>(e));
       notify = nwait_consumer_ != 0;
     } else {
+      ++nwait_provider_;
+      cv_can_push_.wait(lock, [this] {
+          return  (max_capacity_ < 1) || exit_now_.load() ||
+              (static_cast<int>(priority_queue_.size()) < max_capacity_);
+      });
+      --nwait_provider_;
       Entry entry;
       entry.data = std::move(e);
       entry.priority = priority;
@@ -181,13 +199,25 @@ void ConcurrentBlockingQueue<T, type>::PushFront(E&& e, int priority) {
                                  typename std::remove_reference<E>::type>::type,
                              T>::value,
                 "Types must match.");
-  bool notify;
+  bool notify = false;
   {
-    std::lock_guard<std::mutex> lock{mutex_};
+    std::unique_lock<std::mutex> lock{mutex_};
     if (type == ConcurrentQueueType::kFIFO) {
+      ++nwait_provider_;
+      cv_can_push_.wait(lock, [this] {
+          return  (max_capacity_ < 1) || exit_now_.load() ||
+              (static_cast<int>(fifo_queue_.size()) < max_capacity_);
+      });
+      --nwait_provider_;
       fifo_queue_.emplace_front(std::forward<E>(e));
       notify = nwait_consumer_ != 0;
     } else {
+      ++nwait_provider_;
+      cv_can_push_.wait(lock, [this] {
+          return  (max_capacity_ < 1) || exit_now_.load() ||
+              (static_cast<int>(priority_queue_.size()) < max_capacity_);
+      });
+      --nwait_provider_;
       Entry entry;
       entry.data = std::move(e);
       entry.priority = priority;
@@ -201,37 +231,44 @@ void ConcurrentBlockingQueue<T, type>::PushFront(E&& e, int priority) {
 
 template <typename T, ConcurrentQueueType type>
 bool ConcurrentBlockingQueue<T, type>::Pop(T* rv) {
-  std::unique_lock<std::mutex> lock{mutex_};
-  if (type == ConcurrentQueueType::kFIFO) {
-    ++nwait_consumer_;
-    cv_.wait(lock, [this] {
-        return !fifo_queue_.empty() || exit_now_.load();
-      });
-    --nwait_consumer_;
-    if (!exit_now_.load()) {
-      *rv = std::move(fifo_queue_.front());
-      fifo_queue_.pop_front();
-      return true;
+  bool notify = false;
+  bool ret_value;
+  {
+    std::unique_lock<std::mutex> lock{mutex_};
+    if (type == ConcurrentQueueType::kFIFO) {
+      ++nwait_consumer_;
+      cv_.wait(lock, [this] {
+          return !fifo_queue_.empty() || exit_now_.load();
+        });
+      --nwait_consumer_;
+      if (!exit_now_.load()) {
+        *rv = std::move(fifo_queue_.front());
+        fifo_queue_.pop_front();
+        notify = nwait_provider_ != 0;
+        ret_value = true;
+      } else {
+        ret_value = false;
+      }
     } else {
-      return false;
-    }
-  } else {
-    ++nwait_consumer_;
-    cv_.wait(lock, [this] {
-        return !priority_queue_.empty() || exit_now_.load();
-      });
-    --nwait_consumer_;
-    if (!exit_now_.load()) {
-      std::pop_heap(priority_queue_.begin(), priority_queue_.end());
-      *rv = std::move(priority_queue_.back().data);
-      priority_queue_.pop_back();
-      return true;
-    } else {
-      return false;
+      ++nwait_consumer_;
+      cv_.wait(lock, [this] {
+          return !priority_queue_.empty() || exit_now_.load();
+        });
+      --nwait_consumer_;
+      if (!exit_now_.load()) {
+        std::pop_heap(priority_queue_.begin(), priority_queue_.end());
+        *rv = std::move(priority_queue_.back().data);
+        priority_queue_.pop_back();
+        notify = nwait_provider_ != 0;
+        ret_value = true;
+      } else {
+        ret_value = false;
+      }
     }
   }
+  if (notify) cv_can_push_.notify_one();
+  return ret_value;
 }
-
 template <typename T, ConcurrentQueueType type>
 void ConcurrentBlockingQueue<T, type>::SignalForKill() {
   {
@@ -239,6 +276,7 @@ void ConcurrentBlockingQueue<T, type>::SignalForKill() {
     exit_now_.store(true);
   }
   cv_.notify_all();
+  cv_can_push_.notify_all();
 }
 
 template <typename T, ConcurrentQueueType type>
