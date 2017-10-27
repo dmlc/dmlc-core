@@ -45,6 +45,15 @@ struct ParamError : public dmlc::Error {
 template<typename ValueType>
 inline ValueType GetEnv(const char *key,
                         ValueType default_value);
+/*!
+ * \brief Set environment variable.
+ * \param key the name of environment variable.
+ * \param value the new value for key.
+ * \return The value received
+ */
+template<typename ValueType>
+inline void SetEnv(const char *key,
+                   ValueType value);
 
 /*! \brief internal namespace for parameter manangement */
 namespace parameter {
@@ -1033,6 +1042,19 @@ inline ValueType GetEnv(const char *key,
   e.Init(key, &ret, ret);
   e.Set(&ret, val);
   return ret;
+}
+
+// implement SetEnv
+template<typename ValueType>
+inline void SetEnv(const char *key,
+                   ValueType value) {
+  parameter::FieldEntry<ValueType> e;
+  e.Init(key, &value, value);
+#ifdef _WIN32
+  _putenv(key, e.GetStringValue(&value).c_str());
+#else
+  setenv(key, e.GetStringValue(&value).c_str(), 1);
+#endif  // _WIN32
 }
 }  // namespace dmlc
 #endif  // DMLC_PARAMETER_H_
