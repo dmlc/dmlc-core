@@ -84,4 +84,4 @@ def submit(args):
                    fun_submit=ssh_submit,
                    pscmd=(' '.join(args.command)),
                    hostIP=args.host_ip,
-                   addnl_envs=args.pass_envs)
+                   addnl_envs=args.pass_env)
