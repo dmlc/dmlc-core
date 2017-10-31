@@ -83,4 +83,5 @@ def submit(args):
     tracker.submit(args.num_workers, args.num_servers,
                    fun_submit=ssh_submit,
                    pscmd=(' '.join(args.command)),
-                   hostIP=args.host_ip)
+                   hostIP=args.host_ip,
+                   addnl_envs=args.pass_envs)

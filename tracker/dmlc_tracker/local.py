@@ -69,4 +69,4 @@ def submit(args):
 
     # call submit, with nslave, the commands to run each job and submit function
     tracker.submit(args.num_workers, args.num_servers, fun_submit=mthread_submit,
-                   pscmd=(' '.join(args.command)))
+                   pscmd=(' '.join(args.command)), addnl_envs=args.pass_env)
