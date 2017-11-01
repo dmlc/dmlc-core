@@ -416,10 +416,7 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None, addnl_envs=N
 
     if addnl_envs:
         for k in addnl_envs.split(","):
-            try:
-                envs[k] = os.environ[k]
-            except KeyError:
-                print (k + ' is missing from os environment variables')
+            envs[k] = os.environ[k]
 
     hostIP = get_host_ip(hostIP)
 
