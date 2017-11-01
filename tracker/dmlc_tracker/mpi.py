@@ -79,4 +79,5 @@ def submit(args):
 
     tracker.submit(args.num_workers, args.num_servers,
                    fun_submit=mpi_submit,
-                   pscmd=(' '.join(args.command)))
+                   pscmd=(' '.join(args.command)),
+                   addnl_envs=args.pass_env)

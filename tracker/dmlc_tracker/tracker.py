@@ -407,12 +407,17 @@ def get_host_ip(hostIP=None):
     return hostIP
 
 
-def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
+def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None, addnl_envs=None):
     if nserver == 0:
         pscmd = None
 
     envs = {'DMLC_NUM_WORKER' : nworker,
             'DMLC_NUM_SERVER' : nserver}
+
+    if addnl_envs:
+        for k in addnl_envs.split(","):
+            envs[k] = os.environ[k]
+
     hostIP = get_host_ip(hostIP)
 
     if nserver == 0:

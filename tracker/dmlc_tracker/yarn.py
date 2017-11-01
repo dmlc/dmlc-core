@@ -126,4 +126,5 @@ def submit(args):
     YARN_BOOT_PY = os.path.join(curr_path, 'launcher.py')
     tracker.submit(args.num_workers, args.num_servers,
                    fun_submit=yarn_submit_pass,
-                   pscmd=(' '.join([YARN_BOOT_PY] + args.command)))
+                   pscmd=(' '.join([YARN_BOOT_PY] + args.command)),
+                   addnl_envs=args.pass_env)

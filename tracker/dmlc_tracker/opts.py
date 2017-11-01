@@ -147,6 +147,10 @@ def get_opts(args=None):
     parser.add_argument('--slurm-server-nodes', default=None, type=int,
                         help=('Number of nodes on which parameter servers are run. Used only in SLURM mode.' +
                               'If not explicitly set, it defaults to number of parameter servers.'))
+    parser.add_argument('--pass-env', type=str, default='',
+                        help = 'given a comma separated list of environment \
+                        variables, passes their values while launching job')
+
     (args, unknown) = parser.parse_known_args(args)
     args.command += unknown
 
