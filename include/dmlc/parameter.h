@@ -1036,7 +1036,12 @@ template<typename ValueType>
 inline ValueType GetEnv(const char *key,
                         ValueType default_value) {
   const char *val = getenv(key);
-  if (val == NULL) return default_value;
+  // On some implementations, if the var is set to a blank string (i.e. "FOO="), then
+  // a blank string will be returned instead of NULL.  In order to be consistent, if
+  // the environment var is a blank string, then also behave as if a null was returned.
+  if (val == nullptr || !*val) {
+    return default_value;
+  }
   ValueType ret;
   parameter::FieldEntry<ValueType> e;
   e.Init(key, &ret, ret);
