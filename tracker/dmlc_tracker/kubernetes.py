@@ -140,4 +140,4 @@ def submit(args):
 
     tracker.submit(args.num_workers, args.num_servers,
                    fun_submit=kubernetes_submit,
-                   pscmd='')
+                   pscmd="echo \"To check each log, try 'kubectl logs job/{{role}}-{{jobname}}-{{workerID}}'\"")
