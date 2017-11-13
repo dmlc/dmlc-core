@@ -64,7 +64,7 @@ template <typename T,
           ConcurrentQueueType type = ConcurrentQueueType::kFIFO>
 class ConcurrentBlockingQueue {
  public:
-  ConcurrentBlockingQueue(int max_capacity = -1);
+  explicit ConcurrentBlockingQueue(int max_capacity = -1);
   ~ConcurrentBlockingQueue() = default;
   /*!
    * \brief Push element to the end of the queue.

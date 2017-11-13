@@ -427,7 +427,7 @@ class MultiThreadedIter : public DataIter<DType> {
       force_stopped_(false),
       null_cell_num_(0),
       queue_(nullptr),
-      queue_capacity_(queue_capacity){
+      queue_capacity_(queue_capacity) {
         CHECK(loader_.get() != nullptr);
       }
 
