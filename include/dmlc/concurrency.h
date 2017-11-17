@@ -64,6 +64,10 @@ template <typename T,
           ConcurrentQueueType type = ConcurrentQueueType::kFIFO>
 class ConcurrentBlockingQueue {
  public:
+  /*!
+   * \brief constructor
+   * \param max_capacity maximum capacity of the queue
+   */
   explicit ConcurrentBlockingQueue(int max_capacity = -1);
   ~ConcurrentBlockingQueue() = default;
   /*!

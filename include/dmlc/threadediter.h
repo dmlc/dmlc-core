@@ -418,6 +418,12 @@ inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
 template<typename DType, typename SourceType>
 class MultiThreadedIter : public DataIter<DType> {
  public:
+  /*!
+   * \brief constructor
+   * \param base ThreadedIter for source data loading
+   * \param thread_num processing thread num
+   * \param queue_capacity maximum capacity of the queue
+   */
   explicit MultiThreadedIter(ThreadedIter<SourceType>* base,
                              size_t thread_num,
                              size_t queue_capacity) :
@@ -448,6 +454,7 @@ class MultiThreadedIter : public DataIter<DType> {
    *  pass in two function(closure) of producer to represent the producer
    *   NOTE: the closure must remain valid until the MultiThreadedIter destructs
    * \param next the function called to get next element
+   * \param beforefirst the function to call to reset the producer
    */
   inline void Init(std::function<bool(DType**, SourceType*, int)> next,
                    std::function<void()> beforefirst);
@@ -637,7 +644,6 @@ void MultiThreadedIter<DType, SourceType>::BeforeFirst(void) {
     producer_threads_[tid].reset(new std::thread([this, tid]() { producer_thread_body_(tid); }));
   }
 }
-
 }  // namespace dmlc
 #endif  // DMLC_USE_CXX11
 #endif  // DMLC_THREADEDITER_H_
