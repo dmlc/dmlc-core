@@ -637,6 +637,7 @@ void MultiThreadedIter<DType, SourceType>::BeforeFirst(void) {
     producer_threads_[tid].reset(new std::thread([this, tid]() { producer_thread_body_(tid); }));
   }
 }
+
 }  // namespace dmlc
 #endif  // DMLC_USE_CXX11
 #endif  // DMLC_THREADEDITER_H_
