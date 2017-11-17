@@ -1,4 +1,4 @@
-//! @cond Doxygen_Suppress
+//! \cond Doxygen_Suppress
 // Provides an efficient blocking version of moodycamel::ConcurrentQueue.
 // ©2015-2016 Cameron Desrochers. Distributed under the terms of the simplified
 // BSD license, available at the top of concurrentqueue.h.
@@ -980,4 +980,4 @@ inline void swap(BlockingConcurrentQueue<T, Traits>& a, BlockingConcurrentQueue<
 }
 
 }	// end namespace moodycamel
-//! @endcond Doxygen_Suppress
+//! \endcond Doxygen_Suppress
