@@ -9,6 +9,8 @@ endif
 include $(config)
 include make/dmlc.mk
 
+NOLINT_FILES = --exclude_path include/dmlc/concurrentqueue.h include/dmlc/blockingconcurrentqueue.h
+
 # this is the common build script for dmlc lib
 export LDFLAGS= -pthread -lm
 export CFLAGS = -O3 -Wall -Wno-unknown-pragmas -Iinclude  -std=c++0x
@@ -88,7 +90,7 @@ $(ALIB):
 	ar cr $@ $+
 
 lint:
-	python scripts/lint.py dmlc ${LINT_LANG} include src scripts
+	python scripts/lint.py dmlc ${LINT_LANG} include src scripts $(NOLINT_FILES)
 
 pylint:
 	python scripts/lint.py dmlc ${LINT_LANG} tracker/dmlc_tracker
