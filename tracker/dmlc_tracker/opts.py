@@ -70,7 +70,7 @@ def get_opts(args=None):
     """
     parser = argparse.ArgumentParser(description='DMLC job submission.')
     parser.add_argument('--cluster', type=str,
-                        choices=['yarn', 'slurm', 'mpi', 'sge', 'local', 'ssh', 'mesos'],
+                        choices=['yarn', 'slurm', 'mpi', 'sge', 'local', 'ssh', 'mesos', 'kubernetes'],
                         help=('Cluster type of this submission,' +
                               'default to env variable ${DMLC_SUBMIT_CLUSTER}.'))
     parser.add_argument('--num-workers', required=True, type=int,
@@ -147,6 +147,21 @@ def get_opts(args=None):
     parser.add_argument('--slurm-server-nodes', default=None, type=int,
                         help=('Number of nodes on which parameter servers are run. Used only in SLURM mode.' +
                               'If not explicitly set, it defaults to number of parameter servers.'))
+    parser.add_argument('--kube-namespace', default="default", type=str,
+                        help=('A namespace in whitch all tasks are run. Used only in Kubernetes mode.' +
+                              'If not explicitly set, it defaults to default.'))
+    parser.add_argument('--kube-worker-image', default="mxnet/python", type=str,
+                        help=('Container image of workers. Used only in Kubernetes mode.' +
+                              'If not explicitly set, it defaults to mxnet/python.'))
+    parser.add_argument('--kube-server-image', default="mxnet/python", type=str,
+                        help=('Container image of servers. Used only in Kubernetes mode.' +
+                              'If not explicitly set, it defaults to mxnet/python.'))
+    parser.add_argument('--kube-worker-template', default=None, type=str,
+                        help=('Manifest template for workers. Used only in Kubernetes mode.' +
+                              'Can be used to override defaults.'))
+    parser.add_argument('--kube-server-template', default=None, type=str,
+                        help=('Manifest template for servers. Used only in Kubernetes mode.' +
+                              'Can be used to override defaults.'))
     (args, unknown) = parser.parse_known_args(args)
     args.command += unknown
 
