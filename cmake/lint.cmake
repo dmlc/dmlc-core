@@ -11,11 +11,11 @@ endif()
 
 cmake_policy(SET CMP0009 NEW)  # suppress cmake warning
 string(REPLACE " " ";" LINT_DIRS ${LINT_DIRS})
+string(REPLACE " " ";" EXCLUDE_PATH ${EXCLUDE_PATH})
 execute_process(
     COMMAND ${LINT_COMMAND} ${PROJECT_NAME} all ${LINT_DIRS} --exclude_path=${EXCLUDE_PATH}
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     ERROR_VARIABLE LINT_OUTPUT
     ERROR_STRIP_TRAILING_WHITESPACE
-	
 )
 message(STATUS ${LINT_OUTPUT})
