@@ -42,3 +42,6 @@ config.mk
 deps
 recommonmark
 build
+
+# CLion
+.idea
