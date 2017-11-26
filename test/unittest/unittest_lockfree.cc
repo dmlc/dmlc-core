@@ -127,11 +127,11 @@ static void BlockingPullThread(const int id, std::shared_ptr<LFQThreadData<TQueu
 TEST(Lockfree, ConcurrentQueue) {
   ThreadGroup threads;
   const int ITEM_COUNT = 100;
-  auto data = std::make_shared<LFQThreadData<moodycamel::ConcurrentQueue<int>>>();
+  auto data = std::make_shared<LFQThreadData<dmlc::moodycamel::ConcurrentQueue<int>>>();
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
     data->thread_map_.insert(x);
-    threads.Start(PushThread<moodycamel::ConcurrentQueue<int>>, x, data);
+    threads.Start(PushThread<dmlc::moodycamel::ConcurrentQueue<int>>, x, data);
   }
   while(data->count_ < ITEM_COUNT) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -153,7 +153,7 @@ TEST(Lockfree, ConcurrentQueue) {
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
     data->thread_map_.insert(x);
-    threads.Start(PullThread<moodycamel::ConcurrentQueue<int>>, x, data);
+    threads.Start(PullThread<dmlc::moodycamel::ConcurrentQueue<int>>, x, data);
   }
   data->ready_->signal();
   threads.WaitForAll();
@@ -165,8 +165,8 @@ TEST(Lockfree, ConcurrentQueue) {
 
 TEST(Lockfree, BlockingConcurrentQueue) {
 
-  using BlockingQueue = moodycamel::BlockingConcurrentQueue<
-    int, moodycamel::ConcurrentQueueDefaultTraits>;
+  using BlockingQueue = dmlc::moodycamel::BlockingConcurrentQueue<
+    int, dmlc::moodycamel::ConcurrentQueueDefaultTraits>;
 
   ThreadGroup threads;
   const int ITEM_COUNT = 100;

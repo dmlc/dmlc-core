@@ -5,6 +5,9 @@
 // Uses Jeff Preshing's semaphore implementation (under the terms of its
 // separate zlib license, embedded below).
 
+#ifndef DMLC_BLOCKINGCONCURRENTQUEUE_H_
+#define DMLC_BLOCKINGCONCURRENTQUEUE_H_
+
 #pragma once
 
 #include "concurrentqueue.h"
@@ -32,6 +35,8 @@ extern "C" {
 #elif defined(__unix__)
 #include <semaphore.h>
 #endif
+
+namespace dmlc {
 
 namespace moodycamel
 {
@@ -422,7 +427,7 @@ template<typename T, typename Traits = ConcurrentQueueDefaultTraits>
 class BlockingConcurrentQueue
 {
 private:
-	typedef ::moodycamel::ConcurrentQueue<T, Traits> ConcurrentQueue;
+	typedef ::dmlc::moodycamel::ConcurrentQueue<T, Traits> ConcurrentQueue;
 	typedef details::mpmc_sema::LightweightSemaphore LightweightSemaphore;
 
 public:
@@ -980,4 +985,7 @@ inline void swap(BlockingConcurrentQueue<T, Traits>& a, BlockingConcurrentQueue<
 }
 
 }	// end namespace moodycamel
+}  // namespace dmlc
+
+#endif  // DMLC_BLOCKINGCONCURRENTQUEUE_H_
 //! \endcond Doxygen_Suppress
