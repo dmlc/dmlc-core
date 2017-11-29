@@ -41,9 +41,14 @@
  * \brief Whether to print stack trace for fatal error,
  * enabled on linux when using gcc.
  */
-#if (!defined(DMLC_LOG_STACK_TRACE) && defined(__GNUC__) && !defined(__MINGW32__)\
+#if (defined(__GNUC__) && !defined(__MINGW32__)\
      && !(defined __MINGW64__) && !(defined __ANDROID__))
+#if (!defined(DMLC_LOG_STACK_TRACE))
 #define DMLC_LOG_STACK_TRACE 1
+#endif
+#if (!defined(DMLC_LOG_STACK_TRACE_SIZE))
+#define DMLC_LOG_STACK_TRACE_SIZE 10
+#endif
 #endif
 
 /*! \brief whether compile with hdfs support */

@@ -15,6 +15,10 @@
 #include "./base.h"
 
 #if DMLC_LOG_STACK_TRACE
+#include <cxxabi.h>
+#endif
+
+#if DMLC_LOG_STACK_TRACE
 #include <execinfo.h>
 #endif
 
@@ -251,26 +255,72 @@ class CustomLogMessage {
   std::ostringstream log_stream_;
 };
 
+
+
+#if DMLC_LOG_STACK_TRACE
+inline std::string Demangle(char const *msg_str) {
+  using std::string;
+  string msg(msg_str);
+  size_t symbol_start = string::npos;
+  size_t symbol_end = string::npos;
+  if ( ((symbol_start = msg.find("_Z")) != string::npos)
+       && (symbol_end = msg.find_first_of(" ", symbol_start)) ) {
+    string left_of_symbol(msg, 0, symbol_start);
+    string symbol(msg, symbol_start, symbol_end - symbol_start);
+    string right_of_symbol(msg, symbol_end);
+
+    int status = 0;
+    size_t length = string::npos;
+    char* demangled_symbol = abi::__cxa_demangle(symbol.c_str(), 0, &length, &status);
+    if (demangled_symbol && status == 0 && length > 0) {
+      string symbol_str(demangled_symbol, length - 1);
+      free(demangled_symbol);
+      std::ostringstream os;
+      os << left_of_symbol << symbol_str << right_of_symbol;
+      return os.str();
+    }
+  }
+  return string(msg_str);
+}
+
+inline std::string StackTrace() {
+  using std::string;
+  std::ostringstream stacktrace_os;
+  const int MAX_STACK_SIZE = DMLC_LOG_STACK_TRACE_SIZE;
+  void *stack[MAX_STACK_SIZE];
+  int nframes = backtrace(stack, MAX_STACK_SIZE);
+  stacktrace_os << "Stack trace returned " << nframes << " entries:" << std::endl;
+  char **msgs = backtrace_symbols(stack, nframes);
+  if (msgs != nullptr) {
+    for (int frameno = 0; frameno < nframes; ++frameno) {
+      string msg = dmlc::Demangle(msgs[frameno]);
+      stacktrace_os << "[bt] (" << frameno << ") " << msg << "\n";
+    }
+  }
+  free(msgs);
+  string stack_trace = stacktrace_os.str();
+  return stack_trace;
+}
+
+#else  // DMLC_LOG_STACK_TRACE is off
+
+inline std::string demangle(char const* msg_str) {
+  return std::string();
+}
+
+inline std::string StackTrace() {
+  return std::string("stack traces not available when "
+  "DMLC_LOG_STACK_TRACE is disabled at compile time.");
+}
+
+#endif  // DMLC_LOG_STACK_TRACE
+
 #if DMLC_LOG_FATAL_THROW == 0
 class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
   ~LogMessageFatal() {
-#if DMLC_LOG_STACK_TRACE
-    const int MAX_STACK_SIZE = 10;
-    void *stack[MAX_STACK_SIZE];
-
-    int nframes = backtrace(stack, MAX_STACK_SIZE);
-    log_stream_ << "\n\n" << "Stack trace returned " << nframes << " entries:\n";
-    char **msgs = backtrace_symbols(stack, nframes);
-    if (msgs != nullptr) {
-      for (int i = 0; i < nframes; ++i) {
-        log_stream_ << "[bt] (" << i << ") " << msgs[i] << "\n";
-      }
-    }
-#endif
-
-    log_stream_ << "\n";
+    log_stream_ << "\n\n" << StackTrace() << "\n";
     abort();
   }
 
@@ -288,17 +338,7 @@ class LogMessageFatal {
   std::ostringstream &stream() { return log_stream_; }
   ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    const int MAX_STACK_SIZE = 10;
-    void *stack[MAX_STACK_SIZE];
-
-    int nframes = backtrace(stack, MAX_STACK_SIZE);
-    log_stream_ << "\n\n" << "Stack trace returned " << nframes << " entries:\n";
-    char **msgs = backtrace_symbols(stack, nframes);
-    if (msgs != nullptr) {
-      for (int i = 0; i < nframes; ++i) {
-        log_stream_ << "[bt] (" << i << ") " << msgs[i] << "\n";
-      }
-    }
+    log_stream_ << "\n\n" << StackTrace() << "\n";
 #endif
 
     // throwing out of destructor is evil
