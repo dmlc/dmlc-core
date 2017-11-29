@@ -8,12 +8,6 @@
 #if defined(_OPENMP)
 #include <omp.h>
 #else
-#ifndef DISABLE_OPENMP
-// use pragma message instead of warning
-#pragma message("Warning: OpenMP is not available, "                    \
-                "project will be compiled into single-thread code. "     \
-                "Use OpenMP-enabled compiler to get benefit of multi-threading.")
-#endif
 //! \cond Doxygen_Suppress
 #ifdef __cplusplus
 extern "C" {
