@@ -26,7 +26,7 @@ def filepath_enumerate(paths):
         else:
             for root, dirs, files in os.walk(path):
                 for name in files:
-                    out.append(os.path.join(root, name))
+                    out.append(os.path.normpath(os.path.join(root, name)))
     return out
 
 class LintHelper(object):
@@ -191,12 +191,13 @@ def main():
     excluded_paths = filepath_enumerate(args.exclude_path)
     for path in args.path:
         if os.path.isfile(path):
-            if path not in excluded_paths:
+            normpath = os.path.normpath(path)
+            if normpath not in excluded_paths:
                 process(path, allow_type)
         else:
             for root, dirs, files in os.walk(path):
                 for name in files:
-                    file_path = os.path.join(root, name)
+                    file_path = os.path.normpath(os.path.join(root, name))
                     if file_path not in excluded_paths:
                         process(file_path, allow_type)
     nerr = _HELPER.print_summary(sys.stderr)
