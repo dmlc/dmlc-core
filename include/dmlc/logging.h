@@ -251,26 +251,39 @@ class CustomLogMessage {
   std::ostringstream log_stream_;
 };
 
+
+
+#if DMLC_LOG_STACK_TRACE
+std::string demangle(char const* msg_str);
+#define STACK_TRACE()\
+  using std::string;\
+  std::ostringstream stacktrace_;\
+  const int MAX_STACK_SIZE = DMLC_LOG_STACK_TRACE_SIZE;\
+  void *stack[MAX_STACK_SIZE];\
+  int nframes = backtrace(stack, MAX_STACK_SIZE);\
+  stacktrace_ << "Stack trace returned " << nframes << " entries:" << std::endl;\
+  char **msgs = backtrace_symbols(stack, nframes);\
+  if (msgs != nullptr) {\
+    for (int frameno = 0; frameno < nframes; ++frameno) {\
+      string msg = dmlc::demangle(msgs[frameno]);\
+      stacktrace_ << "[bt] (" << frameno << ") " << msg << "\n";\
+    }\
+  }\
+  free(msgs);\
+  string stack_trace = stacktrace_.str();
+
+#else
+inline std::string demangle(char const* msg_str) { return std::string(); }
+#define STACK_TRACE() {}
+#endif
+
 #if DMLC_LOG_FATAL_THROW == 0
 class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
   ~LogMessageFatal() {
-#if DMLC_LOG_STACK_TRACE
-    const int MAX_STACK_SIZE = 10;
-    void *stack[MAX_STACK_SIZE];
-
-    int nframes = backtrace(stack, MAX_STACK_SIZE);
-    log_stream_ << "\n\n" << "Stack trace returned " << nframes << " entries:\n";
-    char **msgs = backtrace_symbols(stack, nframes);
-    if (msgs != nullptr) {
-      for (int i = 0; i < nframes; ++i) {
-        log_stream_ << "[bt] (" << i << ") " << msgs[i] << "\n";
-      }
-    }
-#endif
-
-    log_stream_ << "\n";
+    STACK_TRACE();
+    log_stream_ << "\n\n" << stack_trace << "\n";
     abort();
   }
 
@@ -288,17 +301,8 @@ class LogMessageFatal {
   std::ostringstream &stream() { return log_stream_; }
   ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    const int MAX_STACK_SIZE = 10;
-    void *stack[MAX_STACK_SIZE];
-
-    int nframes = backtrace(stack, MAX_STACK_SIZE);
-    log_stream_ << "\n\n" << "Stack trace returned " << nframes << " entries:\n";
-    char **msgs = backtrace_symbols(stack, nframes);
-    if (msgs != nullptr) {
-      for (int i = 0; i < nframes; ++i) {
-        log_stream_ << "[bt] (" << i << ") " << msgs[i] << "\n";
-      }
-    }
+    STACK_TRACE();
+    log_stream_ << "\n\n" << stack_trace << "\n";
 #endif
 
     // throwing out of destructor is evil
