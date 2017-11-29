@@ -26,7 +26,7 @@
  * This can help identify the error that cannot be catched.
  */
 #ifndef DMLC_LOG_BEFORE_THROW
-#define DMLC_LOG_BEFORE_THROW 1
+#define DMLC_LOG_BEFORE_THROW 0
 #endif
 
 /*!
