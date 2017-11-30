@@ -32,9 +32,21 @@ FileSystem *FileSystem::GetInstance(const URI &path) {
   if (path.protocol == "file://" || path.protocol.length() == 0) {
     return LocalFileSystem::GetInstance();
   }
-  if (path.protocol == "hdfs://") {
+  if (path.protocol == "hdfs://" || path.protocol == "viewfs://") {
 #if DMLC_USE_HDFS
-    return HDFSFileSystem::GetInstance(path.host);
+    if (path.host.length() == 0) {
+      return HDFSFileSystem::GetInstance("default");
+    } else if (path.protocol == "viewfs://") {
+      char* defaultFS = nullptr;
+      hdfsConfGetStr("fs.defaultFS", &defaultFS);
+      if (path.host.length() != 0) {
+        CHECK("viewfs://" + path.host == defaultFS)
+            << "viewfs is only supported as a fs.defaultFS.";
+      }
+      return HDFSFileSystem::GetInstance("default");
+    } else {
+      return HDFSFileSystem::GetInstance(path.host);
+    }
 #else
     LOG(FATAL) << "Please compile with DMLC_USE_HDFS=1 to use hdfs";
 #endif
