@@ -125,7 +125,6 @@ class Row {
   inline real_t get_weight() const {
     return weight == NULL ? 1.0f : *weight;
   }
-
   /*!
    * \return the qid of the instance, this function is always
    *  safe even when qid == NULL
@@ -177,7 +176,7 @@ struct RowBlock {
   const real_t *label;
   /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
   const real_t *weight;
-  /*! \brief With session-id: array[size] label of each instance, otherwise nullptr */
+  /*! \brief With qid: array[size] session-id of each instance, otherwise nullptr */
   const size_t *qid;
   /*! \brief field id*/
   const IndexType *field;
