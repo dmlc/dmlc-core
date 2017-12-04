@@ -68,6 +68,8 @@ ParseBlock(char *begin,
   out->Clear();
   char * lbegin = begin;
   char * lend = lbegin;
+  // advance lbegin if it points to newlines
+  while ((lbegin != end) && (*lbegin == '\n' || *lbegin == '\r')) ++lbegin;
   while (lbegin != end) {
     // get line end
     lend = lbegin + 1;
