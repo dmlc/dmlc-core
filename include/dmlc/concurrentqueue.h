@@ -43,6 +43,10 @@
 #endif
 #endif
 
+#if defined(_WIN32) || defined(__WINDOWS__) || defined(__WIN32__) || defined(_WIN64)
+#include <windows.h>  // for GetCurrentThreadId()
+#endif
+
 #if defined(__APPLE__)
 #include "TargetConditionals.h"
 #endif
