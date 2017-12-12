@@ -35,7 +35,6 @@ def get_cache_file_set(args):
             fset.add(fname)
     return fset, cmds
 
-
 def get_memory_mb(mem_str):
     """Get the memory in MB from memory string.
 
@@ -56,6 +55,18 @@ def get_memory_mb(mem_str):
         msg = 'Invalid memory specification %s, need to be a number follows g or m' % mem_str
         raise RuntimeError(msg)
 
+def parse_env_pairs(env_args):
+    """
+    Convert a comma separated list of key:value to a dictionary
+    Example: `key1:value1,key2:value2` into a dictionary with 2 keys (key1 and key2)
+    :param env_args:
+    :return:
+    """
+    envs = {}
+    for pair in env_args.split(","):
+        for k,v in pair.split(":"):
+            envs[k] = v
+    return envs
 
 def get_opts(args=None):
     """Get options to launch the job.
@@ -141,12 +152,14 @@ def get_opts(args=None):
                         directory into remote machines\'s SYNC_DST_DIR')
     parser.add_argument('command', nargs='+',
                         help='Command to be launched')
+
     parser.add_argument('--slurm-worker-nodes', default=None, type=int,
                         help=('Number of nodes on which workers are run. Used only in SLURM mode.' +
                               'If not explicitly set, it defaults to number of workers.'))
     parser.add_argument('--slurm-server-nodes', default=None, type=int,
                         help=('Number of nodes on which parameter servers are run. Used only in SLURM mode.' +
                               'If not explicitly set, it defaults to number of parameter servers.'))
+
     parser.add_argument('--kube-namespace', default="default", type=str,
                         help=('A namespace in whitch all tasks are run. Used only in Kubernetes mode.' +
                               'If not explicitly set, it defaults to default.'))
