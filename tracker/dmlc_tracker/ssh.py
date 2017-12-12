@@ -48,7 +48,7 @@ def get_envs_str(dmlc_envs, addnl_envs, is_server):
     """
     # appends a pair of key and value to the list representing export command
     def append_env_var(envs_list, key, value):
-        envs_list.append('export ' + k + '=' + v + ';')
+        envs_list.append('export ' + key + '=' + value + ';')
 
     # add role to dmlc_envs
     dmlc_envs['DMLC_ROLE'] = 'server' if is_server else 'worker'
