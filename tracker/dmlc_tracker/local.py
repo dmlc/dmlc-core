@@ -39,7 +39,6 @@ def exec_cmd(cmd, role, taskid, dmlc_envs, addnl_envs):
         env.update(addnl_envs['worker'])
     else:
         env.update(addnl_envs['server'])
-        print(env)
 
     env['DMLC_TASK_ID'] = str(taskid)
     env['DMLC_ROLE'] = role
