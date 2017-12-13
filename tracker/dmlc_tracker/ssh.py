@@ -28,8 +28,8 @@ def prepare_envs(args):
     """
     envs = {}
     # default env variables passed
-    envs['default'] = set('OMP_NUM_THREADS', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
-                          'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE')
+    envs['default'] = {'OMP_NUM_THREADS', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
+                          'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE'}
     # given by user
     envs['user'] = set(args.env)
     # remove those specified by user from default so we can confirm that user has set these vars
@@ -48,12 +48,12 @@ def get_envs_str(dmlc_envs, addnl_envs, is_server):
     """
     # appends a pair of key and value to the list representing export command
     def append_env_var(envs_list, key, value):
-        envs_list.append('export ' + key + '=' + value + ';')
+        envs_list.append('export ' + key + '=' + str(value) + ';')
 
     # add role to dmlc_envs
     dmlc_envs['DMLC_ROLE'] = 'server' if is_server else 'worker'
 
-    envs = ['export']
+    envs = []
     for k in addnl_envs['default']:
         v = os.getenv(k)
         if v is not None:
@@ -131,11 +131,9 @@ def submit(args):
             prog = get_envs_str(dmlc_envs, addnl_envs, is_server)
             prog += ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
-
-            thread = Thread(target = run, args=(prog,))
+            thread = Thread(target=run, args=(prog,))
             thread.setDaemon(True)
             thread.start()
-
         return ssh_submit
 
     tracker.submit(args.num_workers, args.num_servers,
