@@ -31,11 +31,11 @@ def prepare_envs(args):
     envs['default'] = set('OMP_NUM_THREADS', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
                           'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE')
     # given by user
-    envs['user'] = set(args.envs.split(","))
+    envs['user'] = set(args.env)
     # remove those specified by user from default so we can confirm that user has set these vars
     envs['default'].difference_update(envs['user'])
-    envs['server'] = parse_env_pairs(args.envs_server)
-    envs['worker'] = parse_env_pairs(args.envs_worker)
+    envs['server'] = parse_env_pairs(args.env_server)
+    envs['worker'] = parse_env_pairs(args.env_worker)
     return envs
 
 def get_envs_str(dmlc_envs, addnl_envs, is_server):

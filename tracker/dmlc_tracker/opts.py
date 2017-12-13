@@ -57,15 +57,23 @@ def get_memory_mb(mem_str):
 
 def parse_env_pairs(env_args):
     """
-    Convert a comma separated list of key:value to a dictionary
-    Example: `key1:value1,key2:value2` into a dictionary with 2 keys (key1 and key2)
+    Convert a list of key:value to a dictionary
+    Example: `['key1:value1', 'key2:value2']` into a dictionary with 2 keys ('key1' and 'key2')
     :param env_args:
     :return:
     """
+    def raise_unknown_format(pair):
+        raise ValueError("Couldn't recognize "+ pair +
+                         ". Expected is env_variable:value")
+
     envs = {}
-    for pair in env_args.split(","):
-        for k,v in pair.split(":"):
+    for pair in env_args:
+        try:
+            k,v = pair.split(":")
             envs[k] = v
+        except ValueError:
+            # to raise an error that user can understand
+            raise_unknown_format(pair)
     return envs
 
 def get_opts(args=None):
@@ -135,6 +143,10 @@ def get_opts(args=None):
                               ' Only valid in yarn jobs.'))
     parser.add_argument('--env', action='append', default=[],
                         help='Client and ApplicationMaster environment variables.')
+    parser.add_argument('--env-server', action='append', default=[],
+                        help='Environment variable:value for server only')
+    parser.add_argument('--env-worker', action='append', default=[],
+                        help='Environment variable:value for worker only')
     parser.add_argument('--yarn-app-classpath', type=str,
                         help=('Explicit YARN ApplicationMaster classpath.' +
                               'Can be used to override defaults.'))

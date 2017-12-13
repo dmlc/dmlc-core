@@ -19,8 +19,11 @@ def prepare_envs(args):
     # would automatically include --envs even if given
     envs['default'] = os.environ.copy()
     # given by user
-    envs['server'] = parse_env_pairs(args.envs_server)
-    envs['worker'] = parse_env_pairs(args.envs_worker)
+    for k in args.env:
+        if k not in envs['default']:
+            raise ValueError('The environment variable '+ k + ' was passed but not set')
+    envs['server'] = parse_env_pairs(args.env_server)
+    envs['worker'] = parse_env_pairs(args.env_worker)
     return envs
 
 def exec_cmd(cmd, role, taskid, dmlc_envs, addnl_envs):
@@ -28,13 +31,15 @@ def exec_cmd(cmd, role, taskid, dmlc_envs, addnl_envs):
     if cmd[0].find('/') == -1 and os.path.exists(cmd[0]) and os.name != 'nt':
         cmd[0] = './' + cmd[0]
     cmd = ' '.join(cmd)
+    env = addnl_envs['default'].copy()
+    for k in dmlc_envs:
+        env[k] = str(dmlc_envs[k])
 
-    env = addnl_envs['default']
-    env.update(dmlc_envs)
     if role == 'worker':
         env.update(addnl_envs['worker'])
     else:
         env.update(addnl_envs['server'])
+        print(env)
 
     env['DMLC_TASK_ID'] = str(taskid)
     env['DMLC_ROLE'] = role
