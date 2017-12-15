@@ -88,7 +88,7 @@ class ThreadGroup {
 template<typename TQueue>
 struct LFQThreadData {
   LFQThreadData() : count_(0) {}
-  std::atomic<int> count_;
+  std::atomic<size_t> count_;
   std::shared_ptr<TQueue> q_ = std::make_shared<TQueue>();
   std::shared_ptr<SimpleEvent> ready_ = std::make_shared<SimpleEvent>();
   std::mutex cs_map_;
@@ -126,7 +126,7 @@ static void BlockingPullThread(const int id, std::shared_ptr<LFQThreadData<TQueu
 
 TEST(Lockfree, ConcurrentQueue) {
   ThreadGroup threads;
-  const int ITEM_COUNT = 100;
+  const size_t ITEM_COUNT = 100;
   auto data = std::make_shared<LFQThreadData<dmlc::moodycamel::ConcurrentQueue<int>>>();
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -148,7 +148,7 @@ TEST(Lockfree, ConcurrentQueue) {
   GTEST_ASSERT_EQ(count, ITEM_COUNT);
 
   threads.WaitForAll();
-  GTEST_ASSERT_EQ(threads.Count(), 0);
+  GTEST_ASSERT_EQ(threads.Count(), 0UL);
 
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -157,10 +157,10 @@ TEST(Lockfree, ConcurrentQueue) {
   }
   data->ready_->signal();
   threads.WaitForAll();
-  GTEST_ASSERT_EQ(threads.Count(), 0);
+  GTEST_ASSERT_EQ(threads.Count(), 0UL);
 
   count = data->q_->size_approx();
-  GTEST_ASSERT_EQ(count, 0);
+  GTEST_ASSERT_EQ(count, 0UL);
 }
 
 TEST(Lockfree, BlockingConcurrentQueue) {
@@ -169,7 +169,7 @@ TEST(Lockfree, BlockingConcurrentQueue) {
     int, dmlc::moodycamel::ConcurrentQueueDefaultTraits>;
 
   ThreadGroup threads;
-  const int ITEM_COUNT = 100;
+  const size_t ITEM_COUNT = 100;
   auto data = std::make_shared<LFQThreadData<BlockingQueue>>();
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -191,7 +191,7 @@ TEST(Lockfree, BlockingConcurrentQueue) {
   GTEST_ASSERT_EQ(count, ITEM_COUNT);
 
   threads.WaitForAll();
-  GTEST_ASSERT_EQ(threads.Count(), 0);
+  GTEST_ASSERT_EQ(threads.Count(), 0UL);
 
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -200,9 +200,9 @@ TEST(Lockfree, BlockingConcurrentQueue) {
   }
   data->ready_->signal();
   threads.WaitForAll();
-  GTEST_ASSERT_EQ(threads.Count(), 0);
+  GTEST_ASSERT_EQ(threads.Count(), 0UL);
 
   count = data->q_->size_approx();
-  GTEST_ASSERT_EQ(count, 0);
+  GTEST_ASSERT_EQ(count, 0UL);
 }
 
