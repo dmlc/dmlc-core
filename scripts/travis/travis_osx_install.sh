@@ -5,3 +5,4 @@ if [ ${TRAVIS_OS_NAME} != "osx" ]; then
 fi
 
 brew update
+sudo easy_install pip
