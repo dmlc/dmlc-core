@@ -176,7 +176,7 @@ struct RowBlock {
   const real_t *label;
   /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
   const real_t *weight;
-  /*! \brief With qid: array[size] session-id of each instance, otherwise nullptr */
+  /*! \brief With qid: array[size] session id of each instance, otherwise nullptr */
   const size_t *qid;
   /*! \brief field id*/
   const IndexType *field;
