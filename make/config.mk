@@ -14,6 +14,9 @@ export CC = gcc
 export CXX = g++
 export MPICXX = mpicxx
 
+# choice of archiver
+export AR = ar
+
 # whether to compile with -fPIC option
 # Note: to build shared library(so files), fPIC is required
 WITH_FPIC = 1

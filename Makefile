@@ -87,7 +87,7 @@ $(OBJ) :
 	$(CXX) -c $(CFLAGS) -o $@ $(firstword $(filter %.cpp %.c %.cc, $^) )
 
 $(ALIB):
-	ar cr $@ $+
+	$(AR) cr $@ $+
 
 lint:
 	python scripts/lint.py dmlc ${LINT_LANG} include src scripts $(NOLINT_FILES)
