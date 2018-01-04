@@ -157,7 +157,7 @@ TEST(ThreadGroup, TimerThread) {
   thread_group->request_shutdown_all();
   // Wait for all of the queue threads to exit
   thread_group->join_all();
-  GTEST_ASSERT_GE(count, 3U);  // Should have at least done three
+  GTEST_ASSERT_GE(count, 2U);  // Should have at least done three
   GTEST_ASSERT_LE(count, 10U); // Should not have had time to do 20 of them
 }
 
