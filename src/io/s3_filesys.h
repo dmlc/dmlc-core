@@ -13,20 +13,20 @@
 
 namespace dmlc {
 namespace io {
-/*! \brief AWS S3 filesystem */
+/*! \brief S3 filesystem */
 class S3FileSystem : public FileSystem {
  public:
   /*! \brief destructor */
   virtual ~S3FileSystem() {}
 
   /*!
-   * \brief Sets AWS access credentials
-   * \param aws_access_id The AWS Access Key ID
-   * \param aws_secret_key The AWS Secret Key
+   * \brief Sets S3 access credentials
+   * \param s3_access_id The S3 Access Key ID
+   * \param s3_secret_key The S3 Secret Key
    * \return the information about the file
    */
-  void SetCredentials(const std::string& aws_access_id,
-                      const std::string& aws_secret_key);
+  void SetCredentials(const std::string& s3_access_id,
+                      const std::string& s3_secret_key);
 
   /*!
    * \brief get information about a path
@@ -69,14 +69,18 @@ class S3FileSystem : public FileSystem {
  private:
   /*! \brief constructor */
   S3FileSystem();
-  /*! \brief AWS access id */
-  std::string aws_access_id_;
-  /*! \brief AWS secret key */
-  std::string aws_secret_key_;
-  /*! \brief AWS session token */
-  std::string aws_session_token_;
-  /*! \brief AWS region*/
-  std::string aws_region_;
+  /*! \brief S3 access id */
+  std::string s3_access_id_;
+  /*! \brief S3 secret key */
+  std::string s3_secret_key_;
+  /*! \brief S3 session token */
+  std::string s3_session_token_;
+  /*! \brief S3 region*/
+  std::string s3_region_;
+  /*! \brief S3 endpoint*/
+  std::string s3_endpoint_;
+  /*! \brief S3 verify ssl*/
+  std::string s3_verify_ssl_;
 
   /*!
    * \brief try to get information about a path
