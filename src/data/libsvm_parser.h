@@ -64,12 +64,12 @@ ParseBlock(char *begin,
     }
     out->label.push_back(label);
     // parse qid:id
-    size_t qid;
+    uint64_t qid;
     p = q;
     while (p != end && *p == ' ') ++p;
     if (p != lend && (strncmp(p, "qid:", 4) == 0))  {
       p += 4;
-      qid = atol(p);
+      qid = atoll(p);
       out->qid.push_back(qid);
       p = q;
     }

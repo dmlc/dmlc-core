@@ -32,7 +32,7 @@ struct RowBlockContainer {
   /*! \brief array[size] weight of each instance */
   std::vector<real_t> weight;
   /*! \brief array[size] session-id of each instance */
-  std::vector<size_t> qid;
+  std::vector<uint64_t> qid;
   /*! \brief field index */
   std::vector<IndexType> field;
   /*! \brief feature index */

@@ -74,7 +74,7 @@ class Row {
   /*! \brief weight of the instance */
   const real_t *weight;
   /*! \brief session-id of the instance */
-  const size_t *qid;
+  const uint64_t *qid;
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
@@ -129,7 +129,7 @@ class Row {
    * \return the qid of the instance, this function is always
    *  safe even when qid == NULL
    */
-  inline size_t get_qid() const {
+  inline uint64_t get_qid() const {
     return qid == NULL ? 0 : *qid;
   }
   /*!
@@ -177,7 +177,7 @@ struct RowBlock {
   /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
   const real_t *weight;
   /*! \brief With qid: array[size] session id of each instance, otherwise nullptr */
-  const size_t *qid;
+  const uint64_t *qid;
   /*! \brief field id*/
   const IndexType *field;
   /*! \brief feature index */
