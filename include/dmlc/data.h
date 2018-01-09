@@ -73,6 +73,8 @@ class Row {
   const real_t *label;
   /*! \brief weight of the instance */
   const real_t *weight;
+  /*! \brief session-id of the instance */
+  const uint64_t *qid;
   /*! \brief length of the sparse vector */
   size_t length;
   /*!
@@ -124,6 +126,13 @@ class Row {
     return weight == NULL ? 1.0f : *weight;
   }
   /*!
+   * \return the qid of the instance, this function is always
+   *  safe even when qid == NULL
+   */
+  inline uint64_t get_qid() const {
+    return qid == NULL ? 0 : *qid;
+  }
+  /*!
    * \brief helper function to compute dot product of current
    * \param weight the dense array of weight we want to product
    * \param size the size of the weight vector
@@ -167,6 +176,8 @@ struct RowBlock {
   const real_t *label;
   /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
   const real_t *weight;
+  /*! \brief With qid: array[size] session id of each instance, otherwise nullptr */
+  const uint64_t *qid;
   /*! \brief field id*/
   const IndexType *field;
   /*! \brief feature index */
@@ -183,6 +194,7 @@ struct RowBlock {
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(real_t));
     if (weight != NULL) cost += size * sizeof(real_t);
+    if (qid != NULL) cost += size * sizeof(size_t);
     size_t ndata = offset[size] - offset[0];
     if (field != NULL) cost += ndata * sizeof(IndexType);
     if (index != NULL) cost += ndata * sizeof(IndexType);
@@ -204,6 +216,11 @@ struct RowBlock {
       ret.weight = weight + begin;
     } else {
       ret.weight = NULL;
+    }
+    if (qid != NULL) {
+      ret.qid = qid + begin;
+    } else {
+      ret.qid = NULL;
     }
     ret.offset = offset + begin;
     ret.field = field;
@@ -344,6 +361,11 @@ RowBlock<IndexType>::operator[](size_t rowid) const {
     inst.weight = weight + rowid;
   } else {
     inst.weight = NULL;
+  }
+  if (qid != NULL) {
+    inst.qid = qid + rowid;
+  } else {
+    inst.qid = NULL;
   }
   inst.length = offset[rowid + 1] - offset[rowid];
   if (field != NULL) {
