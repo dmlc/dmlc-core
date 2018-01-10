@@ -530,8 +530,8 @@ void ReadStream::InitRequest(size_t begin_bytes,
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HEADER, 0L) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
   if (s3_verify_ssl_ == "0") {
-   CHECK(curl_easy_setopt(ecurl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);  
-   CHECK(curl_easy_setopt(ecurl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
+    CHECK(curl_easy_setopt(ecurl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
   }
 }
 
@@ -564,7 +564,8 @@ class WriteStream : public Stream {
              const std::string &s3_endpoint,
              const std::string &s3_verify_ssl)
       : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
-         s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl), closed_(false) {
+         s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl),
+         closed_(false) {
     const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
     if (buz != NULL) {
       max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
@@ -722,7 +723,7 @@ void WriteStream::Run(const std::string &method,
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
     if (s3_verify_ssl_ == "0") {
-      CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);  
+      CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
       CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
     }
     if (method == "POST") {
@@ -857,7 +858,7 @@ void ListObjects(const URI &path,
   CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
   if (s3_verify_ssl == "0") {
-    CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);  
+    CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
     CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
   }
   CHECK(curl_easy_perform(curl) == CURLE_OK);
@@ -912,6 +913,20 @@ S3FileSystem::S3FileSystem() {
   const char *region = getenv("S3_REGION");
   const char *endpoint = getenv("S3_ENDPOINT");
   const char *verify_ssl = getenv("S3_VERIFY_SSL");
+
+  if (keyid == NULL || (strcmp(keyid, "") == 0)) {
+    keyid = getenv("AWS_ACCESS_KEY_ID");
+  }
+  if (seckey == NULL || (strcmp(seckey, "") == 0)) {
+    seckey = getenv("AWS_SECRET_ACCESS_KEY");
+  }
+  if (token == NULL || (strcmp(token, "") == 0)) {
+    token = getenv("AWS_SESSION_TOKEN");
+  }
+  if (region == NULL || (strcmp(region, "") == 0)) {
+    region = getenv("AWS_REGION");
+  }
+
   if (keyid == NULL) {
     LOG(FATAL) << "Need to set enviroment variable S3_ACCESS_KEY_ID to use S3";
   }
@@ -935,12 +950,12 @@ S3FileSystem::S3FileSystem() {
   if (token != NULL) {
     s3_session_token_ = token;
   }
-  if (endpoint == NULL ||  (strcmp(endpoint, "") == 0)) {
+  if (endpoint == NULL || (strcmp(endpoint, "") == 0)) {
     s3_endpoint_ = s3::getEndpoint(s3_region_);
   } else {
     s3_endpoint_ = endpoint;
   }
-  
+
   s3_verify_ssl_ = verify_ssl;
 }
 
@@ -957,7 +972,8 @@ bool S3FileSystem::TryGetPathInfo(const URI &path_, FileInfo *out_info) {
     path.name.resize(path.name.length() - 1);
   }
   std::vector<FileInfo> files;
-  s3::ListObjects(path,  s3_access_id_, s3_secret_key_, s3_session_token_, s3_region_, s3_endpoint_, s3_verify_ssl_, &files);
+  s3::ListObjects(path,  s3_access_id_, s3_secret_key_, s3_session_token_,
+                  s3_region_, s3_endpoint_, s3_verify_ssl_, &files);
   std::string pdir = path.name + '/';
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
@@ -982,15 +998,15 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
   CHECK(path.protocol == "s3://")
       << " S3FileSystem.ListDirectory";
   if (path.name[path.name.length() - 1] == '/') {
-    s3::ListObjects(path, s3_access_id_,
-                    s3_secret_key_, s3_session_token_, s3_region_, s3_endpoint_, s3_verify_ssl_, out_list);
+    s3::ListObjects(path, s3_access_id_, s3_secret_key_, s3_session_token_,
+                    s3_region_, s3_endpoint_, s3_verify_ssl_, out_list);
     return;
   }
   std::vector<FileInfo> files;
   std::string pdir = path.name + '/';
   out_list->clear();
-  s3::ListObjects(path, s3_access_id_,
-                  s3_secret_key_, s3_session_token_, s3_region_, s3_endpoint_, s3_verify_ssl_, &files);
+  s3::ListObjects(path, s3_access_id_, s3_secret_key_, s3_session_token_,
+                  s3_region_, s3_endpoint_, s3_verify_ssl_, &files);
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
       CHECK(files[i].type == kFile);
@@ -999,8 +1015,8 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
     }
     if (files[i].path.name == pdir) {
       CHECK(files[i].type == kDirectory);
-      s3::ListObjects(files[i].path, s3_access_id_,
-                      s3_secret_key_, s3_session_token_, s3_region_, s3_endpoint_, s3_verify_ssl_, out_list);
+      s3::ListObjects(files[i].path, s3_access_id_, s3_secret_key_, s3_session_token_,
+                      s3_region_, s3_endpoint_, s3_verify_ssl_, out_list);
       return;
     }
   }
