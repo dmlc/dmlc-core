@@ -66,13 +66,22 @@ class FileStream : public SeekStream {
 
 FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
   struct stat sb;
-  if (stat(path.name.c_str(), &sb) == -1) {
-    int errsv = errno;
-    LOG(FATAL) << "LocalFileSystem.GetPathInfo " << path.name
-               << " Error:" << strerror(errsv);
-  }
   FileInfo ret;
   ret.path = path;
+  if (stat(path.name.c_str(), &sb) == -1) {
+    int errsv = errno;
+    // If lstat succeeds where stat failed, assume a problematic
+    // symlink and treat this as if it were a 0-length file.
+    if (lstat(path.name.c_str(), &sb) == 0) {
+      ret.size = 0;
+      ret.type = kFile;
+      LOG(INFO) << "LocalFileSystem.GetPathInfo: detected symlink "
+                << path.name << " error: " << strerror(errsv);
+      return ret;
+    }
+    LOG(FATAL) << "LocalFileSystem.GetPathInfo: "
+               << path.name << " error: " << strerror(errsv);
+  }
   ret.size = sb.st_size;
 
   if ((sb.st_mode & S_IFMT) == S_IFDIR) {
