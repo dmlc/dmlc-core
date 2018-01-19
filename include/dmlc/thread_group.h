@@ -783,7 +783,6 @@ inline bool CreateTimer(const std::string& timer_name,
   dmlc::TimerThread<Duration>::start(timer_thread, duration, timer_function);
   return timer_thread != nullptr;
 }
-
 }  // namespace dmlc
 
 #endif  // DMLC_THREAD_GROUP_H_
