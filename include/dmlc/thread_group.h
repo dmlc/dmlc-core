@@ -127,7 +127,7 @@ class ThreadGroup {
         internal_join(true);
       }
       WriteLock guard(thread_mutex_);
-      if (thread_) {
+      if (thread_.load()) {
         std::thread *thrd = thread_;
         thread_ = nullptr;
         if (self_delete) {
@@ -211,7 +211,7 @@ class ThreadGroup {
      */
     bool joinable() const {
       ReadLock guard(thread_mutex_);
-      if (thread_) {
+      if (thread_.load()) {
         CHECK_EQ(auto_remove_, false);
         // be checked by searching the group or exit event.
         return thread_.load()->joinable();
@@ -245,7 +245,7 @@ class ThreadGroup {
       ReadLock guard(thread_mutex_);
       // should be careful calling (or any function externally) this when in
       // auto-remove mode
-      if (thread_ && thread_.load()->get_id() != std::thread::id()) {
+      if (thread_.load() && thread_.load()->get_id() != std::thread::id()) {
         std::thread::id someId;
         if (!auto_remove_ok) {
           CHECK_EQ(auto_remove_, false);
@@ -783,7 +783,6 @@ inline bool CreateTimer(const std::string& timer_name,
   dmlc::TimerThread<Duration>::start(timer_thread, duration, timer_function);
   return timer_thread != nullptr;
 }
-
 }  // namespace dmlc
 
 #endif  // DMLC_THREAD_GROUP_H_
