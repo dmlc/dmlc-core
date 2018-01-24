@@ -7,6 +7,21 @@
 #include <Windows.h>
 #endif
 
+#if defined(_MSC_VER)
+static void usleep(__int64 usec)
+{
+  HANDLE timer;
+  LARGE_INTEGER ft;
+
+  ft.QuadPart = -(10*usec); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+  timer = CreateWaitableTimer(NULL, TRUE, NULL);
+  SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+  WaitForSingleObject(timer, INFINITE);
+  CloseHandle(timer);
+}
+#endif  // _WIN32
+
 static std::atomic<int> thread_count(0);
 
 static inline std::string TName(const std::string& s, int x) { return s + "-" + std::to_string(x); }
