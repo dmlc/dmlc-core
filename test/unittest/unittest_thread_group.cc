@@ -7,6 +7,21 @@
 #include <Windows.h>
 #endif
 
+#if defined(_MSC_VER)
+static void usleep(__int64 usec)
+{
+  HANDLE timer;
+  LARGE_INTEGER ft;
+
+  ft.QuadPart = -(10*usec); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+  timer = CreateWaitableTimer(NULL, TRUE, NULL);
+  SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+  WaitForSingleObject(timer, INFINITE);
+  CloseHandle(timer);
+}
+#endif  // _WIN32
+
 static std::atomic<int> thread_count(0);
 
 static inline std::string TName(const std::string& s, int x) { return s + "-" + std::to_string(x); }
@@ -130,6 +145,15 @@ static inline uint64_t GetDurationInNanoseconds(const Tick &since) {
   return GetDurationInNanoseconds(since, Now());
 }
 
+constexpr size_t SLEEP_DURATION = 500;
+constexpr size_t TIMER_PERIOD = 10;  // Ideal is 50 periods occur
+constexpr size_t MIN_COUNT_WHILE_SLEEPING = 20;
+constexpr size_t MAX_COUNT_WHILE_SLEEPING = 150;
+
+inline size_t GetDurationInMilliseconds(const Tick& start_time) {
+  return static_cast<size_t>(GetDurationInNanoseconds(start_time)/1000/1000);
+}
+
 /*!
  * \brief Test TimerThread
  */
@@ -145,20 +169,20 @@ TEST(ThreadGroup, TimerThread) {
   size_t count = 0;
   // Launch the queue thread, passing queue item handler as lambda
   dmlc::TimerThread<Duration>::start(
-    timer_thread, Duration(10), [timer_thread, start_time, &count]() -> int {
-      std::cout << "TIME: "
-                << (GetDurationInNanoseconds(start_time)/1000/1000)
+    timer_thread, Duration(TIMER_PERIOD), [timer_thread, start_time, &count]() -> int {
+      std::cout << "[" << (count + 1) << "] TIME: "
+                << GetDurationInMilliseconds(start_time)
                 << std::endl << std::flush;
       ++count;
       return 0;  // return 0 means continue
     });
-  std::this_thread::sleep_for(Duration(50));
+  std::this_thread::sleep_for(Duration(SLEEP_DURATION));
   // Trigger the queues to exit
   thread_group->request_shutdown_all();
   // Wait for all of the queue threads to exit
   thread_group->join_all();
-  GTEST_ASSERT_GE(count, 2U);  // Should have at least done three
-  GTEST_ASSERT_LE(count, 10U); // Should not have had time to do 20 of them
+  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
+  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 20 of them
 }
 
 /*!
@@ -173,21 +197,21 @@ TEST(ThreadGroup, TimerThreadSimple) {
   size_t count = 0;
   // Launch the queue thread, passing queue item handler as lambda
   dmlc::CreateTimer("TimerThreadSimple",
-                    Duration(10),
+                    Duration(TIMER_PERIOD),
                     thread_group.get(),
                     [start_time, &count]() -> int {
-                      std::cout << "TIME: "
-                                << (GetDurationInNanoseconds(start_time)/1000/1000)
+                      std::cout << "[" << (count + 1) << "] TIME: "
+                                << GetDurationInMilliseconds(start_time)
                                 << std::endl << std::flush;
                       ++count;
                       return 0;  // return 0 means continue
                     });
-  std::this_thread::sleep_for(Duration(50));
+  std::this_thread::sleep_for(Duration(SLEEP_DURATION));
   // Trigger the queues to exit
   thread_group->request_shutdown_all();
   // Wait for all of the queue threads to exit
   thread_group->join_all();
-  GTEST_ASSERT_GE(count, 2U);  // Should have at least done three
-  GTEST_ASSERT_LE(count, 10U); // Should not have had time to do 20 of them
+  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
+  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 20 of them
 }
 

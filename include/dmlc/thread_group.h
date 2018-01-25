@@ -128,7 +128,7 @@ class ThreadGroup {
       }
       WriteLock guard(thread_mutex_);
       if (thread_.load()) {
-        std::thread *thrd = thread_;
+        std::thread *thrd = thread_.load();
         thread_ = nullptr;
         if (self_delete) {
           thrd->detach();
@@ -739,7 +739,7 @@ inline bool ThreadGroup::Thread::launch(std::shared_ptr<Thread> pThis,
                                         StartFunction start_function,
                                         Args ...args) {
   WriteLock guard(pThis->thread_mutex_);
-  CHECK_EQ(!pThis->thread_, true);
+  CHECK_EQ(!pThis->thread_.load(), true);
   CHECK_NOTNULL(pThis->owner_);
   // Set auto remove
   pThis->auto_remove_ = autoRemove;
@@ -760,7 +760,7 @@ inline bool ThreadGroup::Thread::launch(std::shared_ptr<Thread> pThis,
   // Signal the thgread to continue (it will check its shutdown status)
   pThis->start_event_->signal();
   // Return if successful
-  return pThis->thread_ != nullptr;
+  return pThis->thread_.load() != nullptr;
 }
 
 /*!

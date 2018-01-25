@@ -52,7 +52,7 @@ static inline std::string TName(const std::string& s, int x) { return s + "-" + 
 
 TEST(Lockfree, ConcurrentQueue) {
   dmlc::ThreadGroup threads;
-  const int ITEM_COUNT = 100;
+  const size_t ITEM_COUNT = 100;
   auto data = std::make_shared<LFQThreadData<dmlc::moodycamel::ConcurrentQueue<int>>>();
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -74,7 +74,7 @@ TEST(Lockfree, ConcurrentQueue) {
   GTEST_ASSERT_EQ(count, ITEM_COUNT);
 
   threads.join_all();
-  GTEST_ASSERT_EQ(threads.size(), 0);
+  GTEST_ASSERT_EQ(threads.size(), 0U);
 
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -84,7 +84,7 @@ TEST(Lockfree, ConcurrentQueue) {
   }
   data->ready_->signal();
   threads.join_all();
-  GTEST_ASSERT_EQ(threads.size(), 0);
+  GTEST_ASSERT_EQ(threads.size(), 0U);
 
   count = data->q_->size_approx();
   GTEST_ASSERT_EQ(count, 0UL);
@@ -98,7 +98,7 @@ TEST(Lockfree, BlockingConcurrentQueue) {
     int, dmlc::moodycamel::ConcurrentQueueDefaultTraits>;
 
   dmlc::ThreadGroup threads;
-  const int ITEM_COUNT = 100;
+  const size_t ITEM_COUNT = 100;
   auto data = std::make_shared<LFQThreadData<BlockingQueue>>();
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -121,7 +121,7 @@ TEST(Lockfree, BlockingConcurrentQueue) {
   GTEST_ASSERT_EQ(count, ITEM_COUNT);
 
   threads.join_all();
-  GTEST_ASSERT_EQ(threads.size(), 0);
+  GTEST_ASSERT_EQ(threads.size(), 0U);
 
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
@@ -130,7 +130,7 @@ TEST(Lockfree, BlockingConcurrentQueue) {
   }
   data->ready_->signal();
   threads.join_all();
-  GTEST_ASSERT_EQ(threads.size(), 0);
+  GTEST_ASSERT_EQ(threads.size(), 0U);
 
   count = data->q_->size_approx();
   GTEST_ASSERT_EQ(count, 0UL);
