@@ -163,7 +163,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
   if (fp != NULL) {
     return new FileStream(fp, use_stdio);
   } else {
-    CHECK(allow_null) << " LocalFileSystem: fail to open \"" << path.str() << '\"';
+    CHECK(allow_null) << " LocalFileSystem::Open \"" << path.str() << "\": " << strerror(errno);
     return NULL;
   }
 }
