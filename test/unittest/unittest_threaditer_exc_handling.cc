@@ -40,6 +40,14 @@ struct IntProducerNextExc : public ThreadedIter<int>::Producer {
     return true;
   }
 };
+
+struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
+  IntProducerBeforeFirst() {}
+  virtual void BeforeFirst(void) {
+    LOG(FATAL) << "Throw exception in before first";
+  }
+  virtual bool Next(int **inout_dptr) { return true; }
+};
 }
 
 TEST(ThreadedIter, exception) {
@@ -71,4 +79,16 @@ TEST(ThreadedIter, exception) {
   }
   CHECK(caught);
   LOG(INFO) << "finish";
+  ThreadedIter<int> iter3;
+  iter3.set_max_capacity(1);
+  IntProducerBeforeFirst prod2;
+  iter3.Init(&prod2);
+  caught = false;
+  try {
+    iter3.BeforeFirst();
+  } catch (dmlc::Error &e) {
+    caught = true;
+    LOG(INFO) << "beforefirst exception caught";
+  }
+  CHECK(caught);
 }
