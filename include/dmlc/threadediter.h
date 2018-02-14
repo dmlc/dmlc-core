@@ -145,6 +145,11 @@ class ThreadedIter : public DataIter<DType> {
   inline void ThrowExcIfSet(void);
 
   /*!
+   * \brief clears exception_ptr, called from Init
+   */
+  inline void EmptyExc(void);
+
+  /*!
    * \brief adapt the iterator interface's Next
    *  NOTE: the call to this function is not threadsafe
    *  use the other Next instead
@@ -297,6 +302,7 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
   producer_sig_ = kProduce;
   producer_sig_processed_ = false;
   produce_end_ = false;
+  EmptyExc();
   // procedure running in prodcuer
   // run producer thread
   auto producer_fun = [this, next, beforefirst]() {
@@ -374,6 +380,7 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
             iter_exception_ = std::current_exception();
           }
         }
+        bool next_notify = false;
         {
           std::unique_lock<std::mutex> lock(mutex_);
           if (producer_sig_ == kBeforeFirst) {
@@ -381,14 +388,19 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
               free_cells_.push(queue_.front());
               queue_.pop();
             }
-            produce_end_ = false;
+            produce_end_ = true;
             producer_sig_processed_ = true;
-            producer_sig_ = kProduce;
             lock.unlock();
             consumer_cond_.notify_all();
-            return;
+          } else if (producer_sig_ == kProduce) {
+            produce_end_ = true;
+            next_notify = nwait_consumer_ != 0;
+            lock.unlock();
+            if (next_notify)
+              consumer_cond_.notify_all();
           }
         }
+        return;
       }
     }
   };
@@ -447,11 +459,15 @@ template <typename DType> inline void ThreadedIter<DType>::ThrowExcIfSet(void) {
     std::lock_guard<std::mutex> lock(mutex_exception_);
     if (iter_exception_) {
       tmp_exception = iter_exception_;
-      iter_exception_ = nullptr;
     }
   }
   if (tmp_exception)
     std::rethrow_exception(tmp_exception);
+}
+
+template <typename DType> inline void ThreadedIter<DType>::EmptyExc(void) {
+  std::lock_guard<std::mutex> lock(mutex_exception_);
+  iter_exception_ = nullptr;
 }
 
 }  // namespace dmlc

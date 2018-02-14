@@ -67,6 +67,7 @@ TEST(ThreadedIter, exception) {
     LOG(INFO) << "recycle exception caught";
   }
   CHECK(caught);
+  iter2.Init(&prod);
   caught = false;
   iter2.BeforeFirst();
   try {
@@ -89,6 +90,13 @@ TEST(ThreadedIter, exception) {
   } catch (dmlc::Error &e) {
     caught = true;
     LOG(INFO) << "beforefirst exception caught";
+  }
+  caught = false;
+  try {
+  iter3.BeforeFirst();
+  } catch (dmlc::Error &e) {
+    LOG(INFO) << "beforefirst exception thrown/caught";
+    caught = true;
   }
   CHECK(caught);
 }
