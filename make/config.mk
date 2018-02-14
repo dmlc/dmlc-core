@@ -37,7 +37,7 @@ USE_AZURE = 0
 LIBJVM=$(JAVA_HOME)/jre/lib/amd64/server
 
 # whether building unittest (gtest is required)
-BUILD_TEST=0
+BUILD_TEST=1
 
 # path to gtest library (only used when $BUILD_TEST=1)
 # there should be an include path in $GTEST_PATH/include and library in $GTEST_PATH/lib
