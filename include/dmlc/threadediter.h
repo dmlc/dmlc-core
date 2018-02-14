@@ -352,7 +352,7 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
             consumer_cond_.notify_all();
             return;
           }
-        } // end of lock scope
+        }  // end of lock scope
         // now without lock
         produce_end_ = !next(&cell);
         DCHECK(cell != NULL || produce_end_);
