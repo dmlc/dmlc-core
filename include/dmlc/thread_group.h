@@ -206,6 +206,15 @@ class ThreadGroup {
     }
 
     /*!
+     * \brief Make the thread joinable (by removing the auto_remove flag)
+     * \warning Care should be taken not to cause a race condition between this call
+     *          and parallel execution of this thread auto-removing itself
+     */
+    void make_joinable() {
+      auto_remove_ = false;
+    }
+
+    /*!
      * \brief Check whether the thread is joinable
      * \return true if the thread is joinable
      */
@@ -291,7 +300,7 @@ class ThreadGroup {
      * \brief Whether to automatically remove this thread's object from the ThreadGroup when the
      *        thread exists (perform its own cleanup)
      */
-    bool auto_remove_;
+    volatile bool auto_remove_;
   };
 
   /*!
@@ -395,38 +404,46 @@ class ThreadGroup {
    */
   inline void join_all() {
     CHECK_EQ(!is_this_thread_in(), true);
-    std::unordered_set<std::shared_ptr<Thread>> working_set;
-    {
-      ReadLock guard(m_);
-      for (auto iter = threads_.begin(), e_iter = threads_.end(); iter != e_iter; ++iter) {
-        if (!(*iter)->is_auto_remove()) {
-          working_set.emplace(*iter);
+    do {
+      std::unique_lock<std::mutex> lk(join_all_mtx_);
+      std::unordered_set<std::shared_ptr<Thread>> working_set;
+      {
+        ReadLock guard(m_);
+        for (auto iter = threads_.begin(), e_iter = threads_.end(); iter != e_iter; ++iter) {
+          if (!(*iter)->is_auto_remove()) {
+            working_set.emplace(*iter);
+          }
         }
       }
-    }
-    // Where possible, prefer to do a proper join rather than simply waiting for empty
-    // (easier to troubleshoot)
-    while (!working_set.empty()) {
-      std::shared_ptr<Thread> thrd;
-      thrd = *working_set.begin();
-      if (thrd->joinable()) {
-        thrd->join();
+      // Where possible, prefer to do a proper join rather than simply waiting for empty
+      // (easier to troubleshoot)
+      while (!working_set.empty()) {
+        std::shared_ptr<Thread> thrd;
+        thrd = *working_set.begin();
+        if (thrd->joinable()) {
+          thrd->join();
+        }
+        remove_thread(thrd);
+        working_set.erase(working_set.begin());
+        thrd.reset();
       }
-      remove_thread(thrd);
-      working_set.erase(working_set.begin());
-      thrd.reset();
-    }
-    // Wait for auto-remove threads (if any) to complete
+      // Wait for auto-remove threads (if any) to complete
+    } while (0);
     evEmpty_->wait();
     CHECK_EQ(threads_.size(), 0);
   }
 
   /*!
    * \brief Call request_shutdown() on all threads in this ThreadGroup
+   * \param make_all_joinable If true, remove all auto_remove flags from child threads
    */
-  inline void request_shutdown_all() {
+  inline void request_shutdown_all(const bool make_all_joinable = true) {
+    std::unique_lock<std::mutex> lk(join_all_mtx_);
     ReadLock guard(m_);
-    for (auto& thread : threads_) {
+    for (auto &thread : threads_) {
+      if (make_all_joinable) {
+        thread->make_joinable();
+      }
       thread->request_shutdown();
     }
   }
@@ -490,6 +507,8 @@ class ThreadGroup {
  private:
   /*! \brief ThreadGroup synchronization mutex */
   mutable SharedMutex m_;
+  /*! \brief join_all/auto_remove synchronization mutex */
+  mutable std::mutex join_all_mtx_;
   /*! \brief Set of threads owned and managed by this ThreadGroup object */
   std::unordered_set<std::shared_ptr<Thread>> threads_;
   /*! \brief Manual event which is signaled when the thread group is empty */
@@ -617,7 +636,7 @@ class BlockingQueueThread : public ThreadGroup::Thread {
 
 /*!
  * \brief Managed timer thread
- * \tparam Duration Durastion type (ie seconds, microseconds, etc)
+ * \tparam Duration Duration type (ie seconds, microseconds, etc)
  */
 template<typename Duration>
 class TimerThread : public ThreadGroup::Thread {

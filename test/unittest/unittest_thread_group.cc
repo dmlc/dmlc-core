@@ -128,7 +128,7 @@ TEST(ThreadGroup, ThreadLaunchQueueThread) {
                    return 0;  // return 0 means continue
                  });
   // Trigger the queues to exit
-  thread_group->request_shutdown_all();
+  thread_group->request_shutdown_all(false);
   // Wait for all of the queue threads to exit
   thread_group->join_all();
   // Check that the queue is empty
@@ -178,7 +178,7 @@ TEST(ThreadGroup, TimerThread) {
     });
   std::this_thread::sleep_for(Duration(SLEEP_DURATION));
   // Trigger the queues to exit
-  thread_group->request_shutdown_all();
+  thread_group->request_shutdown_all(true);
   // Wait for all of the queue threads to exit
   thread_group->join_all();
   GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
