@@ -15,8 +15,10 @@ def prepare_envs(args):
     Load environment variables from arguments
     """
     envs = {}
-    # default env variables passed
-    # would automatically include --envs even if given
+    # envs['default'] refers to the default env variables passed for both worker and server
+
+    # if --env option was used to pass a variable it would automatically be
+    # included because of the next line
     envs['default'] = os.environ.copy()
     # given by user
     for k in args.env:
@@ -76,7 +78,8 @@ def submit(args):
         ----------
         nworker: number of slave process to start up
         nserver: number of server nodes to start up
-        envs: enviroment variables to be added to the starting programs
+        dmlc_envs: refers to the environment variables required to start distributed training
+        addnl_envs: are optional environment variables passed by the user
         """
         procs = {}
         for i in range(nworker + nserver):

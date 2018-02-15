@@ -27,10 +27,10 @@ def prepare_envs(args):
     Load environment variables from arguments
     """
     envs = {}
-    # default env variables passed
-    envs['default'] = {'OMP_NUM_THREADS', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
+    # default env variables which are always passed by the system
+    envs['default'] = {'OMP_NUM_THREADS', 'KMP_AFFINITY', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
                           'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE'}
-    # given by user
+    # given by user with the option --env
     envs['user'] = set(args.env)
     # remove those specified by user from default so we can confirm that user has set these vars
     envs['default'].difference_update(envs['user'])
@@ -58,6 +58,7 @@ def get_envs_str(dmlc_envs, addnl_envs, is_server):
         v = os.getenv(k)
         if v is not None:
             append_env_var(envs, k, v)
+
     for k in addnl_envs['user']:
         v = os.getenv(k)
         if v is not None:

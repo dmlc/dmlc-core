@@ -164,14 +164,12 @@ def get_opts(args=None):
                         directory into remote machines\'s SYNC_DST_DIR')
     parser.add_argument('command', nargs='+',
                         help='Command to be launched')
-
     parser.add_argument('--slurm-worker-nodes', default=None, type=int,
                         help=('Number of nodes on which workers are run. Used only in SLURM mode.' +
                               'If not explicitly set, it defaults to number of workers.'))
     parser.add_argument('--slurm-server-nodes', default=None, type=int,
                         help=('Number of nodes on which parameter servers are run. Used only in SLURM mode.' +
                               'If not explicitly set, it defaults to number of parameter servers.'))
-
     parser.add_argument('--kube-namespace', default="default", type=str,
                         help=('A namespace in whitch all tasks are run. Used only in Kubernetes mode.' +
                               'If not explicitly set, it defaults to default.'))
