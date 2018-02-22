@@ -142,12 +142,12 @@ class ThreadedIter : public DataIter<DType> {
   /*!
    * \brief Rethrows exception which is set by the producer
    */
-  inline void ThrowExcIfSet(void);
+  inline void ThrowExceptionIfSet(void);
 
   /*!
    * \brief clears exception_ptr, called from Init
    */
-  inline void EmptyExc(void);
+  inline void ClearException(void);
 
   /*!
    * \brief adapt the iterator interface's Next
@@ -176,7 +176,7 @@ class ThreadedIter : public DataIter<DType> {
   }
   /*! \brief set the iterator before first location */
   virtual void BeforeFirst(void) {
-    ThrowExcIfSet();
+    ThrowExceptionIfSet();
     std::unique_lock<std::mutex> lock(mutex_);
     if (out_data_ != NULL) {
       free_cells_.push(out_data_);
@@ -199,7 +199,7 @@ class ThreadedIter : public DataIter<DType> {
     lock.unlock();
     // notify producer, in case they are waiting for the condition.
     if (notify) producer_cond_.notify_one();
-    ThrowExcIfSet();
+    ThrowExceptionIfSet();
   }
 
  private:
@@ -302,7 +302,7 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
   producer_sig_ = kProduce;
   producer_sig_processed_ = false;
   produce_end_ = false;
-  EmptyExc();
+  ClearException();
   // procedure running in prodcuer
   // run producer thread
   auto producer_fun = [this, next, beforefirst]() {
@@ -411,7 +411,7 @@ template <typename DType>
 inline bool ThreadedIter<DType>::Next(DType **out_dptr) {
   if (producer_sig_ == kDestroy)
     return false;
-  ThrowExcIfSet();
+  ThrowExceptionIfSet();
   std::unique_lock<std::mutex> lock(mutex_);
   CHECK(producer_sig_ == kProduce)
       << "Make sure you call BeforeFirst not inconcurrent with Next!";
@@ -427,13 +427,13 @@ inline bool ThreadedIter<DType>::Next(DType **out_dptr) {
     if (notify)
       producer_cond_.notify_one();
 
-    ThrowExcIfSet();
+    ThrowExceptionIfSet();
     return true;
   } else {
     CHECK(produce_end_);
     lock.unlock();
 
-    ThrowExcIfSet();
+    ThrowExceptionIfSet();
     return false;
   }
 }
@@ -441,7 +441,7 @@ inline bool ThreadedIter<DType>::Next(DType **out_dptr) {
 template <typename DType>
 inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
   bool notify;
-  ThrowExcIfSet();
+  ThrowExceptionIfSet();
   {
     std::lock_guard<std::mutex> lock(mutex_);
     free_cells_.push(*inout_dptr);
@@ -450,10 +450,10 @@ inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
   }
   if (notify)
     producer_cond_.notify_one();
-  ThrowExcIfSet();
+  ThrowExceptionIfSet();
 }
 
-template <typename DType> inline void ThreadedIter<DType>::ThrowExcIfSet(void) {
+template <typename DType> inline void ThreadedIter<DType>::ThrowExceptionIfSet(void) {
   std::exception_ptr tmp_exception{nullptr};
   {
     std::lock_guard<std::mutex> lock(mutex_exception_);
@@ -465,7 +465,7 @@ template <typename DType> inline void ThreadedIter<DType>::ThrowExcIfSet(void) {
     std::rethrow_exception(tmp_exception);
 }
 
-template <typename DType> inline void ThreadedIter<DType>::EmptyExc(void) {
+template <typename DType> inline void ThreadedIter<DType>::ClearException(void) {
   std::lock_guard<std::mutex> lock(mutex_exception_);
   iter_exception_ = nullptr;
 }
