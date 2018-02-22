@@ -147,7 +147,7 @@ static inline uint64_t GetDurationInNanoseconds(const Tick &since) {
 
 constexpr size_t SLEEP_DURATION = 500;
 constexpr size_t TIMER_PERIOD = 10;  // Ideal is 50 periods occur
-constexpr size_t MIN_COUNT_WHILE_SLEEPING = 20;
+constexpr size_t MIN_COUNT_WHILE_SLEEPING = 10;
 constexpr size_t MAX_COUNT_WHILE_SLEEPING = 150;
 
 inline size_t GetDurationInMilliseconds(const Tick& start_time) {
@@ -170,9 +170,12 @@ TEST(ThreadGroup, TimerThread) {
   // Launch the queue thread, passing queue item handler as lambda
   dmlc::TimerThread<Duration>::start(
     timer_thread, Duration(TIMER_PERIOD), [timer_thread, start_time, &count]() -> int {
-      std::cout << "[" << (count + 1) << "] TIME: "
-                << GetDurationInMilliseconds(start_time)
-                << std::endl << std::flush;
+      if ((count + 1) % 5 == 0) {
+        // output slows it down a bit, so print fewer times
+        std::cout << "[" << (count + 1) << "] TIME: "
+                  << GetDurationInMilliseconds(start_time)
+                  << std::endl << std::flush;
+      }
       ++count;
       return 0;  // return 0 means continue
     });
@@ -200,9 +203,12 @@ TEST(ThreadGroup, TimerThreadSimple) {
                     Duration(TIMER_PERIOD),
                     thread_group.get(),
                     [start_time, &count]() -> int {
-                      std::cout << "[" << (count + 1) << "] TIME: "
-                                << GetDurationInMilliseconds(start_time)
-                                << std::endl << std::flush;
+                      if ((count + 1) % 5 == 0) {
+                        // output slows it down a bit, so print fewer times
+                        std::cout << "[" << (count + 1) << "] TIME: "
+                                  << GetDurationInMilliseconds(start_time)
+                                  << std::endl << std::flush;
+                      }
                       ++count;
                       return 0;  // return 0 means continue
                     });
