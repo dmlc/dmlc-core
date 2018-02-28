@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <memory>
 
 namespace dmlc {
 /*! \brief class to construct input split with global shuffling */
