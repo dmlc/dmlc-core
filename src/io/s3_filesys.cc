@@ -7,6 +7,7 @@ extern "C" {
 #include <openssl/md5.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include <openssl/sha.h>
 }
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
@@ -17,6 +18,7 @@ extern "C" {
 #include <algorithm>
 #include <ctime>
 #include <sstream>
+#include <iomanip>
 
 #include "./s3_filesys.h"
 
@@ -110,6 +112,8 @@ static std::string Sign(const std::string &key,
                         const std::string &resource) {
   std::ostringstream stream;
   stream << method << "\n";
+//  stream <<
+
   stream << content_md5 << "\n";
   stream << content_type << "\n";
   stream << date << "\n";
@@ -119,6 +123,132 @@ static std::string Sign(const std::string &key,
   }
   stream << resource;
   return Sign(key, stream.str());
+}
+
+// time_t -> 20131222T043039Z
+static const std::string ISO8601_date(const std::time_t& t) noexcept {
+  char buf[sizeof "20111008T070709Z"];
+  std::strftime(buf, sizeof buf, "%Y%m%dT%H%M%SZ", std::gmtime(&t));
+  return std::string{buf};
+}
+
+// time_t -> 20131222
+static const std::string utc_yyyymmdd(const std::time_t& t) noexcept {
+  char buf[sizeof "20111008"];
+  std::strftime(buf, sizeof buf, "%Y%m%d", std::gmtime(&t));
+  return std::string{buf};
+}
+
+static std::string HexSHA256Hash(const std::string &str) {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, str.c_str(), str.size());
+  SHA256_Final(hash, &sha256);
+  std::stringstream ss;
+  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+  {
+    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+  }
+  return ss.str();
+}
+
+void HMAC_Hash(const std::string &key, const std::string &msg, unsigned char* hash, int hash_length) {
+  CHECK_EQ(hash_length, 32);
+  HMAC_CTX hmac;
+  HMAC_CTX_init(&hmac);
+  HMAC_Init_ex(&hmac, &key[0], key.length(), EVP_sha256(), NULL);
+  HMAC_Update(&hmac, ( unsigned char* )&msg[0], msg.length());
+  unsigned int len = 32;
+  HMAC_Final(&hmac, hash, &len);
+  HMAC_CTX_cleanup(&hmac);
+}
+
+/*!
+ * \brief returns string representation of Hash-based Message Authentication Codes
+ * @param key secret access key to authenticate data with
+ * @param msg payload
+ * @return
+ */
+static std::string HMAC_String(const std::string &key, const std::string& msg) {
+  unsigned char hash[32];
+  HMAC_Hash(key, msg, hash, 32);
+  std::stringstream ss;
+  ss << std::setfill('0');
+  for (int i = 0; i < 32; i++) {
+    ss  << hash[i];
+  }
+  return ss.str();
+}
+
+
+/*!
+* \brief returns hex representation of Hash-based Message Authentication Codes
+* @param key secret access key to authenticate data with
+* @param msg payload
+* @return
+*/
+static std::string HMAC_Hex(const std::string &key, const std::string& msg) {
+    unsigned char hash[32];
+    HMAC_Hash(key, msg, hash, 32);
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (int i = 0; i < 32; i++) {
+      ss << std::hex << std::setw(2)  << (unsigned int)hash[i];
+    }
+    return ss.str();
+}
+
+
+static std::string GetSignedHeaders(const std::map<std::string, std::string> &canonical_headers) {
+  std::ostringstream stream;
+  for (auto it = canonical_headers.begin(); it != canonical_headers.end(); ++it) {
+    if (it != canonical_headers.begin()) {
+      stream << ";";
+    }
+    stream << it->first;
+  }
+  return stream.str();
+}
+
+
+static std::string GetCredentialScope(time_t time, const std::string &region) {
+  return utc_yyyymmdd(time) + "/" + region  + "/s3/aws4_request";
+}
+
+// sign S3 key
+static std::string SignSig4(const std::string &key,
+                            const std::string &s3_region,
+                            const std::string &method,
+                            const time_t &time,
+                            const std::string &canonical_uri,
+                            const std::string &canonical_query,
+                            const std::map<std::string, std::string> &canonical_headers,
+                            const std::string &payload) {
+  std::ostringstream stream;
+  stream << method << "\n";
+  stream << canonical_uri << "\n";
+  stream << canonical_query << "\n";
+  for (const auto & header : canonical_headers) {
+    stream << header.first << ": "<<header.second << "\n";
+  }
+  stream << GetSignedHeaders(canonical_headers);
+  stream << "\n";
+  stream << HexSHA256Hash(payload);
+  std::string canonical_request = stream.str();
+  std::string hash_request = HexSHA256Hash(canonical_request);
+  std::ostringstream to_sign;
+  to_sign << "AWS4-HMAC-SHA256" << "\n";
+  to_sign << ISO8601_date(time) << "\n";
+  // credential scope
+  to_sign << GetCredentialScope(time, s3_region) << "\n";
+
+  // derive signing key
+  std::string kDate = HMAC_String("AWS4" + key, utc_yyyymmdd(time));
+  std::string kRegion = HMAC_String(kDate, s3_region);
+  std::string kService = HMAC_String(kRegion, "s3");
+  std::string kSigning = HMAC_String(kService, "aws4_request");
+  return HMAC_Hex(kSigning, to_sign.str());
 }
 
 static std::string ComputeMD5(const std::string &buf) {
@@ -150,6 +280,7 @@ inline bool FindHttpError(const std::string &header) {
   }
   return true;
 }
+
 /*!
  * \brief get the datestring needed by S3
  * \return datestring
@@ -819,20 +950,34 @@ void ListObjects(const URI &path,
                  const std::string s3_endpoint,
                  const std::string s3_verify_ssl,
                  std::vector<FileInfo> *out_list) {
+  std::cout<<"listing objects"<<std::endl;
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
-  std::vector<std::string> amz;
+
+  std::string canonical_uri = path.host + path.name;
+  std::string canonical_querystring = "?delimiter=/&prefix=";
+  std::map<std::string, std::string> canonical_headers;
+  time_t curr_time = time(NULL);
+  canonical_headers["x-amz-date"] = ISO8601_date(curr_time);
+  canonical_headers["host"] = "s3.amazonaws.com";
   if (s3_session_token != "") {
-    amz.push_back("x-amz-security-token:" + s3_session_token);
+    canonical_headers["x-amz-security-token"] = s3_session_token;
   }
-  std::string date = GetDateString();
-  std::string signature = Sign(s3_key, "GET", "", "", date, amz,
-                               std::string("/") + path.host + "/");
+  std::string signature = SignSig4(s3_key, s3_region,
+                                   "GET", curr_time,
+                                   canonical_uri,
+                                   canonical_querystring,
+                                   canonical_headers,
+                                   "");
 
   std::ostringstream sauth, sdate, stoken, surl;
   std::ostringstream result;
-  sauth << "Authorization: AWS " << s3_id << ":" << signature;
-  sdate << "Date: " << date;
+  sauth << "Authorization: AWS4-HMAC-SHA256 ";
+  sauth << "Credential=" << s3_key << "/" << GetCredentialScope(curr_time, s3_region) << ", ";
+  sauth << "SignedHeaders=" << GetSignedHeaders(canonical_headers) << ", ";
+  sauth << "Signature=" << signature;
+  std::cout<<sauth.str()<<std::endl;
+  sdate << "x-amz-date: " << ISO8601_date(curr_time);
   stoken << "x-amz-security-token: " << s3_session_token;
 
   if (path.host.find('.', 0) == std::string::npos && s3_region == "us-east-1") {
@@ -880,6 +1025,7 @@ void ListObjects(const URI &path,
       info.path = path;
       XMLIter value;
       CHECK(data.GetNext("Key", &value));
+      std::cout<<value.str()<<std::endl;
       // add root path to be consistent with other filesys convention
       info.path.name = '/' + value.str();
       CHECK(data.GetNext("Size", &value));
@@ -898,6 +1044,7 @@ void ListObjects(const URI &path,
       XMLIter value;
       CHECK(data.GetNext("Prefix", &value));
       // add root path to be consistent with other filesys convention
+      std::cout<<value.str()<<std::endl;
       info.path.name = '/' + value.str();
       info.size = 0; info.type = kDirectory;
       out_list->push_back(info);
