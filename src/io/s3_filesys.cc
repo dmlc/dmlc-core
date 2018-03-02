@@ -125,6 +125,32 @@ static std::string Sign(const std::string &key,
   return Sign(key, stream.str());
 }
 
+// http://stackoverflow.com/questions/2262386/generate-sha256-with-openssl-and-c
+  void sha256(const std::string str, unsigned char outputBuffer[SHA256_DIGEST_LENGTH]) noexcept {
+    char *c_string = new char [str.length()+1];
+    std::strcpy(c_string, str.c_str());
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, c_string, strlen(c_string));
+    SHA256_Final(hash, &sha256);
+    for (int i=0;i<SHA256_DIGEST_LENGTH;i++) {
+      outputBuffer[i] = hash[i];
+    }
+  }
+
+  const std::string sha256_base16(const std::string str) noexcept {
+    unsigned char hashOut[SHA256_DIGEST_LENGTH];
+    sha256(str,hashOut);
+    char outputBuffer[65];
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+      sprintf(outputBuffer + (i * 2), "%02x", hashOut[i]);
+    }
+    outputBuffer[64] = 0;
+    return std::string{outputBuffer};
+  }
+
+
 // time_t -> 20131222T043039Z
 static const std::string ISO8601_date(const std::time_t& t) noexcept {
   char buf[sizeof "20111008T070709Z"];
@@ -140,6 +166,7 @@ static const std::string utc_yyyymmdd(const std::time_t& t) noexcept {
 }
 
 static std::string HexSHA256Hash(const std::string &str) {
+//  std::cout<<"string to hash with hexsha256" << str<<" ; and hash is ";
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
@@ -173,6 +200,7 @@ void HMAC_Hash(const std::string &key, const std::string &msg, unsigned char* ha
 static std::string HMAC_String(const std::string &key, const std::string& msg) {
   unsigned char hash[32];
   HMAC_Hash(key, msg, hash, 32);
+  std::cout<<"key:"<<key<<"\nmsg:"<<msg<<std::endl;
   std::stringstream ss;
   ss << std::setfill('0');
   for (int i = 0; i < 32; i++) {
@@ -196,6 +224,7 @@ static std::string HMAC_Hex(const std::string &key, const std::string& msg) {
     for (int i = 0; i < 32; i++) {
       ss << std::hex << std::setw(2)  << (unsigned int)hash[i];
     }
+    std::cout<<ss.str()<<std::endl;
     return ss.str();
 }
 
@@ -216,6 +245,58 @@ static std::string GetCredentialScope(time_t time, const std::string &region) {
   return utc_yyyymmdd(time) + "/" + region  + "/s3/aws4_request";
 }
 
+const std::string calculate_signature(const std::time_t& request_date,
+                                      const std::string secret,
+                                      const std::string region,
+                                      const std::string service,
+                                      std::string string_to_sign) noexcept {
+  const std::string k1{"AWS4" + secret};
+  char *c_k1 = new char [k1.length()+1];
+  std::strcpy(c_k1, k1.c_str());
+
+  auto yyyymmdd = utc_yyyymmdd(request_date);
+  char *c_yyyymmdd = new char [yyyymmdd.length()+1];
+  std::strcpy(c_yyyymmdd, yyyymmdd.c_str());
+
+  unsigned char* kDate;
+  kDate = HMAC(EVP_sha256(), c_k1, strlen(c_k1),
+               (unsigned char*)c_yyyymmdd, strlen(c_yyyymmdd), NULL, NULL);
+
+  char *c_region = new char [region.length()+1];
+  std::strcpy(c_region, region.c_str());
+  unsigned char *kRegion;
+  kRegion = HMAC(EVP_sha256(), kDate, strlen((char *)kDate),
+                 (unsigned char*)c_region, strlen(c_region), NULL, NULL);
+
+  char *c_service = new char [service.length()+1];
+  std::strcpy(c_service, service.c_str());
+  unsigned char *kService;
+  kService = HMAC(EVP_sha256(), kRegion, strlen((char *)kRegion),
+                  (unsigned char*)c_service, strlen(c_service), NULL, NULL);
+
+  std::string aws4_request = "aws4_request";
+  char *c_aws4_request = new char [aws4_request.length()+1];
+  std::strcpy(c_aws4_request, aws4_request.c_str());
+  unsigned char *kSigning;
+  kSigning = HMAC(EVP_sha256(), kService, strlen((char *)kService),
+                  (unsigned char*)c_aws4_request, strlen(c_aws4_request), NULL, NULL);
+
+  char *c_string_to_sign = new char [string_to_sign.length()+1];
+  std::strcpy(c_string_to_sign, string_to_sign.c_str());
+  unsigned char *kSig;
+  kSig = HMAC(EVP_sha256(), kSigning, strlen((char *)kSigning),
+              (unsigned char*)c_string_to_sign, strlen(c_string_to_sign), NULL, NULL);
+
+  LOG(INFO) <<"ksigning:"<<kSigning<<std::endl;
+  char outputBuffer[65];
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+    sprintf(outputBuffer + (i * 2), "%02x", kSig[i]);
+  }
+  outputBuffer[64] = 0;
+  LOG(INFO) << "signature: "<<std::string{outputBuffer};
+  return std::string{outputBuffer};
+}
+
 // sign S3 key
 static std::string SignSig4(const std::string &key,
                             const std::string &s3_region,
@@ -232,23 +313,22 @@ static std::string SignSig4(const std::string &key,
   for (const auto & header : canonical_headers) {
     stream << header.first << ": "<<header.second << "\n";
   }
-  stream << GetSignedHeaders(canonical_headers);
-  stream << "\n";
-  stream << HexSHA256Hash(payload);
+    stream << "\n";
+    stream << GetSignedHeaders(canonical_headers);
+    stream << "\n";
+  stream << sha256_base16(payload);
   std::string canonical_request = stream.str();
-  std::string hash_request = HexSHA256Hash(canonical_request);
+  std::cout<<canonical_request<<std::endl;
+  LOG(INFO) << "Above was canonical request";
+  std::string hash_request = sha256_base16(canonical_request);
   std::ostringstream to_sign;
   to_sign << "AWS4-HMAC-SHA256" << "\n";
   to_sign << ISO8601_date(time) << "\n";
   // credential scope
   to_sign << GetCredentialScope(time, s3_region) << "\n";
+  to_sign << hash_request;
 
-  // derive signing key
-  std::string kDate = HMAC_String("AWS4" + key, utc_yyyymmdd(time));
-  std::string kRegion = HMAC_String(kDate, s3_region);
-  std::string kService = HMAC_String(kRegion, "s3");
-  std::string kSigning = HMAC_String(kService, "aws4_request");
-  return HMAC_Hex(kSigning, to_sign.str());
+  return calculate_signature(time, key, s3_region, "s3", to_sign.str());
 }
 
 static std::string ComputeMD5(const std::string &buf) {
@@ -950,16 +1030,16 @@ void ListObjects(const URI &path,
                  const std::string s3_endpoint,
                  const std::string s3_verify_ssl,
                  std::vector<FileInfo> *out_list) {
-  std::cout<<"listing objects"<<std::endl;
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
-
+  // TODO CHECK IF / is required at the start
   std::string canonical_uri = path.host + path.name;
-  std::string canonical_querystring = "?delimiter=/&prefix=";
+  std::string canonical_querystring = "";//"?delimiter=/&prefix=";
   std::map<std::string, std::string> canonical_headers;
   time_t curr_time = time(NULL);
   canonical_headers["x-amz-date"] = ISO8601_date(curr_time);
   canonical_headers["host"] = "s3.amazonaws.com";
+  canonical_headers["x-amz-content-sha256"] = HexSHA256Hash("");
   if (s3_session_token != "") {
     canonical_headers["x-amz-security-token"] = s3_session_token;
   }
@@ -970,29 +1050,30 @@ void ListObjects(const URI &path,
                                    canonical_headers,
                                    "");
 
-  std::ostringstream sauth, sdate, stoken, surl;
+  std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream result;
   sauth << "Authorization: AWS4-HMAC-SHA256 ";
-  sauth << "Credential=" << s3_key << "/" << GetCredentialScope(curr_time, s3_region) << ", ";
-  sauth << "SignedHeaders=" << GetSignedHeaders(canonical_headers) << ", ";
+  sauth << "Credential=" << s3_id << "/" << GetCredentialScope(curr_time, s3_region) << ",";
+  sauth << "SignedHeaders=" << GetSignedHeaders(canonical_headers) << ",";
   sauth << "Signature=" << signature;
-  std::cout<<sauth.str()<<std::endl;
   sdate << "x-amz-date: " << ISO8601_date(curr_time);
   stoken << "x-amz-security-token: " << s3_session_token;
+  scontent << "x-amz-content-sha256: " << sha256_base16("");
 
   if (path.host.find('.', 0) == std::string::npos && s3_region == "us-east-1") {
-    // for backword compatibility, use virtual host if no period in host and no region was set.
+  //     for backword compatibility, use virtual host if no period in host and no region was set.
     surl << "https://" << path.host << ".s3.amazonaws.com"
          << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   } else {
-    surl << "https://" << s3_endpoint << "/" << path.host
-         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+    LOG(FATAL) << "Failed";
+    surl << "https://" << s3_endpoint << "/" << path.host << path.name;
   }
   // make request
   CURL *curl = curl_easy_init();
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
   slist = curl_slist_append(slist, sauth.str().c_str());
+  slist = curl_slist_append(slist, scontent.str().c_str());
   if (s3_session_token != "") {
     slist = curl_slist_append(slist, stoken.str().c_str());
   }
@@ -1002,6 +1083,7 @@ void ListObjects(const URI &path,
   CHECK(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
+  CHECK(curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L) == CURLE_OK);
   if (s3_verify_ssl == "0") {
     CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
     CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
