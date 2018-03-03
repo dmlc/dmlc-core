@@ -188,8 +188,7 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #endif
 
 #define LOG_EVERY_N(severity, n) \
-  static int LOG_OCCURRENCES = 0, LOG_OCCURRENCES_MOD_N = 0; \
-    ++LOG_OCCURRENCES; \
+  static int LOG_OCCURRENCES_MOD_N = 0; \
     if (++LOG_OCCURRENCES_MOD_N > n) LOG_OCCURRENCES_MOD_N -= n; \
     if (LOG_OCCURRENCES_MOD_N == 1) \
       LOG_##severity.stream()
