@@ -9,7 +9,9 @@
 
 // This code requires C++11 to compile
 #include <vector>
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
 #include <iostream>
+#endif
 #include <cctype>
 #include <string>
 #include <algorithm>
@@ -42,9 +44,13 @@ class JSONReader {
  public:
   /*!
    * \brief Constructor.
-   * \param is the input stream.
+   * \param is the input source.
    */
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   explicit JSONReader(std::istream *is)
+#else
+  explicit JSONReader(std::string *is)
+#endif
       : is_(is),
         line_count_r_(0),
         line_count_n_(0) {}
@@ -114,17 +120,37 @@ class JSONReader {
 
   /*! \return current line count */
   inline std::string line_info() const {
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
     char temp[64];
     std::ostringstream os;
     os << " Line " << std::max(line_count_r_, line_count_n_);
     is_->getline(temp, 64);
     os << ", around ^`" << temp << "`";
     return os.str();
+#else
+    std::string info = " Line ";
+    info += std::to_string(std::max(line_count_r_, line_count_n_));
+
+    // string getline
+    size_t end_pos = is_->find('\n');
+    end_pos = std::min((size_t)64,
+        end_pos == std::string::npos ? is_->size() : end_pos);
+    std::string line = is_->substr(0, end_pos);
+    is_->erase(0, line.size() + 1);  // +1 for \n
+
+    info += ", around ^`" + line + "`";
+    return info;
+#endif
   }
 
  private:
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   /*! \brief internal reader stream */
   std::istream *is_;
+#else
+  /*! \brief internal reader string */
+  std::string *is_;
+#endif
   /*! \brief "\\r" counter */
   size_t line_count_r_;
   /*! \brief "\\n" counter */
@@ -144,6 +170,16 @@ class JSONReader {
    * \return the next nonspace character.
    */
   inline int PeekNextNonSpace();
+  /*!
+   * \brief Takes the next char from the input source.
+   * \return the next character.
+   */
+  inline int NextChar();
+  /*!
+   * \brief Returns the next char from the input source.
+   * \return the next character.
+   */
+  inline int PeekNextChar();
 };
 
 /*!
@@ -153,9 +189,13 @@ class JSONWriter {
  public:
   /*!
    * \brief Constructor.
-   * \param os the output stream.
+   * \param os the output reciever.
    */
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   explicit JSONWriter(std::ostream *os)
+#else
+  explicit JSONWriter(std::string *os)
+#endif
       : os_(os) {}
   /*!
    * \brief Write a string that do not contain escape characters.
@@ -232,8 +272,12 @@ class JSONWriter {
   inline void Write(const ValueType &value);
 
  private:
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   /*! \brief Output stream */
   std::ostream *os_;
+#else
+  std::string *os_;
+#endif
   /*!
    * \brief record how many element processed in
    *  current array/object scope.
@@ -573,10 +617,28 @@ struct Handler<any> {
 }  // namespace json
 
 // implementations of JSONReader/Writer
+inline int JSONReader::NextChar() {
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+  return is_->get();
+#else
+  int ch = is_->at(0);
+  is_->erase(0, 1);
+  return ch;
+#endif
+}
+
+inline int JSONReader::PeekNextChar() {
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+  return is_->peek();
+#else
+  return is_->at(0);
+#endif
+}
+
 inline int JSONReader::NextNonSpace() {
   int ch;
   do {
-    ch = is_->get();
+    ch = NextChar();
     if (ch == '\n') ++line_count_n_;
     if (ch == '\r') ++line_count_r_;
   } while (isspace(ch));
@@ -586,36 +648,53 @@ inline int JSONReader::NextNonSpace() {
 inline int JSONReader::PeekNextNonSpace() {
   int ch;
   while (true) {
-    ch = is_->peek();
+    ch = PeekNextChar();
     if (ch == '\n') ++line_count_n_;
     if (ch == '\r') ++line_count_r_;
     if (!isspace(ch)) break;
-    is_->get();
+    NextChar();
   }
   return ch;
 }
+
+namespace {
+  template<typename T>
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+  void Extend(std::ostream *os, T item) {
+    *os << item;
+  }
+#else
+  void Extend(std::string *ostr, T item) {
+    *ostr += item;
+  }
+#endif
+}  // namespace
 
 inline void JSONReader::ReadString(std::string *out_str) {
   int ch = NextNonSpace();
   CHECK_EQ(ch, '\"')
       << "Error at" << line_info()
       << ", Expect \'\"\' but get \'" << static_cast<char>(ch) << '\'';
-  std::ostringstream os;
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+  std::ostringstream output;
+#else
+  std::string output = "";
+#endif
   while (true) {
-    ch = is_->get();
+    ch = NextChar();
     if (ch == '\\') {
-      char sch = static_cast<char>(is_->get());
+      char sch = static_cast<char>(NextChar());
       switch (sch) {
-        case 'r': os << "\r"; break;
-        case 'n': os << "\n"; break;
-        case '\\': os << "\\"; break;
-        case 't': os << "\t"; break;
-        case '\"': os << "\""; break;
+        case 'r': Extend(&output, "\r"); break;
+        case 'n': Extend(&output, "\n"); break;
+        case '\\': Extend(&output, "\\"); break;
+        case 't': Extend(&output, "\t"); break;
+        case '\"': Extend(&output, "\""); break;
         default: LOG(FATAL) << "unknown string escape \\" << sch;
       }
     } else {
       if (ch == '\"') break;
-      os << static_cast<char>(ch);
+      Extend(&output, static_cast<char>(ch));
     }
     if (ch == EOF || ch == '\r' || ch == '\n') {
       LOG(FATAL)
@@ -623,15 +702,27 @@ inline void JSONReader::ReadString(std::string *out_str) {
           << ", Expect \'\"\' but reach end of line ";
     }
   }
-  *out_str = os.str();
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+  *out_str = output.str();
+#else
+  *out_str = output;
+#endif
 }
 
 template<typename ValueType>
 inline void JSONReader::ReadNumber(ValueType *out_value) {
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   *is_ >> *out_value;
   CHECK(!is_->fail())
       << "Error at" << line_info()
       << ", Expect number";
+#else
+  char* endptr;
+  const char* icstr = is_->c_str();
+  unsigned number = strtol(icstr, &endptr, 10);
+  is_->erase(0, endptr - icstr);
+  *out_value = static_cast<ValueType>(number);
+#endif
 }
 
 inline void JSONReader::BeginObject() {
@@ -666,7 +757,7 @@ inline bool JSONReader::NextObjectItem(std::string *out_key) {
   } else {
     int ch = PeekNextNonSpace();
     if (ch == '}') {
-      is_->get();
+      NextChar();
       next = false;
     }
   }
@@ -700,7 +791,7 @@ inline bool JSONReader::NextArrayItem() {
   } else {
     int ch = PeekNextNonSpace();
     if (ch == ']') {
-      is_->get();
+      NextChar();
       next = false;
     }
   }
@@ -719,33 +810,38 @@ inline void JSONReader::Read(ValueType *out_value) {
 }
 
 inline void JSONWriter::WriteNoEscape(const std::string &s) {
-  *os_ << '\"' << s << '\"';
+  Extend(os_, '\"');
+  Extend(os_, s);
+  Extend(os_, '\"');
 }
 
 inline void JSONWriter::WriteString(const std::string &s) {
-  std::ostream &os = *os_;
-  os << '\"';
+  Extend(os_, '\"');
   for (size_t i = 0; i < s.length(); ++i) {
     char ch = s[i];
     switch (ch) {
-      case '\r': os << "\\r"; break;
-      case '\n': os << "\\n"; break;
-      case '\\': os << "\\\\"; break;
-      case '\t': os << "\\t"; break;
-      case '\"': os << "\\\""; break;
-      default: os << ch;
+      case '\r': Extend(os_, "\\r"); break;
+      case '\n': Extend(os_, "\\n"); break;
+      case '\\': Extend(os_, "\\\\"); break;
+      case '\t': Extend(os_, "\\t"); break;
+      case '\"': Extend(os_, "\\\""); break;
+      default: Extend(os_, ch);
     }
   }
-  os << '\"';
+  Extend(os_, '\"');
 }
 
 template<typename ValueType>
 inline void JSONWriter::WriteNumber(const ValueType &v) {
-  *os_ << v;
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+  Extend(os_, v);
+#else
+  Extend(os_, std::to_string(v));
+#endif
 }
 
 inline void JSONWriter::BeginArray(bool multi_line) {
-  *os_ << '[';
+  Extend(os_, '[');
   scope_multi_line_.push_back(multi_line);
   scope_counter_.push_back(0);
 }
@@ -758,11 +854,11 @@ inline void JSONWriter::EndArray() {
   scope_multi_line_.pop_back();
   scope_counter_.pop_back();
   if (newline && nelem != 0) WriteSeperator();
-  *os_ << ']';
+  Extend(os_, ']');
 }
 
 inline void JSONWriter::BeginObject(bool multi_line) {
-  *os_ << "{";
+  Extend(os_, '{');
   scope_multi_line_.push_back(multi_line);
   scope_counter_.push_back(0);
 }
@@ -775,29 +871,26 @@ inline void JSONWriter::EndObject() {
   scope_multi_line_.pop_back();
   scope_counter_.pop_back();
   if (newline && nelem != 0) WriteSeperator();
-  *os_ << '}';
+  Extend(os_, '}');
 }
 
 template<typename ValueType>
 inline void JSONWriter::WriteObjectKeyValue(const std::string &key,
                                             const ValueType &value) {
-  std::ostream &os = *os_;
-  if (scope_counter_.back() == 0) {
-    WriteSeperator();
-    os << '\"' << key << "\": ";
-  } else {
-    os << ", ";
-    WriteSeperator();
-    os << '\"' << key << "\": ";
+  if (scope_counter_.back() > 0) {
+    Extend(os_, ", ");
   }
+  WriteSeperator();
+  Extend(os_, '\"');
+  Extend(os_, key);
+  Extend(os_, "\": ");
   scope_counter_.back() += 1;
   json::Handler<ValueType>::Write(this, value);
 }
 
 inline void JSONWriter::WriteArraySeperator() {
-  std::ostream &os = *os_;
   if (scope_counter_.back() != 0) {
-    os << ", ";
+    Extend(os_, ", ");
   }
   scope_counter_.back() += 1;
   WriteSeperator();
@@ -819,7 +912,8 @@ inline void JSONWriter::Write(const ValueType &value) {
 
 inline void JSONWriter::WriteSeperator() {
   if (scope_multi_line_.size() == 0 || scope_multi_line_.back()) {
-    *os_ << '\n' << std::string(scope_multi_line_.size() * 2, ' ');
+    Extend(os_, '\n');
+    Extend(os_, std::string(scope_multi_line_.size() * 2, ' '));
   }
 }
 
@@ -833,13 +927,25 @@ inline void JSONObjectReadHelper::ReadAllFields(JSONReader *reader) {
       (*e.func)(reader, e.addr);
       visited[key] = 0;
     } else {
-      std::ostringstream os;
-      os << "JSONReader: Unknown field " << key << ", candidates are: \n";
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+      std::ostringstream err;
+#else
+      std::string err("");
+#endif
+      Extend(&err, "JSONReader: Unknown field ");
+      Extend(&err, key);
+      Extend(&err, ", candidates are: \n");
       for (std::map<std::string, Entry>::iterator
                it = map_.begin(); it != map_.end(); ++it) {
-        os << '\"' <<it->first << "\"\n";
+        Extend(&err, '\"');
+        Extend(&err, it->first);
+        Extend(&err, "\"\n");
       }
-      LOG(FATAL) << os.str();
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
+      LOG(FATAL) << err.str();
+#else
+      LOG(FATAL) << err;
+#endif
     }
   }
   if (visited.size() != map_.size()) {
