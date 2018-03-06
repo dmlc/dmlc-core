@@ -165,20 +165,20 @@ static const std::string utc_yyyymmdd(const std::time_t& t) noexcept {
   return std::string{buf};
 }
 
-static std::string HexSHA256Hash(const std::string &str) {
+//static std::string HexSHA256Hash(const std::string &str) {
 //  std::cout<<"string to hash with hexsha256" << str<<" ; and hash is ";
-  unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, str.c_str(), str.size());
-  SHA256_Final(hash, &sha256);
-  std::stringstream ss;
-  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-  {
-    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-  }
-  return ss.str();
-}
+//  unsigned char hash[SHA256_DIGEST_LENGTH];
+//  SHA256_CTX sha256;
+//  SHA256_Init(&sha256);
+//  SHA256_Update(&sha256, str.c_str(), str.size());
+//  SHA256_Final(hash, &sha256);
+//  std::stringstream ss;
+//  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+//  {
+//    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+//  }
+//  return ss.str();
+//}
 
 void HMAC_Hash(const std::string &key, const std::string &msg, unsigned char* hash, int hash_length) {
   CHECK_EQ(hash_length, 32);
@@ -197,16 +197,18 @@ void HMAC_Hash(const std::string &key, const std::string &msg, unsigned char* ha
  * @param msg payload
  * @return
  */
-static std::string HMAC_String(const std::string &key, const std::string& msg) {
-  unsigned char hash[32];
-  HMAC_Hash(key, msg, hash, 32);
-  std::cout<<"key:"<<key<<"\nmsg:"<<msg<<std::endl;
-  std::stringstream ss;
-  ss << std::setfill('0');
-  for (int i = 0; i < 32; i++) {
-    ss  << hash[i];
-  }
-  return ss.str();
+static std::vector<uint8_t> HMAC_SHA256(const std::vector<uint8_t>& key,const std::vector<uint8_t>& value) {
+  unsigned int len = SHA256_DIGEST_LENGTH;
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  size_t keyLen = key.size();
+  size_t valueLen = value.size();
+  HMAC_CTX hmac;
+  HMAC_CTX_init(&hmac);
+  HMAC_Init_ex(&hmac, (unsigned char*)key.data(), keyLen, EVP_sha256(), NULL);
+  HMAC_Update(&hmac, (unsigned char*)value.data(), valueLen);
+  HMAC_Final(&hmac, hash, &len);
+  HMAC_CTX_cleanup(&hmac);
+  return std::vector<uint8_t>((uint8_t*)hash,(uint8_t*)hash+SHA256_DIGEST_LENGTH);
 }
 
 
@@ -216,18 +218,22 @@ static std::string HMAC_String(const std::string &key, const std::string& msg) {
 * @param msg payload
 * @return
 */
-static std::string HMAC_Hex(const std::string &key, const std::string& msg) {
-    unsigned char hash[32];
-    HMAC_Hash(key, msg, hash, 32);
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (int i = 0; i < 32; i++) {
-      ss << std::hex << std::setw(2)  << (unsigned int)hash[i];
-    }
-    std::cout<<ss.str()<<std::endl;
-    return ss.str();
-}
+static std::string HMAC_SHA256_Hex(const std::vector<uint8_t>& key, const std::vector<uint8_t>& value) {
 
+  std::vector<uint8_t> hash_string = HMAC_SHA256(key, value);
+  unsigned char* test = new unsigned char[hash_string.size()];//init this with the correct size
+  std::copy(hash_string.begin(), hash_string.end(), test);
+  std::string s = Base64(test, hash_string.size());
+  delete[] test;
+  std::stringstream ss;
+  ss << std::hex << std::setfill('0');
+  for (int i = 0; i < hash_string.size(); i++) {
+    ss << std::hex << std::setw(2)  << hash_string[i];
+  }
+  std::cout<< ss.str()<<std::endl;
+  std::cout<< s <<std::endl;
+  return s;
+}
 
 static std::string GetSignedHeaders(const std::map<std::string, std::string> &canonical_headers) {
   std::ostringstream stream;
@@ -249,52 +255,26 @@ const std::string calculate_signature(const std::time_t& request_date,
                                       const std::string secret,
                                       const std::string region,
                                       const std::string service,
-                                      std::string string_to_sign) noexcept {
-  const std::string k1{"AWS4" + secret};
-  char *c_k1 = new char [k1.length()+1];
-  std::strcpy(c_k1, k1.c_str());
+                                      const std::string string_to_sign) noexcept {
+  std::string full_secret{"AWS4" + secret};
+  std::vector<uint8_t> k_secret(full_secret.begin(), full_secret.end());
 
-  auto yyyymmdd = utc_yyyymmdd(request_date);
-  char *c_yyyymmdd = new char [yyyymmdd.length()+1];
-  std::strcpy(c_yyyymmdd, yyyymmdd.c_str());
+  const std::string datestamp = utc_yyyymmdd(request_date);
+  std::vector<uint8_t> datestamp_v(datestamp.begin(), datestamp.end());
+  std::vector<uint8_t> k_date = HMAC_SHA256(k_secret, datestamp_v);
 
-  unsigned char* kDate;
-  kDate = HMAC(EVP_sha256(), c_k1, strlen(c_k1),
-               (unsigned char*)c_yyyymmdd, strlen(c_yyyymmdd), NULL, NULL);
+  std::vector<uint8_t> region_v(region.begin(), region.end());
+  std::vector<uint8_t> k_region = HMAC_SHA256(k_date, region_v);
 
-  char *c_region = new char [region.length()+1];
-  std::strcpy(c_region, region.c_str());
-  unsigned char *kRegion;
-  kRegion = HMAC(EVP_sha256(), kDate, strlen((char *)kDate),
-                 (unsigned char*)c_region, strlen(c_region), NULL, NULL);
+  std::vector<uint8_t> service_v(service.begin(), service.end());
+  std::vector<uint8_t> k_service = HMAC_SHA256(k_date, service_v);
 
-  char *c_service = new char [service.length()+1];
-  std::strcpy(c_service, service.c_str());
-  unsigned char *kService;
-  kService = HMAC(EVP_sha256(), kRegion, strlen((char *)kRegion),
-                  (unsigned char*)c_service, strlen(c_service), NULL, NULL);
+  const std::string aws4_request = "aws4_request";
+  std::vector<uint8_t> aws4_request_v(aws4_request.begin(), aws4_request.end());
+  std::vector<uint8_t> k_signing = HMAC_SHA256(k_service, aws4_request_v);
 
-  std::string aws4_request = "aws4_request";
-  char *c_aws4_request = new char [aws4_request.length()+1];
-  std::strcpy(c_aws4_request, aws4_request.c_str());
-  unsigned char *kSigning;
-  kSigning = HMAC(EVP_sha256(), kService, strlen((char *)kService),
-                  (unsigned char*)c_aws4_request, strlen(c_aws4_request), NULL, NULL);
-
-  char *c_string_to_sign = new char [string_to_sign.length()+1];
-  std::strcpy(c_string_to_sign, string_to_sign.c_str());
-  unsigned char *kSig;
-  kSig = HMAC(EVP_sha256(), kSigning, strlen((char *)kSigning),
-              (unsigned char*)c_string_to_sign, strlen(c_string_to_sign), NULL, NULL);
-
-  LOG(INFO) <<"ksigning:"<<kSigning<<std::endl;
-  char outputBuffer[65];
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    sprintf(outputBuffer + (i * 2), "%02x", kSig[i]);
-  }
-  outputBuffer[64] = 0;
-  LOG(INFO) << "signature: "<<std::string{outputBuffer};
-  return std::string{outputBuffer};
+  std::vector<uint8_t> to_sign_v(string_to_sign.begin(), string_to_sign.end());
+  return HMAC_SHA256_Hex(k_signing, to_sign_v);
 }
 
 // sign S3 key
@@ -311,15 +291,15 @@ static std::string SignSig4(const std::string &key,
   stream << canonical_uri << "\n";
   stream << canonical_query << "\n";
   for (const auto & header : canonical_headers) {
-    stream << header.first << ": "<<header.second << "\n";
+    stream << header.first << ":"<<header.second << "\n";
   }
     stream << "\n";
     stream << GetSignedHeaders(canonical_headers);
     stream << "\n";
   stream << sha256_base16(payload);
   std::string canonical_request = stream.str();
-  std::cout<<canonical_request<<std::endl;
-  LOG(INFO) << "Above was canonical request";
+  LOG(INFO) << canonical_request;
+
   std::string hash_request = sha256_base16(canonical_request);
   std::ostringstream to_sign;
   to_sign << "AWS4-HMAC-SHA256" << "\n";
@@ -328,6 +308,7 @@ static std::string SignSig4(const std::string &key,
   to_sign << GetCredentialScope(time, s3_region) << "\n";
   to_sign << hash_request;
 
+  LOG(INFO) << to_sign.str();
   return calculate_signature(time, key, s3_region, "s3", to_sign.str());
 }
 
@@ -366,7 +347,7 @@ inline bool FindHttpError(const std::string &header) {
  * \return datestring
  */
 inline std::string GetDateString(void) {
-  time_t t = time(NULL);
+  time_t t = time(nullptr);
   tm gmt;
   gmtime_r(&t, &gmt);
   char buf[256];
@@ -1015,6 +996,13 @@ void WriteStream::Finish(void) {
   Run("POST", path_, sarg.str(),
       "text/xml", sdata.str(), &rheader, &rdata);
 }
+//
+//std::string url_encode(const std::string& str) {
+//  std::stringstream esc;
+//  esc.fill('0');
+//  esc << std::hex << std::
+//}
+
 /*!
  * \brief list the objects in the bucket with prefix specified by path.name
  * \param path the path to query
@@ -1033,13 +1021,13 @@ void ListObjects(const URI &path,
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
   // TODO CHECK IF / is required at the start
-  std::string canonical_uri = path.host + path.name;
+  std::string canonical_uri = "/";path.host + path.name;
   std::string canonical_querystring = "";//"?delimiter=/&prefix=";
   std::map<std::string, std::string> canonical_headers;
   time_t curr_time = time(NULL);
   canonical_headers["x-amz-date"] = ISO8601_date(curr_time);
-  canonical_headers["host"] = "s3.amazonaws.com";
-  canonical_headers["x-amz-content-sha256"] = HexSHA256Hash("");
+  canonical_headers["host"] = path.host + ".s3.amazonaws.com";
+//  canonical_headers["x-amz-content-sha256"] = HexSHA256Hash("");
   if (s3_session_token != "") {
     canonical_headers["x-amz-security-token"] = s3_session_token;
   }
@@ -1049,7 +1037,6 @@ void ListObjects(const URI &path,
                                    canonical_querystring,
                                    canonical_headers,
                                    "");
-
   std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream result;
   sauth << "Authorization: AWS4-HMAC-SHA256 ";
@@ -1062,8 +1049,8 @@ void ListObjects(const URI &path,
 
   if (path.host.find('.', 0) == std::string::npos && s3_region == "us-east-1") {
   //     for backword compatibility, use virtual host if no period in host and no region was set.
-    surl << "https://" << path.host << ".s3.amazonaws.com"
-         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+    surl << "https://" << path.host << ".s3.amazonaws.com";
+//         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   } else {
     LOG(FATAL) << "Failed";
     surl << "https://" << s3_endpoint << "/" << path.host << path.name;
