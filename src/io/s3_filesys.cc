@@ -256,25 +256,78 @@ const std::string calculate_signature(const std::time_t& request_date,
                                       const std::string region,
                                       const std::string service,
                                       const std::string string_to_sign) noexcept {
-  std::string full_secret{"AWS4" + secret};
-  std::vector<uint8_t> k_secret(full_secret.begin(), full_secret.end());
+//  std::string full_secret{"AWS4" + secret};
+//  std::vector<uint8_t> k_secret(full_secret.begin(), full_secret.end());
+//
+//  const std::string datestamp = utc_yyyymmdd(request_date);
+//  std::vector<uint8_t> datestamp_v(datestamp.begin(), datestamp.end());
+//  std::vector<uint8_t> k_date = HMAC_SHA256(k_secret, datestamp_v);
+//
+//  std::vector<uint8_t> region_v(region.begin(), region.end());
+//  std::vector<uint8_t> k_region = HMAC_SHA256(k_date, region_v);
+//
+//  std::vector<uint8_t> service_v(service.begin(), service.end());
+//  std::vector<uint8_t> k_service = HMAC_SHA256(k_date, service_v);
+//
+//  const std::string aws4_request = "aws4_request";
+//  std::vector<uint8_t> aws4_request_v(aws4_request.begin(), aws4_request.end());
+//  std::vector<uint8_t> k_signing = HMAC_SHA256(k_service, aws4_request_v);
+//
+//  std::vector<uint8_t> to_sign_v(string_to_sign.begin(), string_to_sign.end());
+//  std::string rval =  HMAC_SHA256_Hex(k_signing, to_sign_v);
+//  LOG(INFO) << rval ;
 
-  const std::string datestamp = utc_yyyymmdd(request_date);
-  std::vector<uint8_t> datestamp_v(datestamp.begin(), datestamp.end());
-  std::vector<uint8_t> k_date = HMAC_SHA256(k_secret, datestamp_v);
 
-  std::vector<uint8_t> region_v(region.begin(), region.end());
-  std::vector<uint8_t> k_region = HMAC_SHA256(k_date, region_v);
 
-  std::vector<uint8_t> service_v(service.begin(), service.end());
-  std::vector<uint8_t> k_service = HMAC_SHA256(k_date, service_v);
 
-  const std::string aws4_request = "aws4_request";
-  std::vector<uint8_t> aws4_request_v(aws4_request.begin(), aws4_request.end());
-  std::vector<uint8_t> k_signing = HMAC_SHA256(k_service, aws4_request_v);
 
-  std::vector<uint8_t> to_sign_v(string_to_sign.begin(), string_to_sign.end());
-  return HMAC_SHA256_Hex(k_signing, to_sign_v);
+  const std::string k1{"AWS4" + secret};
+  char *c_k1 = new char [k1.length()+1];
+  std::strcpy(c_k1, k1.c_str());
+
+  auto yyyymmdd = utc_yyyymmdd(request_date);
+  char *c_yyyymmdd = new char [yyyymmdd.length()+1];
+  std::strcpy(c_yyyymmdd, yyyymmdd.c_str());
+
+  unsigned char* kDate;
+  unsigned int kDateLen;
+  kDate = HMAC(EVP_sha256(), c_k1, strlen(c_k1),
+               (unsigned char*)c_yyyymmdd, strlen(c_yyyymmdd), NULL, &kDateLen);
+
+  char *c_region = new char [region.length()+1];
+  std::strcpy(c_region, region.c_str());
+  unsigned char *kRegion;
+  unsigned int kRegionLen;
+  kRegion = HMAC(EVP_sha256(), kDate, kDateLen,
+                 (unsigned char*)c_region, strlen(c_region), NULL, &kRegionLen);
+
+  char *c_service = new char [service.length()+1];
+  std::strcpy(c_service, service.c_str());
+  unsigned char *kService;
+  unsigned int kServiceLen;
+  kService = HMAC(EVP_sha256(), kRegion, kRegionLen,
+                  (unsigned char*)c_service, strlen(c_service), NULL, &kServiceLen);
+
+  const std::string AWS4_REQUEST{"aws4_request"};
+  char *c_aws4_request = new char [AWS4_REQUEST.length()+1];
+  std::strcpy(c_aws4_request, AWS4_REQUEST.c_str());
+  unsigned char *kSigning;
+  unsigned int kSigningLen;
+  kSigning = HMAC(EVP_sha256(), kService, kServiceLen,
+                  (unsigned char*)c_aws4_request, strlen(c_aws4_request), NULL, &kSigningLen);
+
+  char *c_string_to_sign = new char [string_to_sign.length()+1];
+  std::strcpy(c_string_to_sign, string_to_sign.c_str());
+  unsigned char *kSig;
+  unsigned int kSigLen;
+  kSig = HMAC(EVP_sha256(), kSigning, strlen((char *)kSigning),
+              (unsigned char*)c_string_to_sign, strlen(c_string_to_sign), NULL, &kSigLen);
+  char outputBuffer[65];
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+    sprintf(outputBuffer + (i * 2), "%02x", kSig[i]);
+  }
+  outputBuffer[64] = 0;
+  return std::string{outputBuffer};
 }
 
 // sign S3 key
@@ -298,7 +351,6 @@ static std::string SignSig4(const std::string &key,
     stream << "\n";
   stream << sha256_base16(payload);
   std::string canonical_request = stream.str();
-  LOG(INFO) << canonical_request;
 
   std::string hash_request = sha256_base16(canonical_request);
   std::ostringstream to_sign;
@@ -307,8 +359,6 @@ static std::string SignSig4(const std::string &key,
   // credential scope
   to_sign << GetCredentialScope(time, s3_region) << "\n";
   to_sign << hash_request;
-
-  LOG(INFO) << to_sign.str();
   return calculate_signature(time, key, s3_region, "s3", to_sign.str());
 }
 
@@ -1021,13 +1071,12 @@ void ListObjects(const URI &path,
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
   // TODO CHECK IF / is required at the start
-  std::string canonical_uri = "/";path.host + path.name;
+  std::string canonical_uri = "/"; path.host + path.name;
   std::string canonical_querystring = "";//"?delimiter=/&prefix=";
   std::map<std::string, std::string> canonical_headers;
   time_t curr_time = time(NULL);
   canonical_headers["x-amz-date"] = ISO8601_date(curr_time);
   canonical_headers["host"] = path.host + ".s3.amazonaws.com";
-//  canonical_headers["x-amz-content-sha256"] = HexSHA256Hash("");
   if (s3_session_token != "") {
     canonical_headers["x-amz-security-token"] = s3_session_token;
   }
