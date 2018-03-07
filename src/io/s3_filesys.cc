@@ -341,27 +341,29 @@ static std::string SignSig4(const std::string &key,
                             const std::string &canonical_query,
                             const std::map<std::string, std::string> &canonical_headers,
                             const std::string &payload) {
-  std::ostringstream stream;
-  stream << method << "\n";
-  stream << canonical_uri << "\n";
-  stream << canonical_query << "\n";
+  std::ostringstream can_req;
+  can_req << method << "\n";
+  can_req << canonical_uri << "\n";
+  can_req << canonical_query << "\n";
   for (const auto & header : canonical_headers) {
-    stream << header.first << ":"<<header.second << "\n";
+    can_req << header.first << ":"<<header.second << "\n";
   }
-    stream << "\n";
-    stream << GetSignedHeaders(canonical_headers);
-    stream << "\n";
-  stream << SHA256Hex(payload);
-  std::string canonical_request = stream.str();
+  can_req << "\n";
+  can_req << GetSignedHeaders(canonical_headers);
+  can_req << "\n";
+  can_req << SHA256Hex(payload);
+
+  std::string canonical_request = can_req.str();
   std::string hash_request = SHA256Hex(canonical_request);
+
   std::ostringstream to_sign;
   to_sign << "AWS4-HMAC-SHA256" << "\n";
   to_sign << GetDateISO8601(time) << "\n";
-  // credential scope
   to_sign << GetCredentialScope(time, s3_region) << "\n";
   to_sign << hash_request;
   return CalculateSig4Sign(time, key, s3_region, "s3", to_sign.str());
 }
+
 static std::string ComputeMD5(const std::string &buf) {
   if (buf.length() == 0) return "";
   unsigned char md[MD5_DIGEST_LENGTH];
@@ -397,7 +399,7 @@ inline bool FindHttpError(const std::string &header) {
  * \return datetime string as string
  */
 inline std::string GetDateTimeString(void) {
-  time_t t = time(nullptr);
+  time_t t = time(NULL);
   tm gmt;
   gmtime_r(&t, &gmt);
   char buf[256];
@@ -436,7 +438,7 @@ std::string getEndpoint(std::string region_name) {
 }
 
 /*!
- * Encodeing as required by SIG4
+ * Encoding as required by SIG4
  * \param str string to encode
  * \param reserved string which contains characters that should not be encoded
  * \param encodeSlash whether or not to encode slash (/) character
