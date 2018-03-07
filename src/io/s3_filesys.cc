@@ -887,68 +887,46 @@ void WriteStream::Run(const std::string &method,
                       const std::string &data,
                       std::string *out_header,
                       std::string *out_data) {
-  time_t curr_time = time(NULL);
-  std::map<std::string, std::string> canonical_headers;
-  canonical_headers["x-amz-date"] = ISO8601_date(curr_time);
+  // initialize the curl request
+  std::vector<std::string> amz;
   if (s3_session_token_ != "") {
-    canonical_headers["x-amz-security-token"] = s3_session_token_;
+    amz.push_back("x-amz-security-token:" + s3_session_token_);
   }
+  std::string md5str = ComputeMD5(data);
+  std::string date = GetDateString();
+  std::string signature = Sign(s3_key_, method.c_str(), md5str,
+                               content_type, date, amz,
+                               std::string("/") + path_.host + '/' +
+                               RemoveBeginSlash(path_.name) + args);
 
-  std::ostringstream sauth, sdate, stoken, surl, scontent, srange;
+  // generate headers
+  std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
   std::ostringstream rheader, rdata;
+  sauth << "Authorization: AWS " << s3_id_ << ":" << signature;
+  sdate << "Date: " << date;
+  stoken << "x-amz-security-token: " << s3_session_token_;
 
-  if (path_.host.find('.', 0) == std::string::npos) {
-    std::string canonical_uri = "/" + std::string{RemoveBeginSlash(path_.name)};
-    std::string canonical_querystring = "";
-    canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
-    canonical_headers["x-amz-content-sha256"] = sha256_base16(data);
-    std::string signature = SignSig4(s3_key_, s3_region_, "PUT", curr_time,
-                                     canonical_uri, canonical_querystring,
-                                     canonical_headers, data);
-    BuildRequestHeaders(sauth, sdate, stoken, surl, scontent,
-                        curr_time, s3_id_, s3_region_, s3_session_token_,
-                        canonical_headers, signature, data);
-    surl << "https://" << path_.host << ".s3.amazonaws.com" << '/' << RemoveBeginSlash(path_.name);
+  if (path_.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
+    // for backword compatibility, use virtual host if no period in host and no region was set.
+    surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
+         << RemoveBeginSlash(path_.name) << args;
   } else {
-    LOG(FATAL);
+    surl << "https://" << s3_endpoint_ << '/' << path_.host << '/'
+         << RemoveBeginSlash(path_.name) << args;
   }
-//  std::string md5str = ComputeMD5(data);
-//  std::string date = GetDateString();
-//  std::string signature = Sign(s3_key_, method.c_str(), md5str,
-//                               content_type, date, amz,
-//                               std::string("/") + path_.host + '/' +
-//                               RemoveBeginSlash(path_.name) + args);
-//
-//  // generate headers
-//  std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
-//  std::ostringstream rheader, rdata;
-//  sauth << "Authorization: AWS " << s3_id_ << ":" << signature;
-//  sdate << "Date: " << date;
-//  stoken << "x-amz-security-token: " << s3_session_token_;
-//
-//  if (path_.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
-//    // for backword compatibility, use virtual host if no period in host and no region was set.
-//    surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
-//         << RemoveBeginSlash(path_.name) << args;
-//  } else {
-//    surl << "https://" << s3_endpoint_ << '/' << path_.host << '/'
-//         << RemoveBeginSlash(path_.name) << args;
-//  }
-  scontent << "\nContent-Type: " << content_type;
-
+  scontent << "Content-Type: " << content_type;
   // list
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
   slist = curl_slist_append(slist, scontent.str().c_str());
-  slist = curl_slist_append(slist, sauth.str().c_str());
   if (s3_session_token_ != "") {
     slist = curl_slist_append(slist, stoken.str().c_str());
   }
-//  if (md5str.length() != 0) {
-//    smd5 << "Content-MD5: " << md5str;
-//    slist = curl_slist_append(slist, smd5.str().c_str());
-//  }
-//  slist = curl_slist_append(slist, sauth.str().c_str());
+  if (md5str.length() != 0) {
+    smd5 << "Content-MD5: " << md5str;
+    slist = curl_slist_append(slist, smd5.str().c_str());
+  }
+  slist = curl_slist_append(slist, sauth.str().c_str());
 
   int num_retry = 0;
   while (true) {
@@ -963,7 +941,6 @@ void WriteStream::Run(const std::string &method,
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEHEADER, WriteSStreamCallback) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
-    CHECK(curl_easy_setopt(ecurl_, CURLOPT_VERBOSE, 1L) == CURLE_OK);
     if (s3_verify_ssl_ == "0") {
       CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
       CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
@@ -1001,52 +978,52 @@ void WriteStream::Run(const std::string &method,
 }
 
 void WriteStream::Init(void) {
-//  std::string rheader, rdata;
-//  Run("POST", path_, "?uploads",
-//      "binary/octel-stream", "", &rheader, &rdata);
-//  XMLIter xml(rdata.c_str());
-//  XMLIter upid;
-//  CHECK(xml.GetNext("UploadId", &upid)) << "missing UploadId";
-//  upload_id_ = upid.str();
+  std::string rheader, rdata;
+  Run("POST", path_, "?uploads",
+      "binary/octel-stream", "", &rheader, &rdata);
+  XMLIter xml(rdata.c_str());
+  XMLIter upid;
+  CHECK(xml.GetNext("UploadId", &upid)) << "missing UploadId";
+  upload_id_ = upid.str();
 }
 
 void WriteStream::Upload(bool force_upload_even_if_zero_bytes) {
   if (buffer_.length() == 0 && !force_upload_even_if_zero_bytes) return;
   std::ostringstream sarg;
   std::string rheader, rdata;
-//  size_t partno = etags_.size() + 1;
+  size_t partno = etags_.size() + 1;
 
-//  sarg << "?partNumber=" << partno << "&uploadId=" << upload_id_;
-//
-//  Run("PUT", path_, sarg.str(),
-//      "binary/octel-stream", buffer_, &rheader, &rdata);
-//  const char *p = strstr(rheader.c_str(), "ETag: ");
-//  CHECK(p != NULL) << "cannot find ETag in header";
-//  p = strchr(p, '\"');
-//  CHECK(p != NULL) << "cannot find ETag in header";
-//  const char *end = strchr(p + 1, '\"');
-//  CHECK(end != NULL) << "cannot find ETag in header";
-//
-//  etags_.push_back(std::string(p, end - p + 1));
-//  part_ids_.push_back(partno);
+  sarg << "?partNumber=" << partno << "&uploadId=" << upload_id_;
+
+  Run("PUT", path_, sarg.str(),
+      "binary/octel-stream", buffer_, &rheader, &rdata);
+  const char *p = strstr(rheader.c_str(), "ETag: ");
+  CHECK(p != NULL) << "cannot find ETag in header";
+  p = strchr(p, '\"');
+  CHECK(p != NULL) << "cannot find ETag in header";
+  const char *end = strchr(p + 1, '\"');
+  CHECK(end != NULL) << "cannot find ETag in header";
+
+  etags_.push_back(std::string(p, end - p + 1));
+  part_ids_.push_back(partno);
   buffer_.clear();
 }
 
 void WriteStream::Finish(void) {
-//  std::ostringstream sarg, sdata;
-//  std::string rheader, rdata;
-//  sarg << "?uploadId=" << upload_id_;
-//  sdata << "<CompleteMultipartUpload>\n";
-//  CHECK(etags_.size() == part_ids_.size());
-//  for (size_t i = 0; i < etags_.size(); ++i) {
-//    sdata << " <Part>\n"
-//          << "  <PartNumber>" << part_ids_[i] << "</PartNumber>\n"
-//          << "  <ETag>" << etags_[i] << "</ETag>\n"
-//          << " </Part>\n";
-//  }
-//  sdata << "</CompleteMultipartUpload>\n";
-//  Run("POST", path_, sarg.str(),
-//      "text/xml", sdata.str(), &rheader, &rdata);
+  std::ostringstream sarg, sdata;
+  std::string rheader, rdata;
+  sarg << "?uploadId=" << upload_id_;
+  sdata << "<CompleteMultipartUpload>\n";
+  CHECK(etags_.size() == part_ids_.size());
+  for (size_t i = 0; i < etags_.size(); ++i) {
+    sdata << " <Part>\n"
+          << "  <PartNumber>" << part_ids_[i] << "</PartNumber>\n"
+          << "  <ETag>" << etags_[i] << "</ETag>\n"
+          << " </Part>\n";
+  }
+  sdata << "</CompleteMultipartUpload>\n";
+  Run("POST", path_, sarg.str(),
+      "text/xml", sdata.str(), &rheader, &rdata);
 }
 }  // namespace s3
 
