@@ -317,6 +317,7 @@ static void BuildRequestHeaders(std::ostringstream& sauth,
   sauth << "Credential=" << s3_access_id << "/" << GetCredentialScope(curr_time, s3_region) << ",";
   sauth << "SignedHeaders=" << GetSignedHeaders(canonical_headers) << ",";
   sauth << "Signature=" << signature;
+
   sdate << "x-amz-date: " << GetDateISO8601(curr_time);
   stoken << "x-amz-security-token: " << s3_session_token;
   scontent << "x-amz-content-sha256: " << SHA256Hex(payload);
@@ -965,34 +966,50 @@ void WriteStream::Run(const std::string &method,
                       const std::string &data,
                       std::string *out_header,
                       std::string *out_data) {
-  // initialize the curl request
-  std::vector<std::string> amz;
+  time_t curr_time = time(NULL);
+
+  std::string canonical_uri = "/" + path_.host + path_.name;
+  canonical_uri = URIEncode(canonical_uri, false);
+
+  std::string canonical_query = URIEncode("uploads=");
+
+  std::map<std::string, std::string> canonical_headers;
+  canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
   if (s3_session_token_ != "") {
-    amz.push_back("x-amz-security-token:" + s3_session_token_);
+    canonical_headers["x-amz-security-token"] = s3_session_token_;
   }
-  std::string md5str = ComputeMD5(data);
-  std::string date = GetDateTimeString();
-  std::string signature = Sign(s3_key_, method.c_str(), md5str,
-                               content_type, date, amz,
-                               std::string("/") + path_.host + '/' +
-                               RemoveBeginSlash(path_.name) + args);
+  canonical_headers["x-amz-content-sha256"] = SHA256Hex(data);
+  canonical_headers["host"] = s3_endpoint_;
 
-  // generate headers
-  std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
+  std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream rheader, rdata;
-  sauth << "Authorization: AWS " << s3_id_ << ":" << signature;
-  sdate << "Date: " << date;
-  stoken << "x-amz-security-token: " << s3_session_token_;
 
-  if (path_.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
-    // for backword compatibility, use virtual host if no period in host and no region was set.
-    surl << "https://" << path_.host << ".s3.amazonaws.com" << '/'
-         << RemoveBeginSlash(path_.name) << args;
-  } else {
-    surl << "https://" << s3_endpoint_ << '/' << path_.host << '/'
-         << RemoveBeginSlash(path_.name) << args;
-  }
-  scontent << "Content-Type: " << content_type;
+//  if (path.host.find('.', 0) == std::string::npos) {
+//    // use virtual host style if no period in host
+//    std::string canonical_uri = "/";
+//    canonical_headers["host"] = path.host + ".s3.amazonaws.com";
+//    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
+//                                     canonical_uri, canonical_querystring,
+//                                     canonical_headers, payload);
+//    BuildRequestHeaders(sauth, sdate, stoken, scontent,
+//                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
+//                        canonical_headers, signature, payload);
+//    surl << "https://" << path.host << ".s3.amazonaws.com"
+//         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+//  } else {
+//    std::string canonical_uri = "/" + path.host + "/";
+//    canonical_uri = URIEncode(canonical_uri, false);
+//    canonical_headers["host"] = s3_endpoint_;
+  std::string signature = SignSig4(s3_key_, s3_region_, method, curr_time,
+                                   canonical_uri, canonical_query,
+                                   canonical_headers, data);
+  BuildRequestHeaders(sauth, sdate, stoken, scontent,
+                      curr_time, s3_id_, s3_region_, s3_session_token_,
+                      canonical_headers, signature, data);
+  surl << "https://" << s3_endpoint_ << "/" << path.host << "/"
+       << RemoveBeginSlash(path.name) << args;
+  scontent << "\n Content-Type: " << content_type;
+
   // list
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
@@ -1000,10 +1017,10 @@ void WriteStream::Run(const std::string &method,
   if (s3_session_token_ != "") {
     slist = curl_slist_append(slist, stoken.str().c_str());
   }
-  if (md5str.length() != 0) {
-    smd5 << "Content-MD5: " << md5str;
-    slist = curl_slist_append(slist, smd5.str().c_str());
-  }
+//  if (md5str.length() != 0) {
+//    smd5 << "Content-MD5: " << md5str;
+//    slist = curl_slist_append(slist, smd5.str().c_str());
+//  }
   slist = curl_slist_append(slist, sauth.str().c_str());
 
   int num_retry = 0;
@@ -1019,7 +1036,8 @@ void WriteStream::Run(const std::string &method,
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEHEADER, WriteSStreamCallback) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
-    if (!s3_verify_ssl_ ) {
+    CHECK(curl_easy_setopt(ecurl_, CURLOPT_VERBOSE, 1) == CURLE_OK);
+    if (!s3_verify_ssl_ == "0") {
       CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
       CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
     }
