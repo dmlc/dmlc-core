@@ -947,7 +947,6 @@ class WriteStream : public Stream {
 };
 
 void WriteStream::Write(const void *ptr, size_t size) {
-  std::cout<<size<<std::endl;
   size_t rlen = buffer_.length();
   buffer_.resize(rlen + size);
   std::memcpy(BeginPtr(buffer_) + rlen, ptr, size);
@@ -1105,13 +1104,6 @@ void WriteStream::Finish(void) {
 }
 }  // namespace s3
 
-/*!
-* \brief list the objects in the bucket with prefix specified by path.name
-* \param path the path to query
-* \param s3_id access id of s3
-* \param s3_key access key of s3
-* \paam out_list stores the output results
-*/
 void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list) {
   CHECK(path.host.length() != 0) << "bucket name not specified in s3";
   out_list->clear();
@@ -1129,7 +1121,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream result;
 
-  if (false && path.host.find('.', 0) == std::string::npos) {
+  if (path.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
     std::string canonical_uri = "/";
     canonical_headers["host"] = path.host + ".s3.amazonaws.com";
@@ -1142,7 +1134,6 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     surl << "https://" << path.host << ".s3.amazonaws.com"
          << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   } else {
-    LOG(INFO) << "Using this style";
     std::string canonical_uri = "/" + path.host + "/";
     canonical_headers["host"] = s3_endpoint_;
     std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
@@ -1151,8 +1142,8 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     BuildRequestHeaders(sauth, sdate, stoken, scontent,
                         curr_time, s3_access_id_, s3_region_, s3_session_token_,
                         canonical_headers, signature, payload);
-    surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
-    LOG(INFO) << surl.str();
+    surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix="
+         << RemoveBeginSlash(path.name);
   }
 
 // make request
@@ -1193,7 +1184,6 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
       info.path = path;
       XMLIter value;
       CHECK(data.GetNext("Key", &value));
-      std::cout<< " * " << value.str()<<std::endl;
       // add root path to be consistent with other filesys convention
       info.path.name = '/' + value.str();
       CHECK(data.GetNext("Size", &value));
@@ -1212,7 +1202,6 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
       XMLIter value;
       CHECK(data.GetNext("Prefix", &value));
       // add root path to be consistent with other filesys convention
-      std::cout<<value.str()<<std::endl;
       info.path.name = '/' + value.str();
       info.size = 0; info.type = kDirectory;
       out_list->push_back(info);

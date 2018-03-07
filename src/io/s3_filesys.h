@@ -90,6 +90,11 @@ class S3FileSystem : public FileSystem {
    */
   bool TryGetPathInfo(const URI &path, FileInfo *info);
 
+  /*!
+  * \brief list the objects in the bucket with prefix specified by path.name
+  * \param path the path to query
+  * \param out_list stores the output results which match given prefix
+  */
   void ListObjects(const URI &path, std::vector<FileInfo> *out_list);
 
 };
