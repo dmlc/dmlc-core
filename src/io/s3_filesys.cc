@@ -165,7 +165,7 @@ static const std::string SHA256Hex(const std::string &str) noexcept {
   SHA256(str, hashOut);
   char outputBuffer[65];
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    snprintf(outputBuffer + (i * 2), 2, "%02x", hashOut[i]);
+    snprintf(outputBuffer + (i * 2), 65, "%02x", hashOut[i]);
   }
   outputBuffer[64] = 0;
   return std::string{outputBuffer};
@@ -242,7 +242,7 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
 
   auto yyyymmdd = GetDateYYYYMMDD(request_date);
   char *c_yyyymmdd = new char[yyyymmdd.length() + 1];
-  std::snprintf(c_yyyymmdd, yyyymmdd.length() + 1, yyyymmdd.c_str());
+  std::snprintf(c_yyyymmdd, yyyymmdd.length() + 1, "%s", yyyymmdd.c_str());
 
   unsigned char* kDate;
   unsigned int kDateLen;
@@ -272,7 +272,7 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
                   (unsigned char*)c_aws4_request, strlen(c_aws4_request), NULL, &kSigningLen);
 
   char *c_string_to_sign = new char[string_to_sign.length() + 1];
-  std::snprintf(c_string_to_sign, string_to_sign.length() + 1, string_to_sign.c_str());
+  std::snprintf(c_string_to_sign, string_to_sign.length() + 1, "%s", string_to_sign.c_str());
   unsigned char *kSig;
   unsigned int kSigLen;
   kSig = HMAC(EVP_sha256(), kSigning, strlen(reinterpret_cast<char *>(kSigning)),
@@ -280,7 +280,7 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
   // convert to hex
   char outputBuffer[65];
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    snprintf(outputBuffer + (i * 2), 2, "%02x", kSig[i]);
+    snprintf(outputBuffer + (i * 2), 65, "%02x", kSig[i]);
   }
   outputBuffer[64] = 0;
   return std::string{outputBuffer};
