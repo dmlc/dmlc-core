@@ -871,6 +871,7 @@ class WriteStream : public Stream {
 };
 
 void WriteStream::Write(const void *ptr, size_t size) {
+  std::cout<<size<<std::endl;
   size_t rlen = buffer_.length();
   buffer_.resize(rlen + size);
   std::memcpy(BeginPtr(buffer_) + rlen, ptr, size);
@@ -1000,51 +1001,52 @@ void WriteStream::Run(const std::string &method,
 }
 
 void WriteStream::Init(void) {
-  std::string rheader, rdata;
-  Run("POST", path_, "?uploads",
-      "binary/octel-stream", "", &rheader, &rdata);
-  XMLIter xml(rdata.c_str());
-  XMLIter upid;
-  CHECK(xml.GetNext("UploadId", &upid)) << "missing UploadId";
-  upload_id_ = upid.str();
+//  std::string rheader, rdata;
+//  Run("POST", path_, "?uploads",
+//      "binary/octel-stream", "", &rheader, &rdata);
+//  XMLIter xml(rdata.c_str());
+//  XMLIter upid;
+//  CHECK(xml.GetNext("UploadId", &upid)) << "missing UploadId";
+//  upload_id_ = upid.str();
 }
 
 void WriteStream::Upload(bool force_upload_even_if_zero_bytes) {
   if (buffer_.length() == 0 && !force_upload_even_if_zero_bytes) return;
   std::ostringstream sarg;
   std::string rheader, rdata;
-  size_t partno = etags_.size() + 1;
+//  size_t partno = etags_.size() + 1;
 
-  sarg << "?partNumber=" << partno << "&uploadId=" << upload_id_;
-  Run("PUT", path_, sarg.str(),
-      "binary/octel-stream", buffer_, &rheader, &rdata);
-  const char *p = strstr(rheader.c_str(), "ETag: ");
-  CHECK(p != NULL) << "cannot find ETag in header";
-  p = strchr(p, '\"');
-  CHECK(p != NULL) << "cannot find ETag in header";
-  const char *end = strchr(p + 1, '\"');
-  CHECK(end != NULL) << "cannot find ETag in header";
-
-  etags_.push_back(std::string(p, end - p + 1));
-  part_ids_.push_back(partno);
+//  sarg << "?partNumber=" << partno << "&uploadId=" << upload_id_;
+//
+//  Run("PUT", path_, sarg.str(),
+//      "binary/octel-stream", buffer_, &rheader, &rdata);
+//  const char *p = strstr(rheader.c_str(), "ETag: ");
+//  CHECK(p != NULL) << "cannot find ETag in header";
+//  p = strchr(p, '\"');
+//  CHECK(p != NULL) << "cannot find ETag in header";
+//  const char *end = strchr(p + 1, '\"');
+//  CHECK(end != NULL) << "cannot find ETag in header";
+//
+//  etags_.push_back(std::string(p, end - p + 1));
+//  part_ids_.push_back(partno);
   buffer_.clear();
 }
 
 void WriteStream::Finish(void) {
-  std::ostringstream sarg, sdata;
-  std::string rheader, rdata;
-  sarg << "?uploadId=" << upload_id_;
-  sdata << "<CompleteMultipartUpload>\n";
-  CHECK(etags_.size() == part_ids_.size());
-  for (size_t i = 0; i < etags_.size(); ++i) {
-    sdata << " <Part>\n"
-          << "  <PartNumber>" << part_ids_[i] << "</PartNumber>\n"
-          << "  <ETag>" << etags_[i] << "</ETag>\n"
-          << " </Part>\n";
-  }
-  sdata << "</CompleteMultipartUpload>\n";
-  Run("POST", path_, sarg.str(),
-      "text/xml", sdata.str(), &rheader, &rdata);
+//  std::ostringstream sarg, sdata;
+//  std::string rheader, rdata;
+//  sarg << "?uploadId=" << upload_id_;
+//  sdata << "<CompleteMultipartUpload>\n";
+//  CHECK(etags_.size() == part_ids_.size());
+//  for (size_t i = 0; i < etags_.size(); ++i) {
+//    sdata << " <Part>\n"
+//          << "  <PartNumber>" << part_ids_[i] << "</PartNumber>\n"
+//          << "  <ETag>" << etags_[i] << "</ETag>\n"
+//          << " </Part>\n";
+//  }
+//  sdata << "</CompleteMultipartUpload>\n";
+//  Run("POST", path_, sarg.str(),
+//      "text/xml", sdata.str(), &rheader, &rdata);
 }
 }  // namespace s3
 
