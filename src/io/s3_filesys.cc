@@ -142,15 +142,15 @@ static std::string Sign(const std::string &key,
  * \param str input to hash
  * \param outputBuffer hashed output
  */
-static void SHA256(const std::string str, unsigned char *outputBuffer) noexcept {
-  char *c_string = new char [str.length()+1];
-  std::strcpy(c_string, str.c_str());
+static void SHA256(const std::string &str, unsigned char *outputBuffer) noexcept {
+  char *c_string = new char[str.length() + 1];
+  std::snprintf(c_string, str.length() + 1, "%s", str.c_str());
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
   SHA256_Update(&sha256, c_string, strlen(c_string));
   SHA256_Final(hash, &sha256);
-  for (int i=0;i<SHA256_DIGEST_LENGTH;i++) {
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
     outputBuffer[i] = hash[i];
   }
 }
@@ -160,12 +160,12 @@ static void SHA256(const std::string str, unsigned char *outputBuffer) noexcept 
  * \param str input to hash
  * \return string with hex representation of SHA256 Hash
  */
-static const std::string SHA256Hex(const std::string str) noexcept {
+static const std::string SHA256Hex(const std::string &str) noexcept {
   unsigned char hashOut[SHA256_DIGEST_LENGTH];
   SHA256(str, hashOut);
   char outputBuffer[65];
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    sprintf(outputBuffer + (i * 2), "%02x", hashOut[i]);
+    snprintf(outputBuffer + (i * 2), 2, "%02x", hashOut[i]);
   }
   outputBuffer[64] = 0;
   return std::string{outputBuffer};
@@ -218,7 +218,7 @@ static std::string GetSignedHeaders(const std::map<std::string, std::string> &ca
  * \param region s3 region
  * \return credential scope
  */
-static const std::string GetCredentialScope(time_t time, const std::string &region) {
+static const std::string GetCredentialScope(const time_t &time, const std::string &region) {
   return GetDateYYYYMMDD(time) + "/" + region  + "/s3/aws4_request";
 }
 
@@ -232,55 +232,55 @@ static const std::string GetCredentialScope(time_t time, const std::string &regi
  * \return signature
  */
 static const std::string CalculateSig4Sign(const std::time_t &request_date,
-                                           const std::string secret,
-                                           const std::string region,
-                                           const std::string service,
-                                           const std::string string_to_sign) noexcept {
+                                           const std::string &secret,
+                                           const std::string &region,
+                                           const std::string &service,
+                                           const std::string &string_to_sign) noexcept {
   const std::string k1{"AWS4" + secret};
-  char *c_k1 = new char [k1.length()+1];
-  std::strcpy(c_k1, k1.c_str());
+  char *c_k1 = new char[k1.length() + 1];
+  std::snprintf(c_k1, k1.length() + 1, "%s", k1.c_str());
 
   auto yyyymmdd = GetDateYYYYMMDD(request_date);
-  char *c_yyyymmdd = new char [yyyymmdd.length()+1];
-  std::strcpy(c_yyyymmdd, yyyymmdd.c_str());
+  char *c_yyyymmdd = new char[yyyymmdd.length() + 1];
+  std::snprintf(c_yyyymmdd, yyyymmdd.length() + 1, yyyymmdd.c_str());
 
   unsigned char* kDate;
   unsigned int kDateLen;
   kDate = HMAC(EVP_sha256(), c_k1, strlen(c_k1),
                (unsigned char*)c_yyyymmdd, strlen(c_yyyymmdd), NULL, &kDateLen);
 
-  char *c_region = new char [region.length()+1];
-  std::strcpy(c_region, region.c_str());
+  char *c_region = new char[region.length() + 1];
+  std::snprintf(c_region, region.length() + 1, "%s", region.c_str());
   unsigned char *kRegion;
   unsigned int kRegionLen;
   kRegion = HMAC(EVP_sha256(), kDate, kDateLen,
                  (unsigned char*)c_region, strlen(c_region), NULL, &kRegionLen);
 
-  char *c_service = new char [service.length()+1];
-  std::strcpy(c_service, service.c_str());
+  char *c_service = new char[service.length() + 1];
+  std::snprintf(c_service, service.length() + 1, "%s", service.c_str());
   unsigned char *kService;
   unsigned int kServiceLen;
   kService = HMAC(EVP_sha256(), kRegion, kRegionLen,
                   (unsigned char*)c_service, strlen(c_service), NULL, &kServiceLen);
 
   const std::string AWS4_REQUEST{"aws4_request"};
-  char *c_aws4_request = new char [AWS4_REQUEST.length()+1];
-  std::strcpy(c_aws4_request, AWS4_REQUEST.c_str());
+  char *c_aws4_request = new char[AWS4_REQUEST.length() + 1];
+  std::snprintf(c_aws4_request, AWS4_REQUEST.length() + 1, "%s", AWS4_REQUEST.c_str());
   unsigned char *kSigning;
   unsigned int kSigningLen;
   kSigning = HMAC(EVP_sha256(), kService, kServiceLen,
                   (unsigned char*)c_aws4_request, strlen(c_aws4_request), NULL, &kSigningLen);
 
-  char *c_string_to_sign = new char [string_to_sign.length()+1];
-  std::strcpy(c_string_to_sign, string_to_sign.c_str());
+  char *c_string_to_sign = new char[string_to_sign.length() + 1];
+  std::snprintf(c_string_to_sign, string_to_sign.length() + 1, string_to_sign.c_str());
   unsigned char *kSig;
   unsigned int kSigLen;
-  kSig = HMAC(EVP_sha256(), kSigning, strlen((char *)kSigning),
-              (unsigned char*)c_string_to_sign, strlen(c_string_to_sign), NULL, &kSigLen);
+  kSig = HMAC(EVP_sha256(), kSigning, strlen(reinterpret_cast<char *>(kSigning)),
+              reinterpret_cast<unsigned char*>(c_string_to_sign), strlen(c_string_to_sign), NULL, &kSigLen);
   // convert to hex
   char outputBuffer[65];
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    sprintf(outputBuffer + (i * 2), "%02x", kSig[i]);
+    snprintf(outputBuffer + (i * 2), 2, "%02x", kSig[i]);
   }
   outputBuffer[64] = 0;
   return std::string{outputBuffer};
@@ -346,7 +346,7 @@ static std::string SignSig4(const std::string &key,
   can_req << canonical_uri << "\n";
   can_req << canonical_query << "\n";
   for (const auto & header : canonical_headers) {
-    can_req << header.first << ":"<<header.second << "\n";
+    can_req << header.first << ":" << header.second << "\n";
   }
   can_req << "\n";
   can_req << GetSignedHeaders(canonical_headers);
@@ -450,7 +450,7 @@ std::string URIEncode(const std::string& str,
   std::stringstream encoded_str;
   encoded_str << std::hex << std::uppercase << std::setfill('0');
   const std::string ILLEGAL = "%<>{}|\\\"^`!*'()$,[]";
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it){
+  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
     char c = *it;
     if ((c >= 'a' && c <= 'z') ||
         (c >= 'A' && c <= 'Z') ||
@@ -465,7 +465,7 @@ std::string URIEncode(const std::string& str,
         encoded_str << c;
       }
     } else if (c <= 0x20 || c >= 0x7F || ILLEGAL.find(c) != std::string::npos
-               || reserved.find(c) != std::string::npos){
+               || reserved.find(c) != std::string::npos) {
       encoded_str << '%';
       encoded_str << std::setw(2) << static_cast<unsigned>(c);
     } else {
@@ -1109,7 +1109,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   out_list->clear();
   using namespace s3;
   std::string canonical_querystring = "delimiter=%2F&prefix=" +
-                                      URIEncode(std::string{RemoveBeginSlash(path.name)},"");
+                                      URIEncode(std::string{RemoveBeginSlash(path.name)}, "");
   std::string payload = "";
 
   std::map<std::string, std::string> canonical_headers;

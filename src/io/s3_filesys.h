@@ -96,7 +96,6 @@ class S3FileSystem : public FileSystem {
   * \param out_list stores the output results which match given prefix
   */
   void ListObjects(const URI &path, std::vector<FileInfo> *out_list);
-
 };
 }  // namespace io
 }  // namespace dmlc
