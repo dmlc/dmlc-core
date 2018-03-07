@@ -1132,6 +1132,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
          << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   } else {
     std::string canonical_uri = "/" + path.host + "/";
+    canonical_uri = URIEncode(canonical_uri, false);
     canonical_headers["host"] = s3_endpoint_;
     std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
                                      canonical_uri, canonical_querystring,
