@@ -156,6 +156,23 @@ static void SHA256(const std::string &str, unsigned char *outputBuffer) noexcept
 }
 
 /*!
+ * Converts a char array to hex
+ * \param input unsinged char array
+ * \param size size of input buffer
+ * \return string in hex representation
+ */
+static const std::string ConvertToHex(const unsigned char *input, const int size) {
+  // size for output buffer which has hex data
+  char outputBuffer[size * 2 + 1];
+  for (int i = 0; i < size; i++) {
+    // converting to hex
+    snprintf(outputBuffer + (i * 2), sizeof(outputBuffer), "%02x", input[i]);
+  }
+  outputBuffer[64] = 0;
+  return std::string{outputBuffer};
+}
+
+/*!
  * \brief Generates hash of input as per SHA256 algorithm and converts it to hex representation
  * \param str input to hash
  * \return string with hex representation of SHA256 Hash
@@ -163,12 +180,7 @@ static void SHA256(const std::string &str, unsigned char *outputBuffer) noexcept
 static const std::string SHA256Hex(const std::string &str) noexcept {
   unsigned char hashOut[SHA256_DIGEST_LENGTH];
   SHA256(str, hashOut);
-  char outputBuffer[65];
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    snprintf(outputBuffer + (i * 2), sizeof(outputBuffer), "%02x", hashOut[i]);
-  }
-  outputBuffer[64] = 0;
-  return std::string{outputBuffer};
+  return ConvertToHex(hashOut, SHA256_DIGEST_LENGTH);
 }
 
 /*!
@@ -178,7 +190,7 @@ static const std::string SHA256Hex(const std::string &str) noexcept {
  * \return datetime in above format as string
  */
 static const std::string GetDateISO8601(const std::time_t &t) noexcept {
-  char buf[sizeof "20111008T070709Z"];
+  char buf[sizeof "YYYYMMDDTHHMMSSZ"];
   std::strftime(buf, sizeof buf, "%Y%m%dT%H%M%SZ", std::gmtime(&t));
   return std::string{buf};
 }
@@ -190,7 +202,7 @@ static const std::string GetDateISO8601(const std::time_t &t) noexcept {
  * \return datetime in above format as string
  */
 static const std::string GetDateYYYYMMDD(const std::time_t &t) noexcept {
-  char buf[sizeof "20111008"];
+  char buf[sizeof "YYYYMMDD"];
   std::strftime(buf, sizeof buf, "%Y%m%d", std::gmtime(&t));
   return std::string{buf};
 }
@@ -235,13 +247,13 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
                                            const std::string &secret,
                                            const std::string &region,
                                            const std::string &service,
-                                           const std::string &string_to_sign) noexcept {
-  const std::string k1{"AWS4" + secret};
+                                           const std::string &string_to_sign) {
+  const std::string key1{"AWS4" + secret};
   const std::string yyyymmdd = GetDateYYYYMMDD(request_date);
 
   unsigned char* kDate;
   unsigned int kDateLen;
-  kDate = HMAC(EVP_sha256(), k1.c_str(), k1.size(),
+  kDate = HMAC(EVP_sha256(), key1.c_str(), key1.size(),
                reinterpret_cast<const unsigned char*>(yyyymmdd.c_str()),
                yyyymmdd.size(), NULL, &kDateLen);
 
@@ -269,13 +281,8 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
   kSig = HMAC(EVP_sha256(), kSigning, strlen(reinterpret_cast<char *>(kSigning)),
               reinterpret_cast<const unsigned char*>(string_to_sign.c_str()),
               string_to_sign.size(), NULL, &kSigLen);
-  // convert to hex
-  char outputBuffer[65];
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    snprintf(outputBuffer + (i * 2), sizeof(outputBuffer), "%02x", kSig[i]);
-  }
-  outputBuffer[64] = 0;
-  return std::string{outputBuffer};
+
+  return ConvertToHex(kSig, SHA256_DIGEST_LENGTH);
 }
 
 /*!
