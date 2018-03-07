@@ -353,7 +353,6 @@ static std::string SignSig4(const std::string &key,
     stream << "\n";
   stream << SHA256Hex(payload);
   std::string canonical_request = stream.str();
-    std::cout << canonical_request<<std::endl;
   std::string hash_request = SHA256Hex(canonical_request);
   std::ostringstream to_sign;
   to_sign << "AWS4-HMAC-SHA256" << "\n";
@@ -955,6 +954,9 @@ void WriteStream::Write(const void *ptr, size_t size) {
   }
 }
 
+// Still uses Sig2 auth. Will only work in us-east-1
+// Sig4 does not support multipart upload of data whose length is
+// not known beforehand
 void WriteStream::Run(const std::string &method,
                       const URI &path,
                       const std::string &args,
@@ -1069,7 +1071,6 @@ void WriteStream::Upload(bool force_upload_even_if_zero_bytes) {
   size_t partno = etags_.size() + 1;
 
   sarg << "?partNumber=" << partno << "&uploadId=" << upload_id_;
-
   Run("PUT", path_, sarg.str(),
       "binary/octel-stream", buffer_, &rheader, &rdata);
   const char *p = strstr(rheader.c_str(), "ETag: ");
@@ -1126,7 +1127,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream result;
 
-  if (path.host.find('.', 0) == std::string::npos) {
+  if (false && path.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
     std::string canonical_uri = "/";
     canonical_headers["host"] = path.host + ".s3.amazonaws.com";
@@ -1139,19 +1140,19 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     surl << "https://" << path.host << ".s3.amazonaws.com"
          << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   } else {
-    LOG (FATAL) << "Please use bucketnames without periods";
+    LOG(INFO) << "Using this style";
+    std::string canonical_uri = "/" + path.host + "/";
+    canonical_headers["host"] = s3_endpoint_;
+    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
+                                     canonical_uri, canonical_querystring,
+                                     canonical_headers, payload);
+    BuildRequestHeaders(sauth, sdate, stoken, scontent,
+                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
+                        canonical_headers, signature, payload);
+    surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+    LOG(INFO) << surl.str();
   }
-//    std::string canonical_uri = "/" + path.host;
-//    canonical_headers["host"] = s3_endpoint_;
-//    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
-//                                     canonical_uri, canonical_querystring,
-//                                     canonical_headers, payload);
-//    BuildRequestHeaders(sauth, sdate, stoken, surl, scontent,
-//                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
-//                        canonical_headers, signature, payload);
-//    surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
-//    LOG(INFO) << surl.str();
-//  }
+
 // make request
   CURL *curl = curl_easy_init();
   curl_slist *slist = NULL;
