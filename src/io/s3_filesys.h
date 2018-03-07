@@ -89,6 +89,9 @@ class S3FileSystem : public FileSystem {
    * \return return false when path do not exist
    */
   bool TryGetPathInfo(const URI &path, FileInfo *info);
+
+  void ListObjects(const URI &path, std::vector<FileInfo> *out_list);
+
 };
 }  // namespace io
 }  // namespace dmlc
