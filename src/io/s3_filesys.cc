@@ -156,14 +156,17 @@ static void SHA256(const std::string &str, unsigned char *outputBuffer) noexcept
 }
 
 /*!
- * Converts a char array to hex
+ * Converts a sha256 hash char array to hex
+ *
  * \param input unsinged char array
  * \param size size of input buffer
  * \return string in hex representation
  */
-static const std::string ConvertToHex(const unsigned char *input, const int size) {
+static const std::string ConvertSHA256HashToHex(const unsigned char *input, const int size) {
+  CHECK_EQ(size, SHA256_DIGEST_LENGTH) << "SHA256Hash needs to be of size "
+                                       << SHA256_DIGEST_LENGTH;
   // size for output buffer which has hex data
-  char outputBuffer[size * 2 + 1];
+  char outputBuffer[65];
   for (int i = 0; i < size; i++) {
     // converting to hex
     snprintf(outputBuffer + (i * 2), sizeof(outputBuffer), "%02x", input[i]);
@@ -180,7 +183,7 @@ static const std::string ConvertToHex(const unsigned char *input, const int size
 static const std::string SHA256Hex(const std::string &str) noexcept {
   unsigned char hashOut[SHA256_DIGEST_LENGTH];
   SHA256(str, hashOut);
-  return ConvertToHex(hashOut, SHA256_DIGEST_LENGTH);
+  return ConvertSHA256HashToHex(hashOut, SHA256_DIGEST_LENGTH);
 }
 
 /*!
@@ -282,7 +285,7 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
               reinterpret_cast<const unsigned char*>(string_to_sign.c_str()),
               string_to_sign.size(), NULL, &kSigLen);
 
-  return ConvertToHex(kSig, SHA256_DIGEST_LENGTH);
+  return ConvertSHA256HashToHex(kSig, SHA256_DIGEST_LENGTH);
 }
 
 /*!
@@ -742,7 +745,7 @@ class ReadStream : public CURLReadStreamBase {
              const std::string &s3_session_token,
              const std::string &s3_region,
              const std::string &s3_endpoint,
-             const std::string &s3_verify_ssl,
+             const bool s3_verify_ssl,
              size_t file_size)
       : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
          s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl) {
@@ -760,7 +763,8 @@ class ReadStream : public CURLReadStreamBase {
   // path we are reading
   URI path_;
   // s3 access key and id
-  std::string s3_id_, s3_key_, s3_session_token_, s3_region_, s3_endpoint_, s3_verify_ssl_;
+  std::string s3_id_, s3_key_, s3_session_token_, s3_region_, s3_endpoint_;
+  bool s3_verify_ssl_;
 };
 
 // initialize the reader at begin bytes
@@ -818,7 +822,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HEADER, 0L) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
-  if (s3_verify_ssl_ == "0") {
+  if (!s3_verify_ssl_) {
     CHECK(curl_easy_setopt(ecurl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
   }
@@ -850,8 +854,8 @@ class WriteStream : public Stream {
               const std::string &s3_key,
               const std::string &s3_session_token,
               const std::string &s3_region,
-             const std::string &s3_endpoint,
-             const std::string &s3_verify_ssl)
+              const std::string &s3_endpoint,
+              bool s3_verify_ssl)
       : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
          s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl),
          closed_(false) {
@@ -895,7 +899,8 @@ class WriteStream : public Stream {
   // path we are reading
   URI path_;
   // s3 access key and id
-  std::string s3_id_, s3_key_, s3_session_token_, s3_region_, s3_endpoint_, s3_verify_ssl_;
+  std::string s3_id_, s3_key_, s3_session_token_, s3_region_, s3_endpoint_;
+  bool s3_verify_ssl_;
   // easy curl handle used for the request
   CURL *ecurl_;
   // upload_id used by AWS
@@ -1014,7 +1019,7 @@ void WriteStream::Run(const std::string &method,
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEHEADER, WriteSStreamCallback) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &rheader) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl_, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
-    if (s3_verify_ssl_ == "0") {
+    if (!s3_verify_ssl_ ) {
       CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
       CHECK(curl_easy_setopt(ecurl_, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
     }
@@ -1104,7 +1109,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   out_list->clear();
   using namespace s3;
   std::string canonical_querystring = "delimiter=%2F&prefix=" +
-                                      URIEncode(std::string{RemoveBeginSlash(path.name)}, "");
+                                      URIEncode(std::string{RemoveBeginSlash(path.name)});
   std::string payload;
 
   std::map<std::string, std::string> canonical_headers;
@@ -1157,7 +1162,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   CHECK(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
   CHECK(curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
-  if (s3_verify_ssl_ == "0") {
+  if (!s3_verify_ssl_) {
     CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
     CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
   }
@@ -1255,8 +1260,10 @@ S3FileSystem::S3FileSystem() {
     s3_endpoint_ = endpoint;
   }
 
-  if (verify_ssl != NULL) {
-    s3_verify_ssl_ = verify_ssl;
+  if (verify_ssl == NULL || (strcmp(verify_ssl, "1") == 0)) {
+    s3_verify_ssl_ = true;
+  } else {
+    s3_verify_ssl_ = false;
   }
 }
 
