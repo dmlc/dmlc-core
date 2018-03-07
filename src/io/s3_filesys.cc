@@ -441,16 +441,13 @@ std::string getEndpoint(std::string region_name) {
 /*!
  * Encoding as required by SIG4
  * \param str string to encode
- * \param reserved string which contains characters that should not be encoded
  * \param encodeSlash whether or not to encode slash (/) character
  * \return
  */
 std::string URIEncode(const std::string& str,
-                      const std::string& reserved,
                       bool encodeSlash = true) {
   std::stringstream encoded_str;
   encoded_str << std::hex << std::uppercase << std::setfill('0');
-  const std::string ILLEGAL = "%<>{}|\\\"^`!*'()$,[]";
   for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
     char c = *it;
     if ((c >= 'a' && c <= 'z') ||
@@ -465,12 +462,9 @@ std::string URIEncode(const std::string& str,
       } else {
         encoded_str << c;
       }
-    } else if (c <= 0x20 || c >= 0x7F || ILLEGAL.find(c) != std::string::npos
-               || reserved.find(c) != std::string::npos) {
+    } else {
       encoded_str << '%';
       encoded_str << std::setw(2) << static_cast<unsigned>(c);
-    } else {
-      encoded_str << c;
     }
   }
   return encoded_str.str();
@@ -788,6 +782,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   if (path_.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
     std::string canonical_uri = "/" + std::string{RemoveBeginSlash(path_.name)};
+    canonical_uri = URIEncode(canonical_uri, false);
     std::string canonical_querystring = "";
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
     std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
@@ -799,6 +794,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
     surl << "https://" << path_.host << ".s3.amazonaws.com" << '/' << RemoveBeginSlash(path_.name);
   } else {
     std::string canonical_uri = "/" + path_.host + path_.name;
+    canonical_uri = URIEncode(canonical_uri, false);
     std::string canonical_querystring = "";
     canonical_headers["host"] = s3_endpoint_;
     std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
