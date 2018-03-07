@@ -237,47 +237,38 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
                                            const std::string &service,
                                            const std::string &string_to_sign) noexcept {
   const std::string k1{"AWS4" + secret};
-  char *c_k1 = new char[k1.length() + 1];
-  std::snprintf(c_k1, k1.length() + 1, "%s", k1.c_str());
-
-  auto yyyymmdd = GetDateYYYYMMDD(request_date);
-  char *c_yyyymmdd = new char[yyyymmdd.length() + 1];
-  std::snprintf(c_yyyymmdd, yyyymmdd.length() + 1, "%s", yyyymmdd.c_str());
+  const std::string yyyymmdd = GetDateYYYYMMDD(request_date);
 
   unsigned char* kDate;
   unsigned int kDateLen;
-  kDate = HMAC(EVP_sha256(), c_k1, strlen(c_k1),
-               (unsigned char*)c_yyyymmdd, strlen(c_yyyymmdd), NULL, &kDateLen);
+  kDate = HMAC(EVP_sha256(), k1.c_str(), k1.size(),
+               reinterpret_cast<const unsigned char*>(yyyymmdd.c_str()),
+               yyyymmdd.size(), NULL, &kDateLen);
 
-  char *c_region = new char[region.length() + 1];
-  std::snprintf(c_region, region.length() + 1, "%s", region.c_str());
   unsigned char *kRegion;
   unsigned int kRegionLen;
   kRegion = HMAC(EVP_sha256(), kDate, kDateLen,
-                 (unsigned char*)c_region, strlen(c_region), NULL, &kRegionLen);
+                 reinterpret_cast<const unsigned char*>(region.c_str()),
+                 region.size(), NULL, &kRegionLen);
 
-  char *c_service = new char[service.length() + 1];
-  std::snprintf(c_service, service.length() + 1, "%s", service.c_str());
   unsigned char *kService;
   unsigned int kServiceLen;
   kService = HMAC(EVP_sha256(), kRegion, kRegionLen,
-                  (unsigned char*)c_service, strlen(c_service), NULL, &kServiceLen);
+                  reinterpret_cast<const unsigned char*>(service.c_str()),
+                  service.size(), NULL, &kServiceLen);
 
   const std::string AWS4_REQUEST{"aws4_request"};
-  char *c_aws4_request = new char[AWS4_REQUEST.length() + 1];
-  std::snprintf(c_aws4_request, AWS4_REQUEST.length() + 1, "%s", AWS4_REQUEST.c_str());
   unsigned char *kSigning;
   unsigned int kSigningLen;
   kSigning = HMAC(EVP_sha256(), kService, kServiceLen,
-                  (unsigned char*)c_aws4_request, strlen(c_aws4_request), NULL, &kSigningLen);
+                  reinterpret_cast<const unsigned char*>(AWS4_REQUEST.c_str()),
+                  AWS4_REQUEST.size(), NULL, &kSigningLen);
 
-  char *c_string_to_sign = new char[string_to_sign.length() + 1];
-  std::snprintf(c_string_to_sign, string_to_sign.length() + 1, "%s", string_to_sign.c_str());
   unsigned char *kSig;
   unsigned int kSigLen;
   kSig = HMAC(EVP_sha256(), kSigning, strlen(reinterpret_cast<char *>(kSigning)),
-              reinterpret_cast<unsigned char*>(c_string_to_sign),
-              strlen(c_string_to_sign), NULL, &kSigLen);
+              reinterpret_cast<const unsigned char*>(string_to_sign.c_str()),
+              string_to_sign.size(), NULL, &kSigLen);
   // convert to hex
   char outputBuffer[65];
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
@@ -769,7 +760,7 @@ class ReadStream : public CURLReadStreamBase {
 void ReadStream::InitRequest(size_t begin_bytes,
                              CURL *ecurl,
                              curl_slist **slist) {
-  std::string payload = "";
+  std::string payload;
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
   canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
@@ -783,7 +774,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
     // use virtual host style if no period in host
     std::string canonical_uri = "/" + std::string{RemoveBeginSlash(path_.name)};
     canonical_uri = URIEncode(canonical_uri, false);
-    std::string canonical_querystring = "";
+    std::string canonical_querystring;
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
     std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
                                      canonical_uri, canonical_querystring,
@@ -795,7 +786,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   } else {
     std::string canonical_uri = "/" + path_.host + path_.name;
     canonical_uri = URIEncode(canonical_uri, false);
-    std::string canonical_querystring = "";
+    std::string canonical_querystring;
     canonical_headers["host"] = s3_endpoint_;
     std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
                                      canonical_uri, canonical_querystring,
@@ -1107,7 +1098,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   using namespace s3;
   std::string canonical_querystring = "delimiter=%2F&prefix=" +
                                       URIEncode(std::string{RemoveBeginSlash(path.name)}, "");
-  std::string payload = "";
+  std::string payload;
 
   std::map<std::string, std::string> canonical_headers;
   time_t curr_time = time(NULL);
