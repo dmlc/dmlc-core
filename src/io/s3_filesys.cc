@@ -165,7 +165,7 @@ static const std::string SHA256Hex(const std::string &str) noexcept {
   SHA256(str, hashOut);
   char outputBuffer[65];
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    snprintf(outputBuffer + (i * 2), 65, "%02x", hashOut[i]);
+    snprintf(outputBuffer + (i * 2), sizeof(outputBuffer), "%02x", hashOut[i]);
   }
   outputBuffer[64] = 0;
   return std::string{outputBuffer};
@@ -276,11 +276,12 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
   unsigned char *kSig;
   unsigned int kSigLen;
   kSig = HMAC(EVP_sha256(), kSigning, strlen(reinterpret_cast<char *>(kSigning)),
-              reinterpret_cast<unsigned char*>(c_string_to_sign), strlen(c_string_to_sign), NULL, &kSigLen);
+              reinterpret_cast<unsigned char*>(c_string_to_sign),
+              strlen(c_string_to_sign), NULL, &kSigLen);
   // convert to hex
   char outputBuffer[65];
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    snprintf(outputBuffer + (i * 2), 65, "%02x", kSig[i]);
+    snprintf(outputBuffer + (i * 2), sizeof(outputBuffer), "%02x", kSig[i]);
   }
   outputBuffer[64] = 0;
   return std::string{outputBuffer};
