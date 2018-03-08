@@ -67,112 +67,14 @@ struct XMLIter {
   }
 };
 
-/*!
- * \brief return a base64 encoded string
- * \param md the data
- * \param len the length of data
- * \return the encoded string
- */
-static std::string Base64(unsigned char md[], unsigned len) {
-  // encode base64
-  BIO *fp = BIO_push(BIO_new(BIO_f_base64()),
-                       BIO_new(BIO_s_mem()));
-  BIO_write(fp, md, len);
-  BIO_ctrl(fp, BIO_CTRL_FLUSH, 0, NULL);
-  BUF_MEM *res;
-  BIO_get_mem_ptr(fp, &res);
-  std::string ret(res->data, res->length - 1);
-  BIO_free_all(fp);
-  return ret;
-}
-
-/*!
- * \brief sign given S3 secret key
- * \param secret_key the key to compute the sign
- * \param content the content to sign
- */
-static std::string Sign(const std::string &key, const std::string &content) {
-  HMAC_CTX ctx;
-  unsigned char md[EVP_MAX_MD_SIZE];
-  unsigned rlen = 0;
-  HMAC_CTX_init(&ctx);
-  HMAC_Init(&ctx, key.c_str(), key.length(), EVP_sha1());
-  HMAC_Update(&ctx,
-              reinterpret_cast<const unsigned char*>(content.c_str()),
-                content.length());
-  HMAC_Final(&ctx, md, &rlen);
-  HMAC_CTX_cleanup(&ctx);
-  return Base64(md, rlen);
-}
-
-/*!
- * \brief Returns signature according to AWS Signature Version 2
- * \param key s3_access_key
- * \param method GET/PUT/POST
- * \param content_md5 hash of content
- * \param content_type type of content
- * \param date date
- * \param amz_headers headers
- * \param resource address of resource
- * \return signature as a string which is base64 encoded
- */
-static std::string Sign(const std::string &key,
-                        const std::string &method,
-                        const std::string &content_md5,
-                        const std::string &content_type,
-                        const std::string &date,
-                        std::vector<std::string> amz_headers,
-                        const std::string &resource) {
-  std::ostringstream stream;
-  stream << method << "\n";
-  stream << content_md5 << "\n";
-  stream << content_type << "\n";
-  stream << date << "\n";
-  std::sort(amz_headers.begin(), amz_headers.end());
-  for (size_t i = 0; i < amz_headers.size(); ++i) {
-    stream << amz_headers[i] << "\n";
+static const std::string SHA256HashToHex(unsigned char *hash, int size) {
+  CHECK_EQ(size, SHA256_DIGEST_LENGTH);
+  std::stringstream ss;
+  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+  {
+    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
   }
-  stream << resource;
-  return Sign(key, stream.str());
-}
-
-/*!
- * \brief Generates hash of input as per SHA256 algorithm
- * Ref: http://stackoverflow.com/questions/2262386/generate-sha256-with-openssl-and-c
- * \param str input to hash
- * \param outputBuffer hashed output
- */
-static void SHA256(const std::string &str, unsigned char *outputBuffer) noexcept {
-  char *c_string = new char[str.length() + 1];
-  std::snprintf(c_string, str.length() + 1, "%s", str.c_str());
-  unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  SHA256_Update(&sha256, c_string, strlen(c_string));
-  SHA256_Final(hash, &sha256);
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    outputBuffer[i] = hash[i];
-  }
-}
-
-/*!
- * Converts a sha256 hash char array to hex
- *
- * \param input unsinged char array
- * \param size size of input buffer
- * \return string in hex representation
- */
-static const std::string ConvertSHA256HashToHex(const unsigned char *input, const int size) {
-  CHECK_EQ(size, SHA256_DIGEST_LENGTH) << "SHA256Hash needs to be of size "
-                                       << SHA256_DIGEST_LENGTH;
-  // size for output buffer which has hex data
-  char outputBuffer[65];
-  for (int i = 0; i < size; i++) {
-    // converting to hex
-    snprintf(outputBuffer + (i * 2), sizeof(outputBuffer), "%02x", input[i]);
-  }
-  outputBuffer[64] = 0;
-  return std::string{outputBuffer};
+  return ss.str();
 }
 
 /*!
@@ -181,9 +83,14 @@ static const std::string ConvertSHA256HashToHex(const unsigned char *input, cons
  * \return string with hex representation of SHA256 Hash
  */
 static const std::string SHA256Hex(const std::string &str) noexcept {
-  unsigned char hashOut[SHA256_DIGEST_LENGTH];
-  SHA256(str, hashOut);
-  return ConvertSHA256HashToHex(hashOut, SHA256_DIGEST_LENGTH);
+  if (str.empty()) return "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, str.c_str(), str.size());
+  SHA256_Final(hash, &sha256);
+  return SHA256HashToHex(hash, SHA256_DIGEST_LENGTH);
 }
 
 /*!
@@ -223,6 +130,65 @@ static std::string GetSignedHeaders(const std::map<std::string, std::string> &ca
       stream << ";";
     }
     stream << it->first;
+  }
+  return stream.str();
+}
+
+/*!
+ * Encoding as required by SIG4
+ * \param str string to encode
+ * \param encodeSlash whether or not to encode slash (/) character
+ * \return
+ */
+std::string URIEncode(const std::string& str,
+                      bool encodeSlash = true) {
+  std::stringstream encoded_str;
+  encoded_str << std::hex << std::uppercase << std::setfill('0');
+  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+    char c = *it;
+    if ((c >= 'a' && c <= 'z') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= '0' && c <= '9') ||
+        c == '-' || c == '_' ||
+        c == '.' || c == '~') {
+      encoded_str << c;
+    } else if (c == '/') {
+      if (encodeSlash) {
+        encoded_str << "%2F";
+      } else {
+        encoded_str << c;
+      }
+    } else {
+      encoded_str << '%';
+      encoded_str << std::setw(2) << static_cast<unsigned>(c);
+    }
+  }
+  return encoded_str.str();
+}
+
+/*!
+ * \brief encodes keys and values in params to return query string
+ * \param params query keys and values
+ * \param is_canonical whether or not to produce canonical query by URIEncoding
+ * \return query as a string
+ */
+static std::string GetQueryMultipart(const std::map<std::string, std::string> &params,
+                                     const bool is_canonical) {
+  bool init_request = (params.find("uploads") != params.end());
+  std::ostringstream stream;
+  for (auto it = params.begin(); it != params.end(); ++it) {
+    if (it != params.begin()) {
+      stream << "&";
+    }
+    if (is_canonical) {
+      stream << URIEncode(it->first) << "=" << URIEncode(it->second);
+    } else {
+      if (init_request) {
+        stream << it->first;
+      } else {
+        stream << it->first << "=" << it->second;
+      }
+    }
   }
   return stream.str();
 }
@@ -284,8 +250,7 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
   kSig = HMAC(EVP_sha256(), kSigning, strlen(reinterpret_cast<char *>(kSigning)),
               reinterpret_cast<const unsigned char*>(string_to_sign.c_str()),
               string_to_sign.size(), NULL, &kSigLen);
-
-  return ConvertSHA256HashToHex(kSig, SHA256_DIGEST_LENGTH);
+  return SHA256HashToHex(kSig, SHA256_DIGEST_LENGTH);
 }
 
 /*!
@@ -358,7 +323,6 @@ static std::string SignSig4(const std::string &key,
 
   std::string canonical_request = can_req.str();
   std::string hash_request = SHA256Hex(canonical_request);
-
   std::ostringstream to_sign;
   to_sign << "AWS4-HMAC-SHA256" << "\n";
   to_sign << GetDateISO8601(time) << "\n";
@@ -367,13 +331,6 @@ static std::string SignSig4(const std::string &key,
   return CalculateSig4Sign(time, key, s3_region, "s3", to_sign.str());
 }
 
-static std::string ComputeMD5(const std::string &buf) {
-  if (buf.length() == 0) return "";
-  unsigned char md[MD5_DIGEST_LENGTH];
-  MD5(reinterpret_cast<const unsigned char *>(buf.c_str()),
-      buf.length(), md);
-  return Base64(md, MD5_DIGEST_LENGTH);
-}
 // remove the beginning slash at name
 inline const char *RemoveBeginSlash(const std::string &name) {
   const char *s = name.c_str();
@@ -395,19 +352,6 @@ inline bool FindHttpError(const std::string &header) {
     }
   }
   return true;
-}
-
-/*!
- * \brief Get the datetime string in format like this Tue, 27 Mar 2007 21:15:45
- * \return datetime string as string
- */
-inline std::string GetDateTimeString(void) {
-  time_t t = time(NULL);
-  tm gmt;
-  gmtime_r(&t, &gmt);
-  char buf[256];
-  strftime(buf, 256, "%a, %d %b %Y %H:%M:%S GMT", &gmt);
-  return std::string(buf);
 }
 
 // curl callback to write sstream
@@ -438,38 +382,6 @@ std::string getEndpoint(std::string region_name) {
     result_endpoint.append(".amazonaws.com");
     return result_endpoint;
   }
-}
-
-/*!
- * Encoding as required by SIG4
- * \param str string to encode
- * \param encodeSlash whether or not to encode slash (/) character
- * \return
- */
-std::string URIEncode(const std::string& str,
-                      bool encodeSlash = true) {
-  std::stringstream encoded_str;
-  encoded_str << std::hex << std::uppercase << std::setfill('0');
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
-    char c = *it;
-    if ((c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        (c >= '0' && c <= '9') ||
-        c == '-' || c == '_' ||
-        c == '.' || c == '~') {
-      encoded_str << c;
-    } else if (c == '/') {
-      if (encodeSlash) {
-        encoded_str << "%2F";
-      } else {
-        encoded_str << c;
-      }
-    } else {
-      encoded_str << '%';
-      encoded_str << std::setw(2) << static_cast<unsigned>(c);
-    }
-  }
-  return encoded_str.str();
 }
 
 // useful callback for reading memory
@@ -781,34 +693,25 @@ void ReadStream::InitRequest(size_t begin_bytes,
   }
   std::ostringstream sauth, sdate, stoken, surl, scontent, srange;
   std::ostringstream result;
-
+  std::string canonical_querystring;
+  std::string canonical_uri;
   if (path_.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
-    std::string canonical_uri = "/" + std::string{RemoveBeginSlash(path_.name)};
-    canonical_uri = URIEncode(canonical_uri, false);
-    std::string canonical_querystring;
+    canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
-    std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
-                                     canonical_uri, canonical_querystring,
-                                     canonical_headers, payload);
-    BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                        curr_time, s3_id_, s3_region_, s3_session_token_,
-                        canonical_headers, signature, payload);
     surl << "https://" << path_.host << ".s3.amazonaws.com" << '/' << RemoveBeginSlash(path_.name);
   } else {
-    std::string canonical_uri = "/" + path_.host + path_.name;
-    canonical_uri = URIEncode(canonical_uri, false);
-    std::string canonical_querystring;
+    canonical_uri = URIEncode("/" + path_.host + path_.name, false);
     canonical_headers["host"] = s3_endpoint_;
-    std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
-                                     canonical_uri, canonical_querystring,
-                                     canonical_headers, payload);
-    BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                        curr_time, s3_id_, s3_region_, s3_session_token_,
-                        canonical_headers, signature, payload);
     surl << "https://" << s3_endpoint_ << '/' << path_.host << '/'
          << RemoveBeginSlash(path_.name);
   }
+  std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
+                                   canonical_uri, canonical_querystring,
+                                   canonical_headers, payload);
+  BuildRequestHeaders(sauth, sdate, stoken, scontent,
+                      curr_time, s3_id_, s3_region_, s3_session_token_,
+                      canonical_headers, signature, payload);
 
   srange << "Range: bytes=" << begin_bytes << "-";
   *slist = curl_slist_append(*slist, sdate.str().c_str());
@@ -917,7 +820,6 @@ class WriteStream : public Stream {
   /*!
    * \brief helper function to do http post request
    * \param method method to peform
-   * \param path the resource to post
    * \param url_args additional arguments in URL
    * \param url_args translated arguments to sign
    * \param content_type content type of the data
@@ -926,8 +828,7 @@ class WriteStream : public Stream {
    * \param out_data holds output data
    */
   void Run(const std::string &method,
-           const URI &path,
-           const std::string &args,
+           const std::map<std::string, std::string> &params,
            const std::string &content_type,
            const std::string &data,
            std::string *out_header,
@@ -956,71 +857,56 @@ void WriteStream::Write(const void *ptr, size_t size) {
   }
 }
 
-// Still uses Sig2 auth. Will only work in us-east-1
-// Sig4 does not support multipart upload of data whose length is
-// not known beforehand
 void WriteStream::Run(const std::string &method,
-                      const URI &path,
-                      const std::string &args,
+                      const std::map<std::string, std::string> &params,
                       const std::string &content_type,
                       const std::string &data,
                       std::string *out_header,
                       std::string *out_data) {
+  CHECK(path_.host.length() != 0) << "bucket name not specified for s3 location";
+  CHECK(path_.name.length() != 0) << "key name not specified for s3 location";
   time_t curr_time = time(NULL);
-
-  std::string canonical_uri = "/" + path_.host + path_.name;
-  canonical_uri = URIEncode(canonical_uri, false);
-
-  std::string canonical_query = URIEncode("uploads=");
-
   std::map<std::string, std::string> canonical_headers;
   canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
-  if (s3_session_token_ != "") {
+  if (!s3_session_token_.empty()) {
     canonical_headers["x-amz-security-token"] = s3_session_token_;
   }
   canonical_headers["x-amz-content-sha256"] = SHA256Hex(data);
-  canonical_headers["host"] = s3_endpoint_;
+  std::string canonical_query = GetQueryMultipart(params, true);
 
-  std::ostringstream sauth, sdate, stoken, surl, scontent;
+  std::string canonical_uri;
+  std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
   std::ostringstream rheader, rdata;
 
-//  if (path.host.find('.', 0) == std::string::npos) {
-//    // use virtual host style if no period in host
-//    std::string canonical_uri = "/";
-//    canonical_headers["host"] = path.host + ".s3.amazonaws.com";
-//    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
-//                                     canonical_uri, canonical_querystring,
-//                                     canonical_headers, payload);
-//    BuildRequestHeaders(sauth, sdate, stoken, scontent,
-//                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
-//                        canonical_headers, signature, payload);
-//    surl << "https://" << path.host << ".s3.amazonaws.com"
-//         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
-//  } else {
-//    std::string canonical_uri = "/" + path.host + "/";
-//    canonical_uri = URIEncode(canonical_uri, false);
-//    canonical_headers["host"] = s3_endpoint_;
+  if (path_.host.find('.', 0) == std::string::npos) {
+    canonical_uri = URIEncode(path_.name, false);
+    canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
+    surl << "https://" << path_.host << ".s3.amazonaws.com"
+         << path_.name << "?" << GetQueryMultipart(params, false);
+  } else {
+    canonical_uri = URIEncode("/" + path_.host + path_.name, false);
+    canonical_headers["host"] = s3_endpoint_;
+    surl << "https://" << s3_endpoint_ << "/" << path_.host
+         << path_.name << "?" << GetQueryMultipart(params, false);
+  }
+  std::cout << surl.str() << " " << canonical_query << " " << canonical_uri << std::endl;
+
   std::string signature = SignSig4(s3_key_, s3_region_, method, curr_time,
                                    canonical_uri, canonical_query,
                                    canonical_headers, data);
+
   BuildRequestHeaders(sauth, sdate, stoken, scontent,
                       curr_time, s3_id_, s3_region_, s3_session_token_,
                       canonical_headers, signature, data);
-  surl << "https://" << s3_endpoint_ << "/" << path.host << "/"
-       << RemoveBeginSlash(path.name) << args;
-  scontent << "\n Content-Type: " << content_type;
+  scontent << "\nContent-Type: "<< content_type;
 
   // list
   curl_slist *slist = NULL;
   slist = curl_slist_append(slist, sdate.str().c_str());
   slist = curl_slist_append(slist, scontent.str().c_str());
-  if (s3_session_token_ != "") {
+  if (!s3_session_token_.empty()) {
     slist = curl_slist_append(slist, stoken.str().c_str());
   }
-//  if (md5str.length() != 0) {
-//    smd5 << "Content-MD5: " << md5str;
-//    slist = curl_slist_append(slist, smd5.str().c_str());
-//  }
   slist = curl_slist_append(slist, sauth.str().c_str());
 
   int num_retry = 0;
@@ -1074,7 +960,9 @@ void WriteStream::Run(const std::string &method,
 
 void WriteStream::Init(void) {
   std::string rheader, rdata;
-  Run("POST", path_, "?uploads",
+  std::map<std::string, std::string> params;
+  params["uploads"] = "";
+  Run("POST", params,
       "binary/octel-stream", "", &rheader, &rdata);
   XMLIter xml(rdata.c_str());
   XMLIter upid;
@@ -1084,12 +972,12 @@ void WriteStream::Init(void) {
 
 void WriteStream::Upload(bool force_upload_even_if_zero_bytes) {
   if (buffer_.length() == 0 && !force_upload_even_if_zero_bytes) return;
-  std::ostringstream sarg;
   std::string rheader, rdata;
   size_t partno = etags_.size() + 1;
-
-  sarg << "?partNumber=" << partno << "&uploadId=" << upload_id_;
-  Run("PUT", path_, sarg.str(),
+  std::map<std::string, std::string> params;
+  params["partNumber"] = std::to_string(partno);
+  params["uploadId"] = upload_id_;
+  Run("PUT", params,
       "binary/octel-stream", buffer_, &rheader, &rdata);
   const char *p = strstr(rheader.c_str(), "ETag: ");
   CHECK(p != NULL) << "cannot find ETag in header";
@@ -1104,9 +992,11 @@ void WriteStream::Upload(bool force_upload_even_if_zero_bytes) {
 }
 
 void WriteStream::Finish(void) {
-  std::ostringstream sarg, sdata;
   std::string rheader, rdata;
-  sarg << "?uploadId=" << upload_id_;
+  std::map<std::string, std::string> params;
+  params["uploadId"] = upload_id_;
+
+  std::ostringstream sdata;
   sdata << "<CompleteMultipartUpload>\n";
   CHECK(etags_.size() == part_ids_.size());
   for (size_t i = 0; i < etags_.size(); ++i) {
@@ -1116,13 +1006,14 @@ void WriteStream::Finish(void) {
           << " </Part>\n";
   }
   sdata << "</CompleteMultipartUpload>\n";
-  Run("POST", path_, sarg.str(),
+
+  Run("POST", params,
       "text/xml", sdata.str(), &rheader, &rdata);
 }
 }  // namespace s3
 
 void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list) {
-  CHECK(path.host.length() != 0) << "bucket name not specified in s3";
+  CHECK(path.host.length() != 0) << "bucket name not specified for s3 location";
   out_list->clear();
   using namespace s3;
   std::string canonical_querystring = "delimiter=%2F&prefix=" +
@@ -1170,7 +1061,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   slist = curl_slist_append(slist, sdate.str().c_str());
   slist = curl_slist_append(slist, sauth.str().c_str());
   slist = curl_slist_append(slist, scontent.str().c_str());
-  if (s3_session_token_ != "") {
+  if (!s3_session_token_.empty()) {
     slist = curl_slist_append(slist, stoken.str().c_str());
   }
   CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
