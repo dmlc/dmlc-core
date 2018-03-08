@@ -76,8 +76,8 @@ struct XMLIter {
 static const std::string SHA256HashToHex(unsigned char *hash, int size) {
   CHECK_EQ(size, SHA256_DIGEST_LENGTH);
   std::stringstream ss;
-  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+  for (int i=0; i < SHA256_DIGEST_LENGTH; i++) {
+    ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
   }
   return ss.str();
 }
@@ -121,17 +121,17 @@ static const std::string GetDateYYYYMMDD(const std::time_t &t) noexcept {
   return std::string{buf};
 }
 
-static void AddDefaultCanonicalHeaders(std::map<std::string, std::string> &canonical_headers,
+static void AddDefaultCanonicalHeaders(std::map<std::string, std::string> *canonical_headers,
                                        const time_t &curr_time,
                                        const std::string &s3_session_token,
                                        const std::string &data,
                                        bool addDataHash = false) {
-  canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
+  (*canonical_headers)["x-amz-date"] = GetDateISO8601(curr_time);
   if (s3_session_token != "") {
-    canonical_headers["x-amz-security-token"] = s3_session_token;
+    (*canonical_headers)["x-amz-security-token"] = s3_session_token;
   }
   if (addDataHash) {
-    canonical_headers["x-amz-content-sha256"] = SHA256Hex(data);
+    (*canonical_headers)["x-amz-content-sha256"] = SHA256Hex(data);
   }
 }
 
@@ -702,13 +702,13 @@ void ReadStream::InitRequest(size_t begin_bytes,
   std::string payload;
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
-  AddDefaultCanonicalHeaders(canonical_headers, curr_time, s3_session_token_, payload, false);
+  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
   std::ostringstream sauth, sdate, stoken, surl, scontent, srange;
   std::ostringstream result;
   std::string canonical_querystring;
   std::string canonical_uri;
-  CHECK_EQ(path_.name.front(),'/');
-  CHECK_NE(path_.host.front(),'/');
+  CHECK_EQ(path_.name.front(), '/');
+  CHECK_NE(path_.host.front(), '/');
   if (path_.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
     canonical_uri = URIEncode(path_.name, false);
@@ -881,7 +881,7 @@ void WriteStream::Run(const std::string &method,
   CHECK(path_.name.length() != 0) << "key name not specified for s3 location";
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
-  AddDefaultCanonicalHeaders(canonical_headers, curr_time, s3_session_token_, data, true);
+  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, data, true);
   std::string canonical_query = GetQueryMultipart(params, true);
   std::string canonical_uri;
   std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
@@ -1026,7 +1026,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   std::ostringstream result;
   std::string canonical_uri;
 
-  AddDefaultCanonicalHeaders(canonical_headers, curr_time, s3_session_token_, payload, false);
+  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
   std::string canonical_querystring = "delimiter=%2F&prefix=" +
                                       URIEncode(std::string{RemoveBeginSlash(path.name)});
 
