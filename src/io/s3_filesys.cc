@@ -67,11 +67,16 @@ struct XMLIter {
   }
 };
 
+/*!
+ * \brief Converts hash to hex representation
+ * \param hash unsigned char array with hash
+ * \param size size of hash
+ * \return string in hex representation
+ */
 static const std::string SHA256HashToHex(unsigned char *hash, int size) {
   CHECK_EQ(size, SHA256_DIGEST_LENGTH);
   std::stringstream ss;
-  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-  {
+  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
     ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
   }
   return ss.str();
@@ -84,7 +89,6 @@ static const std::string SHA256HashToHex(unsigned char *hash, int size) {
  */
 static const std::string SHA256Hex(const std::string &str) noexcept {
   if (str.empty()) return "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
@@ -182,7 +186,7 @@ std::string URIEncode(const std::string& str,
 }
 
 /*!
- * \brief encodes keys and values in params to return query string
+ * \brief creates query string from keys and values in params
  * \param params query keys and values
  * \param is_canonical whether or not to produce canonical query by URIEncoding
  * \return query as a string
