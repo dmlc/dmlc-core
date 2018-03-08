@@ -1214,6 +1214,11 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
   std::string pdir = path.name + '/';
   out_list->clear();
   ListObjects(path,  &files);
+  if (path.name.empty()) {
+    // then insert all files in the bucket
+    out_list->insert(out_list->end(), files.begin(), files.end());
+    return;
+  }
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
       CHECK(files[i].type == kFile);
