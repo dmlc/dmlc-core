@@ -1222,7 +1222,7 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
     }
     if (files[i].path.name == pdir) {
       CHECK(files[i].type == kDirectory);
-      ListObjects(path, out_list);
+      ListObjects(files[i].path, out_list);
       return;
     }
   }
