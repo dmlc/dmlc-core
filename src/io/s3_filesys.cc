@@ -117,6 +117,21 @@ static const std::string GetDateYYYYMMDD(const std::time_t &t) noexcept {
   return std::string{buf};
 }
 
+static void AddDefaultCanonicalHeaders(std::map<std::string, std::string> &canonical_headers,
+                                       const time_t &curr_time,
+                                       const std::string &s3_session_token,
+                                       const std::string &data,
+                                       bool addDataHash = false) {
+  canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
+  if (s3_session_token != "") {
+    canonical_headers["x-amz-security-token"] = s3_session_token;
+  }
+  if (addDataHash) {
+    canonical_headers["x-amz-content-sha256"] = SHA256Hex(data);
+  }
+}
+
+
 /*!
  * \brief Returns keys of canonical_headers separated with semicolon
  * as per AWS SIG4 authentication
@@ -270,11 +285,11 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
 static void BuildRequestHeaders(std::ostringstream& sauth,
                                 std::ostringstream& sdate,
                                 std::ostringstream& stoken,
-                                std::ostringstream &scontent,
+                                std::ostringstream& scontent,
                                 const time_t& curr_time,
                                 const std::string& s3_access_id,
                                 const std::string& s3_region,
-                                const std::string s3_session_token,
+                                const std::string& s3_session_token,
                                 const std::map<std::string, std::string>& canonical_headers,
                                 const std::string& signature,
                                 const std::string& payload) {
@@ -282,7 +297,6 @@ static void BuildRequestHeaders(std::ostringstream& sauth,
   sauth << "Credential=" << s3_access_id << "/" << GetCredentialScope(curr_time, s3_region) << ",";
   sauth << "SignedHeaders=" << GetSignedHeaders(canonical_headers) << ",";
   sauth << "Signature=" << signature;
-
   sdate << "x-amz-date: " << GetDateISO8601(curr_time);
   stoken << "x-amz-security-token: " << s3_session_token;
   scontent << "x-amz-content-sha256: " << SHA256Hex(payload);
@@ -374,13 +388,10 @@ std::string getEndpoint(std::string region_name) {
   // using if elseif chain switching region_name
   if (region_name == "us-east-1") {
     return "s3.amazonaws.com";
-  } else if (region_name == "cn-north-1") {
-    return "s3.cn-north-1.amazonaws.com.cn";
+  } else if (region_name == "cn-north-1" || region_name == "cn-northwest-1") {
+    return "s3."+ region_name + ".amazonaws.com.cn";
   } else {
-    std::string result_endpoint = std::string("s3-");
-    result_endpoint.append(region_name);
-    result_endpoint.append(".amazonaws.com");
-    return result_endpoint;
+    return "s3-" + region_name + ".amazonaws.com";
   }
 }
 
@@ -687,14 +698,13 @@ void ReadStream::InitRequest(size_t begin_bytes,
   std::string payload;
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
-  canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
-  if (s3_session_token_ != "") {
-    canonical_headers["x-amz-security-token"] = s3_session_token_;
-  }
+  AddDefaultCanonicalHeaders(canonical_headers, curr_time, s3_session_token_, payload, false);
   std::ostringstream sauth, sdate, stoken, surl, scontent, srange;
   std::ostringstream result;
   std::string canonical_querystring;
   std::string canonical_uri;
+  CHECK_EQ(path_.name.front(),'/');
+  CHECK_NE(path_.host.front(),'/');
   if (path_.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
     canonical_uri = URIEncode(path_.name, false);
@@ -867,17 +877,11 @@ void WriteStream::Run(const std::string &method,
   CHECK(path_.name.length() != 0) << "key name not specified for s3 location";
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
-  canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
-  if (!s3_session_token_.empty()) {
-    canonical_headers["x-amz-security-token"] = s3_session_token_;
-  }
-  canonical_headers["x-amz-content-sha256"] = SHA256Hex(data);
+  AddDefaultCanonicalHeaders(canonical_headers, curr_time, s3_session_token_, data, true);
   std::string canonical_query = GetQueryMultipart(params, true);
-
   std::string canonical_uri;
   std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
   std::ostringstream rheader, rdata;
-
   if (path_.host.find('.', 0) == std::string::npos) {
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
@@ -889,12 +893,9 @@ void WriteStream::Run(const std::string &method,
     surl << "https://" << s3_endpoint_ << "/" << path_.host
          << path_.name << "?" << GetQueryMultipart(params, false);
   }
-  std::cout << surl.str() << " " << canonical_query << " " << canonical_uri << std::endl;
-
   std::string signature = SignSig4(s3_key_, s3_region_, method, curr_time,
                                    canonical_uri, canonical_query,
                                    canonical_headers, data);
-
   BuildRequestHeaders(sauth, sdate, stoken, scontent,
                       curr_time, s3_id_, s3_region_, s3_session_token_,
                       canonical_headers, signature, data);
@@ -962,8 +963,7 @@ void WriteStream::Init(void) {
   std::string rheader, rdata;
   std::map<std::string, std::string> params;
   params["uploads"] = "";
-  Run("POST", params,
-      "binary/octel-stream", "", &rheader, &rdata);
+  Run("POST", params, "binary/octel-stream", "", &rheader, &rdata);
   XMLIter xml(rdata.c_str());
   XMLIter upid;
   CHECK(xml.GetNext("UploadId", &upid)) << "missing UploadId";
@@ -977,8 +977,7 @@ void WriteStream::Upload(bool force_upload_even_if_zero_bytes) {
   std::map<std::string, std::string> params;
   params["partNumber"] = std::to_string(partno);
   params["uploadId"] = upload_id_;
-  Run("PUT", params,
-      "binary/octel-stream", buffer_, &rheader, &rdata);
+  Run("PUT", params, "binary/octel-stream", buffer_, &rheader, &rdata);
   const char *p = strstr(rheader.c_str(), "ETag: ");
   CHECK(p != NULL) << "cannot find ETag in header";
   p = strchr(p, '\"');
@@ -1007,8 +1006,7 @@ void WriteStream::Finish(void) {
   }
   sdata << "</CompleteMultipartUpload>\n";
 
-  Run("POST", params,
-      "text/xml", sdata.str(), &rheader, &rdata);
+  Run("POST", params, "text/xml", sdata.str(), &rheader, &rdata);
 }
 }  // namespace s3
 
@@ -1016,44 +1014,36 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   CHECK(path.host.length() != 0) << "bucket name not specified for s3 location";
   out_list->clear();
   using namespace s3;
-  std::string canonical_querystring = "delimiter=%2F&prefix=" +
-                                      URIEncode(std::string{RemoveBeginSlash(path.name)});
-  std::string payload;
 
-  std::map<std::string, std::string> canonical_headers;
   time_t curr_time = time(NULL);
-  canonical_headers["x-amz-date"] = GetDateISO8601(curr_time);
-  if (s3_session_token_ != "") {
-    canonical_headers["x-amz-security-token"] = s3_session_token_;
-  }
+  std::map<std::string, std::string> canonical_headers;
+  std::string payload;
   std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream result;
+  std::string canonical_uri;
+
+  AddDefaultCanonicalHeaders(canonical_headers, curr_time, s3_session_token_, payload, false);
+  std::string canonical_querystring = "delimiter=%2F&prefix=" +
+                                      URIEncode(std::string{RemoveBeginSlash(path.name)});
 
   if (path.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
-    std::string canonical_uri = "/";
+    canonical_uri = "/";
     canonical_headers["host"] = path.host + ".s3.amazonaws.com";
-    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
-                                     canonical_uri, canonical_querystring,
-                                     canonical_headers, payload);
-    BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
-                        canonical_headers, signature, payload);
     surl << "https://" << path.host << ".s3.amazonaws.com"
          << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
   } else {
-    std::string canonical_uri = "/" + path.host + "/";
-    canonical_uri = URIEncode(canonical_uri, false);
+    canonical_uri = URIEncode("/" + path.host + "/", false);
     canonical_headers["host"] = s3_endpoint_;
-    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
-                                     canonical_uri, canonical_querystring,
-                                     canonical_headers, payload);
-    BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
-                        canonical_headers, signature, payload);
     surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix="
          << RemoveBeginSlash(path.name);
   }
+  std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
+                                   canonical_uri, canonical_querystring,
+                                   canonical_headers, payload);
+  BuildRequestHeaders(sauth, sdate, stoken, scontent,
+                      curr_time, s3_access_id_, s3_region_, s3_session_token_,
+                      canonical_headers, signature, payload);
 
 // make request
   CURL *curl = curl_easy_init();
