@@ -187,8 +187,11 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #define DLOG_IF(severity, condition) LOG_IF(severity, condition)
 #endif
 
-// Poor man version of LOG_EVERY_N
-#define LOG_EVERY_N(severity, n) LOG(severity)
+#define LOG_EVERY_N(severity, n) \
+  static int LOG_OCCURRENCES_MOD_N = 0; \
+    if (++LOG_OCCURRENCES_MOD_N > n) LOG_OCCURRENCES_MOD_N -= n; \
+    if (LOG_OCCURRENCES_MOD_N == 1) \
+      LOG_##severity.stream()
 
 #endif  // DMLC_GLOG_DEFINED
 
