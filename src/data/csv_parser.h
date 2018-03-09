@@ -85,7 +85,8 @@ ParseBlock(char *begin,
     while (p != lend) {
       char *endptr;
       float v = strtof(p, &endptr);
-      p = endptr;
+      p = (endptr >= lend) ? lend : endptr;
+
       if (column_index == param_.label_column) {
         label = v;
       } else {

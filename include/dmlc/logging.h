@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <memory>
 #include "./base.h"
 
 #if DMLC_LOG_STACK_TRACE
@@ -77,6 +78,7 @@ class LogCheckError {
 
 #ifndef DMLC_GLOG_DEFINED
 
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
 #define DEFINE_CHECK_FUNC(name, op)                               \
   template <typename X, typename Y>                               \
   inline LogCheckError LogCheck##name(const X& x, const Y& y) {   \
@@ -88,6 +90,17 @@ class LogCheckError {
   inline LogCheckError LogCheck##name(int x, int y) {             \
     return LogCheck##name<int, int>(x, y);                        \
   }
+#else
+#define DEFINE_CHECK_FUNC(name, op)                               \
+  template <typename X, typename Y>                               \
+  inline LogCheckError LogCheck##name(const X& x, const Y& y) {   \
+    if (x op y) return LogCheckError();                           \
+    return LogCheckError("Error.");                               \
+  }                                                               \
+  inline LogCheckError LogCheck##name(int x, int y) {             \
+    return LogCheck##name<int, int>(x, y);                        \
+  }
+#endif
 
 #define CHECK_BINARY_OP(name, op, x, y)                               \
   if (dmlc::LogCheckError _check_err = dmlc::LogCheck##name(x, y))    \
@@ -187,6 +200,7 @@ class DateLogger {
 #endif
   }
   const char* HumanDate() {
+#ifndef _LIBCPP_SGX_CONFIG
 #if defined(_MSC_VER)
     _strtime_s(buffer_, sizeof(buffer_));
 #else
@@ -201,6 +215,7 @@ class DateLogger {
     snprintf(buffer_, sizeof(buffer_), "%02d:%02d:%02d",
              pnow->tm_hour, pnow->tm_min, pnow->tm_sec);
 #endif
+#endif  // _LIBCPP_SGX_CONFIG
     return buffer_;
   }
 
@@ -208,6 +223,7 @@ class DateLogger {
   char buffer_[9];
 };
 
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
 class LogMessage {
  public:
   LogMessage(const char* file, int line)
@@ -254,6 +270,26 @@ class CustomLogMessage {
  private:
   std::ostringstream log_stream_;
 };
+#else
+class DummyOStream {
+ public:
+  template <typename T>
+  DummyOStream& operator<<(T _) { return *this; }
+  inline std::string str() { return ""; }
+};
+class LogMessage {
+ public:
+  LogMessage(const char* file, int line) : log_stream_() {}
+  DummyOStream& stream() { return log_stream_; }
+
+ protected:
+  DummyOStream log_stream_;
+
+ private:
+  LogMessage(const LogMessage&);
+  void operator=(const LogMessage&);
+};
+#endif
 
 
 
@@ -264,17 +300,17 @@ inline std::string Demangle(char const *msg_str) {
   size_t symbol_start = string::npos;
   size_t symbol_end = string::npos;
   if ( ((symbol_start = msg.find("_Z")) != string::npos)
-       && (symbol_end = msg.find_first_of(" ", symbol_start)) ) {
+       && (symbol_end = msg.find_first_of(" +", symbol_start)) ) {
     string left_of_symbol(msg, 0, symbol_start);
     string symbol(msg, symbol_start, symbol_end - symbol_start);
     string right_of_symbol(msg, symbol_end);
 
     int status = 0;
     size_t length = string::npos;
-    char* demangled_symbol = abi::__cxa_demangle(symbol.c_str(), 0, &length, &status);
+    std::unique_ptr<char, decltype(&std::free)> demangled_symbol =
+            {abi::__cxa_demangle(symbol.c_str(), 0, &length, &status), &std::free};
     if (demangled_symbol && status == 0 && length > 0) {
-      string symbol_str(demangled_symbol, length - 1);
-      free(demangled_symbol);
+      string symbol_str(demangled_symbol.get());
       std::ostringstream os;
       os << left_of_symbol << symbol_str << right_of_symbol;
       return os.str();
@@ -315,7 +351,18 @@ inline std::string StackTrace() {
 
 #endif  // DMLC_LOG_STACK_TRACE
 
-#if DMLC_LOG_FATAL_THROW == 0
+#if defined(_LIBCPP_SGX_NO_IOSTREAMS)
+class LogMessageFatal : public LogMessage {
+ public:
+  LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
+  ~LogMessageFatal() {
+    abort();
+  }
+ private:
+  LogMessageFatal(const LogMessageFatal&);
+  void operator=(const LogMessageFatal&);
+};
+#elif DMLC_LOG_FATAL_THROW == 0
 class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
@@ -366,7 +413,9 @@ class LogMessageVoidify {
   LogMessageVoidify() {}
   // This has to be an operator with a precedence lower than << but
   // higher than "?:". See its usage.
+#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
   void operator&(std::ostream&) {}
+#endif
 };
 
 }  // namespace dmlc

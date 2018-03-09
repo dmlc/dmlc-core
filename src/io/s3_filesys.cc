@@ -956,7 +956,9 @@ S3FileSystem::S3FileSystem() {
     s3_endpoint_ = endpoint;
   }
 
-  s3_verify_ssl_ = verify_ssl;
+  if (verify_ssl != NULL) {
+    s3_verify_ssl_ = verify_ssl;
+  }
 }
 
 void S3FileSystem::SetCredentials(const std::string& s3_access_id,
