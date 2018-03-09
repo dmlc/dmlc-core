@@ -79,7 +79,7 @@ class TextParserBase : public ParserImpl<IndexType> {
    * \param begin reference to begin pointer
    * \param end reference to end pointer
    */
-   virtual void IgnoreUTF8BOM(char *&begin, const char *&end) {
+   inline void IgnoreUTF8BOM(char *&begin, char *&end) {
      int count = 0;
      for (count = 0; begin != end && count < 3; count++, begin++) {
        if (*begin != '\xEF' && count == 0)
