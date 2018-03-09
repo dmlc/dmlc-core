@@ -49,11 +49,6 @@ class TextParserBase : public ParserImpl<IndexType> {
 
   virtual void IgnoreUTF8BOM(char *&begin, char *&end) {
     int count = 0;
-    int val = 0;
-    if (begin[0] == '1' && begin[1] == '5' && begin[2] == '6' && begin[3] == '7' && begin[4] == '3' && begin[5] == '7') {
-        val = 1;
-        std::cout << val;
-    }
     for (count = 0; begin != end && count < 3; count++, begin++) {
       if (*begin != '\xEF' && count == 0) break;
       if (*begin != '\xBB' && count == 1) break;
