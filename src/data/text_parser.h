@@ -47,45 +47,53 @@ class TextParserBase : public ParserImpl<IndexType> {
     return FillData(data);
   }
 
-  virtual void IgnoreUTF8BOM(char *&begin, char *&end) {
-    int count = 0;
-    for (count = 0; begin != end && count < 3; count++, begin++) {
-      if (*begin != '\xEF' && count == 0) break;
-      if (*begin != '\xBB' && count == 1) break;
-      if (*begin != '\xBF' && count == 2) break;
-    }
-    if (count < 3) begin = begin - count;
-    return;
-  }
-
  protected:
-  /*!
-   * \brief parse data into out
-   * \param begin beginning of buffer
-   * \param end end of buffer
-   */
-  virtual void ParseBlock(char *begin,
-                          char *end,
-                          RowBlockContainer<IndexType> *out) = 0;
-  /*!
-   * \brief read in next several blocks of data
-   * \param data vector of data to be returned
-   * \return true if the data is loaded, false if reach end
-   */
-  inline bool FillData(std::vector<RowBlockContainer<IndexType> > *data);
-  /*!
-   * \brief start from bptr, go backward and find first endof line
-   * \param bptr end position to go backward
-   * \param begin the beginning position of buffer
-   * \return position of first endof line going backward
-   */
-  inline char* BackFindEndLine(char *bptr,
-                               char *begin) {
-    for (; bptr != begin; --bptr) {
-      if (*bptr == '\n' || *bptr == '\r') return bptr;
-    }
-    return begin;
+   /*!
+    * \brief parse data into out
+    * \param begin beginning of buffer
+    * \param end end of buffer
+    */
+   virtual void ParseBlock(char *begin, char *end,
+                           RowBlockContainer<IndexType> *out) = 0;
+   /*!
+    * \brief read in next several blocks of data
+    * \param data vector of data to be returned
+    * \return true if the data is loaded, false if reach end
+    */
+   inline bool FillData(std::vector<RowBlockContainer<IndexType>> *data);
+   /*!
+    * \brief start from bptr, go backward and find first endof line
+    * \param bptr end position to go backward
+    * \param begin the beginning position of buffer
+    * \return position of first endof line going backward
+    */
+   inline char *BackFindEndLine(char *bptr, char *begin) {
+     for (; bptr != begin; --bptr) {
+       if (*bptr == '\n' || *bptr == '\r')
+         return bptr;
+     }
+     return begin;
   }
+  /*!
+   * \brief Ignore UTF-8 BOM if present
+   * \param begin reference to begin pointer
+   * \param end reference to end pointer
+   */
+   virtual void IgnoreUTF8BOM(char *&begin, const char *&end) {
+     int count = 0;
+     for (count = 0; begin != end && count < 3; count++, begin++) {
+       if (*begin != '\xEF' && count == 0)
+         break;
+       if (*begin != '\xBB' && count == 1)
+         break;
+       if (*begin != '\xBF' && count == 2)
+         break;
+     }
+     if (count < 3)
+       begin = begin - count;
+     return;
+   }
+
 
  private:
   // nthread
