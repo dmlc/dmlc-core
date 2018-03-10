@@ -79,21 +79,22 @@ class TextParserBase : public ParserImpl<IndexType> {
    * \param begin reference to begin pointer
    * \param end reference to end pointer
    */
-   inline void IgnoreUTF8BOM(char *&begin, char *&end) {
-     int count = 0;
-     for (count = 0; begin != end && count < 3; count++, begin++) {
-       if (*begin != '\xEF' && count == 0)
-         break;
-       if (*begin != '\xBB' && count == 1)
-         break;
-       if (*begin != '\xBF' && count == 2)
-         break;
-     }
-     if (count < 3)
-       begin = begin - count;
-     return;
-   }
-
+  inline void IgnoreUTF8BOM(char **begin, char **end) {
+    int count = 0;
+    for (count = 0; *begin != *end && count < 3; count++, *begin = *begin + 1) {
+      if (!begin || !*begin)
+        break;
+      if (**begin != '\xEF' && count == 0)
+        break;
+      if (**begin != '\xBB' && count == 1)
+        break;
+      if (**begin != '\xBF' && count == 2)
+        break;
+    }
+    if (count < 3)
+      *begin = *begin - count;
+    return;
+  }
 
  private:
   // nthread

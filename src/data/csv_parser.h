@@ -73,7 +73,7 @@ ParseBlock(char *begin,
   while ((lbegin != end) && (*lbegin == '\n' || *lbegin == '\r')) ++lbegin;
   while (lbegin != end) {
     // get line end
-    this->IgnoreUTF8BOM(lbegin, end);
+    this->IgnoreUTF8BOM(&lbegin, &end);
     lend = lbegin + 1;
     while (lend != end && *lend != '\n' && *lend != '\r') ++lend;
 
