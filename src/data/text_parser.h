@@ -53,21 +53,21 @@ class TextParserBase : public ParserImpl<IndexType> {
     * \param begin beginning of buffer
     * \param end end of buffer
     */
-   virtual void ParseBlock(char *begin, char *end,
+  virtual void ParseBlock(char *begin, char *end,
                            RowBlockContainer<IndexType> *out) = 0;
    /*!
     * \brief read in next several blocks of data
     * \param data vector of data to be returned
     * \return true if the data is loaded, false if reach end
     */
-   inline bool FillData(std::vector<RowBlockContainer<IndexType>> *data);
+  inline bool FillData(std::vector<RowBlockContainer<IndexType>> *data);
    /*!
     * \brief start from bptr, go backward and find first endof line
     * \param bptr end position to go backward
     * \param begin the beginning position of buffer
     * \return position of first endof line going backward
     */
-   inline char *BackFindEndLine(char *bptr, char *begin) {
+  inline char *BackFindEndLine(char *bptr, char *begin) {
      for (; bptr != begin; --bptr) {
        if (*bptr == '\n' || *bptr == '\r')
          return bptr;
