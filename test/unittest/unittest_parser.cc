@@ -66,7 +66,7 @@ TEST(CSVParser, test_different_newlines) {
   std::unique_ptr<CSVParserTest<unsigned>> parser(
       new CSVParserTest<unsigned>(source, args, 1));
   RowBlockContainer<unsigned> *rctr = new RowBlockContainer<unsigned>();
-  std::string data = "0,1,2,3\r\n⍉4,5,6,7\r\n8,9,10,11\r\n";
+  std::string data = "0,1,2,3\r\n4,5,6,7\r\n8,9,10,11\r\n";
   char *out_data = const_cast<char *>(data.c_str());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
   for (size_t i = 0; i < rctr->value.size(); i++) {
