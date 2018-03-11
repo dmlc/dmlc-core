@@ -2,11 +2,10 @@
 #ifndef DMLC_IO_SINGLE_THREADED_INPUT_SPLIT_H_
 #define DMLC_IO_SINGLE_THREADED_INPUT_SPLIT_H_
 
-#include <dmlc/base.h>
-#if DMLC_ENABLE_STD_THREAD
-#include "./input_split_base.h"
-#include <algorithm>
 #include <dmlc/threadediter.h>
+#include <dmlc/base.h>
+#include <algorithm>
+#include "./input_split_base.h"
 
 namespace dmlc {
 namespace io {
@@ -17,7 +16,7 @@ namespace io {
  *  compared to ThreadedInputSplit
  */
 class SingleThreadedInputSplit : public InputSplit {
-public:
+ public:
   explicit SingleThreadedInputSplit(InputSplitBase *base,
                                     const size_t batch_size)
       : buffer_size_(InputSplitBase::kBufferSize), batch_size_(batch_size),
@@ -76,15 +75,13 @@ public:
     this->BeforeFirst();
   }
 
-private:
+ private:
   size_t buffer_size_;
   size_t batch_size_;
   InputSplitBase *base_;
-  ThreadedIter<InputSplitBase::Chunk> iter_;
   InputSplitBase::Chunk *tmp_chunk_;
 };
-} // namespace io
-} // namespace dmlc
+}  //  namespace io
+}  //  namespace dmlc
 
-#endif
-#endif
+#endif  // DMLC_IO_SINGLE_THREADED_INPUT_SPLIT_H_
