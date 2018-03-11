@@ -10,6 +10,12 @@
 
 namespace dmlc {
 namespace io {
+/*!
+ * \brief provides a single threaded input split
+ *  Useful for debugging purposes. Be cautious of use
+ *  for production use cases, as this is much less performant
+ *  compared to ThreadedInputSplit
+ */
 class SingleThreadedInputSplit : public InputSplit {
 public:
   explicit SingleThreadedInputSplit(InputSplitBase *base,
