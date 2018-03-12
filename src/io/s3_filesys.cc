@@ -266,7 +266,7 @@ static const std::string CalculateSig4Sign(const std::time_t &request_date,
 
   unsigned char *kSig;
   unsigned int kSigLen;
-  kSig = HMAC(EVP_sha256(), kSigning, strlen(reinterpret_cast<char *>(kSigning)),
+  kSig = HMAC(EVP_sha256(), kSigning, kSigningLen,
               reinterpret_cast<const unsigned char*>(string_to_sign.c_str()),
               string_to_sign.size(), NULL, &kSigLen);
   return SHA256HashToHex(kSig, SHA256_DIGEST_LENGTH);
