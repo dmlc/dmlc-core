@@ -8,6 +8,7 @@
 
 #include <dmlc/concurrentqueue.h>
 #include <dmlc/blockingconcurrentqueue.h>
+#include <dmlc/logging.h>
 #include <string>
 #include <mutex>
 #include <set>
