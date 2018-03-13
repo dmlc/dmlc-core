@@ -83,12 +83,16 @@ class TextParserBase : public ParserImpl<IndexType> {
   size_t bytes_read_;
   // source split that provides the data
   InputSplit *source_;
+  // exception_ptr to hold exception thrown in OMP threads
+  std::exception_ptr parser_exception_;
+  // mutex for the exception_ptr
+  std::mutex mutex_exception_;
 };
 
 // implementation
 template <typename IndexType>
-inline bool TextParserBase<IndexType>::
-FillData(std::vector<RowBlockContainer<IndexType> > *data) {
+inline bool TextParserBase<IndexType>::FillData(
+    std::vector<RowBlockContainer<IndexType> > *data) {
   InputSplit::Blob chunk;
   if (!source_->NextChunk(&chunk)) return false;
   const int nthread = omp_get_max_threads();
@@ -96,22 +100,34 @@ FillData(std::vector<RowBlockContainer<IndexType> > *data) {
   data->resize(nthread);
   bytes_read_ += chunk.size;
   CHECK_NE(chunk.size, 0U);
-  char *head = reinterpret_cast<char*>(chunk.dptr);
-  #pragma omp parallel num_threads(nthread)
+  char *head = reinterpret_cast<char *>(chunk.dptr);
+#pragma omp parallel num_threads(nthread)
   {
-    // threadid
-    int tid = omp_get_thread_num();
-    size_t nstep = (chunk.size + nthread - 1) / nthread;
-    size_t sbegin = std::min(tid * nstep, chunk.size);
-    size_t send = std::min((tid + 1) * nstep, chunk.size);
-    char *pbegin = BackFindEndLine(head + sbegin, head);
-    char *pend;
-    if (tid + 1 == nthread) {
-      pend = head + send;
-    } else {
-      pend = BackFindEndLine(head + send, head);
+    try {
+      // threadid
+      int tid = omp_get_thread_num();
+      size_t nstep = (chunk.size + nthread - 1) / nthread;
+      size_t sbegin = std::min(tid * nstep, chunk.size);
+      size_t send = std::min((tid + 1) * nstep, chunk.size);
+      char *pbegin = BackFindEndLine(head + sbegin, head);
+      char *pend;
+      if (tid + 1 == nthread) {
+        pend = head + send;
+      } else {
+        pend = BackFindEndLine(head + send, head);
+      }
+      ParseBlock(pbegin, pend, &(*data)[tid]);
+    } catch (dmlc::Error& ex) {
+      {
+        std::lock_guard<std::mutex> lock(mutex_exception_);
+        if (!parser_exception_) {
+          parser_exception_ = std::current_exception();
+        }
+      }
     }
-    ParseBlock(pbegin, pend, &(*data)[tid]);
+  }
+  if (parser_exception_) {
+    std::rethrow_exception(parser_exception_);
   }
   this->data_ptr_ = 0;
   return true;

@@ -12,16 +12,25 @@ using namespace std;
 namespace json {
 template<typename T>
 inline void TestSaveLoad(T data) {
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::ostringstream os;
+#else
+  std::string os;
+#endif
   {
     T temp(data);
     dmlc::JSONWriter writer(&os);
     writer.Write(temp);
     temp.clear();
   }
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::string json = os.str();
-  LOG(INFO) << json;
   std::istringstream is(json);
+#else
+  std::string json = os;
+  std::string is(json);
+#endif
+  LOG(INFO) << json;
   dmlc::JSONReader reader(&is);
   T copy_data;
   reader.Read(&copy_data);
@@ -93,16 +102,25 @@ TEST(JSON, basics) {
 TEST(JSON, any) {
   dmlc::any x = std::vector<std::string>{"a", "b", "c"};
 
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::ostringstream os;
+#else
+  std::string os;
+#endif
   {
     dmlc::any temp(x);
     dmlc::JSONWriter writer(&os);
     writer.Write(temp);
   }
 
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::string json = os.str();
-  LOG(INFO) << json;
   std::istringstream is(json);
+#else
+  std::string json = os;
+  std::string is(json);
+#endif
+  LOG(INFO) << json;
   dmlc::JSONReader reader(&is);
   dmlc::any copy_data;
   reader.Read(&copy_data);

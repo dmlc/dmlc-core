@@ -17,6 +17,12 @@ export MPICXX = mpicxx
 # choice of archiver
 export AR = ar
 
+# the additional link flags you want to add
+ADD_LDFLAGS =
+
+# the additional compile flags you want to add
+ADD_CFLAGS =
+
 # whether to compile with -fPIC option
 # Note: to build shared library(so files), fPIC is required
 WITH_FPIC = 1

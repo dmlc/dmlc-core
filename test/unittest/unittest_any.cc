@@ -47,16 +47,26 @@ TEST(Any, json) {
   x["vec"] = std::vector<int>{1, 2, 3};
   x["int"] = 300;
 
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::ostringstream os;
+#else
+  std::string os;
+#endif
   {
     std::unordered_map<std::string, dmlc::any> temp(x);
     dmlc::JSONWriter writer(&os);
     writer.Write(temp);
     temp.clear();
   }
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::string json = os.str();
-  LOG(INFO) << json;
   std::istringstream is(json);
+#else
+  std::string json = os;
+  std::string is(json);
+#endif
+  LOG(INFO) << json;
+
   dmlc::JSONReader reader(&is);
   std::unordered_map<std::string, dmlc::any> copy_data;
   reader.Read(&copy_data);

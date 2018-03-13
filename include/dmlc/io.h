@@ -281,6 +281,7 @@ class InputSplit {
                             const bool recurse_directories = false);
 };
 
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
 /*!
  * \brief a std::ostream class that can can wrap Stream objects,
  *  can use ostream with that output to underlying Stream
@@ -419,6 +420,7 @@ class istream : public std::basic_istream<char> {
   /*! \brief input buffer */
   InBuf buf_;
 };
+#endif
 }  // namespace dmlc
 
 #include "./serializer.h"
@@ -434,6 +436,7 @@ inline bool Stream::Read(T *out_data) {
   return serializer::Handler<T>::Read(this, out_data);
 }
 
+#ifndef _LIBCPP_SGX_NO_IOSTREAMS
 // implementations for ostream
 inline void ostream::OutBuf::set_stream(Stream *stream) {
   if (stream_ != NULL) this->pubsync();
@@ -480,5 +483,6 @@ inline int istream::InBuf::underflow() {
     return traits_type::to_int_type(*gptr());
   }
 }
+#endif
 }  // namespace dmlc
 #endif  // DMLC_IO_H_

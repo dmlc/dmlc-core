@@ -31,6 +31,8 @@ struct RowBlockContainer {
   std::vector<real_t> label;
   /*! \brief array[size] weight of each instance */
   std::vector<real_t> weight;
+  /*! \brief array[size] session-id of each instance */
+  std::vector<uint64_t> qid;
   /*! \brief field index */
   std::vector<IndexType> field;
   /*! \brief feature index */
@@ -61,7 +63,7 @@ struct RowBlockContainer {
   /*! \brief clear the container */
   inline void Clear(void) {
     offset.clear(); offset.push_back(0);
-    label.clear(); field.clear(); index.clear(); value.clear(); weight.clear();
+    label.clear(); field.clear(); index.clear(); value.clear(); weight.clear(); qid.clear();
     max_field = 0;
     max_index = 0;
   }
@@ -74,6 +76,7 @@ struct RowBlockContainer {
     return offset.size() * sizeof(size_t) +
         label.size() * sizeof(real_t) +
         weight.size() * sizeof(real_t) +
+        qid.size() * sizeof(size_t) +
         field.size() * sizeof(IndexType) +
         index.size() * sizeof(IndexType) +
         value.size() * sizeof(real_t);
@@ -87,6 +90,7 @@ struct RowBlockContainer {
   inline void Push(Row<I> row) {
     label.push_back(row.get_label());
     weight.push_back(row.get_weight());
+    qid.push_back(row.get_qid());
     if (row.field != NULL) {
       for (size_t i = 0; i < row.length; ++i) {
         CHECK_LE(row.field[i], std::numeric_limits<IndexType>::max())
@@ -123,6 +127,9 @@ struct RowBlockContainer {
                 batch.size * sizeof(real_t));
     if (batch.weight != NULL) {
       weight.insert(weight.end(), batch.weight, batch.weight + batch.size);
+    }
+    if (batch.qid != NULL) {
+      qid.insert(qid.end(), batch.qid, batch.qid + batch.size);
     }
     size_t ndata = batch.offset[batch.size] - batch.offset[0];
     if (batch.field != NULL) {
@@ -173,6 +180,7 @@ RowBlockContainer<IndexType>::GetBlock(void) const {
   data.offset = BeginPtr(offset);
   data.label = BeginPtr(label);
   data.weight = BeginPtr(weight);
+  data.qid = BeginPtr(qid);
   data.field = BeginPtr(field);
   data.index = BeginPtr(index);
   data.value = BeginPtr(value);
@@ -184,6 +192,7 @@ RowBlockContainer<IndexType>::Save(Stream *fo) const {
   fo->Write(offset);
   fo->Write(label);
   fo->Write(weight);
+  fo->Write(qid);
   fo->Write(field);
   fo->Write(index);
   fo->Write(value);
@@ -196,6 +205,7 @@ RowBlockContainer<IndexType>::Load(Stream *fi) {
   if (!fi->Read(&offset)) return false;
   CHECK(fi->Read(&label)) << "Bad RowBlock format";
   CHECK(fi->Read(&weight)) << "Bad RowBlock format";
+  CHECK(fi->Read(&qid)) << "Bad RowBlock format";
   CHECK(fi->Read(&field)) << "Bad RowBlock format";
   CHECK(fi->Read(&index)) << "Bad RowBlock format";
   CHECK(fi->Read(&value)) << "Bad RowBlock format";

@@ -28,8 +28,11 @@ class Spinlock {
     lock_.clear();
   }
 #else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wbraced-scalar-init"
   Spinlock() : lock_(ATOMIC_FLAG_INIT) {
   }
+#pragma clang diagnostic pop
 #endif
   ~Spinlock() = default;
   /*!

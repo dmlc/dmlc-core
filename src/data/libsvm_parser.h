@@ -63,8 +63,17 @@ ParseBlock(char *begin,
       out->offset.push_back(out->index.size());
     }
     out->label.push_back(label);
-    // parse feature[:value]
+    // parse qid:id
+    uint64_t qid;
     p = q;
+    while (p != end && *p == ' ') ++p;
+    if (p != lend && (strncmp(p, "qid:", 4) == 0))  {
+      p += 4;
+      qid = atoll(p);
+      out->qid.push_back(qid);
+      p = q;
+    }
+    // parse feature[:value]
     while (p != lend) {
       IndexType featureId;
       real_t value;
