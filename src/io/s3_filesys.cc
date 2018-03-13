@@ -325,7 +325,7 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
       size_t rec_curr_bytes = curr_bytes_;
       this->Cleanup();
       this->Init(rec_curr_bytes);
-      if (this->FillBuffer(1) != 0) break;
+      if (this->FillBuffer(nleft) != 0) break;
       ++nretry;
       CHECK_LT(nretry, 50)
           << "Unable to re-establish connection to read full file"
