@@ -27,11 +27,7 @@ class TextParserBase : public ParserImpl<IndexType> {
   explicit TextParserBase(InputSplit *source,
                           int nthread)
       : bytes_read_(0), source_(source) {
-    int maxthread;
-    #pragma omp parallel
-    {
-      maxthread = std::max(omp_get_num_procs() / 2 - 4, 1);
-    }
+    int maxthread = std::max(omp_get_num_procs() / 2 - 4, 1);
     nthread_ = std::min(maxthread, nthread);
   }
   virtual ~TextParserBase() {
@@ -54,7 +50,7 @@ class TextParserBase : public ParserImpl<IndexType> {
     * \param end end of buffer
     */
   virtual void ParseBlock(char *begin, char *end,
-                           RowBlockContainer<IndexType> *out) = 0;
+                          RowBlockContainer<IndexType> *out) = 0;
    /*!
     * \brief read in next several blocks of data
     * \param data vector of data to be returned
@@ -81,7 +77,7 @@ class TextParserBase : public ParserImpl<IndexType> {
    */
   inline void IgnoreUTF8BOM(char **begin, char **end) {
     int count = 0;
-    for (count = 0; *begin != *end && count < 3; count++, *begin = *begin + 1) {
+    for (count = 0; *begin != *end && count < 3; count++, ++*begin) {
       if (!begin || !*begin)
         break;
       if (**begin != '\xEF' && count == 0)
@@ -92,8 +88,7 @@ class TextParserBase : public ParserImpl<IndexType> {
         break;
     }
     if (count < 3)
-      *begin = *begin - count;
-    return;
+      *begin -= count;
   }
 
  private:
