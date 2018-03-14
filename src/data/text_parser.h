@@ -49,7 +49,7 @@ class TextParserBase : public ParserImpl<IndexType> {
     * \param begin beginning of buffer
     * \param end end of buffer
     */
-  virtual void ParseBlock(char *begin, char *end,
+  virtual void ParseBlock(const char *begin, const char *end,
                           RowBlockContainer<IndexType> *out) = 0;
    /*!
     * \brief read in next several blocks of data
@@ -61,9 +61,9 @@ class TextParserBase : public ParserImpl<IndexType> {
     * \brief start from bptr, go backward and find first endof line
     * \param bptr end position to go backward
     * \param begin the beginning position of buffer
-    * \return position of first endof line going backward
+    * \return position of first endof line going backward, returns begin if not found
     */
-  inline char *BackFindEndLine(char *bptr, char *begin) {
+  static inline const char *BackFindEndLine(const char *bptr, const char *begin) {
      for (; bptr != begin; --bptr) {
        if (*bptr == '\n' || *bptr == '\r')
          return bptr;
@@ -75,7 +75,7 @@ class TextParserBase : public ParserImpl<IndexType> {
    * \param begin reference to begin pointer
    * \param end reference to end pointer
    */
-  inline void IgnoreUTF8BOM(char **begin, char **end) {
+  static inline void IgnoreUTF8BOM(const char **begin, const char **end) {
     int count = 0;
     for (count = 0; *begin != *end && count < 3; count++, ++*begin) {
       if (!begin || !*begin)
@@ -124,12 +124,12 @@ inline bool TextParserBase<IndexType>::FillData(
       size_t nstep = (chunk.size + nthread - 1) / nthread;
       size_t sbegin = std::min(tid * nstep, chunk.size);
       size_t send = std::min((tid + 1) * nstep, chunk.size);
-      char *pbegin = BackFindEndLine(head + sbegin, head);
-      char *pend;
+      const char *pbegin = BackFindEndLine(static_cast<const char*>(head + sbegin), static_cast<const char*>(head));
+      const char *pend;
       if (tid + 1 == nthread) {
         pend = head + send;
       } else {
-        pend = BackFindEndLine(head + send, head);
+        pend = BackFindEndLine(static_cast<const char*>(head + send), static_cast<const char*>(head));
       }
       ParseBlock(pbegin, pend, &(*data)[tid]);
     } catch (dmlc::Error& ex) {
