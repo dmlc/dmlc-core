@@ -124,12 +124,14 @@ inline bool TextParserBase<IndexType>::FillData(
       size_t nstep = (chunk.size + nthread - 1) / nthread;
       size_t sbegin = std::min(tid * nstep, chunk.size);
       size_t send = std::min((tid + 1) * nstep, chunk.size);
-      const char *pbegin = BackFindEndLine(static_cast<const char*>(head + sbegin), static_cast<const char*>(head));
+      const char *pbegin = BackFindEndLine(static_cast<const char*>(head + sbegin),
+                                           static_cast<const char*>(head));
       const char *pend;
       if (tid + 1 == nthread) {
         pend = head + send;
       } else {
-        pend = BackFindEndLine(static_cast<const char*>(head + send), static_cast<const char*>(head));
+        pend = BackFindEndLine(static_cast<const char*>(head + send),
+                               static_cast<const char*>(head));
       }
       ParseBlock(pbegin, pend, &(*data)[tid]);
     } catch (dmlc::Error& ex) {
