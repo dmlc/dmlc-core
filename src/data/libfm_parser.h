@@ -27,19 +27,19 @@ class LibFMParser : public TextParserBase<IndexType> {
       : TextParserBase<IndexType>(source, nthread) {}
 
  protected:
-  virtual void ParseBlock(char *begin,
-                          char *end,
+  virtual void ParseBlock(const char *begin,
+                          const char *end,
                           RowBlockContainer<IndexType> *out);
 };
 
 template <typename IndexType>
 void LibFMParser<IndexType>::
-ParseBlock(char *begin,
-           char *end,
+ParseBlock(const char *begin,
+           const char *end,
            RowBlockContainer<IndexType> *out) {
   out->Clear();
-  char * lbegin = begin;
-  char * lend = lbegin;
+  const char * lbegin = begin;
+  const char * lend = lbegin;
   while (lbegin != end) {
     // get line end
     lend = lbegin + 1;

@@ -52,8 +52,8 @@ class CSVParser : public TextParserBase<IndexType> {
   }
 
  protected:
-  virtual void ParseBlock(char *begin,
-                          char *end,
+  virtual void ParseBlock(const char *begin,
+                          const char *end,
                           RowBlockContainer<IndexType> *out);
 
  private:
@@ -62,20 +62,21 @@ class CSVParser : public TextParserBase<IndexType> {
 
 template <typename IndexType>
 void CSVParser<IndexType>::
-ParseBlock(char *begin,
-           char *end,
+ParseBlock(const char *begin,
+           const char *end,
            RowBlockContainer<IndexType> *out) {
   out->Clear();
-  char * lbegin = begin;
-  char * lend = lbegin;
+  const char * lbegin = begin;
+  const char * lend = lbegin;
   // advance lbegin if it points to newlines
   while ((lbegin != end) && (*lbegin == '\n' || *lbegin == '\r')) ++lbegin;
   while (lbegin != end) {
     // get line end
+    this->IgnoreUTF8BOM(&lbegin, &end);
     lend = lbegin + 1;
     while (lend != end && *lend != '\n' && *lend != '\r') ++lend;
 
-    char* p = lbegin;
+    const char* p = lbegin;
     int column_index = 0;
     IndexType idx = 0;
     float label = 0.0f;
