@@ -5,15 +5,23 @@
  */
 #ifndef DMLC_OMP_H_
 #define DMLC_OMP_H_
+
+
 #if defined(_OPENMP)
 #include <omp.h>
 #else
+
+#if defined(__ANDROID__) && defined(__AARCH64EL__)
+#define __GOMP_NOTHROW
+#elif defined(__cplusplus)
+#define __GOMP_NOTHROW throw()
+#else
+#define __GOMP_NOTHROW __attribute__((__nothrow__))
+#endif
+
 //! \cond Doxygen_Suppress
 #ifdef __cplusplus
 extern "C" {
-# define __GOMP_NOTHROW throw ()
-#else
-# define __GOMP_NOTHROW __attribute__((__nothrow__))
 #endif
 inline int omp_get_thread_num() __GOMP_NOTHROW { return 0; }
 inline int omp_get_num_threads() __GOMP_NOTHROW { return 1; }
@@ -22,8 +30,9 @@ inline int omp_get_num_procs() __GOMP_NOTHROW { return 1; }
 inline void omp_set_num_threads(int nthread) __GOMP_NOTHROW {}
 #ifdef __cplusplus
 }
-#endif
-#endif
+#endif  // __cplusplus
+#endif  // _OPENMP
+
 // loop variable used in openmp
 namespace dmlc {
 #ifdef _MSC_VER
