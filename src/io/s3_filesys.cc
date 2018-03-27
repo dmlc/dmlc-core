@@ -2,10 +2,7 @@
 extern "C" {
 #include <errno.h>
 #include <curl/curl.h>
-#include <curl/curl.h>
 #include <openssl/hmac.h>
-#include <openssl/md5.h>
-#include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/sha.h>
 }
@@ -73,7 +70,7 @@ struct XMLIter {
  * \param size size of hash
  * \return string in hex representation
  */
-static const std::string SHA256HashToHex(unsigned char *hash, int size) {
+static std::string SHA256HashToHex(unsigned char *hash, int size) {
   CHECK_EQ(size, SHA256_DIGEST_LENGTH);
   std::stringstream ss;
   for (int i=0; i < SHA256_DIGEST_LENGTH; i++) {
@@ -87,7 +84,7 @@ static const std::string SHA256HashToHex(unsigned char *hash, int size) {
  * \param str input to hash
  * \return string with hex representation of SHA256 Hash
  */
-static const std::string SHA256Hex(const std::string &str) noexcept {
+static std::string SHA256Hex(const std::string &str) noexcept {
   if (str.empty()) return "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
@@ -103,7 +100,7 @@ static const std::string SHA256Hex(const std::string &str) noexcept {
  * \param time
  * \return datetime in above format as string
  */
-static const std::string GetDateISO8601(const std::time_t &t) noexcept {
+static std::string GetDateISO8601(const std::time_t &t) noexcept {
   char buf[sizeof "YYYYMMDDTHHMMSSZ"];
   std::strftime(buf, sizeof buf, "%Y%m%dT%H%M%SZ", std::gmtime(&t));
   return std::string{buf};
@@ -115,7 +112,7 @@ static const std::string GetDateISO8601(const std::time_t &t) noexcept {
  * \param time
  * \return datetime in above format as string
  */
-static const std::string GetDateYYYYMMDD(const std::time_t &t) noexcept {
+static std::string GetDateYYYYMMDD(const std::time_t &t) noexcept {
   char buf[sizeof "YYYYMMDD"];
   std::strftime(buf, sizeof buf, "%Y%m%d", std::gmtime(&t));
   return std::string{buf};
@@ -218,7 +215,7 @@ static std::string GetQueryMultipart(const std::map<std::string, std::string> &p
  * \param region s3 region
  * \return credential scope
  */
-static const std::string GetCredentialScope(const time_t &time, const std::string &region) {
+static std::string GetCredentialScope(const time_t &time, const std::string &region) {
   return GetDateYYYYMMDD(time) + "/" + region  + "/s3/aws4_request";
 }
 
@@ -231,11 +228,11 @@ static const std::string GetCredentialScope(const time_t &time, const std::strin
  * \param string_to_sign
  * \return signature
  */
-static const std::string CalculateSig4Sign(const std::time_t &request_date,
-                                           const std::string &secret,
-                                           const std::string &region,
-                                           const std::string &service,
-                                           const std::string &string_to_sign) {
+static std::string CalculateSig4Sign(const std::time_t &request_date,
+                                     const std::string &secret,
+                                     const std::string &region,
+                                     const std::string &service,
+                                     const std::string &string_to_sign) {
   const std::string key1{"AWS4" + secret};
   const std::string yyyymmdd = GetDateYYYYMMDD(request_date);
 
@@ -884,7 +881,7 @@ void WriteStream::Run(const std::string &method,
   AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, data, true);
   std::string canonical_query = GetQueryMultipart(params, true);
   std::string canonical_uri;
-  std::ostringstream sauth, sdate, stoken, surl, scontent, smd5;
+  std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream rheader, rdata;
   if (path_.host.find('.', 0) == std::string::npos) {
     canonical_uri = URIEncode(path_.name, false);
