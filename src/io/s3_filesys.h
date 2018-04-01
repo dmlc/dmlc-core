@@ -80,7 +80,7 @@ class S3FileSystem : public FileSystem {
   /*! \brief S3 endpoint*/
   std::string s3_endpoint_;
   /*! \brief S3 verify ssl*/
-  std::string s3_verify_ssl_;
+  bool s3_verify_ssl_;
 
   /*!
    * \brief try to get information about a path
@@ -89,6 +89,13 @@ class S3FileSystem : public FileSystem {
    * \return return false when path do not exist
    */
   bool TryGetPathInfo(const URI &path, FileInfo *info);
+
+  /*!
+  * \brief list the objects in the bucket with prefix specified by path.name
+  * \param path the path to query
+  * \param out_list stores the output results which match given prefix
+  */
+  void ListObjects(const URI &path, std::vector<FileInfo> *out_list);
 };
 }  // namespace io
 }  // namespace dmlc
