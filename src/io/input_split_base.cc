@@ -188,6 +188,7 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     offset_curr_ += n;
     if (nleft == 0) break;
     if (n == 0) {
+      buf[0] = '\n'; ++buf; --nleft;  // insert a newline between files
       if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
         LOG(ERROR) << "curr=" << offset_curr_
                    << ",begin=" << offset_begin_
