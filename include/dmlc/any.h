@@ -355,7 +355,7 @@ class any::TypeInfo
   Type type_;
   // constructor
   TypeInfo() {
-    if (std::is_pod<T>::value) {
+    if (std::is_pod<T>::value && data_on_stack<T>::value) {
       type_.destroy = nullptr;
     } else {
       type_.destroy = TypeInfo<T>::destroy;
