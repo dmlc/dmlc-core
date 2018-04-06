@@ -20,7 +20,7 @@ def sync_dir(local_dir, slave_node, slave_dir):
     logging.info('rsync %s -> %s', local_dir, remote)
     prog = 'rsync -az --rsh="ssh -o StrictHostKeyChecking=no -p %s" %s %s' % (
         slave_node[1], local_dir, remote)
-    subprocess.check_call([prog], shell = True)
+    subprocess.check_call([prog], shell=True)
 
 def prepare_envs(args):
     """
@@ -32,7 +32,7 @@ def prepare_envs(args):
                           'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE'}
 
     # given by user with the option --env
-    envs['user'] = set([item for item in args_env.split(',') if item])
+    envs['user'] = set([item for item in args.env.split(',') if item])
     # remove those specified by user from default so we can confirm that user has set these vars
     envs['default'].difference_update(envs['user'])
     envs['server'] = parse_env_pairs(args.env_server)
