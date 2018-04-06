@@ -30,8 +30,9 @@ def prepare_envs(args):
     # default env variables which are always passed by the system
     envs['default'] = {'OMP_NUM_THREADS', 'KMP_AFFINITY', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
                           'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE'}
+
     # given by user with the option --env
-    envs['user'] = set(args.env)
+    envs['user'] = set([item for item in args_env.split(',') if item])
     # remove those specified by user from default so we can confirm that user has set these vars
     envs['default'].difference_update(envs['user'])
     envs['server'] = parse_env_pairs(args.env_server)

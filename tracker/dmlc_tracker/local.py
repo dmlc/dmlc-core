@@ -20,10 +20,14 @@ def prepare_envs(args):
     # if --env option was used to pass a variable it would automatically be
     # included because of the next line
     envs['default'] = os.environ.copy()
+
     # given by user
-    for k in args.env:
+    common_envs = [item for item in args.env.split(',') if item]
+    for k in common_envs:
         if k not in envs['default']:
-            raise ValueError('The environment variable '+ k + ' was passed but not set')
+            # raise warning if user intended to set this
+            logging.info('The environment variable %s was passed but not set', k)
+
     envs['server'] = parse_env_pairs(args.env_server)
     envs['worker'] = parse_env_pairs(args.env_worker)
     return envs

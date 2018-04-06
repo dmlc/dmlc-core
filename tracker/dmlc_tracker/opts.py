@@ -55,10 +55,11 @@ def get_memory_mb(mem_str):
         msg = 'Invalid memory specification %s, need to be a number follows g or m' % mem_str
         raise RuntimeError(msg)
 
-def parse_env_pairs(env_args):
+def parse_env_pairs(env_args_str):
     """
-    Convert a list of key:value to a dictionary
-    Example: `['key1:value1', 'key2:value2']` into a dictionary with 2 keys ('key1' and 'key2')
+    Convert a comma separated list of key:value to a dictionary
+    Example: `'key1:value1,key2:value2'` into a dictionary with 2 keys ('key1' and 'key2')
+    whose values are 'value1' and 'value2' respectively
     :param env_args:
     :return:
     """
@@ -67,9 +68,11 @@ def parse_env_pairs(env_args):
                          ". Expected is env_variable:value")
 
     envs = {}
+
+    env_args = [pair for pair in env_args_str.split(',') if pair]
     for pair in env_args:
         try:
-            k,v = pair.split(":")
+            k, v = pair.split(":")
             envs[k] = v
         except ValueError:
             # to raise an error that user can understand
@@ -141,12 +144,13 @@ def get_opts(args=None):
                               ' but corresponds to archieve files that will be unziped locally,' +
                               ' You can use this option to ship python libraries.' +
                               ' Only valid in yarn jobs.'))
-    parser.add_argument('--env', action='append', default=[],
-                        help='Client and ApplicationMaster environment variables.')
-    parser.add_argument('--env-server', action='append', default=[],
-                        help='Environment variable:value for server only')
-    parser.add_argument('--env-worker', action='append', default=[],
-                        help='Environment variable:value for worker only')
+    parser.add_argument('--env', type=str, default='',
+                        help='Comma separated list of Client and ApplicationMaster environment \
+                        variables.')
+    parser.add_argument('--env-server', type=str, default='',
+                        help='Comma separated list of environment variable:value for server only')
+    parser.add_argument('--env-worker', type=str, default='',
+                        help='Comma separated list of environment variable:value for worker only')
     parser.add_argument('--yarn-app-classpath', type=str,
                         help=('Explicit YARN ApplicationMaster classpath.' +
                               'Can be used to override defaults.'))
