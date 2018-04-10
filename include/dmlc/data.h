@@ -15,6 +15,9 @@
 #include "./logging.h"
 #include "./registry.h"
 
+// To help C Preprocessor with processing c++ templated types
+#define __DMLC_COMMA ,
+
 namespace dmlc {
 /*!
  * \brief this defines the float point
@@ -65,12 +68,13 @@ class DataIter {
 /*!
  * \brief one row of training instance
  * \tparam IndexType type of index
+ * \tparam DType type of data (both label and value will be of DType
  */
-template<typename IndexType>
+template<typename IndexType, typename DType = real_t>
 class Row {
  public:
   /*! \brief label of the instance */
-  const real_t *label;
+  const DType *label;
   /*! \brief weight of the instance */
   const real_t *weight;
   /*! \brief session-id of the instance */
@@ -89,7 +93,7 @@ class Row {
    * \brief array value of each instance, this can be NULL
    *  indicating every value is set to be 1
    */
-  const real_t *value;
+  const DType *value;
   /*!
    * \param i the input index
    * \return field for i-th feature
@@ -109,13 +113,13 @@ class Row {
    * \return i-th feature value, this function is always
    *  safe even when value == NULL
    */
-  inline real_t get_value(size_t i) const {
-    return value == NULL ? 1.0f : value[i];
+  inline DType get_value(size_t i) const {
+    return value == NULL ? DType(1.0f) : value[i];
   }
   /*!
    * \return the label of the instance
    */
-  inline real_t get_label() const {
+  inline DType get_label() const {
     return *label;
   }
   /*!
@@ -165,15 +169,16 @@ class Row {
  *  The size of batch is usually large enough so that parallelizing over the rows
  *  can give significant speedup
  * \tparam IndexType type to store the index used in row batch
+ * \tparam DType type to store the label and value used in row batch
  */
-template<typename IndexType>
+template<typename IndexType, typename DType = real_t>
 struct RowBlock {
   /*! \brief batch size */
   size_t size;
   /*! \brief array[size+1], row pointer to beginning of each rows */
   const size_t *offset;
   /*! \brief array[size] label of each instance */
-  const real_t *label;
+  const DType *label;
   /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
   const real_t *weight;
   /*! \brief With qid: array[size] session id of each instance, otherwise nullptr */
@@ -183,22 +188,22 @@ struct RowBlock {
   /*! \brief feature index */
   const IndexType *index;
   /*! \brief feature value, can be NULL, indicating all values are 1 */
-  const real_t *value;
+  const DType *value;
   /*!
    * \brief get specific rows in the batch
    * \param rowid the rowid in that row
    * \return the instance corresponding to the row
    */
-  inline Row<IndexType> operator[](size_t rowid) const;
+  inline Row<IndexType, DType> operator[](size_t rowid) const;
   /*! \return memory cost of the block in bytes */
   inline size_t MemCostBytes(void) const {
-    size_t cost = size * (sizeof(size_t) + sizeof(real_t));
+    size_t cost = size * (sizeof(size_t) + sizeof(DType));
     if (weight != NULL) cost += size * sizeof(real_t);
     if (qid != NULL) cost += size * sizeof(size_t);
     size_t ndata = offset[size] - offset[0];
     if (field != NULL) cost += ndata * sizeof(IndexType);
     if (index != NULL) cost += ndata * sizeof(IndexType);
-    if (value != NULL) cost += ndata * sizeof(real_t);
+    if (value != NULL) cost += ndata * sizeof(DType);
     return cost;
   }
   /*!
@@ -241,10 +246,12 @@ struct RowBlock {
  *
  * \sa Parser
  * \tparam IndexType type of index in RowBlock
+ * \tparam DType type of label and value in RowBlock
  *  Create function was only implemented for IndexType uint64_t and uint32_t
+ *  and DType real_t and int
  */
-template<typename IndexType>
-class RowBlockIter : public DataIter<RowBlock<IndexType> > {
+template<typename IndexType, typename DType = real_t>
+class RowBlockIter : public DataIter<RowBlock<IndexType, DType> > {
  public:
   /*!
    * \brief create a new instance of iterator that returns rowbatch
@@ -257,7 +264,7 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
    *
    * \return the created data iterator
    */
-  static RowBlockIter<IndexType> *
+  static RowBlockIter<IndexType, DType> *
   Create(const char *uri,
          unsigned part_index,
          unsigned num_parts,
@@ -278,10 +285,12 @@ class RowBlockIter : public DataIter<RowBlock<IndexType> > {
  *
  * \sa RowBlockIter
  * \tparam IndexType type of index in RowBlock
+ * \tparam DType type of label and value in RowBlock
  *  Create function was only implemented for IndexType uint64_t and uint32_t
+ *  and DType real_t and int
  */
-template <typename IndexType>
-class Parser : public DataIter<RowBlock<IndexType> > {
+template <typename IndexType, typename DType = real_t>
+class Parser : public DataIter<RowBlock<IndexType, DType> > {
  public:
   /*!
   * \brief create a new instance of parser based on the "type"
@@ -295,7 +304,7 @@ class Parser : public DataIter<RowBlock<IndexType> > {
   *
   * \return the created parser
   */
-  static Parser<IndexType> *
+  static Parser<IndexType, DType> *
   Create(const char *uri_,
          unsigned part_index,
          unsigned num_parts,
@@ -303,7 +312,7 @@ class Parser : public DataIter<RowBlock<IndexType> > {
   /*! \return size of bytes read so far */
   virtual size_t BytesRead(void) const = 0;
   /*! \brief Factory type of the parser*/
-  typedef Parser<IndexType>* (*Factory)
+  typedef Parser<IndexType, DType>* (*Factory)
       (const std::string& path,
        const std::map<std::string, std::string>& args,
        unsigned part_index,
@@ -313,24 +322,26 @@ class Parser : public DataIter<RowBlock<IndexType> > {
 /*!
  * \brief registry entry of parser factory
  * \tparam IndexType The type of index
+ * \tparam DType The type of label and value
  */
-template<typename IndexType>
+template<typename IndexType, typename DType = real_t>
 struct ParserFactoryReg
-    : public FunctionRegEntryBase<ParserFactoryReg<IndexType>,
-                                  typename Parser<IndexType>::Factory> {};
+    : public FunctionRegEntryBase<ParserFactoryReg<IndexType, DType>,
+                                  typename Parser<IndexType, DType>::Factory> {};
 
 /*!
  * \brief Register a new distributed parser to dmlc-core.
  *
  * \param IndexType The type of Batch index, can be uint32_t or uint64_t
+ * \param DataType The type of Batch label and value, can be real_t or int
  * \param TypeName The typename of of the data.
  * \param FactoryFunction The factory function that creates the parser.
  *
  * \begincode
  *
- *  // defin the factory function
- *  template<typename IndexType>
- *  Parser<IndexType>*
+ *  // define the factory function
+ *  template<typename IndexType, typename DType = real_t>
+ *  Parser<IndexType, DType>*
  *  CreateLibSVMParser(const char* uri, unsigned part_index, unsigned num_parts) {
  *    return new LibSVMParser(uri, part_index, num_parts);
  *  }
@@ -339,23 +350,23 @@ struct ParserFactoryReg
  *  // Then we can use Parser<uint32_t>::Create(uri, part_index, num_parts, "libsvm");
  *  // to create the parser
  *
- *  DMLC_REGISTER_DATA_PARSER(uint32_t, libsvm, CreateLibSVMParser<uint32_t>);
- *  DMLC_REGISTER_DATA_PARSER(uint64_t, libsvm, CreateLibSVMParser<uint64_t>);
+ *  DMLC_REGISTER_DATA_PARSER(uint32_t, real_t, libsvm, CreateLibSVMParser<uint32_t>);
+ *  DMLC_REGISTER_DATA_PARSER(uint64_t, real_t, libsvm, CreateLibSVMParser<uint64_t>);
  *
  * \endcode
  */
-#define DMLC_REGISTER_DATA_PARSER(IndexType, TypeName, FactoryFunction) \
-  DMLC_REGISTRY_REGISTER(::dmlc::ParserFactoryReg<IndexType>,           \
-                         ParserFactoryReg ## _ ## IndexType, TypeName)  \
+#define DMLC_REGISTER_DATA_PARSER(IndexType, DataType, TypeName, FactoryFunction) \
+  DMLC_REGISTRY_REGISTER(ParserFactoryReg<IndexType __DMLC_COMMA DataType>,           \
+                         ParserFactoryReg ## _ ## IndexType ## _ ## DataType, TypeName)  \
   .set_body(FactoryFunction)
 
 
 // implementation of operator[]
-template<typename IndexType>
-inline Row<IndexType>
-RowBlock<IndexType>::operator[](size_t rowid) const {
+template<typename IndexType, typename DType>
+inline Row<IndexType, DType>
+RowBlock<IndexType, DType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
-  Row<IndexType> inst;
+  Row<IndexType, DType> inst;
   inst.label = label + rowid;
   if (weight != NULL) {
     inst.weight = weight + rowid;

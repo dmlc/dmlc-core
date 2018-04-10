@@ -21,8 +21,8 @@ namespace data {
  * \brief Text parser that parses the input lines
  * and returns rows in input data
  */
-template <typename IndexType>
-class TextParserBase : public ParserImpl<IndexType> {
+template <typename IndexType, typename DType = real_t>
+class TextParserBase : public ParserImpl<IndexType, DType> {
  public:
   explicit TextParserBase(InputSplit *source,
                           int nthread)
@@ -39,7 +39,7 @@ class TextParserBase : public ParserImpl<IndexType> {
   virtual size_t BytesRead(void) const {
     return bytes_read_;
   }
-  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType> > *data) {
+  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
     return FillData(data);
   }
 
@@ -50,13 +50,13 @@ class TextParserBase : public ParserImpl<IndexType> {
     * \param end end of buffer
     */
   virtual void ParseBlock(const char *begin, const char *end,
-                          RowBlockContainer<IndexType> *out) = 0;
+                          RowBlockContainer<IndexType, DType> *out) = 0;
    /*!
     * \brief read in next several blocks of data
     * \param data vector of data to be returned
     * \return true if the data is loaded, false if reach end
     */
-  inline bool FillData(std::vector<RowBlockContainer<IndexType>> *data);
+  inline bool FillData(std::vector<RowBlockContainer<IndexType, DType>> *data);
    /*!
     * \brief start from bptr, go backward and find first endof line
     * \param bptr end position to go backward
@@ -105,9 +105,9 @@ class TextParserBase : public ParserImpl<IndexType> {
 };
 
 // implementation
-template <typename IndexType>
-inline bool TextParserBase<IndexType>::FillData(
-    std::vector<RowBlockContainer<IndexType> > *data) {
+template <typename IndexType, typename DType>
+inline bool TextParserBase<IndexType, DType>::FillData(
+    std::vector<RowBlockContainer<IndexType, DType> > *data) {
   InputSplit::Blob chunk;
   if (!source_->NextChunk(&chunk)) return false;
   const int nthread = omp_get_max_threads();

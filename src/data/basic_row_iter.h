@@ -20,10 +20,10 @@ namespace data {
  * \brief basic set of row iterators that provides
  * \tparam IndexType the type of index we are using
  */
-template<typename IndexType>
-class BasicRowIter: public RowBlockIter<IndexType> {
+template<typename IndexType, typename DType = real_t>
+class BasicRowIter: public RowBlockIter<IndexType, DType> {
  public:
-  explicit BasicRowIter(Parser<IndexType> *parser)
+  explicit BasicRowIter(Parser<IndexType, DType> *parser)
       : at_head_(true) {
     this->Init(parser);
     delete parser;
@@ -40,7 +40,7 @@ class BasicRowIter: public RowBlockIter<IndexType> {
       return false;
     }
   }
-  virtual const RowBlock<IndexType> &Value(void) const {
+  virtual const RowBlock<IndexType, DType> &Value(void) const {
     return row_;
   }
   virtual size_t NumCol(void) const {
@@ -51,15 +51,15 @@ class BasicRowIter: public RowBlockIter<IndexType> {
   // at head
   bool at_head_;
   // row block to store
-  RowBlock<IndexType> row_;
+  RowBlock<IndexType, DType> row_;
   // back end data
-  RowBlockContainer<IndexType> data_;
+  RowBlockContainer<IndexType, DType> data_;
   // initialize
-  inline void Init(Parser<IndexType> *parser);
+  inline void Init(Parser<IndexType, DType> *parser);
 };
 
-template<typename IndexType>
-inline void BasicRowIter<IndexType>::Init(Parser<IndexType> *parser) {
+template<typename IndexType, typename DType>
+inline void BasicRowIter<IndexType, DType>::Init(Parser<IndexType, DType> *parser) {
   data_.Clear();
   double tstart = GetTime();
   size_t bytes_expect = 10UL << 20UL;

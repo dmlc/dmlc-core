@@ -8,16 +8,16 @@ using namespace dmlc;
 using namespace dmlc::data;
 
 namespace parser_test {
-template <typename IndexType>
-class CSVParserTest : public CSVParser<IndexType> {
+template <typename IndexType, typename DType = real_t>
+class CSVParserTest : public CSVParser<IndexType, DType> {
 public:
   explicit CSVParserTest(InputSplit *source,
                          const std::map<std::string, std::string> &args,
                          int nthread)
-      : CSVParser<IndexType>(source, args, nthread) {}
+      : CSVParser<IndexType, DType>(source, args, nthread) {}
   void CallParseBlock(char *begin, char *end,
-                      RowBlockContainer<IndexType> *out) {
-    CSVParser<IndexType>::ParseBlock(begin, end, out);
+                      RowBlockContainer<IndexType, DType> *out) {
+    CSVParser<IndexType, DType>::ParseBlock(begin, end, out);
   }
 };
 
@@ -56,6 +56,23 @@ TEST(CSVParser, test_standard_case) {
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
   for (size_t i = 0; i < rctr->value.size(); i++) {
     CHECK(i == rctr->value[i]);
+  }
+}
+
+TEST(CSVParser, test_integer_parse) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args;
+  std::unique_ptr<CSVParserTest<unsigned, int>> parser(
+      new CSVParserTest<unsigned, int>(source, args, 1));
+  RowBlockContainer<unsigned, int> *rctr = new RowBlockContainer<unsigned, int>();
+  std::string data = "20000000,20000001,20000002,20000003\n"
+                     "20000004,20000005,20000006,20000007\n"
+                     "20000008,20000009,20000010,20000011\n";
+  char *out_data = const_cast<char *>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+  for (size_t i = 0; i < rctr->value.size(); i++) {
+    CHECK((i+20000000) == rctr->value[i]);
   }
 }
 

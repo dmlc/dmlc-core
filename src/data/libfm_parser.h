@@ -19,8 +19,8 @@ namespace data {
  * \brief Text parser that parses the input lines
  * and returns rows in input data
  */
-template <typename IndexType>
-class LibFMParser : public TextParserBase<IndexType> {
+template <typename IndexType, typename DType = real_t>
+class LibFMParser : public TextParserBase<IndexType, DType> {
  public:
   explicit LibFMParser(InputSplit *source,
                         int nthread)
@@ -29,14 +29,14 @@ class LibFMParser : public TextParserBase<IndexType> {
  protected:
   virtual void ParseBlock(const char *begin,
                           const char *end,
-                          RowBlockContainer<IndexType> *out);
+                          RowBlockContainer<IndexType, DType> *out);
 };
 
-template <typename IndexType>
-void LibFMParser<IndexType>::
+template <typename IndexType, typename DType>
+void LibFMParser<IndexType, DType>::
 ParseBlock(const char *begin,
            const char *end,
-           RowBlockContainer<IndexType> *out) {
+           RowBlockContainer<IndexType, DType> *out) {
   out->Clear();
   const char * lbegin = begin;
   const char * lend = lbegin;

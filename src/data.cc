@@ -18,7 +18,7 @@ namespace dmlc {
 /*! \brief namespace for useful input data structure */
 namespace data {
 
-template<typename IndexType>
+template<typename IndexType, typename DType = real_t>
 Parser<IndexType> *
 CreateLibSVMParser(const std::string& path,
                    const std::map<std::string, std::string>& args,
@@ -33,12 +33,12 @@ CreateLibSVMParser(const std::string& path,
   return parser;
 }
 
-template<typename IndexType>
+template<typename IndexType, typename DType = real_t>
 Parser<IndexType> *
 CreateLibFMParser(const std::string& path,
-                   const std::map<std::string, std::string>& args,
-                   unsigned part_index,
-                   unsigned num_parts) {
+                  const std::map<std::string, std::string>& args,
+                  unsigned part_index,
+                  unsigned num_parts) {
   InputSplit* source = InputSplit::Create(
       path.c_str(), part_index, num_parts, "text");
   ParserImpl<IndexType> *parser = new LibFMParser<IndexType>(source, 2);
@@ -48,19 +48,19 @@ CreateLibFMParser(const std::string& path,
   return parser;
 }
 
-template<typename IndexType>
-Parser<IndexType> *
+template<typename IndexType, typename DType = real_t>
+Parser<IndexType, DType> *
 CreateCSVParser(const std::string& path,
                 const std::map<std::string, std::string>& args,
                 unsigned part_index,
                 unsigned num_parts) {
   InputSplit* source = InputSplit::Create(
       path.c_str(), part_index, num_parts, "text");
-  return new CSVParser<IndexType>(source, args, 2);
+  return new CSVParser<IndexType, DType>(source, args, 2);
 }
 
-template<typename IndexType>
-inline Parser<IndexType> *
+template<typename IndexType, typename DType = real_t>
+inline Parser<IndexType, DType> *
 CreateParser_(const char *uri_,
               unsigned part_index,
               unsigned num_parts,
@@ -75,8 +75,8 @@ CreateParser_(const char *uri_,
     }
   }
 
-  const ParserFactoryReg<IndexType>* e =
-      Registry<ParserFactoryReg<IndexType> >::Get()->Find(ptype);
+  const ParserFactoryReg<IndexType, DType>* e =
+      Registry<ParserFactoryReg<IndexType, DType> >::Get()->Find(ptype);
   if (e == NULL) {
     LOG(FATAL) << "Unknown data type " << ptype;
   }
@@ -84,25 +84,25 @@ CreateParser_(const char *uri_,
   return (*e->body)(spec.uri, spec.args, part_index, num_parts);
 }
 
-template<typename IndexType>
-inline RowBlockIter<IndexType> *
+template<typename IndexType, typename DType = real_t>
+inline RowBlockIter<IndexType, DType> *
 CreateIter_(const char *uri_,
             unsigned part_index,
             unsigned num_parts,
             const char *type) {
   using namespace std;
   io::URISpec spec(uri_, part_index, num_parts);
-  Parser<IndexType> *parser = CreateParser_<IndexType>
+  Parser<IndexType, DType> *parser = CreateParser_<IndexType, DType>
       (spec.uri.c_str(), part_index, num_parts, type);
   if (spec.cache_file.length() != 0) {
 #if DMLC_ENABLE_STD_THREAD
-    return new DiskRowIter<IndexType>(parser, spec.cache_file.c_str(), true);
+    return new DiskRowIter<IndexType, DType>(parser, spec.cache_file.c_str(), true);
 #else
     LOG(FATAL) << "compile with c++0x or c++11 to enable cache file";
     return NULL;
 #endif
   } else {
-    return new BasicRowIter<IndexType>(parser);
+    return new BasicRowIter<IndexType, DType>(parser);
   }
 }
 
@@ -111,50 +111,100 @@ DMLC_REGISTER_PARAMETER(CSVParserParam);
 
 // template specialization
 template<>
-RowBlockIter<uint32_t> *
-RowBlockIter<uint32_t>::Create(const char *uri,
-                               unsigned part_index,
-                               unsigned num_parts,
-                               const char *type) {
-  return data::CreateIter_<uint32_t>(uri, part_index, num_parts, type);
+RowBlockIter<uint32_t, real_t> *
+RowBlockIter<uint32_t, real_t>::Create(const char *uri,
+                                       unsigned part_index,
+                                       unsigned num_parts,
+                                       const char *type) {
+  return data::CreateIter_<uint32_t, real_t>(uri, part_index, num_parts, type);
 }
 
 template<>
-RowBlockIter<uint64_t> *
-RowBlockIter<uint64_t>::Create(const char *uri,
-                               unsigned part_index,
-                               unsigned num_parts,
-                               const char *type) {
-  return data::CreateIter_<uint64_t>(uri, part_index, num_parts, type);
+RowBlockIter<uint64_t, real_t> *
+RowBlockIter<uint64_t, real_t>::Create(const char *uri,
+                                       unsigned part_index,
+                                       unsigned num_parts,
+                                       const char *type) {
+  return data::CreateIter_<uint64_t, real_t>(uri, part_index, num_parts, type);
 }
 
 template<>
-Parser<uint32_t> *
-Parser<uint32_t>::Create(const char *uri_,
-                         unsigned part_index,
-                         unsigned num_parts,
-                         const char *type) {
-  return data::CreateParser_<uint32_t>(uri_, part_index, num_parts, type);
+RowBlockIter<uint32_t, int> *
+RowBlockIter<uint32_t, int>::Create(const char *uri,
+                                    unsigned part_index,
+                                    unsigned num_parts,
+                                    const char *type) {
+  return data::CreateIter_<uint32_t, int>(uri, part_index, num_parts, type);
 }
 
 template<>
-Parser<uint64_t> *
-Parser<uint64_t>::Create(const char *uri_,
-                         unsigned part_index,
-                         unsigned num_parts,
-                         const char *type) {
-  return data::CreateParser_<uint64_t>(uri_, part_index, num_parts, type);
+RowBlockIter<uint64_t, int> *
+RowBlockIter<uint64_t, int>::Create(const char *uri,
+                                    unsigned part_index,
+                                    unsigned num_parts,
+                                    const char *type) {
+  return data::CreateIter_<uint64_t, int>(uri, part_index, num_parts, type);
+}
+
+template<>
+Parser<uint32_t, real_t> *
+Parser<uint32_t, real_t>::Create(const char *uri_,
+                                 unsigned part_index,
+                                 unsigned num_parts,
+                                 const char *type) {
+  return data::CreateParser_<uint32_t, real_t>(uri_, part_index, num_parts, type);
+}
+
+template<>
+Parser<uint64_t, real_t> *
+Parser<uint64_t, real_t>::Create(const char *uri_,
+                                 unsigned part_index,
+                                 unsigned num_parts,
+                                 const char *type) {
+  return data::CreateParser_<uint64_t, real_t>(uri_, part_index, num_parts, type);
+}
+
+template<>
+Parser<uint32_t, int> *
+Parser<uint32_t, int>::Create(const char *uri_,
+                              unsigned part_index,
+                              unsigned num_parts,
+                              const char *type) {
+  return data::CreateParser_<uint32_t, int>(uri_, part_index, num_parts, type);
+}
+
+template<>
+Parser<uint64_t, int> *
+Parser<uint64_t, int>::Create(const char *uri_,
+                              unsigned part_index,
+                              unsigned num_parts,
+                              const char *type) {
+  return data::CreateParser_<uint64_t, int>(uri_, part_index, num_parts, type);
 }
 
 // registry
-DMLC_REGISTRY_ENABLE(ParserFactoryReg<uint32_t>);
-DMLC_REGISTRY_ENABLE(ParserFactoryReg<uint64_t>);
-DMLC_REGISTER_DATA_PARSER(uint32_t, libsvm, data::CreateLibSVMParser<uint32_t>);
-DMLC_REGISTER_DATA_PARSER(uint64_t, libsvm, data::CreateLibSVMParser<uint64_t>);
+typedef ParserFactoryReg<uint32_t, real_t> Reg32flt;
+typedef ParserFactoryReg<uint32_t, int> Reg32int;
+typedef ParserFactoryReg<uint64_t, real_t> Reg64flt;
+typedef ParserFactoryReg<uint64_t, int> Reg64int;
+DMLC_REGISTRY_ENABLE(Reg32flt);
+DMLC_REGISTRY_ENABLE(Reg32int);
+DMLC_REGISTRY_ENABLE(Reg64flt);
+DMLC_REGISTRY_ENABLE(Reg64int);
 
-DMLC_REGISTER_DATA_PARSER(uint32_t, libfm, data::CreateLibFMParser<uint32_t>);
-DMLC_REGISTER_DATA_PARSER(uint64_t, libfm, data::CreateLibFMParser<uint64_t>);
-
-DMLC_REGISTER_DATA_PARSER(uint32_t, csv, data::CreateCSVParser<uint32_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint32_t, real_t, libsvm, data::CreateLibSVMParser<uint32_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint64_t, real_t, libsvm, data::CreateLibSVMParser<uint64_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint32_t, real_t, libfm, data::CreateLibFMParser<uint32_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint64_t, real_t, libfm, data::CreateLibFMParser<uint64_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint32_t, real_t, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint64_t, real_t, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(uint32_t, int, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA int>);
+DMLC_REGISTER_DATA_PARSER(uint64_t, int, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA int>);
 
 }  // namespace dmlc
