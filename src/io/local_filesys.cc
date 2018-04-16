@@ -141,8 +141,9 @@ SeekStream *LocalFileSystem::Open(const URI &path,
   FILE *fp = NULL;
 #ifdef _MSC_VER
   const int fname_length = MultiByteToWideChar(CP_UTF8, 0, path.name.c_str(), -1, nullptr, 0);
-  CHECK(fname_length > 0) << " LocalFileSystem::Open \"" << path.str() << "\": " << "Invalid character sequence.";
-  std::wstring fname(fname_length,0);
+  CHECK(fname_length > 0) << " LocalFileSystem::Open \"" << path.str() 
+                          << "\": " << "Invalid character sequence.";
+  std::wstring fname(fname_length, 0);
   MultiByteToWideChar(CP_UTF8, 0, path.name.c_str(), -1, &fname[0], fname_length);
 
   const int mode_length = MultiByteToWideChar(CP_UTF8, 0, mode, -1, nullptr, 0);
@@ -158,7 +159,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
     use_stdio = true; fp = stdout;
   }
 #endif
-  if (!wcsncmp(fname.c_str(), L"file://", 7)) { fname = fname.substr(7); };
+  if (!wcsncmp(fname.c_str(), L"file://", 7)) { fname = fname.substr(7); }
   if (!use_stdio) {
     std::wstring flag(wmode.c_str());
     if (flag == L"w") flag = L"wb";
