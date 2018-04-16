@@ -139,6 +139,38 @@ SeekStream *LocalFileSystem::Open(const URI &path,
                                   bool allow_null) {
   bool use_stdio = false;
   FILE *fp = NULL;
+#ifdef _MSC_VER
+  const int fname_length = MultiByteToWideChar(CP_UTF8, 0, path.name.c_str(), -1, nullptr, 0);
+  CHECK(fname_length > 0) << " LocalFileSystem::Open \"" << path.str() 
+                          << "\": " << "Invalid character sequence.";
+  std::wstring fname(fname_length, 0);
+  MultiByteToWideChar(CP_UTF8, 0, path.name.c_str(), -1, &fname[0], fname_length);
+
+  const int mode_length = MultiByteToWideChar(CP_UTF8, 0, mode, -1, nullptr, 0);
+  std::wstring wmode(mode_length, 0);
+  MultiByteToWideChar(CP_UTF8, 0, mode, -1, &wmode[0], mode_length);
+
+  using namespace std;
+#ifndef DMLC_DISABLE_STDIN
+  if (!wcscmp(fname.c_str(), L"stdin")) {
+    use_stdio = true; fp = stdin;
+  }
+  if (!wcscmp(fname.c_str(), L"stdout")) {
+    use_stdio = true; fp = stdout;
+  }
+#endif
+  if (!wcsncmp(fname.c_str(), L"file://", 7)) { fname = fname.substr(7); }
+  if (!use_stdio) {
+    std::wstring flag(wmode.c_str());
+    if (flag == L"w") flag = L"wb";
+    if (flag == L"r") flag = L"rb";
+#if DMLC_USE_FOPEN64
+    fp = _wfopen(fname.c_str(), flag.c_str());
+#else
+    fp = fopen(fname, flag.c_str());
+#endif
+  }
+#else
   const char *fname = path.name.c_str();
   using namespace std;
 #ifndef DMLC_DISABLE_STDIN
@@ -160,6 +192,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
     fp = fopen(fname, flag.c_str());
 #endif
   }
+#endif
   if (fp != NULL) {
     return new FileStream(fp, use_stdio);
   } else {
