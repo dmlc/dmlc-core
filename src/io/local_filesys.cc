@@ -141,7 +141,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
   FILE *fp = NULL;
 #ifdef _MSC_VER
   const int fname_length = MultiByteToWideChar(CP_UTF8, 0, path.name.c_str(), -1, nullptr, 0);
-  CHECK(fname_length > 0) << " LocalFileSystem::Open \"" << path.str() 
+  CHECK(fname_length > 0) << " LocalFileSystem::Open \"" << path.str()
                           << "\": " << "Invalid character sequence.";
   std::wstring fname(fname_length, 0);
   MultiByteToWideChar(CP_UTF8, 0, path.name.c_str(), -1, &fname[0], fname_length);
