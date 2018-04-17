@@ -5,4 +5,5 @@ if [ ${TRAVIS_OS_NAME} != "osx" ]; then
 fi
 
 brew update
-sudo easy_install pip
+brew upgrade python3
+python3 -m pip install --upgrade pip
