@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
     }
   }
   using namespace dmlc;
-  std::unique_ptr<dmlc::Parser<unsigned> > parser(
-      dmlc::Parser<unsigned>::Create(argv[1],
+  std::unique_ptr<dmlc::Parser<unsigned, int> > parser(
+      dmlc::Parser<unsigned, int>::Create(argv[1],
                                      atoi(argv[2]),
                                      atoi(argv[3]),
                                      "csv"));
@@ -34,10 +34,10 @@ int main(int argc, char *argv[]) {
     bytes_read  = parser->BytesRead();
     num_ex += parser->Value().size;
     if (fo != NULL){
-      const dmlc::RowBlock<unsigned>& batch = parser->Value();
+      const dmlc::RowBlock<unsigned, int>& batch = parser->Value();
       for (size_t i = 0; i < batch.size; ++i) {
         for (size_t j = 0; j < batch[i].length; ++j) {
-          fprintf(fo, "%g", batch[i].value[j]);
+          fprintf(fo, "%d", batch[i].value[j]);
           if (j + 1 == batch[i].length) {
             fprintf(fo, "\n");
           } else {

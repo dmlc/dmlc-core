@@ -25,8 +25,8 @@ namespace data {
  * \brief basic set of row iterators that provides
  * \tparam IndexType the type of index we are using
  */
-template<typename IndexType>
-class DiskRowIter: public RowBlockIter<IndexType> {
+template<typename IndexType, typename DType = real_t>
+class DiskRowIter: public RowBlockIter<IndexType, DType> {
  public:
   // page size 64MB
   static const size_t kPageSize = 64UL << 20UL;
@@ -35,7 +35,7 @@ class DiskRowIter: public RowBlockIter<IndexType> {
    * \param parser parser used to generate this
 
    */
-  explicit DiskRowIter(Parser<IndexType> *parser,
+  explicit DiskRowIter(Parser<IndexType, DType> *parser,
                        const char *cache_file,
                        bool reuse_cache)
       : cache_file_(cache_file), fi_(NULL) {
@@ -67,7 +67,7 @@ class DiskRowIter: public RowBlockIter<IndexType> {
       return false;
     }
   }
-  virtual const RowBlock<IndexType> &Value(void) const {
+  virtual const RowBlock<IndexType, DType> &Value(void) const {
     return row_;
   }
   virtual size_t NumCol(void) const {
@@ -82,24 +82,24 @@ class DiskRowIter: public RowBlockIter<IndexType> {
   // maximum feature dimension
   size_t num_col_;
   // row block to store
-  RowBlock<IndexType> row_;
+  RowBlock<IndexType, DType> row_;
   // iterator
-  ThreadedIter<RowBlockContainer<IndexType> > iter_;
+  ThreadedIter<RowBlockContainer<IndexType, DType> > iter_;
   // load disk cache file
   inline bool TryLoadCache(void);
   // build disk cache
-  inline void BuildCache(Parser<IndexType> *parser);
+  inline void BuildCache(Parser<IndexType, DType> *parser);
 };
 
 // build disk cache
-template<typename IndexType>
-inline bool DiskRowIter<IndexType>::TryLoadCache(void) {
+template<typename IndexType, typename DType>
+inline bool DiskRowIter<IndexType, DType>::TryLoadCache(void) {
   SeekStream *fi = SeekStream::CreateForRead(cache_file_.c_str(), true);
   if (fi == NULL) return false;
   this->fi_ = fi;
-  iter_.Init([fi](RowBlockContainer<IndexType> **dptr) {
+  iter_.Init([fi](RowBlockContainer<IndexType, DType> **dptr) {
       if (*dptr ==NULL) {
-        *dptr = new RowBlockContainer<IndexType>();
+        *dptr = new RowBlockContainer<IndexType, DType>();
       }
       return (*dptr)->Load(fi);
     },
@@ -107,12 +107,12 @@ inline bool DiskRowIter<IndexType>::TryLoadCache(void) {
   return true;
 }
 
-template<typename IndexType>
-inline void DiskRowIter<IndexType>::
-BuildCache(Parser<IndexType> *parser) {
+template<typename IndexType, typename DType>
+inline void DiskRowIter<IndexType, DType>::
+BuildCache(Parser<IndexType, DType> *parser) {
   Stream *fo = Stream::Create(cache_file_.c_str(), "w");
   // back end data
-  RowBlockContainer<IndexType> data;
+  RowBlockContainer<IndexType, DType> data;
   num_col_ = 0;
   double tstart = GetTime();
   while (parser->Next()) {
