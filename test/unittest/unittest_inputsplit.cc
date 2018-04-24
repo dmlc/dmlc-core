@@ -5,9 +5,20 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
+#include <random>
 #include <cstdlib>
-#include <unistd.h>
 #include <gtest/gtest.h>
+
+/* platform specific headers */
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#include <Shlwapi.h>
+#pragma comment(lib, "Shlwapi.lib")
+#else
+#include <unistd.h>
+#endif
 
 static inline void CountDimensions(dmlc::Parser<uint32_t>* parser,
                                    size_t* out_num_row, size_t* out_num_col) {
@@ -28,6 +39,35 @@ static inline void CountDimensions(dmlc::Parser<uint32_t>* parser,
 class TemporaryDirectory {
  public:
   TemporaryDirectory() {
+#if _WIN32
+    /* locate the root directory of temporary area */
+    char tmproot[MAX_PATH] = {0};
+    const DWORD dw_retval = GetTempPathA(MAX_PATH, tmproot);
+    if (dw_retval > MAX_PATH || dw_retval == 0) {
+      std::cerr << "TemporaryDirectory(): "
+                << "Could not create temporary directory" << std::endl;
+      exit(-1);
+    }
+    /* generate a unique 8-letter alphanumeric string */
+    const std::string letters = "abcdefghijklmnopqrstuvwxyz0123456789_";
+    std::string uniqstr(8, '\0');
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dis(0, letters.length() - 1);
+    std::generate(uniqstr.begin(), uniqstr.end(),
+      [&dis, &gen, &letters]() -> char {
+        return letters[dis(gen)];
+      });
+    /* combine paths to get the name of the temporary directory */
+    char tmpdir[MAX_PATH] = {0};
+    PathCombineA(tmpdir, tmproot, uniqstr.c_str());
+    if (!CreateDirectoryA(tmpdir, NULL)) {
+      std::cerr << "TemporaryDirectory(): "
+                << "Could not create temporary directory" << std::endl;
+      exit(-1);
+    }
+    path = std::string(tmpdir);
+#else
     std::string tmproot; /* root directory of temporary area */
     std::string dirtemplate; /* template for temporary directory name */
     /* Get TMPDIR env variable or fall back to /tmp/ */
@@ -53,10 +93,15 @@ class TemporaryDirectory {
       exit(-1);
     }
     path = std::string(tmpdir);
+#endif
     std::cerr << "Created temporary directory " << path << std::endl;
   }
   ~TemporaryDirectory() {
+#if _WIN32
+    if (!RemoveDirectoryA(path.c_str())) {
+#else
     if (rmdir(path.c_str()) == -1) {
+#endif
       std::cerr << "~TemporaryDirectory(): "
                 << "Could not remove temporary directory " << path << std::endl;
       exit(-1);
@@ -87,14 +132,19 @@ TEST(InputSplit, test_split_csv_noeol) {
       of << "0,1,1,2\n";
     }
     /* Load the test case with InputSplit and obtain matrix dimensions */
-    std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-          dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "csv"));
-    CountDimensions(parser.get(), &num_row, &num_col);
+    {
+      std::unique_ptr<dmlc::Parser<uint32_t> > parser(
+        dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "csv"));
+      CountDimensions(parser.get(), &num_row, &num_col);
+    }
     /* Clean up */
     for (int i = 0; i < 3; ++i) {
       std::string filename
         = tempdir.path + "/train_" + std::to_string(i) + ".csv";
-      std::remove(filename.c_str());
+      if (std::remove(filename.c_str()) != 0) {
+        std::cerr << "Couldn't remove file " << filename << std::endl;
+        exit(-1);
+      }
     }
   }
   /* Check matrix dimensions: must be 3x4 */
@@ -115,14 +165,19 @@ TEST(InputSplit, test_split_libsvm) {
          << "77:1 86:1 88:1 92:1 95:1 102:1 105:1 117:1 124:1\n";
     }
     /* Load the test case with InputSplit and obtain matrix dimensions */
-    std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-          dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "libsvm"));
-    CountDimensions(parser.get(), &num_row, &num_col);
+    {
+      std::unique_ptr<dmlc::Parser<uint32_t> > parser(
+        dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "libsvm"));
+      CountDimensions(parser.get(), &num_row, &num_col);
+    }
     /* Clean up */
     for (int i = 0; i < 5; ++i) {
       std::string filename
         = tempdir.path + "/test_" + std::to_string(i) + ".libsvm";
-      std::remove(filename.c_str());
+      if (std::remove(filename.c_str()) != 0) {
+        std::cerr << "Couldn't remove file " << filename << std::endl;
+        exit(-1);
+      }
     }
   }
   /* Check matrix dimensions: must be 5x125 */
