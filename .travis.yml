@@ -30,7 +30,7 @@ addons:
       - unzip
       - gcc-4.8
       - g++-4.8
-      - python-pip
+      - python3-pip
 
 before_install:
   - export TRAVIS=scripts/travis
@@ -38,7 +38,7 @@ before_install:
   - ${TRAVIS}/travis_osx_install.sh
 
 install:
-  - pip install --user cpplint pylint
+  - pip3 install --user cpplint pylint
 
 script: ${TRAVIS}/travis_script.sh
 

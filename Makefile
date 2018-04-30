@@ -90,10 +90,10 @@ $(ALIB):
 	$(AR) cr $@ $+
 
 lint:
-	python scripts/lint.py dmlc ${LINT_LANG} include src scripts $(NOLINT_FILES)
+	scripts/lint.py dmlc ${LINT_LANG} include src scripts $(NOLINT_FILES)
 
 pylint:
-	python scripts/lint.py dmlc ${LINT_LANG} tracker/dmlc_tracker
+	scripts/lint.py dmlc ${LINT_LANG} tracker/dmlc_tracker
 
 doxygen:
 	doxygen doc/Doxyfile
