@@ -9,6 +9,8 @@
 
 #include <dmlc/data.h>
 #include <dmlc/omp.h>
+#include <thread>
+#include <mutex>
 #include <vector>
 #include <cstring>
 #include <algorithm>
