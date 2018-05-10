@@ -197,6 +197,12 @@ TEST(CSVParser, test_weight_column) {
   for (size_t i = 0; i < rctr->weight.size(); i++) {
     CHECK_EQ(rctr->weight[i], 2.0f + 4.0f * i);
   }
+  const std::vector<real_t>
+    expected_values{0.0f, 1.0f, 3.0f, 4.0f, 5.0f, 7.0f, 8.0f, 9.0f, 11.0f};
+  CHECK_EQ(rctr->value.size(), expected_values.size());
+  for (size_t i = 0; i < rctr->value.size(); i++) {
+    CHECK_EQ(rctr->value[i], expected_values[i]);
+  }
 }
 
 TEST(CSVParser, test_weight_column_2) {
@@ -210,6 +216,10 @@ TEST(CSVParser, test_weight_column_2) {
   char *out_data = const_cast<char *>(data.c_str());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
   CHECK(rctr->weight.empty());
+  CHECK_EQ(rctr->value.size(), 12U);
+  for (size_t i = 0; i < rctr->value.size(); i++) {
+    CHECK(i == rctr->value[i]);
+  }
 }
 
 TEST(LibSVMParser, test_qid) {
