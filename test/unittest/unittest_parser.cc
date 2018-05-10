@@ -183,6 +183,22 @@ TEST(CSVParser, test_delimiter) {
   }
 }
 
+TEST(CSVParser, test_weight_column) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{ {"weight_column", "2"} };
+  std::unique_ptr<CSVParserTest<real_t>> parser(
+      new CSVParserTest<real_t>(source, args, 1));
+  RowBlockContainer<real_t> *rctr = new RowBlockContainer<real_t>();
+  std::string data = "0,1,2,3\n4,5,6,7\n8,9,10,11";
+  char *out_data = const_cast<char *>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+  CHECK_EQ(rctr->weight.size(), 3U);
+  for (size_t i = 0; i < rctr->weight.size(); i++) {
+    CHECK_EQ(rctr->weight[i], 2.0f + 4.0f * i);
+  }
+}
+
 TEST(LibSVMParser, test_qid) {
   using namespace parser_test;
   InputSplit *source = nullptr;
