@@ -9,7 +9,10 @@
 
 #include <dmlc/data.h>
 #include <dmlc/parameter.h>
+#include <map>
+#include <string>
 #include <limits>
+#include <algorithm>
 #include <cstring>
 #include "./row_block.h"
 #include "./text_parser.h"

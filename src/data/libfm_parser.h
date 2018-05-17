@@ -8,6 +8,11 @@
 #define DMLC_DATA_LIBFM_PARSER_H_
 
 #include <dmlc/data.h>
+#include <dmlc/parameter.h>
+#include <map>
+#include <string>
+#include <limits>
+#include <algorithm>
 #include <cstring>
 #include "./row_block.h"
 #include "./text_parser.h"
@@ -40,7 +45,7 @@ struct LibFMParserParam : public Parameter<LibFMParserParam> {
 template <typename IndexType, typename DType = real_t>
 class LibFMParser : public TextParserBase<IndexType, DType> {
  public:
- explicit LibFMParser(InputSplit *source, int nthread)
+  explicit LibFMParser(InputSplit *source, int nthread)
       : LibFMParser(source, std::map<std::string, std::string>(), nthread) {}
   explicit LibFMParser(InputSplit *source,
                        const std::map<std::string, std::string>& args,
