@@ -187,9 +187,9 @@ TEST(CSVParser, test_weight_column) {
   using namespace parser_test;
   InputSplit *source = nullptr;
   const std::map<std::string, std::string> args{ {"weight_column", "2"} };
-  std::unique_ptr<CSVParserTest<real_t>> parser(
-      new CSVParserTest<real_t>(source, args, 1));
-  RowBlockContainer<real_t> *rctr = new RowBlockContainer<real_t>();
+  std::unique_ptr<CSVParserTest<unsigned>> parser(
+      new CSVParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned> *rctr = new RowBlockContainer<unsigned>();
   std::string data = "0,1,2,3\n4,5,6,7\n8,9,10,11";
   char *out_data = const_cast<char *>(data.c_str());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
@@ -209,9 +209,9 @@ TEST(CSVParser, test_weight_column_2) {
   using namespace parser_test;
   InputSplit *source = nullptr;
   const std::map<std::string, std::string> args;
-  std::unique_ptr<CSVParserTest<real_t>> parser(
-      new CSVParserTest<real_t>(source, args, 1));
-  RowBlockContainer<real_t> *rctr = new RowBlockContainer<real_t>();
+  std::unique_ptr<CSVParserTest<unsigned>> parser(
+      new CSVParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned> *rctr = new RowBlockContainer<unsigned>();
   std::string data = "0,1,2,3\n4,5,6,7\n8,9,10,11";
   char *out_data = const_cast<char *>(data.c_str());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
