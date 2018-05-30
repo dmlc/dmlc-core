@@ -85,6 +85,22 @@ class Stream {  // NOLINT(*)
    */
   template<typename T>
   inline bool Read(T *out_data);
+  /*!
+   * \brief Endian aware write array of data.
+   * \param data The data pointer
+   * \param num_elems Number of elements
+   * \tparam T the data type.
+   */
+  template<typename T>
+  inline void WriteArray(const T* data, size_t num_elems);
+  /*!
+   * \brief Endian aware read array of data.
+   * \param data The data pointer
+   * \param num_elems Number of elements
+   * \tparam T the data type.
+   */
+  template<typename T>
+  inline bool ReadArray(T* data, size_t num_elems);
 };
 
 /*! \brief interface of i/o stream that support seek */
@@ -436,6 +452,21 @@ inline void Stream::Write(const T &data) {
 template<typename T>
 inline bool Stream::Read(T *out_data) {
   return serializer::Handler<T>::Read(this, out_data);
+}
+
+template<typename T>
+inline void Stream::WriteArray(const T* data, size_t num_elems) {
+  for (size_t i = 0; i < num_elems; ++i) {
+    this->Write<T>(data[i]);
+  }
+}
+
+template<typename T>
+inline bool Stream::ReadArray(T* data, size_t num_elems) {
+  for (size_t i = 0; i < num_elems; ++i) {
+    if (!this->Read<T>(data + i)) return false;
+  }
+  return true;
 }
 
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS

@@ -155,19 +155,14 @@ struct ComposeVectorHandler {
   inline static void Write(Stream *strm, const std::vector<T> &vec) {
     uint64_t sz = static_cast<uint64_t>(vec.size());
     strm->Write<uint64_t>(sz);
-    for (size_t i = 0; i < vec.size(); ++i) {
-      Handler<T>::Write(strm, vec[i]);
-    }
+    strm->WriteArray(dmlc::BeginPtr(vec), vec.size());
   }
   inline static bool Read(Stream *strm, std::vector<T> *out_vec) {
     uint64_t sz;
     if (!strm->Read<uint64_t>(&sz)) return false;
     size_t size = static_cast<size_t>(sz);
     out_vec->resize(size);
-    for (size_t i = 0; i < size; ++i) {
-      if (!Handler<T>::Read(strm, &(*out_vec)[i])) return false;
-    }
-    return true;
+    return strm->ReadArray(dmlc::BeginPtr(*out_vec), size);
   }
 };
 
