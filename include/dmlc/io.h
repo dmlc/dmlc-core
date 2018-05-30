@@ -98,6 +98,7 @@ class Stream {  // NOLINT(*)
    * \param data The data pointer
    * \param num_elems Number of elements
    * \tparam T the data type.
+   * \return whether the load was successful
    */
   template<typename T>
   inline bool ReadArray(T* data, size_t num_elems);
