@@ -58,12 +58,13 @@ class Stream {  // NOLINT(*)
                         bool allow_null = false);
   // helper functions to write/read different data structures
   /*!
-   * \brief writes a data to stream
+   * \brief writes a data to stream.
    *
-   * dmlc::Stream support Write/Read of most STL
-   * composites and base types.
-   * If the data type is not supported, a compile time error will
-   * be issued.
+   * dmlc::Stream support Write/Read of most STL composites and base types.
+   * If the data type is not supported, a compile time error will be issued.
+   *
+   * This function is endian-aware,
+   * the output endian defined by DMLC_IO_USE_LITTLE_ENDIAN
    *
    * \param data data to be written
    * \tparam T the data type to be written
@@ -73,10 +74,11 @@ class Stream {  // NOLINT(*)
   /*!
    * \brief loads a data from stream.
    *
-   * dmlc::Stream support Write/Read of most STL
-   * composites and base types.
-   * If the data type is not supported, a compile time error will
-   * be issued.
+   * dmlc::Stream support Write/Read of most STL composites and base types.
+   * If the data type is not supported, a compile time error will be issued.
+   *
+   * This function is endian-aware,
+   * the input endian defined by DMLC_IO_USE_LITTLE_ENDIAN
    *
    * \param out_data place holder of data to be deserialized
    * \return whether the load was successful
