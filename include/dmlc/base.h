@@ -117,6 +117,13 @@
 #endif
 #endif
 
+/*!
+ * \brief Use little endian for binary serialization
+ *  if this is set to 0, use big endian.
+ */
+#ifndef DMLC_IO_USE_LITTLE_ENDIAN
+#define DMLC_IO_USE_LITTLE_ENDIAN 1
+#endif
 
 /*!
  * \brief Enable std::thread related modules,

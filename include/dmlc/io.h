@@ -58,12 +58,13 @@ class Stream {  // NOLINT(*)
                         bool allow_null = false);
   // helper functions to write/read different data structures
   /*!
-   * \brief writes a data to stream
+   * \brief writes a data to stream.
    *
-   * dmlc::Stream support Write/Read of most STL
-   * composites and base types.
-   * If the data type is not supported, a compile time error will
-   * be issued.
+   * dmlc::Stream support Write/Read of most STL composites and base types.
+   * If the data type is not supported, a compile time error will be issued.
+   *
+   * This function is endian-aware,
+   * the output endian defined by DMLC_IO_USE_LITTLE_ENDIAN
    *
    * \param data data to be written
    * \tparam T the data type to be written
@@ -73,16 +74,34 @@ class Stream {  // NOLINT(*)
   /*!
    * \brief loads a data from stream.
    *
-   * dmlc::Stream support Write/Read of most STL
-   * composites and base types.
-   * If the data type is not supported, a compile time error will
-   * be issued.
+   * dmlc::Stream support Write/Read of most STL composites and base types.
+   * If the data type is not supported, a compile time error will be issued.
+   *
+   * This function is endian-aware,
+   * the input endian defined by DMLC_IO_USE_LITTLE_ENDIAN
    *
    * \param out_data place holder of data to be deserialized
    * \return whether the load was successful
    */
   template<typename T>
   inline bool Read(T *out_data);
+  /*!
+   * \brief Endian aware write array of data.
+   * \param data The data pointer
+   * \param num_elems Number of elements
+   * \tparam T the data type.
+   */
+  template<typename T>
+  inline void WriteArray(const T* data, size_t num_elems);
+  /*!
+   * \brief Endian aware read array of data.
+   * \param data The data pointer
+   * \param num_elems Number of elements
+   * \tparam T the data type.
+   * \return whether the load was successful
+   */
+  template<typename T>
+  inline bool ReadArray(T* data, size_t num_elems);
 };
 
 /*! \brief interface of i/o stream that support seek */
@@ -434,6 +453,21 @@ inline void Stream::Write(const T &data) {
 template<typename T>
 inline bool Stream::Read(T *out_data) {
   return serializer::Handler<T>::Read(this, out_data);
+}
+
+template<typename T>
+inline void Stream::WriteArray(const T* data, size_t num_elems) {
+  for (size_t i = 0; i < num_elems; ++i) {
+    this->Write<T>(data[i]);
+  }
+}
+
+template<typename T>
+inline bool Stream::ReadArray(T* data, size_t num_elems) {
+  for (size_t i = 0; i < num_elems; ++i) {
+    if (!this->Read<T>(data + i)) return false;
+  }
+  return true;
 }
 
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
