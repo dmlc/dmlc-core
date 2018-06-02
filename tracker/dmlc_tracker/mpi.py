@@ -21,14 +21,14 @@ def get_mpi_env(envs):
         return cmd
 
     # decide MPI version.
-    (_, err) = subprocess.Popen(['mpirun','--verion'],
+    (out, err) = subprocess.Popen(['mpirun','--version'],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE).communicate()
     cmd = ''
-    if 'Open MPI' in err:
+    if b'Open MPI' in out:
         for k, v in envs.items():
             cmd += ' -x %s=%s' % (k, str(v))
-    elif 'mpich' in err:
+    elif b'mpich' in err:
         for k, v in envs.items():
             cmd += ' -env %s %s' % (k, str(v))
     else:
