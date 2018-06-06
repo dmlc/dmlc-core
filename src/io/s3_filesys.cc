@@ -1016,97 +1016,129 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
   out_list->clear();
   using namespace s3;
 
-  time_t curr_time = time(NULL);
-  std::map<std::string, std::string> canonical_headers;
-  std::string payload;
-  std::ostringstream sauth, sdate, stoken, surl, scontent;
-  std::ostringstream result;
-  std::string canonical_uri;
+  std::string next_token = "";
+  std::string has_next_page = "false";
 
-  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
-  std::string canonical_querystring = "delimiter=%2F&prefix=" +
-                                      URIEncode(std::string{RemoveBeginSlash(path.name)});
+  do {
+    time_t curr_time = time(NULL);
+    std::map<std::string, std::string> canonical_headers;
+    std::string payload;
+    std::ostringstream sauth, sdate, stoken, surl, scontent;
+    std::ostringstream result;
+    std::string canonical_uri;
+    std::string canonical_querystring;
 
-  if (path.host.find('.', 0) == std::string::npos) {
-    // use virtual host style if no period in host
-    canonical_uri = "/";
-    canonical_headers["host"] = path.host + ".s3.amazonaws.com";
-    surl << "https://" << path.host << ".s3.amazonaws.com"
-         << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
-  } else {
-    canonical_uri = URIEncode("/" + path.host + "/", false);
-    canonical_headers["host"] = s3_endpoint_;
-    surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix="
-         << RemoveBeginSlash(path.name);
-  }
-  std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
-                                   canonical_uri, canonical_querystring,
-                                   canonical_headers, payload);
-  BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                      curr_time, s3_access_id_, s3_region_, s3_session_token_,
-                      canonical_headers, signature, payload);
-
-// make request
-  CURL *curl = curl_easy_init();
-  curl_slist *slist = NULL;
-  slist = curl_slist_append(slist, sdate.str().c_str());
-  slist = curl_slist_append(slist, sauth.str().c_str());
-  slist = curl_slist_append(slist, scontent.str().c_str());
-  if (!s3_session_token_.empty()) {
-    slist = curl_slist_append(slist, stoken.str().c_str());
-  }
-  CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
-  CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
-  CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
-  CHECK(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
-  CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
-  CHECK(curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
-  if (!s3_verify_ssl_) {
-    CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
-    CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
-  }
-  CHECK(curl_easy_perform(curl) == CURLE_OK);
-  curl_slist_free_all(slist);
-  curl_easy_cleanup(curl);
-  // parse xml
-  std::string ret = result.str();
-  if (ret.find("<Error>") != std::string::npos) {
-    LOG(FATAL) << ret;
-  }
-  {
-    // get files
-    XMLIter xml(ret.c_str());
-    XMLIter data;
-    CHECK(xml.GetNext("IsTruncated", &data)) << "missing IsTruncated";
-    CHECK(data.str() == "false") << "the returning list is truncated";
-    while (xml.GetNext("Contents", &data)) {
-      FileInfo info;
-      info.path = path;
-      XMLIter value;
-      CHECK(data.GetNext("Key", &value));
-      // add root path to be consistent with other filesys convention
-      info.path.name = '/' + value.str();
-      CHECK(data.GetNext("Size", &value));
-      info.size = static_cast<size_t>(atol(value.str().c_str()));
-      info.type = kFile;
-      out_list->push_back(info);
+    AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
+    if (next_token == "") {
+        canonical_querystring = "delimiter=%2F&prefix=" +
+            URIEncode(std::string{RemoveBeginSlash(path.name)});
+    } else {
+        canonical_querystring = "delimiter=%2F&marker=" + URIEncode(std::string{next_token}) +
+            "&prefix=" + URIEncode(std::string{RemoveBeginSlash(path.name)});
     }
-  }
-  {
-    // get directories
-    XMLIter xml(ret.c_str());
-    XMLIter data;
-    while (xml.GetNext("CommonPrefixes", &data)) {
-      FileInfo info;
-      info.path = path;
-      XMLIter value;
-      CHECK(data.GetNext("Prefix", &value));
-      // add root path to be consistent with other filesys convention
-      info.path.name = '/' + value.str();
-      info.size = 0; info.type = kDirectory;
-      out_list->push_back(info);
+
+    if (path.host.find('.', 0) == std::string::npos) {
+      // use virtual host style if no period in host
+      canonical_uri = "/";
+      canonical_headers["host"] = path.host + ".s3.amazonaws.com";
+      surl << "https://" << path.host << ".s3.amazonaws.com"
+           << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
+    } else {
+      canonical_uri = URIEncode("/" + path.host + "/", false);
+      canonical_headers["host"] = s3_endpoint_;
+      surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix="
+           << RemoveBeginSlash(path.name);
     }
-  }
+
+    if (next_token != "") {
+        surl << "&marker=" << next_token;
+    }
+
+    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
+                                     canonical_uri, canonical_querystring,
+                                     canonical_headers, payload);
+    BuildRequestHeaders(sauth, sdate, stoken, scontent,
+                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
+                        canonical_headers, signature, payload);
+
+    // make request
+    CURL *curl = curl_easy_init();
+    curl_slist *slist = NULL;
+    slist = curl_slist_append(slist, sdate.str().c_str());
+    slist = curl_slist_append(slist, sauth.str().c_str());
+    slist = curl_slist_append(slist, scontent.str().c_str());
+    if (!s3_session_token_.empty()) {
+      slist = curl_slist_append(slist, stoken.str().c_str());
+    }
+    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteSStreamCallback) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result) == CURLE_OK);
+    CHECK(curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
+    if (!s3_verify_ssl_) {
+      CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
+      CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
+    }
+    CHECK(curl_easy_perform(curl) == CURLE_OK);
+    curl_slist_free_all(slist);
+    curl_easy_cleanup(curl);
+
+    // parse xml
+    std::string ret = result.str();
+    if (ret.find("<Error>") != std::string::npos) {
+      LOG(FATAL) << ret;
+    }
+
+    {
+      // get files
+      XMLIter xml(ret.c_str());
+      XMLIter data;
+      CHECK(xml.GetNext("IsTruncated", &data)) << "missing IsTruncated";
+      has_next_page = data.str();
+    }
+
+    {
+      // get files
+      XMLIter xml(ret.c_str());
+      XMLIter data;
+
+      if (xml.GetNext("NextMarker", &data)) {
+        // If NextContinuationToken exists in the response, more requests needs
+        // to be made to get the full list of objects.
+        next_token = data.str();
+      }
+
+      while (xml.GetNext("Contents", &data)) {
+        FileInfo info;
+        info.path = path;
+        XMLIter value;
+        CHECK(data.GetNext("Key", &value));
+        // add root path to be consistent with other filesys convention
+        info.path.name = '/' + value.str();
+        CHECK(data.GetNext("Size", &value));
+        info.size = static_cast<size_t>(atol(value.str().c_str()));
+        info.type = kFile;
+        out_list->push_back(info);
+      }
+    }
+
+    {
+      // get directories
+      XMLIter xml(ret.c_str());
+      XMLIter data;
+      while (xml.GetNext("CommonPrefixes", &data)) {
+        FileInfo info;
+        info.path = path;
+        XMLIter value;
+        CHECK(data.GetNext("Prefix", &value));
+        // add root path to be consistent with other filesys convention
+        info.path.name = '/' + value.str();
+        info.size = 0; info.type = kDirectory;
+        out_list->push_back(info);
+      }
+    }
+  } while (has_next_page == "true");
 }
 
 S3FileSystem::S3FileSystem() {
