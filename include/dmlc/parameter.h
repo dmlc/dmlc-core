@@ -535,8 +535,8 @@ struct ParamManagerSingleton {
   ParamManager manager;
   explicit ParamManagerSingleton(const std::string &param_name) {
     PType param;
-    param.__DECLARE__(this);
     manager.set_name(param_name);
+    param.__DECLARE__(this);
   }
 };
 
