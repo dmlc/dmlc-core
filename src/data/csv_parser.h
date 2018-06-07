@@ -22,12 +22,15 @@ namespace data {
 struct CSVParserParam : public Parameter<CSVParserParam> {
   std::string format;
   int label_column;
+  std::string delimiter;
   // declare parameters
   DMLC_DECLARE_PARAMETER(CSVParserParam) {
     DMLC_DECLARE_FIELD(format).set_default("csv")
         .describe("File format.");
     DMLC_DECLARE_FIELD(label_column).set_default(-1)
         .describe("Column index that will put into label.");
+    DMLC_DECLARE_FIELD(delimiter).set_default(",")
+      .describe("Delimiter used in the csv file.");
   }
 };
 
@@ -106,7 +109,12 @@ ParseBlock(const char *begin,
         out->index.push_back(idx++);
       }
       ++column_index;
-      while (*p != ',' && p != lend) ++p;
+      while (*p != param_.delimiter[0] && p != lend) ++p;
+      if (p == lend && idx == 0) {
+        LOG(FATAL) << "Delimiter \'" << param_.delimiter << "\' is not found in the line. "
+                   << "Expected \'" << param_.delimiter
+                   << "\' as the delimiter to separate fields.";
+      }
       if (p != lend) ++p;
     }
     // skip empty line
