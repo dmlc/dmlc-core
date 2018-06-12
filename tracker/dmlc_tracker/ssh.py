@@ -24,7 +24,7 @@ def sync_dir(local_dir, slave_node, slave_dir):
 def get_env(pass_envs):
     envs = []
     # get system envs
-    keys = ['MXNET_CUDNN_AUTOTUNE_DEFAULT', 'OMP_NUM_THREADS', 'KMP_AFFINITY', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
+    keys = ['OMP_NUM_THREADS', 'KMP_AFFINITY', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
             'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE']
     for k in keys:
         v = os.getenv(k)
