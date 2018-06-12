@@ -6,6 +6,7 @@ One need to make sure all slaves machines are ssh-able.
 """
 from __future__ import absolute_import
 
+from multiprocessing import Pool, Process
 import os, subprocess, logging
 from threading import Thread
 from . import tracker
@@ -23,7 +24,7 @@ def sync_dir(local_dir, slave_node, slave_dir):
 def get_env(pass_envs):
     envs = []
     # get system envs
-    keys = ['OMP_NUM_THREADS', 'KMP_AFFINITY', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
+    keys = ['MXNET_CUDNN_AUTOTUNE_DEFAULT', 'OMP_NUM_THREADS', 'KMP_AFFINITY', 'LD_LIBRARY_PATH', 'AWS_ACCESS_KEY_ID',
             'AWS_SECRET_ACCESS_KEY', 'DMLC_INTERFACE']
     for k in keys:
         v = os.getenv(k)
@@ -65,8 +66,12 @@ def submit(args):
         working_dir = local_dir
         if args.sync_dst_dir is not None and args.sync_dst_dir != 'None':
             working_dir = args.sync_dst_dir
+            pool = Pool(processes=len(hosts))
             for h in hosts:
-                sync_dir(local_dir, h, working_dir)
+                pool.apply_async(sync_dir, args=(local_dir, h, working_dir))
+            pool.close()
+            pool.join()
+            
 
         # launch jobs
         for i in range(nworker + nserver):
