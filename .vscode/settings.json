@@ -1,0 +1,15 @@
+{
+    // "sync-rsync.onSave": true,
+    "sync-rsync.onSaveIndividual": true,
+    "sync-rsync.sites": [
+        {
+            "remotePath": "ubuntu@ec2-18-191-223-60.us-east-2.compute.amazonaws.com:/home/ubuntu/incubator-mxnet/3rdparty/dmlc-core"
+        },
+        {
+            "remotePath": "ubuntu@ec2-18-216-25-57.us-east-2.compute.amazonaws.com:/home/ubuntu/incubator-mxnet/3rdparty/dmlc-core"
+        }
+    ],
+    "sync-rsync.executableShell": "/bin/bash",
+    "sync-rsync.shell": "ssh -i ~/lab/pandora_key.pem",
+    "sync-rsync.flags": "av"
+}

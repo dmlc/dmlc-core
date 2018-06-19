@@ -69,8 +69,21 @@ def submit(args):
                 sync_dir(local_dir, h, working_dir)
 
         # launch jobs
-        for i in range(nworker + nserver):
-            pass_envs['DMLC_ROLE'] = 'server' if i < nserver else 'worker'
+        for i in range(nserver):
+            pass_envs['DMLC_ROLE'] = 'server'
+            # pass rank to the process
+            pass_envs['DMLC_SERVER_LOCAL_RANK'] = int(i // len(hosts))
+            (node, port) = hosts[i % len(hosts)]
+            prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
+            prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
+            thread = Thread(target = run, args=(prog,))
+            thread.setDaemon(True)
+            thread.start()
+        del pass_envs['DMLC_SERVER_LOCAL_RANK']
+        for i in range(nworker):
+            pass_envs['DMLC_ROLE'] = 'worker'
+            # pass rank to the process
+            pass_envs['DMLC_WORKER_LOCAL_RANK'] = int(i // len(hosts))
             (node, port) = hosts[i % len(hosts)]
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
