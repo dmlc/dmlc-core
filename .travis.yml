@@ -31,6 +31,7 @@ addons:
       - gcc-4.8
       - g++-4.8
       - python3-pip
+      - python-pip
 
 before_install:
   - export TRAVIS=scripts/travis
