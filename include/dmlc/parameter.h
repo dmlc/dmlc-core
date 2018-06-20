@@ -994,7 +994,7 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
       os << "Invalid Parameter format for " << key_ << " expect " << type_
          << " but value=\'" << value << '\'';
       throw dmlc::ParamError(os.str());
-    } catch (const std::out_of_range) {
+    } catch (const std::out_of_range&) {
       std::ostringstream os;
       os << "Out of range value for " << key_ << ", value=\'" << value << '\'';
       throw dmlc::ParamError(os.str());
