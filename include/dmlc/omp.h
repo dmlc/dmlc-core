@@ -11,7 +11,7 @@
 #include <omp.h>
 #else
 
-#if defined(__ANDROID__) && defined(__AARCH64EL__)
+#if defined(__ANDROID__)
 #define __GOMP_NOTHROW
 #elif defined(__cplusplus)
 #define __GOMP_NOTHROW throw()
