@@ -129,21 +129,39 @@ RowBlockIter<uint64_t, real_t>::Create(const char *uri,
 }
 
 template<>
-RowBlockIter<uint32_t, int> *
-RowBlockIter<uint32_t, int>::Create(const char *uri,
+RowBlockIter<uint32_t, int32_t> *
+RowBlockIter<uint32_t, int32_t>::Create(const char *uri,
                                     unsigned part_index,
                                     unsigned num_parts,
                                     const char *type) {
-  return data::CreateIter_<uint32_t, int>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint32_t, int32_t>(uri, part_index, num_parts, type);
 }
 
 template<>
-RowBlockIter<uint64_t, int> *
-RowBlockIter<uint64_t, int>::Create(const char *uri,
+RowBlockIter<uint64_t, int32_t> *
+RowBlockIter<uint64_t, int32_t>::Create(const char *uri,
                                     unsigned part_index,
                                     unsigned num_parts,
                                     const char *type) {
-  return data::CreateIter_<uint64_t, int>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint64_t, int32_t>(uri, part_index, num_parts, type);
+}
+
+template<>
+RowBlockIter<uint32_t, int64_t> *
+RowBlockIter<uint32_t, int64_t>::Create(const char *uri,
+                                        unsigned part_index,
+                                        unsigned num_parts,
+                                        const char *type) {
+  return data::CreateIter_<uint32_t, int64_t>(uri, part_index, num_parts, type);
+}
+
+template<>
+RowBlockIter<uint64_t, int64_t> *
+RowBlockIter<uint64_t, int64_t>::Create(const char *uri,
+                                        unsigned part_index,
+                                        unsigned num_parts,
+                                        const char *type) {
+  return data::CreateIter_<uint64_t, int64_t>(uri, part_index, num_parts, type);
 }
 
 template<>
@@ -165,32 +183,54 @@ Parser<uint64_t, real_t>::Create(const char *uri_,
 }
 
 template<>
-Parser<uint32_t, int> *
-Parser<uint32_t, int>::Create(const char *uri_,
+Parser<uint32_t, int32_t> *
+Parser<uint32_t, int32_t>::Create(const char *uri_,
                               unsigned part_index,
                               unsigned num_parts,
                               const char *type) {
-  return data::CreateParser_<uint32_t, int>(uri_, part_index, num_parts, type);
+  return data::CreateParser_<uint32_t, int32_t>(uri_, part_index, num_parts, type);
 }
 
 template<>
-Parser<uint64_t, int> *
-Parser<uint64_t, int>::Create(const char *uri_,
+Parser<uint64_t, int32_t> *
+Parser<uint64_t, int32_t>::Create(const char *uri_,
                               unsigned part_index,
                               unsigned num_parts,
                               const char *type) {
-  return data::CreateParser_<uint64_t, int>(uri_, part_index, num_parts, type);
+  return data::CreateParser_<uint64_t, int32_t>(uri_, part_index, num_parts, type);
+}
+
+template<>
+Parser<uint32_t, int64_t> *
+Parser<uint32_t, int64_t>::Create(const char *uri_,
+                                  unsigned part_index,
+                                  unsigned num_parts,
+                                  const char *type) {
+  return data::CreateParser_<uint32_t, int64_t>(uri_, part_index, num_parts, type);
+}
+
+template<>
+Parser<uint64_t, int64_t> *
+Parser<uint64_t, int64_t>::Create(const char *uri_,
+                                  unsigned part_index,
+                                  unsigned num_parts,
+                                  const char *type) {
+  return data::CreateParser_<uint64_t, int64_t>(uri_, part_index, num_parts, type);
 }
 
 // registry
 typedef ParserFactoryReg<uint32_t, real_t> Reg32flt;
-typedef ParserFactoryReg<uint32_t, int> Reg32int;
+typedef ParserFactoryReg<uint32_t, int32_t> Reg32int;
+typedef ParserFactoryReg<uint32_t, int64_t> Reg32int64;
 typedef ParserFactoryReg<uint64_t, real_t> Reg64flt;
-typedef ParserFactoryReg<uint64_t, int> Reg64int;
+typedef ParserFactoryReg<uint64_t, int32_t> Reg64int;
+typedef ParserFactoryReg<uint64_t, int64_t> Reg64int64;
 DMLC_REGISTRY_ENABLE(Reg32flt);
 DMLC_REGISTRY_ENABLE(Reg32int);
+DMLC_REGISTRY_ENABLE(Reg32int64);
 DMLC_REGISTRY_ENABLE(Reg64flt);
 DMLC_REGISTRY_ENABLE(Reg64int);
+DMLC_REGISTRY_ENABLE(Reg64int64);
 
 DMLC_REGISTER_DATA_PARSER(
   uint32_t, real_t, libsvm, data::CreateLibSVMParser<uint32_t __DMLC_COMMA real_t>);
@@ -204,7 +244,13 @@ DMLC_REGISTER_DATA_PARSER(
   uint32_t, real_t, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA real_t>);
 DMLC_REGISTER_DATA_PARSER(
   uint64_t, real_t, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA real_t>);
-DMLC_REGISTER_DATA_PARSER(uint32_t, int, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA int>);
-DMLC_REGISTER_DATA_PARSER(uint64_t, int, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA int>);
+DMLC_REGISTER_DATA_PARSER(
+  uint32_t, int32_t, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA int32_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint64_t, int32_t, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA int32_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint32_t, int64_t, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA int64_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint64_t, int64_t, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA int64_t>);
 
 }  // namespace dmlc
