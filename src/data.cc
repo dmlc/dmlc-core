@@ -220,16 +220,16 @@ Parser<uint64_t, int64_t>::Create(const char *uri_,
 
 // registry
 typedef ParserFactoryReg<uint32_t, real_t> Reg32flt;
-typedef ParserFactoryReg<uint32_t, int32_t> Reg32int;
+typedef ParserFactoryReg<uint32_t, int32_t> Reg32int32;
 typedef ParserFactoryReg<uint32_t, int64_t> Reg32int64;
 typedef ParserFactoryReg<uint64_t, real_t> Reg64flt;
-typedef ParserFactoryReg<uint64_t, int32_t> Reg64int;
+typedef ParserFactoryReg<uint64_t, int32_t> Reg64int32;
 typedef ParserFactoryReg<uint64_t, int64_t> Reg64int64;
 DMLC_REGISTRY_ENABLE(Reg32flt);
-DMLC_REGISTRY_ENABLE(Reg32int);
+DMLC_REGISTRY_ENABLE(Reg32int32);
 DMLC_REGISTRY_ENABLE(Reg32int64);
 DMLC_REGISTRY_ENABLE(Reg64flt);
-DMLC_REGISTRY_ENABLE(Reg64int);
+DMLC_REGISTRY_ENABLE(Reg64int32);
 DMLC_REGISTRY_ENABLE(Reg64int64);
 
 DMLC_REGISTER_DATA_PARSER(
