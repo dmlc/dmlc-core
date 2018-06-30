@@ -67,11 +67,11 @@ ParseBlock(const char *begin,
     uint64_t qid;
     p = q;
     while (p != end && *p == ' ') ++p;
-    if (p != lend && (strncmp(p, "qid:", 4) == 0))  {
+    if (p != lend && (strncmp(p, "qid:", 4) == 0)) {
       p += 4;
-      qid = atoll(p);
+      qid = static_cast<uint64_t>(atoll(p));
+      while (p != lend && isdigitchars(*p)) ++p;
       out->qid.push_back(qid);
-      p = q;
     }
     // parse feature[:value]
     while (p != lend) {
