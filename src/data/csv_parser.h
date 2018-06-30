@@ -27,7 +27,7 @@ struct CSVParserParam : public Parameter<CSVParserParam> {
     DMLC_DECLARE_FIELD(format).set_default("csv")
         .describe("File format.");
     DMLC_DECLARE_FIELD(label_column).set_default(-1)
-        .describe("Column index that will put into label.");
+        .describe("Column index (0-based) that will put into label.");
   }
 };
 

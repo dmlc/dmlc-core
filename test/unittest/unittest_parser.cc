@@ -1,5 +1,6 @@
 #include "../src/data/csv_parser.h"
 #include "../src/data/libsvm_parser.h"
+#include "../src/data/libfm_parser.h"
 #include <cstdio>
 #include <cstdlib>
 #include <dmlc/io.h>
@@ -25,15 +26,47 @@ public:
 template <typename IndexType, typename DType = real_t>
 class LibSVMParserTest : public LibSVMParser<IndexType, DType> {
 public:
-  explicit LibSVMParserTest(InputSplit *source, int nthread)
-      : LibSVMParser<IndexType, DType>(source, nthread) {}
+  explicit LibSVMParserTest(InputSplit *source,
+                            const std::map<std::string, std::string> &args,
+                            int nthread)
+      : LibSVMParser<IndexType, DType>(source, args, nthread) {}
   void CallParseBlock(char *begin, char *end,
                       RowBlockContainer<IndexType, DType> *out) {
     LibSVMParser<IndexType, DType>::ParseBlock(begin, end, out);
   }
 };
 
+template <typename IndexType, typename DType = real_t>
+class LibFMParserTest : public LibFMParser<IndexType, DType> {
+public:
+  explicit LibFMParserTest(InputSplit *source,
+                           const std::map<std::string, std::string> &args,
+                           int nthread)
+      : LibFMParser<IndexType, DType>(source, args, nthread) {}
+  void CallParseBlock(char *begin, char *end,
+                      RowBlockContainer<IndexType, DType> *out) {
+    LibFMParser<IndexType, DType>::ParseBlock(begin, end, out);
+  }
+};
+
+}  // namespace parser_test
+
+namespace {
+
+template <typename IndexType>
+static inline void CountDimensions(RowBlockContainer<IndexType>* rctr,
+                                   size_t* out_num_row, size_t* out_num_col) {
+  size_t num_row = rctr->label.size();
+  size_t num_col = 0;
+  for (size_t i = rctr->offset[0]; i < rctr->offset[num_row]; ++i) {
+    const IndexType index = rctr->index[i];
+    num_col = std::max(num_col, static_cast<size_t>(index + 1));
+  }
+  *out_num_row = num_row;
+  *out_num_col = num_col;
 }
+
+}  // namespace anonymous
 
 TEST(CSVParser, test_ignore_bom) {
   using namespace parser_test;
@@ -138,8 +171,9 @@ TEST(CSVParser, test_noeol) {
 TEST(LibSVMParser, test_qid) {
   using namespace parser_test;
   InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args;
   std::unique_ptr<LibSVMParserTest<unsigned>> parser(
-      new LibSVMParserTest<unsigned>(source, 1));
+      new LibSVMParserTest<unsigned>(source, args, 1));
   RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
   std::string data = R"qid(3 qid:1 1:1 2:1 3:0 4:0.2 5:0
                            2 qid:1 1:0 2:0 3:1 4:0.1 5:1
@@ -179,4 +213,198 @@ TEST(LibSVMParser, test_qid) {
   CHECK(rctr->qid == expected_qid);
   CHECK(rctr->index == expected_index);
   CHECK(rctr->value == expected_value);
+}
+
+TEST(LibSVMParser, test_indexing_mode_0_based) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args;
+  std::unique_ptr<LibSVMParserTest<unsigned>> parser(
+      new LibSVMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data = "1 1:1 2:-1\n0 1:-1 2:1\n1 1:-1 2:-1\n0 1:1 2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 3U);
+
+  const std::vector<unsigned> expected_index{1, 2, 1, 2, 1, 2, 1, 2};
+  const std::vector<real_t> expected_value{1, -1, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->index == expected_index);  // perform element-wise comparsion
+  CHECK(rctr->value == expected_value);
+}
+
+TEST(LibSVMParser, test_indexing_mode_1_based) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{{"indexing_mode", "1"}};
+  std::unique_ptr<LibSVMParserTest<unsigned>> parser(
+      new LibSVMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data = "1 1:1 2:-1\n0 1:-1 2:1\n1 1:-1 2:-1\n0 1:1 2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 2U);
+
+  const std::vector<unsigned> expected_index{0, 1, 0, 1, 0, 1, 0, 1};
+    // with indexing_mode=1, parser will subtract 1 from each feature index
+  const std::vector<real_t> expected_value{1, -1, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->index == expected_index);  // perform element-wise comparsion
+  CHECK(rctr->value == expected_value);
+}
+
+TEST(LibSVMParser, test_indexing_mode_auto_detect) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
+  std::unique_ptr<LibSVMParserTest<unsigned>> parser(
+      new LibSVMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data = "1 1:1 2:-1\n0 1:-1 2:1\n1 1:-1 2:-1\n0 1:1 2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 2U);
+
+  const std::vector<unsigned> expected_index{0, 1, 0, 1, 0, 1, 0, 1};
+    // expect to detect 1-based indexing, since the least feature id is 1
+  const std::vector<real_t> expected_value{1, -1, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->index == expected_index);  // perform element-wise comparsion
+  CHECK(rctr->value == expected_value);
+}
+
+TEST(LibSVMParser, test_indexing_mode_auto_detect_2) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
+  std::unique_ptr<LibSVMParserTest<unsigned>> parser(
+      new LibSVMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data = "1 1:1 2:-1\n0 0:-2 1:-1 2:1\n1 1:-1 2:-1\n0 1:1 2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 3U);
+
+  const std::vector<unsigned> expected_index{1, 2, 0, 1, 2, 1, 2, 1, 2};
+    // expect to detect 0-based indexing, since the least feature id is 0
+  const std::vector<real_t> expected_value{1, -1, -2, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->index == expected_index);  // perform element-wise comparsion
+  CHECK(rctr->value == expected_value);
+}
+
+TEST(LibFMParser, test_indexing_mode_0_based) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args;
+  std::unique_ptr<LibFMParserTest<unsigned>> parser(
+      new LibFMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data
+    = "1 1:1:1 1:2:-1\n0 1:1:-1 2:2:1\n1 2:1:-1 1:2:-1\n0 2:1:1 2:2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 3U);
+
+  const std::vector<unsigned> expected_field{1, 1, 1, 2, 2, 1, 2, 2};
+  const std::vector<unsigned> expected_index{1, 2, 1, 2, 1, 2, 1, 2};
+  const std::vector<real_t> expected_value{1, -1, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->field == expected_field);
+  CHECK(rctr->index == expected_index);
+  CHECK(rctr->value == expected_value);  // perform element-wise comparsion
+}
+
+TEST(LibFMParser, test_indexing_mode_1_based) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{{"indexing_mode", "1"}};
+  std::unique_ptr<LibFMParserTest<unsigned>> parser(
+      new LibFMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data
+    = "1 1:1:1 1:2:-1\n0 1:1:-1 2:2:1\n1 2:1:-1 1:2:-1\n0 2:1:1 2:2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 2U);
+
+  const std::vector<unsigned> expected_field{0, 0, 0, 1, 1, 0, 1, 1};
+  const std::vector<unsigned> expected_index{0, 1, 0, 1, 0, 1, 0, 1};
+    // with indexing_mode=1, parser will subtract 1 from field/feature indices
+  const std::vector<real_t> expected_value{1, -1, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->field == expected_field);
+  CHECK(rctr->index == expected_index);
+  CHECK(rctr->value == expected_value);  // perform element-wise comparsion
+}
+
+TEST(LibFMParser, test_indexing_mode_auto_detect) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
+  std::unique_ptr<LibFMParserTest<unsigned>> parser(
+      new LibFMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data
+    = "1 1:1:1 1:2:-1\n0 1:1:-1 2:2:1\n1 2:1:-1 1:2:-1\n0 2:1:1 2:2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 2U);
+
+  const std::vector<unsigned> expected_field{0, 0, 0, 1, 1, 0, 1, 1};
+  const std::vector<unsigned> expected_index{0, 1, 0, 1, 0, 1, 0, 1};
+    // expect to detect 1-based indexing, since all field/feature id's exceed 0
+  const std::vector<real_t> expected_value{1, -1, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->field == expected_field);
+  CHECK(rctr->index == expected_index);
+  CHECK(rctr->value == expected_value);  // perform element-wise comparsion
+}
+
+TEST(LibFMParser, test_indexing_mode_auto_detect_2) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
+  std::unique_ptr<LibFMParserTest<unsigned>> parser(
+      new LibFMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data
+    = "1 1:1:1 1:2:-1\n0 0:0:-2 1:1:-1 2:2:1\n1 2:1:-1 1:2:-1\n0 2:1:1 2:2:1\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 4U);
+  CHECK_EQ(num_col, 3U);
+
+  const std::vector<unsigned> expected_field{1, 1, 0, 1, 2, 2, 1, 2, 2};
+  const std::vector<unsigned> expected_index{1, 2, 0, 1, 2, 1, 2, 1, 2};
+    // expect to detect 0-based indexing, since second row has feature id 0
+  const std::vector<real_t> expected_value{1, -1, -2, -1, 1, -1, -1, 1, 1};
+  CHECK(rctr->field == expected_field);
+  CHECK(rctr->index == expected_index);
+  CHECK(rctr->value == expected_value);  // perform element-wise comparsion
 }
