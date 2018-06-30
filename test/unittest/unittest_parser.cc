@@ -1,4 +1,5 @@
 #include "../src/data/csv_parser.h"
+#include "../src/data/libsvm_parser.h"
 #include <cstdio>
 #include <cstdlib>
 #include <dmlc/io.h>
@@ -18,6 +19,17 @@ public:
   void CallParseBlock(char *begin, char *end,
                       RowBlockContainer<IndexType, DType> *out) {
     CSVParser<IndexType, DType>::ParseBlock(begin, end, out);
+  }
+};
+
+template <typename IndexType, typename DType = real_t>
+class LibSVMParserTest : public LibSVMParser<IndexType, DType> {
+public:
+  explicit LibSVMParserTest(InputSplit *source, int nthread)
+      : LibSVMParser<IndexType, DType>(source, nthread) {}
+  void CallParseBlock(char *begin, char *end,
+                      RowBlockContainer<IndexType, DType> *out) {
+    LibSVMParser<IndexType, DType>::ParseBlock(begin, end, out);
   }
 };
 
@@ -121,4 +133,50 @@ TEST(CSVParser, test_noeol) {
   for (size_t i = 0; i < rctr->value.size(); i++) {
     CHECK(i == rctr->value[i]);
   }
+}
+
+TEST(LibSVMParser, test_qid) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  std::unique_ptr<LibSVMParserTest<unsigned>> parser(
+      new LibSVMParserTest<unsigned>(source, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data = R"qid(3 qid:1 1:1 2:1 3:0 4:0.2 5:0
+                           2 qid:1 1:0 2:0 3:1 4:0.1 5:1
+                           1 qid:1 1:0 2:1 3:0 4:0.4 5:0
+                           1 qid:1 1:0 2:0 3:1 4:0.3 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0
+                           2 qid:2 1:1 2:0 3:1 4:0.4 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.1 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0
+                           2 qid:3 1:0 2:0 3:1 4:0.1 5:1
+                           3 qid:3 1:1 2:1 3:0 4:0.3 5:0
+                           4 qid:3 1:1 2:0 3:0 4:0.4 5:1
+                           1 qid:3 1:0 2:1 3:1 4:0.5 5:0)qid";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+  const std::vector<size_t> expected_offset{
+    0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60
+  };
+  const std::vector<real_t> expected_label{
+    3, 2, 1, 1, 1, 2, 1, 1, 2, 3, 4, 1
+  };
+  const std::vector<uint64_t> expected_qid{
+    1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3
+  };
+  const std::vector<unsigned> expected_index{
+    1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5,
+    1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5,
+    1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5
+  };
+  const std::vector<real_t> expected_value{
+    1, 1, 0, 0.2, 0, 0, 0, 1, 0.1, 1, 0, 1, 0, 0.4, 0, 0, 0, 1, 0.3, 0,
+    0, 0, 1, 0.2, 0, 1, 0, 1, 0.4, 0, 0, 0, 1, 0.1, 0, 0, 0, 1, 0.2, 0,
+    0, 0, 1, 0.1, 1, 1, 1, 0, 0.3, 0, 1, 0, 0, 0.4, 1, 0, 1, 1, 0.5, 0
+  };
+  CHECK(rctr->offset == expected_offset);
+  CHECK(rctr->label == expected_label);
+  CHECK(rctr->qid == expected_qid);
+  CHECK(rctr->index == expected_index);
+  CHECK(rctr->value == expected_value);
 }
