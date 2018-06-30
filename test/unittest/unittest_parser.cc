@@ -183,6 +183,45 @@ TEST(CSVParser, test_delimiter) {
   }
 }
 
+TEST(CSVParser, test_weight_column) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{ {"weight_column", "2"} };
+  std::unique_ptr<CSVParserTest<unsigned>> parser(
+      new CSVParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned> *rctr = new RowBlockContainer<unsigned>();
+  std::string data = "0,1,2,3\n4,5,6,7\n8,9,10,11";
+  char *out_data = const_cast<char *>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+  CHECK_EQ(rctr->weight.size(), 3U);
+  for (size_t i = 0; i < rctr->weight.size(); i++) {
+    CHECK_EQ(rctr->weight[i], 2.0f + 4.0f * i);
+  }
+  const std::vector<real_t>
+    expected_values{0.0f, 1.0f, 3.0f, 4.0f, 5.0f, 7.0f, 8.0f, 9.0f, 11.0f};
+  CHECK_EQ(rctr->value.size(), expected_values.size());
+  for (size_t i = 0; i < rctr->value.size(); i++) {
+    CHECK_EQ(rctr->value[i], expected_values[i]);
+  }
+}
+
+TEST(CSVParser, test_weight_column_2) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args;
+  std::unique_ptr<CSVParserTest<unsigned>> parser(
+      new CSVParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned> *rctr = new RowBlockContainer<unsigned>();
+  std::string data = "0,1,2,3\n4,5,6,7\n8,9,10,11";
+  char *out_data = const_cast<char *>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+  CHECK(rctr->weight.empty());
+  CHECK_EQ(rctr->value.size(), 12U);
+  for (size_t i = 0; i < rctr->value.size(); i++) {
+    CHECK(i == rctr->value[i]);
+  }
+}
+
 TEST(LibSVMParser, test_qid) {
   using namespace parser_test;
   InputSplit *source = nullptr;
