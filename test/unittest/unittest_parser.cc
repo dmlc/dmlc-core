@@ -278,7 +278,7 @@ TEST(LibSVMParser, test_indexing_mode_1_based) {
 TEST(LibSVMParser, test_indexing_mode_auto_detect) {
   using namespace parser_test;
   InputSplit *source = nullptr;
-  const std::map<std::string, std::string> args{{"indexing_mode", "0"}};
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
   std::unique_ptr<LibSVMParserTest<unsigned>> parser(
       new LibSVMParserTest<unsigned>(source, args, 1));
   RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
@@ -301,7 +301,7 @@ TEST(LibSVMParser, test_indexing_mode_auto_detect) {
 TEST(LibSVMParser, test_indexing_mode_auto_detect_2) {
   using namespace parser_test;
   InputSplit *source = nullptr;
-  const std::map<std::string, std::string> args{{"indexing_mode", "0"}};
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
   std::unique_ptr<LibSVMParserTest<unsigned>> parser(
       new LibSVMParserTest<unsigned>(source, args, 1));
   RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
@@ -375,7 +375,7 @@ TEST(LibFMParser, test_indexing_mode_1_based) {
 TEST(LibFMParser, test_indexing_mode_auto_detect) {
   using namespace parser_test;
   InputSplit *source = nullptr;
-  const std::map<std::string, std::string> args{{"indexing_mode", "0"}};
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
   std::unique_ptr<LibFMParserTest<unsigned>> parser(
       new LibFMParserTest<unsigned>(source, args, 1));
   RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
@@ -401,7 +401,7 @@ TEST(LibFMParser, test_indexing_mode_auto_detect) {
 TEST(LibFMParser, test_indexing_mode_auto_detect_2) {
   using namespace parser_test;
   InputSplit *source = nullptr;
-  const std::map<std::string, std::string> args{{"indexing_mode", "0"}};
+  const std::map<std::string, std::string> args{{"indexing_mode", "-1"}};
   std::unique_ptr<LibFMParserTest<unsigned>> parser(
       new LibFMParserTest<unsigned>(source, args, 1));
   RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();

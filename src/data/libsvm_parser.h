@@ -28,11 +28,11 @@ struct LibSVMParserParam : public Parameter<LibSVMParserParam> {
   DMLC_DECLARE_PARAMETER(LibSVMParserParam) {
     DMLC_DECLARE_FIELD(format).set_default("libsvm")
         .describe("File format");
-    DMLC_DECLARE_FIELD(indexing_mode).set_default(-1)
+    DMLC_DECLARE_FIELD(indexing_mode).set_default(0)
         .describe(
           "If >0, treat all feature indices as 1-based. "
-          "If <0, treat all feature indices as 0-based. "
-          "If =0, use heuristic to automatically detect mode of indexing. "
+          "If =0, treat all feature indices as 0-based. "
+          "If <0, use heuristic to automatically detect mode of indexing. "
           "See https://en.wikipedia.org/wiki/Array_data_type#Index_origin "
           "for more details on indexing modes.");
   }
@@ -135,7 +135,7 @@ ParseBlock(const char *begin,
   // heuristic adopted from sklearn.datasets.load_svmlight_file
   // If all feature id's exceed 0, then detect 1-based indexing
   if (param_.indexing_mode > 0
-      || (param_.indexing_mode == 0 && !out->index.empty() && min_feat_id > 0)) {
+      || (param_.indexing_mode < 0 && !out->index.empty() && min_feat_id > 0)) {
     // convert from 1-based to 0-based indexing
     for (IndexType& e : out->index) {
       --e;
