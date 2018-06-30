@@ -135,6 +135,21 @@ TEST(CSVParser, test_noeol) {
   }
 }
 
+TEST(CSVParser, test_delimiter) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args{ {"delimiter", " "} };
+  std::unique_ptr<CSVParserTest<unsigned>> parser(
+      new CSVParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned> *rctr = new RowBlockContainer<unsigned>();
+  std::string data = "0 1 2 3\n4 5 6 7\n8 9 10 11";
+  char *out_data = const_cast<char *>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+  for (size_t i = 0; i < rctr->value.size(); i++) {
+    CHECK(i == rctr->value[i]);
+  }
+}
+
 TEST(LibSVMParser, test_qid) {
   using namespace parser_test;
   InputSplit *source = nullptr;
