@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.2)
 
 project(dmlc C CXX)
 
@@ -41,10 +41,7 @@ if(USE_S3)
  find_package(OpenSSL REQUIRED)
  include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
  list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_LIBRARY} ${OPENSSL_LIBRARIES})
-
- find_package(Crypto REQUIRED)
- include_directories(SYSTEM ${CRYPTO_INCLUDE_DIR})
- list(APPEND dmlccore_LINKER_LIBS ${CRYPTO_LIBRARY})
+ list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_CRYPTO_LIBRARY})
 
  add_definitions(-DDMLC_USE_S3=1)
 else()
