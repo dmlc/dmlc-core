@@ -6,6 +6,7 @@ One need to make sure all slaves machines are ssh-able.
 """
 from __future__ import absolute_import
 
+from multiprocessing import Pool, Process
 import os, subprocess, logging
 from threading import Thread
 from . import tracker
@@ -65,8 +66,12 @@ def submit(args):
         working_dir = local_dir
         if args.sync_dst_dir is not None and args.sync_dst_dir != 'None':
             working_dir = args.sync_dst_dir
+            pool = Pool(processes=len(hosts))
             for h in hosts:
-                sync_dir(local_dir, h, working_dir)
+                pool.apply_async(sync_dir, args=(local_dir, h, working_dir))
+            pool.close()
+            pool.join()
+            
 
         # launch jobs
         for i in range(nworker + nserver):
