@@ -31,14 +31,25 @@ addons:
       - gcc-4.8
       - g++-4.8
       - python3-pip
+      - python-pip
 
 before_install:
   - export TRAVIS=scripts/travis
   - source ${TRAVIS}/travis_setup_env.sh
   - ${TRAVIS}/travis_osx_install.sh
 
+python:
+  - "3.5"
+  - "3.4"
+  - "3.3"
+  - "3.2"
+  - "2.7"
+  - "2.6"
+  - "pypy"
+  - "pypy3"
+
 install:
-  - pip3 install --user cpplint pylint
+  - pip install --user cpplint pylint
 
 script: ${TRAVIS}/travis_script.sh
 
