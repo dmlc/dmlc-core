@@ -1,5 +1,5 @@
-Distributed Machine Learning Common Codebase
-============================================
+Distributed (Deep) Machine Learning Common Codebase
+===================================================
 
 [![Build Status](https://travis-ci.org/dmlc/dmlc-core.svg?branch=master)](https://travis-ci.org/dmlc/dmlc-core)
 [![Documentation Status](https://readthedocs.org/projects/dmlc-core/badge/?version=latest)](http://dmlc-core.readthedocs.org/en/latest/)
