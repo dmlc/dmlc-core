@@ -1,21 +1,17 @@
-# disable sudo to use container based build
-sudo: false
-
-# Enabling test on Linux and OS X
-os:
-  - linux
-  - osx
-
-# Use Build Matrix to do lint and build seperately
-env:
-  matrix:
-    - TASK=lint
-    - TASK=unittest_gtest
+group: travis_latest
+language: python
 
 matrix:
-  exclude:
-    - os: osx
-      env: TASK=lint
+  include:
+  - env: TASK=lint
+    os: linux
+    python: '3.6'
+  - env: TASK=unittest_gtest
+    os: linux
+    python: '3.6'
+  - env: TASK=unittest_gtest
+    language: ruby
+    os: osx
 
 # dependent apt packages
 addons:
@@ -30,7 +26,6 @@ addons:
       - unzip
       - gcc-4.8
       - g++-4.8
-      - python3-pip
 
 before_install:
   - export TRAVIS=scripts/travis
@@ -38,10 +33,17 @@ before_install:
   - ${TRAVIS}/travis_osx_install.sh
 
 install:
-  - pip3 install --user cpplint pylint
+  - if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then brew install python; fi
+  - python3 --version ; python3 -m pip --version
+  - python3 -m pip install cpplint pylint flake8
+
+before_script:
+  # stop the build if there are Python syntax errors or undefined names
+  - flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+  # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+  - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
 script: ${TRAVIS}/travis_script.sh
-
 
 before_cache:
   - ${TRAVIS}/travis_before_cache.sh
@@ -49,7 +51,6 @@ before_cache:
 cache:
   directories:
     - ${HOME}/.cache/usr
-
 
 notifications:
 # Emails are sent to the committer's git-configured email address by default,
