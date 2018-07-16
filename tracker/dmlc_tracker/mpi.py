@@ -14,6 +14,7 @@ def get_mpi_env(envs):
     support both openmpi and mpich2
     """
 
+    cmd = ''
     # windows hack: we will use msmpi
     if sys.platform == 'win32':
         for k, v in envs.items():
@@ -21,10 +22,9 @@ def get_mpi_env(envs):
         return cmd
 
     # decide MPI version.
-    (out, err) = subprocess.Popen(['mpirun','--version'],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE).communicate()
-    cmd = ''
+    (out, err) = subprocess.Popen(['mpirun', '--version'],
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE).communicate()
     if b'Open MPI' in out:
         for k, v in envs.items():
             cmd += ' -x %s=%s' % (k, str(v))
