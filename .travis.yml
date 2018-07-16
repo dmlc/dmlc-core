@@ -35,7 +35,7 @@ before_install:
 install:
   - if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then brew install python; fi
   - python3 --version ; python3 -m pip --version
-  - python3 -m pip install cpplint pylint
+  - python3 -m pip install cpplint pylint flake8
 
 before_script:
   # stop the build if there are Python syntax errors or undefined names
