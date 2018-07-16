@@ -39,7 +39,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
             if os.name == 'nt':
                 sys.exit(-1)
             else:
-                raise RuntimeError('Get nonzero return code=%d' % ret)
+                raise RuntimeError('Get nonzero return code=%d on %s %s' % (ret, cmd, env))
 
 
 def submit(args):
