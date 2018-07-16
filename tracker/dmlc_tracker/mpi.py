@@ -15,6 +15,7 @@ def get_mpi_env(envs):
     """
 
     # windows hack: we will use msmpi
+    cmd = ''
     if sys.platform == 'win32':
         for k, v in envs.items():
             cmd += ' -env %s %s' % (k, str(v))
