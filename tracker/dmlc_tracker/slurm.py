@@ -30,7 +30,7 @@ def submit(args):
         pass_envs['DMLC_JOB_CLUSTER'] = 'slurm'
 
         if args.slurm_worker_nodes is None:
-	  nworker_nodes = nworker
+          nworker_nodes = nworker
         else:
           nworker_nodes=args.slurm_worker_nodes
  
@@ -46,7 +46,7 @@ def submit(args):
 
 
         if args.slurm_server_nodes is None:
-	  nserver_nodes = nserver
+          nserver_nodes = nserver
         else:
           nserver_nodes=args.slurm_server_nodes
 
