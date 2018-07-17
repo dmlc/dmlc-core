@@ -52,10 +52,7 @@
 #endif
 #endif
 
-/*! \brief whether compile with hdfs support */
-#ifndef DMLC_USE_HDFS
-#define DMLC_USE_HDFS 0
-#endif
+#include <dmlc/build_config.h>
 
 /*! \brief whether compile with s3 support */
 #ifndef DMLC_USE_S3

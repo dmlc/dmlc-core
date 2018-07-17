@@ -1,6 +1,13 @@
 #cmakedefine FOPEN_64_PRESENT
+#cmakedefine01 DMLC_USE_HDFS
+#cmakedefine01 DMLC_USE_CXX11
+#cmakedefine01 DMLC_USE_CXX14
+
+#cmakedefine01 DMLC_USE_AZURE
+#cmakedefine01 DMLC_USE_S3
 
 #if !defined(FOPEN_64_PRESENT) && DMLC_USE_FOPEN64
   #warning "Redefining fopen64 with std::fopen"
   #define fopen64 std::fopen
 #endif
+

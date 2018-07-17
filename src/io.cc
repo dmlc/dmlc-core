@@ -1,5 +1,4 @@
 // Copyright by Contributors
-
 #include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
