@@ -6,8 +6,10 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
   include(${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
+set(CMAKE_LOCAL "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_LOCAL}/Modules)
 
+include(CheckCXXSymbolExists)
 include(cmake/Utils.cmake)
 #include(cmake/dmlccore.cmake)
 
@@ -19,7 +21,9 @@ dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler supports it" OFF)
 
 # include path
-include_directories("include")
+set(INCLUDE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(INCLUDE_DMLC_DIR "${INCLUDE_ROOT}/dmlc")
+include_directories("${INCLUDE_ROOT}")
 
 set(dmlccore_LINKER_LIBS "")
 # HDFS configurations
@@ -56,6 +60,10 @@ endif()
 
 # Older stdc++ enable c++11 items
 add_definitions(-D__USE_XOPEN2K8)
+
+check_symbol_exists(fopen64 stdio.h FOPEN_64_PRESENT)
+message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> ${INCLUDE_DMLC_DIR}/build_config.h")
+configure_file("${CMAKE_LOCAL}/build_config.h.in" "${INCLUDE_DMLC_DIR}/build_config.h")
 
 # compile
 if(MSVC)

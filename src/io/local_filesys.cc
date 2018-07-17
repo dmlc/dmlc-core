@@ -17,9 +17,7 @@ extern "C" {
 
 #include "./local_filesys.h"
 
-#if defined(__FreeBSD__) && DMLC_USE_FOPEN64
-#define fopen64 std::fopen
-#endif
+#include <dmlc/build_config.h>
 
 
 namespace dmlc {

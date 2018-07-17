@@ -172,16 +172,8 @@
 #  endif
 #endif
 
-#if DMLC_USE_FOPEN64 && \
-  (!defined(__GNUC__) || (defined __ANDROID__) || ((defined __MINGW32__) && !(defined __MINGW64__)))
-#define fopen64 std::fopen
-#endif
-
 #ifdef __APPLE__
 #  define off64_t off_t
-#  if DMLC_USE_FOPEN64
-#    define fopen64 std::fopen
-#  endif
 #endif
 
 #ifdef _MSC_VER
@@ -197,6 +189,8 @@
 #pragma message("Warning: FILE OFFSET BITS defined to be 32 bit")
 #endif
 #endif
+
+#include <dmlc/build_config.h>
 
 
 extern "C" {

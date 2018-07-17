@@ -14,9 +14,7 @@
 #include <string>
 #include <algorithm>
 
-#if defined(__FreeBSD__) && DMLC_USE_FOPEN64
-#define fopen64 std::fopen
-#endif
+#include <dmlc/build_config.h>
 
 namespace dmlc {
 namespace io {
