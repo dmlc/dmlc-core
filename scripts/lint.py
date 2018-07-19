@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # pylint: disable=protected-access, unused-variable, locally-disabled, len-as-condition
 """Lint helper to generate lint summary of source.
 
