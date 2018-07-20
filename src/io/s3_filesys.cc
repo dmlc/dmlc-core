@@ -469,9 +469,9 @@ class CURLReadStreamBase : public SeekStream {
    */
   void Init(size_t begin_bytes);
   /*!
-  * \brief make request to server
-  * \param begin_bytes the beginning bytes of the stream
-  */
+   * \brief make request to server
+   * \param begin_bytes the beginning bytes of the stream
+   */
   void MakeRequest(size_t begin_bytes);
   /*!
    * \brief cleanup the previous session for restart
@@ -586,26 +586,26 @@ void CURLReadStreamBase::MakeRequest(size_t begin_bytes) {
 
 void CURLReadStreamBase::Init(size_t begin_bytes) {
   CHECK(mcurl_ == NULL && ecurl_ == NULL &&
-  	slist_ == NULL) << "must call init in clean state";
+    slist_ == NULL) << "must call init in clean state";
   this->MakeRequest(begin_bytes);
   // start running and check header
   int nretry = 0;
   while (nretry < 50) {
-	nretry++;
-	this->FillBuffer(1);
-	if (!FindHttpError(header_)) break;
-	while (this->FillBuffer(buffer_.length() + 256) != 0) {}
-	if (header_.length() > 10)
-		LOG(ERROR) << "Request Error:\n" << header_ << buffer_;
-	LOG(WARNING) << "Try again..." << nretry;
-	this->Cleanup();
-	this->MakeRequest(begin_bytes);
-	// sleep 60000ms
+    nretry++;
+    this->FillBuffer(1);
+    if (!FindHttpError(header_)) break;
+    while (this->FillBuffer(buffer_.length() + 256) != 0) {}
+    if (header_.length() > 10)
+      LOG(ERROR) << "Request Error:\n" << header_ << buffer_;
+    LOG(WARNING) << "Try again..." << nretry;
+    this->Cleanup();
+    this->MakeRequest(begin_bytes);
+    // sleep 60000ms
 #ifdef _WIN32
-	Sleep(60000);
+    Sleep(60000);
 #else
-	struct timeval wait = { 0, 60000 * 1000 };
-	select(0, NULL, NULL, NULL, &wait);
+    struct timeval wait = { 0, 60000 * 1000 };
+    select(0, NULL, NULL, NULL, &wait);
 #endif
   }
   // setup the variables
