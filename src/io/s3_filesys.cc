@@ -569,50 +569,51 @@ void CURLReadStreamBase::Cleanup() {
 }
 
 void CURLReadStreamBase::MakeRequest(size_t begin_bytes) {
-	// make request
-	ecurl_ = curl_easy_init();
-	this->InitRequest(begin_bytes, ecurl_, &slist_);
-	CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteStringCallback) == CURLE_OK);
-	CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &buffer_) == CURLE_OK);
-	CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERFUNCTION, WriteStringCallback) == CURLE_OK);
-	CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &header_) == CURLE_OK);
-	CHECK(curl_easy_setopt(ecurl_, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
-	mcurl_ = curl_multi_init();
-	CHECK(curl_multi_add_handle(mcurl_, ecurl_) == CURLM_OK);
-	int nrun;
-	curl_multi_perform(mcurl_, &nrun);
-	CHECK(nrun != 0 || header_.length() != 0 || buffer_.length() != 0);
+  // make request
+  ecurl_ = curl_easy_init();
+  this->InitRequest(begin_bytes, ecurl_, &slist_);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEFUNCTION, WriteStringCallback) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_WRITEDATA, &buffer_) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERFUNCTION, WriteStringCallback) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_HEADERDATA, &header_) == CURLE_OK);
+  CHECK(curl_easy_setopt(ecurl_, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
+  mcurl_ = curl_multi_init();
+  CHECK(curl_multi_add_handle(mcurl_, ecurl_) == CURLM_OK);
+  int nrun;
+  curl_multi_perform(mcurl_, &nrun);
+  CHECK(nrun != 0 || header_.length() != 0 || buffer_.length() != 0);
 }
 
 void CURLReadStreamBase::Init(size_t begin_bytes) {
-	CHECK(mcurl_ == NULL && ecurl_ == NULL &&
-		slist_ == NULL) << "must call init in clean state";
+  CHECK(mcurl_ == NULL && ecurl_ == NULL &&
+  	slist_ == NULL) << "must call init in clean state";
+  this->MakeRequest(begin_bytes);
+  // start running and check header
+  int nretry = 0;
+  while (nretry < 50) {
+	nretry++;
+	this->FillBuffer(1);
+	if (!FindHttpError(header_)) break;
+	while (this->FillBuffer(buffer_.length() + 256) != 0) {}
+	if (header_.length() > 10)
+		LOG(ERROR) << "Request Error:\n" << header_ << buffer_;
+	LOG(WARNING) << "Try again..." << nretry;
+	this->Cleanup();
 	this->MakeRequest(begin_bytes);
-	// start running and check header
-	int nretry = 0;
-	while (nretry < 50) {
-		nretry++;
-		this->FillBuffer(1);
-		if (!FindHttpError(header_)) break;
-		while (this->FillBuffer(buffer_.length() + 256) != 0) {}
-		if (header_.length() > 10)
-			LOG(ERROR) << "Request Error:\n" << header_ << buffer_;
-		LOG(WARNING) << "Try again..." << nretry;
-		this->Cleanup();
-		this->MakeRequest(begin_bytes);
-		// sleep 60000ms
+	// sleep 60000ms
 #ifdef _WIN32
-		Sleep(60000);
+	Sleep(60000);
 #else
-		struct timeval wait = { 0, 60000 * 1000 };
-		select(0, NULL, NULL, NULL, &wait);
+	struct timeval wait = { 0, 60000 * 1000 };
+	select(0, NULL, NULL, NULL, &wait);
 #endif
-	}
-	// setup the variables
-	at_end_ = false;
-	curr_bytes_ = begin_bytes;
-	read_ptr_ = 0;
+  }
+  // setup the variables
+  at_end_ = false;
+  curr_bytes_ = begin_bytes;
+  read_ptr_ = 0;
 }
+
 // fill the buffer with wanted bytes
 int CURLReadStreamBase::FillBuffer(size_t nwant) {
   int nrun = 0;
