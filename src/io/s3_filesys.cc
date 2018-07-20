@@ -469,6 +469,11 @@ class CURLReadStreamBase : public SeekStream {
    */
   void Init(size_t begin_bytes);
   /*!
+   * \brief make request to server
+   * \param begin_bytes the beginning bytes of the stream
+   */
+  void MakeRequest(size_t begin_bytes);
+  /*!
    * \brief cleanup the previous session for restart
    */
   void Cleanup(void);
@@ -563,9 +568,7 @@ void CURLReadStreamBase::Cleanup() {
   curr_bytes_ = 0; at_end_ = false;
 }
 
-void CURLReadStreamBase::Init(size_t begin_bytes) {
-  CHECK(mcurl_ == NULL && ecurl_ == NULL &&
-        slist_ == NULL) << "must call init in clean state";
+void CURLReadStreamBase::MakeRequest(size_t begin_bytes) {
   // make request
   ecurl_ = curl_easy_init();
   this->InitRequest(begin_bytes, ecurl_, &slist_);
@@ -579,11 +582,31 @@ void CURLReadStreamBase::Init(size_t begin_bytes) {
   int nrun;
   curl_multi_perform(mcurl_, &nrun);
   CHECK(nrun != 0 || header_.length() != 0 || buffer_.length() != 0);
+}
+
+void CURLReadStreamBase::Init(size_t begin_bytes) {
+  CHECK(mcurl_ == NULL && ecurl_ == NULL &&
+    slist_ == NULL) << "must call init in clean state";
+  this->MakeRequest(begin_bytes);
   // start running and check header
-  this->FillBuffer(1);
-  if (FindHttpError(header_)) {
+  int nretry = 0;
+  while (nretry < 50) {
+    nretry++;
+    this->FillBuffer(1);
+    if (!FindHttpError(header_)) break;
     while (this->FillBuffer(buffer_.length() + 256) != 0) {}
-    LOG(FATAL) << "Request Error:\n" << header_ << buffer_;
+    if (header_.length() > 10)
+      LOG(ERROR) << "Request Error:\n" << header_ << buffer_;
+    LOG(WARNING) << "Try again..." << nretry;
+    this->Cleanup();
+    this->MakeRequest(begin_bytes);
+    // sleep 60000ms
+#ifdef _WIN32
+    Sleep(60000);
+#else
+    struct timeval wait = { 0, 60000 * 1000 };
+    select(0, NULL, NULL, NULL, &wait);
+#endif
   }
   // setup the variables
   at_end_ = false;
@@ -699,14 +722,14 @@ void ReadStream::InitRequest(size_t begin_bytes,
   std::string payload;
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
-  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
+  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, true);
   std::ostringstream sauth, sdate, stoken, surl, scontent, srange;
   std::ostringstream result;
   std::string canonical_querystring;
   std::string canonical_uri;
   CHECK_EQ(path_.name.front(), '/');
   CHECK_NE(path_.host.front(), '/');
-  if (path_.host.find('.', 0) == std::string::npos) {
+  if (path_.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
     // use virtual host style if no period in host
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
@@ -732,6 +755,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   if (s3_session_token_ != "") {
     *slist = curl_slist_append(*slist, stoken.str().c_str());
   }
+  CHECK(curl_easy_setopt(ecurl, CURLOPT_TIMEOUT, 180) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPHEADER, *slist) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
   CHECK(curl_easy_setopt(ecurl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
@@ -883,7 +907,7 @@ void WriteStream::Run(const std::string &method,
   std::string canonical_uri;
   std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream rheader, rdata;
-  if (path_.host.find('.', 0) == std::string::npos) {
+  if (path_.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
     surl << "https://" << path_.host << ".s3.amazonaws.com"
@@ -1028,7 +1052,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     std::string canonical_uri;
     std::string canonical_querystring;
 
-    AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
+    AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, true);
     if (next_token == "") {
         canonical_querystring = "delimiter=%2F&prefix=" +
             URIEncode(std::string{RemoveBeginSlash(path.name)});
@@ -1037,7 +1061,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
             "&prefix=" + URIEncode(std::string{RemoveBeginSlash(path.name)});
     }
 
-    if (path.host.find('.', 0) == std::string::npos) {
+    if (path.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
       // use virtual host style if no period in host
       canonical_uri = "/";
       canonical_headers["host"] = path.host + ".s3.amazonaws.com";
