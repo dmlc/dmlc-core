@@ -699,7 +699,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   std::string payload;
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
-  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
+  AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, true);
   std::ostringstream sauth, sdate, stoken, surl, scontent, srange;
   std::ostringstream result;
   std::string canonical_querystring;
@@ -1028,7 +1028,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     std::string canonical_uri;
     std::string canonical_querystring;
 
-    AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, false);
+    AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, true);
     if (next_token == "") {
         canonical_querystring = "delimiter=%2F&prefix=" +
             URIEncode(std::string{RemoveBeginSlash(path.name)});
