@@ -69,7 +69,7 @@ def submit(args):
             logging.info('Start %d servers by mpirun' % nserver)
             pass_envs['DMLC_ROLE'] = 'server'
             if sys.platform == 'win32':
-                prog = 'mpiexec -n %d %s %s' % (nworker, get_mpi_env(pass_envs), cmd)
+                prog = 'mpiexec -n %d %s %s' % (nserver, get_mpi_env(pass_envs), cmd)
             else:
                 prog = 'mpirun -n %d %s %s' % (nserver, get_mpi_env(pass_envs), cmd)
             thread = Thread(target=run, args=(prog,))
