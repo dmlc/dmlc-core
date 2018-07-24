@@ -706,7 +706,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   std::string canonical_uri;
   CHECK_EQ(path_.name.front(), '/');
   CHECK_NE(path_.host.front(), '/');
-  if (path_.host.find('.', 0) == std::string::npos) {
+  if (path_.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
     // use virtual host style if no period in host
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
@@ -883,7 +883,7 @@ void WriteStream::Run(const std::string &method,
   std::string canonical_uri;
   std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream rheader, rdata;
-  if (path_.host.find('.', 0) == std::string::npos) {
+  if (path_.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + ".s3.amazonaws.com";
     surl << "https://" << path_.host << ".s3.amazonaws.com"
@@ -1037,7 +1037,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
             "&prefix=" + URIEncode(std::string{RemoveBeginSlash(path.name)});
     }
 
-    if (path.host.find('.', 0) == std::string::npos) {
+    if (path.host.find('.', 0) == std::string::npos && s3_region_ == "us-east-1") {
       // use virtual host style if no period in host
       canonical_uri = "/";
       canonical_headers["host"] = path.host + ".s3.amazonaws.com";
