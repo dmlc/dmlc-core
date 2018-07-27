@@ -36,11 +36,11 @@ def get_env(pass_envs):
     return (' '.join(envs))
 
 def submit(args):
-    assert args.host_file is not None
-    with open(args.host_file) as f:
+    assert args.host_file_server is not None
+    with open(args.host_file_server) as f:
         tmp = f.readlines()
     assert len(tmp) > 0
-    hosts=[]
+    server_hosts=[]
     for h in tmp:
         if len(h.strip()) > 0:
             # parse addresses of the form ip:port
@@ -51,7 +51,25 @@ def submit(args):
                 p = h[i+1:]
                 h = h[:i]
             # hosts now contain the pair ip, port
-            hosts.append((h, p))
+            server_hosts.append((h, p))
+
+    assert args.host_file is not None
+    with open(args.host_file) as f:
+        tmp = f.readlines()
+    assert len(tmp) > 0
+    worker_hosts=[]
+    for h in tmp:
+        if len(h.strip()) > 0:
+            # parse addresses of the form ip:port
+            h = h.strip()
+            i = h.find(":")
+            p = "22"
+            if i != -1:
+                p = h[i+1:]
+                h = h[:i]
+            # hosts now contain the pair ip, port
+            worker_hosts.append((h, p))
+
 
     def ssh_submit(nworker, nserver, pass_envs):
         """
@@ -71,12 +89,20 @@ def submit(args):
                 pool.apply_async(sync_dir, args=(local_dir, h, working_dir))
             pool.close()
             pool.join()
-            
 
         # launch jobs
-        for i in range(nworker + nserver):
-            pass_envs['DMLC_ROLE'] = 'server' if i < nserver else 'worker'
-            (node, port) = hosts[i % len(hosts)]
+        for i in range(nserver):
+            pass_envs['DMLC_ROLE'] = 'server'
+            (node, port) = server_hosts[i % len(server_hosts)]
+            pass_envs['DMLC_NODE_HOST'] = node
+            prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
+            prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
+            thread = Thread(target = run, args=(prog,))
+            thread.setDaemon(True)
+            thread.start()
+        for i in range(nworker):
+            pass_envs['DMLC_ROLE'] = 'worker'
+            (node, port) = worker_hosts[i % len(worker_hosts)]
             pass_envs['DMLC_NODE_HOST'] = node
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''

@@ -105,6 +105,8 @@ def get_opts(args=None):
                               ' only needed in YARN mode.'))
     parser.add_argument('--host-file', default=None, type=str,
                         help=('The file contains the list of hostnames, needed for MPI and ssh.'))
+    parser.add_argument('--host-file-server', default=None, type=str,
+                        help=('The file contains the list of hostnames for servers, needed for MPI and ssh.'))
     parser.add_argument('--sge-log-dir', default=None, type=str,
                         help=('Log directory of SGD jobs, only needed in SGE mode.'))
     parser.add_argument(
@@ -172,6 +174,9 @@ def get_opts(args=None):
         raise RuntimeError('--cluster is not specified, ' +
                            'you can also specify the default behavior via ' +
                            'environment variable DMLC_SUBMIT_CLUSTER')
+    
+    if args.host_file_server is None and args.host_file is not None:
+        args.host_file_server = args.host_file
 
     args.worker_memory_mb = get_memory_mb(args.worker_memory)
     args.server_memory_mb = get_memory_mb(args.server_memory)
