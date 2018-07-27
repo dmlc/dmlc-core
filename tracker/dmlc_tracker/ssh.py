@@ -6,6 +6,7 @@ One need to make sure all slaves machines are ssh-able.
 """
 from __future__ import absolute_import
 
+from multiprocessing import Pool, Process
 import os, subprocess, logging
 from threading import Thread
 from . import tracker
@@ -83,13 +84,17 @@ def submit(args):
         working_dir = local_dir
         if args.sync_dst_dir is not None and args.sync_dst_dir != 'None':
             working_dir = args.sync_dst_dir
-            for h in worker_hosts:
-                sync_dir(local_dir, h, working_dir)
+            pool = Pool(processes=len(hosts))
+            for h in hosts:
+                pool.apply_async(sync_dir, args=(local_dir, h, working_dir))
+            pool.close()
+            pool.join()
 
         # launch jobs
         for i in range(nserver):
             pass_envs['DMLC_ROLE'] = 'server'
             (node, port) = server_hosts[i % len(server_hosts)]
+            pass_envs['DMLC_NODE_HOST'] = node
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
             thread = Thread(target = run, args=(prog,))
@@ -98,6 +103,7 @@ def submit(args):
         for i in range(nworker):
             pass_envs['DMLC_ROLE'] = 'worker'
             (node, port) = worker_hosts[i % len(worker_hosts)]
+            pass_envs['DMLC_NODE_HOST'] = node
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
             thread = Thread(target = run, args=(prog,))

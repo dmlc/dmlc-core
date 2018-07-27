@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # pylint: disable=protected-access, unused-variable, locally-disabled, len-as-condition
 """Lint helper to generate lint summary of source.
 
@@ -29,6 +29,7 @@ def filepath_enumerate(paths):
                     out.append(os.path.normpath(os.path.join(root, name)))
     return out
 
+# pylint: disable=useless-object-inheritance
 class LintHelper(object):
     """Class to help runing the lint and records summary"""
 
@@ -177,9 +178,9 @@ def main():
         _HELPER.pylint_opts = ['--rcfile='+args.pylint_rc,]
     file_type = args.filetype
     allow_type = []
-    if file_type == 'python' or file_type == 'all':
+    if file_type in ('python', 'all'):
         allow_type += [x for x in PYTHON_SUFFIX]
-    if file_type == 'cpp' or file_type == 'all':
+    if file_type in ('cpp', 'all'):
         allow_type += [x for x in CXX_SUFFIX]
     allow_type = set(allow_type)
     if sys.version_info.major == 2 and os.name != 'nt':

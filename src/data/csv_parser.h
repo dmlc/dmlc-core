@@ -9,9 +9,11 @@
 
 #include <dmlc/data.h>
 #include <dmlc/parameter.h>
+#include <cmath>
 #include <cstring>
 #include <map>
 #include <string>
+#include <limits>
 #include "./row_block.h"
 #include "./text_parser.h"
 #include "./strtonum.h"
@@ -22,12 +24,18 @@ namespace data {
 struct CSVParserParam : public Parameter<CSVParserParam> {
   std::string format;
   int label_column;
+  std::string delimiter;
+  int weight_column;
   // declare parameters
   DMLC_DECLARE_PARAMETER(CSVParserParam) {
     DMLC_DECLARE_FIELD(format).set_default("csv")
         .describe("File format.");
     DMLC_DECLARE_FIELD(label_column).set_default(-1)
-        .describe("Column index that will put into label.");
+        .describe("Column index (0-based) that will put into label.");
+    DMLC_DECLARE_FIELD(delimiter).set_default(",")
+      .describe("Delimiter used in the csv file.");
+    DMLC_DECLARE_FIELD(weight_column).set_default(-1)
+        .describe("Column index that will put into instance weights.");
   }
 };
 
@@ -49,6 +57,9 @@ class CSVParser : public TextParserBase<IndexType, DType> {
       : TextParserBase<IndexType, DType>(source, nthread) {
     param_.Init(args);
     CHECK_EQ(param_.format, "csv");
+    CHECK(param_.label_column != param_.weight_column
+          || param_.label_column < 0)
+      << "Must have distinct columns for labels and instance weights";
   }
 
  protected:
@@ -80,6 +91,7 @@ ParseBlock(const char *begin,
     int column_index = 0;
     IndexType idx = 0;
     DType label = DType(0.0f);
+    real_t weight = std::numeric_limits<real_t>::quiet_NaN();
 
     while (p != lend) {
       char *endptr;
@@ -88,31 +100,46 @@ ParseBlock(const char *begin,
       if (std::is_same<DType, real_t>::value) {
         v = strtof(p, &endptr);
       // If DType is int32
-      } else if (std::is_same<DType, int>::value) {
-        v = static_cast<int>(strtol(p, &endptr, 0));
+      } else if (std::is_same<DType, int32_t>::value) {
+        v = static_cast<int32_t>(strtol(p, &endptr, 0));
+      // If DType is int64
+      } else if (std::is_same<DType, int64_t>::value) {
+        v = static_cast<int64_t>(strtol(p, &endptr, 0));
       // If DType is all other types
       } else {
-        LOG(FATAL) << "Only float32 and int32 are supported for the time being";
+        LOG(FATAL) << "Only float32, int32, and int64 are supported for the time being";
       }
       p = (endptr >= lend) ? lend : endptr;
 
       if (column_index == param_.label_column) {
         label = v;
+      } else if (std::is_same<DType, real_t>::value
+                 && column_index == param_.weight_column) {
+        weight = v;
       } else {
         out->value.push_back(v);
         out->index.push_back(idx++);
       }
       ++column_index;
-      while (*p != ',' && p != lend) ++p;
+      while (*p != param_.delimiter[0] && p != lend) ++p;
+      if (p == lend && idx == 0) {
+        LOG(FATAL) << "Delimiter \'" << param_.delimiter << "\' is not found in the line. "
+                   << "Expected \'" << param_.delimiter
+                   << "\' as the delimiter to separate fields.";
+      }
       if (p != lend) ++p;
     }
     // skip empty line
     while ((*lend == '\n' || *lend == '\r') && lend != end) ++lend;
     lbegin = lend;
     out->label.push_back(label);
+    if (!std::isnan(weight)) {
+      out->weight.push_back(weight);
+    }
     out->offset.push_back(out->index.size());
   }
   CHECK(out->label.size() + 1 == out->offset.size());
+  CHECK(out->weight.size() == 0 || out->weight.size() + 1 == out->offset.size());
 }
 }  // namespace data
 }  // namespace dmlc
