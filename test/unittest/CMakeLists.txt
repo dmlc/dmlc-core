@@ -23,11 +23,12 @@ if(GTEST_FOUND)
     find_package(Threads REQUIRED)
     file(GLOB_RECURSE UNIT_TEST_SOURCE "*.cc")
     include_directories(cpp/include)
+    include_directories(${GTEST_INCLUDE_DIRS})
     add_executable(${PROJECT_NAME}_unit_tests ${UNIT_TEST_SOURCE})
     set_property(TARGET ${PROJECT_NAME}_unit_tests
             PROPERTY RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
     target_link_libraries(${PROJECT_NAME}_unit_tests
-            ${GTEST_LIBRARY}
+            ${GTEST_LIBRARIES}
             dmlc
             Threads::Threads
             )

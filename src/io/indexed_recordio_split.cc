@@ -46,7 +46,8 @@ void IndexedRecordIOSplitter::ReadIndexFile(FileSystem *fs, const std::string& i
     << "IndexedRecordIOSplitter does not support multiple index files";
   for (size_t i = 0; i < expanded_list.size(); ++i) {
     const URI& path = expanded_list[i];
-    std::ifstream index_file(path.str());
+    std::unique_ptr<dmlc::Stream> file_stream(fs->Open(path, "r", true));
+    dmlc::istream index_file(file_stream.get());
     std::vector<size_t> temp;
     size_t index, offset;
     while (index_file >> index >> offset) {

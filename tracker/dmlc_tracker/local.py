@@ -22,9 +22,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env['DMLC_ROLE'] = role
     env['DMLC_JOB_CLUSTER'] = 'local'
 
-    num_retry = 0
-    if 'DMLC_NUM_ATTEMPT' in env:
-        num_retry = env['DMLC_NUM_ATTEMPT']
+    num_retry = env.get('DMLC_NUM_ATTEMPT', 0)
 
     while True:
         if os.name == 'nt':
@@ -41,7 +39,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
             if os.name == 'nt':
                 sys.exit(-1)
             else:
-                raise RuntimeError('Get nonzero return code=%d' % ret)
+                raise RuntimeError('Get nonzero return code=%d on %s %s' % (ret, cmd, env))
 
 
 def submit(args):
