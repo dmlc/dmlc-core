@@ -89,19 +89,14 @@ def submit(args):
         # launch jobs
         for i in range(nserver):
             pass_envs['DMLC_ROLE'] = 'server'
-            # pass rank to the process
-            pass_envs['DMLC_SERVER_LOCAL_RANK'] = int(i // len(server_hosts))
             (node, port) = server_hosts[i % len(server_hosts)]
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
             thread = Thread(target = run, args=(prog,))
             thread.setDaemon(True)
             thread.start()
-        del pass_envs['DMLC_SERVER_LOCAL_RANK']
         for i in range(nworker):
             pass_envs['DMLC_ROLE'] = 'worker'
-            # pass rank to the process
-            pass_envs['DMLC_WORKER_LOCAL_RANK'] = int(i // len(worker_hosts))
             (node, port) = worker_hosts[i % len(worker_hosts)]
             prog = get_env(pass_envs) + ' cd ' + working_dir + '; ' + (' '.join(args.command))
             prog = 'ssh -o StrictHostKeyChecking=no ' + node + ' -p ' + port + ' \'' + prog + '\''
