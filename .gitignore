@@ -46,3 +46,6 @@ build
 # CLion
 .idea
 cmake-build-*
+
+# VSCode
+.vscode
