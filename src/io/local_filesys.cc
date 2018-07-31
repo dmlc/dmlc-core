@@ -1,5 +1,6 @@
 // Copyright by Contributors
 
+#include <dmlc/build_config.h>
 #include <dmlc/logging.h>
 #include <errno.h>
 extern "C" {
@@ -16,8 +17,6 @@ extern "C" {
 #endif
 
 #include "./local_filesys.h"
-
-#include <dmlc/build_config.h>
 
 
 namespace dmlc {
