@@ -9,7 +9,7 @@ endif
 include $(config)
 include make/dmlc.mk
 
-NOLINT_FILES = --exclude_path include/dmlc/concurrentqueue.h include/dmlc/blockingconcurrentqueue.h
+NOLINT_FILES = --exclude_path include/dmlc/concurrentqueue.h include/dmlc/blockingconcurrentqueue.h include/dmlc/build_config.h
 
 # this is the common build script for dmlc lib
 export LDFLAGS= -pthread -lm
