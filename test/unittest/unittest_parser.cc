@@ -269,6 +269,29 @@ TEST(LibSVMParser, test_qid) {
   CHECK(rctr->value == expected_value);
 }
 
+TEST(LibSVMParser, test_excess_decimal_digits) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args;
+  std::unique_ptr<LibSVMParserTest<unsigned>> parser(
+      new LibSVMParserTest<unsigned>(source, args, 1));
+  RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
+  std::string data = "0 1:17.065995780200002000000 4:17.0659957802 "
+                     "6:0.00017065995780200002 8:0.000170659957802\n";
+  char* out_data = const_cast<char*>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr);
+
+  size_t num_row, num_col;
+  CountDimensions(rctr, &num_row, &num_col);
+  CHECK_EQ(num_row, 1U);
+  CHECK_EQ(num_col, 9U);
+
+  const std::vector<unsigned> expected_index{1, 4, 6, 8};
+  CHECK(rctr->index == expected_index);  // perform element-wise comparsion
+  CHECK_EQ(rctr->value[0], rctr->value[1]);
+  CHECK_EQ(rctr->value[2], rctr->value[3]);
+}
+
 TEST(LibSVMParser, test_indexing_mode_0_based) {
   using namespace parser_test;
   InputSplit *source = nullptr;
