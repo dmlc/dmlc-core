@@ -7,6 +7,7 @@
 #ifndef DMLC_IO_SINGLE_FILE_SPLIT_H_
 #define DMLC_IO_SINGLE_FILE_SPLIT_H_
 
+#include <dmlc/build_config.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <sys/stat.h>
@@ -14,7 +15,6 @@
 #include <string>
 #include <algorithm>
 
-#include <dmlc/build_config.h>
 
 namespace dmlc {
 namespace io {
