@@ -81,6 +81,7 @@ class S3FileSystem : public FileSystem {
   std::string s3_endpoint_;
   /*! \brief S3 verify ssl*/
   bool s3_verify_ssl_;
+  bool s3_isAWS_;
 
   /*!
    * \brief try to get information about a path
