@@ -675,7 +675,7 @@ class ReadStream : public CURLReadStreamBase {
              size_t file_size)
       : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
          s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl),
-         s3_isAWS_(s3_isAWS){
+         s3_isAWS_(s3_isAWS) {
     this->expect_file_size_ = file_size;
   }
   virtual ~ReadStream(void) {}
@@ -1031,7 +1031,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     std::ostringstream result;
     std::string canonical_uri;
     std::string canonical_querystring;
-    
+
     AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, true);
     if (next_token == "") {
         canonical_querystring = "delimiter=%2F&prefix=" +
@@ -1177,7 +1177,7 @@ S3FileSystem::S3FileSystem() {
 
   if (isAWS == NULL || (strcmp(isAWS, "1") == 0)) {
     s3_isAWS_ = true;
-  }else {
+  } else {
     s3_isAWS_ = false;
   }
 
