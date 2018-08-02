@@ -137,35 +137,35 @@ TEST(Optional, parsing_bool) {
     std::string one("1");
     std::istringstream is(one);
     is >> x;
-    CHECK_EQ(x.value(), 1);
+    CHECK_EQ(x.value(), true);
   }
 
   {
     std::string zero("0");
     std::istringstream is(zero);
     is >> x;
-    CHECK_EQ(x.value(), 0);
+    CHECK_EQ(x.value(), false);
   }
 
   {
     std::string one("true");
     std::istringstream is(one);
     is >> x;
-    CHECK_EQ(x.value(), 1);
+    CHECK_EQ(x.value(), true);
   }
 
   {
     std::string zero("false");
     std::istringstream is(zero);
     is >> x;
-    CHECK_EQ(x.value(), 0);
+    CHECK_EQ(x.value(), false);
   }
 
   {
     std::istringstream is("false true");
     is >> x >> y;
-    CHECK_EQ(x.value(), 0);
-    CHECK_EQ(y.value(), 1);
+    CHECK_EQ(x.value(), false);
+    CHECK_EQ(y.value(), true);
   }
 }
 
