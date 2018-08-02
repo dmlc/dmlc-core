@@ -1180,7 +1180,6 @@ S3FileSystem::S3FileSystem() {
   } else {
     s3_isAWS_ = false;
   }
-
   if (region == NULL) {
     LOG(WARNING) << "No AWS Region set, using default region us-east-1";
     s3_region_ = "us-east-1";
