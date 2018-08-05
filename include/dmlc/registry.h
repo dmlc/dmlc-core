@@ -99,7 +99,7 @@ class Registry {
   }
   /*!
    * \brief get a singleton of the Registry.
-   *  This function can be defined by DMLC_ENABLE_REGISTRY.
+   *  This function can be defined by DMLC_REGISTRY_ENABLE.
    * \return get a singleton
    */
   static Registry *Get();
