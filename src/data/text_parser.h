@@ -9,6 +9,7 @@
 
 #include <dmlc/data.h>
 #include <dmlc/omp.h>
+#include <dmlc/common.h>
 #include <thread>
 #include <mutex>
 #include <vector>
@@ -100,10 +101,8 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   size_t bytes_read_;
   // source split that provides the data
   InputSplit *source_;
-  // exception_ptr to hold exception thrown in OMP threads
-  std::exception_ptr parser_exception_;
-  // mutex for the exception_ptr
-  std::mutex mutex_exception_;
+  // OMPException object to catch and rethrow exceptions in omp blocks
+  dmlc::OMPException omp_exc_;
 };
 
 // implementation
@@ -120,34 +119,24 @@ inline bool TextParserBase<IndexType, DType>::FillData(
   const char *head = reinterpret_cast<char *>(chunk.dptr);
 #pragma omp parallel num_threads(nthread)
   {
-    try {
-      // threadid
-      int tid = omp_get_thread_num();
-      size_t nstep = (chunk.size + nthread - 1) / nthread;
-      size_t sbegin = std::min(tid * nstep, chunk.size);
-      size_t send = std::min((tid + 1) * nstep, chunk.size);
-      const char *pbegin = BackFindEndLine(head + sbegin,
-                                           head);
-      const char *pend;
-      if (tid + 1 == nthread) {
-        pend = head + send;
-      } else {
-        pend = BackFindEndLine(head + send,
-                               head);
-      }
-      ParseBlock(pbegin, pend, &(*data)[tid]);
-    } catch (dmlc::Error& ex) {
-      {
-        std::lock_guard<std::mutex> lock(mutex_exception_);
-        if (!parser_exception_) {
-          parser_exception_ = std::current_exception();
-        }
-      }
+  omp_exc_.Run([=] {
+    // threadid
+    int tid = omp_get_thread_num();
+    size_t nstep = (chunk.size + nthread - 1) / nthread;
+    size_t sbegin = std::min(tid * nstep, chunk.size);
+    size_t send = std::min((tid + 1) * nstep, chunk.size);
+    const char *pbegin = BackFindEndLine(head + sbegin, head);
+    const char *pend;
+    if (tid + 1 == nthread) {
+      pend = head + send;
+    } else {
+      pend = BackFindEndLine(head + send, head);
     }
+    ParseBlock(pbegin, pend, &(*data)[tid]);
+  });
   }
-  if (parser_exception_) {
-    std::rethrow_exception(parser_exception_);
-  }
+  omp_exc_.Rethrow();
+
   this->data_ptr_ = 0;
   return true;
 }

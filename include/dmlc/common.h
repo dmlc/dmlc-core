@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <mutex>
+#include "./logging.h"
 
 namespace dmlc {
 /*!
@@ -43,6 +45,27 @@ template<>
 inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
   return key ^ (value + 0x9e3779b9 + (key << 6) + (key >> 2));
 }
+
+class OMPException {
+private:
+  std::exception_ptr omp_exception_;
+  std::mutex mutex_;
+public:
+  template <typename Function, typename... Parameters>
+  void Run(Function f, Parameters... params) {
+    try {
+      f(params...);
+    } catch (dmlc::Error &ex) {
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (!omp_exception_) {
+        omp_exception_ = std::current_exception();
+      }
+    }
+  }
+  void Rethrow() {
+    if (this->omp_exception_) std::rethrow_exception(this->omp_exception_);
+  }
+};
 
 }  // namespace dmlc
 
