@@ -47,10 +47,10 @@ inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
 }
 
 class OMPException {
-private:
+ private:
   std::exception_ptr omp_exception_;
   std::mutex mutex_;
-public:
+ public:
   template <typename Function, typename... Parameters>
   void Run(Function f, Parameters... params) {
     try {
