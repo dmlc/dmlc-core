@@ -51,6 +51,9 @@ class OMPException {
   std::exception_ptr omp_exception_;
   std::mutex mutex_;
  public:
+  /*
+   * \brief Parallel OMP blocks should be placed within Run to save exception
+   */
   template <typename Function, typename... Parameters>
   void Run(Function f, Parameters... params) {
     try {
@@ -62,6 +65,10 @@ class OMPException {
       }
     }
   }
+
+  /*
+   * \brief should be called from the main thread to rethrow the exception
+   */
   void Rethrow() {
     if (this->omp_exception_) std::rethrow_exception(this->omp_exception_);
   }
