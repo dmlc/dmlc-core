@@ -50,6 +50,7 @@ class OMPException {
  private:
   std::exception_ptr omp_exception_;
   std::mutex mutex_;
+
  public:
   /*
    * \brief Parallel OMP blocks should be placed within Run to save exception
