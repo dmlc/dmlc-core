@@ -671,11 +671,11 @@ class ReadStream : public CURLReadStreamBase {
              const std::string &s3_region,
              const std::string &s3_endpoint,
              const bool s3_verify_ssl,
-             const bool s3_isAWS,
+             const bool s3_is_aws,
              size_t file_size)
       : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
          s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl),
-         s3_isAWS_(s3_isAWS) {
+         s3_is_aws_(s3_is_aws) {
     this->expect_file_size_ = file_size;
   }
   virtual ~ReadStream(void) {}
@@ -691,7 +691,7 @@ class ReadStream : public CURLReadStreamBase {
   URI path_;
   // s3 access key and id
   std::string s3_id_, s3_key_, s3_session_token_, s3_region_, s3_endpoint_;
-  bool s3_verify_ssl_, s3_isAWS_;
+  bool s3_verify_ssl_, s3_is_aws_;
 };
 
 // initialize the reader at begin bytes
@@ -708,7 +708,7 @@ void ReadStream::InitRequest(size_t begin_bytes,
   std::string canonical_uri;
   CHECK_EQ(path_.name.front(), '/');
   CHECK_NE(path_.host.front(), '/');
-  if (s3_isAWS_) {
+  if (s3_is_aws_ && path_.host.find('.', 0) == std::string::npos) {
     // use virtual host style if no period in host
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + "." + s3::getEndpoint(s3_region_);
@@ -774,10 +774,10 @@ class WriteStream : public Stream {
               const std::string &s3_region,
               const std::string &s3_endpoint,
               bool s3_verify_ssl,
-              bool s3_isAWS)
+              bool s3_is_aws)
       : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
          s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl),
-         s3_isAWS_(s3_isAWS), closed_(false) {
+         s3_is_aws_(s3_is_aws), closed_(false) {
     const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
     if (buz != NULL) {
       max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
@@ -819,7 +819,7 @@ class WriteStream : public Stream {
   URI path_;
   // s3 access key and id
   std::string s3_id_, s3_key_, s3_session_token_, s3_region_, s3_endpoint_;
-  bool s3_verify_ssl_, s3_isAWS_;
+  bool s3_verify_ssl_, s3_is_aws_;
   // easy curl handle used for the request
   CURL *ecurl_;
   // upload_id used by AWS
@@ -887,7 +887,7 @@ void WriteStream::Run(const std::string &method,
   std::string canonical_uri;
   std::ostringstream sauth, sdate, stoken, surl, scontent;
   std::ostringstream rheader, rdata;
-  if (s3_isAWS_) {
+  if (s3_is_aws_ && path_.host.find('.', 0) == std::string::npos) {
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + "." + s3::getEndpoint(s3_region_);
     surl << "https://" << canonical_headers["host"]
@@ -1041,7 +1041,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
             "&prefix=" + URIEncode(std::string{RemoveBeginSlash(path.name)});
     }
 
-    if (s3_isAWS_) {
+    if (s3_is_aws_ && path.host.find('.', 0) == std::string::npos) {
       // use virtual host style if no period in host
       canonical_uri = "/";
       canonical_headers["host"] = path.host + "." + s3::getEndpoint(s3_region_);
@@ -1167,7 +1167,6 @@ S3FileSystem::S3FileSystem() {
     region = getenv("AWS_REGION");
   }
 
-
   if (keyid == NULL) {
     LOG(FATAL) << "Need to set enviroment variable S3_ACCESS_KEY_ID to use S3";
   }
@@ -1176,9 +1175,9 @@ S3FileSystem::S3FileSystem() {
   }
 
   if (isAWS == NULL || (strcmp(isAWS, "1") == 0)) {
-    s3_isAWS_ = true;
+    s3_is_aws_ = true;
   } else {
-    s3_isAWS_ = false;
+    s3_is_aws_ = false;
   }
   if (region == NULL) {
     LOG(WARNING) << "No AWS Region set, using default region us-east-1";
@@ -1280,7 +1279,7 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
     CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
     return new s3::WriteStream(path, s3_access_id_, s3_secret_key_, s3_session_token_,
-                               s3_region_, s3_endpoint_, s3_verify_ssl_, s3_isAWS_);
+                               s3_region_, s3_endpoint_, s3_verify_ssl_, s3_is_aws_);
   } else {
     LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;
     return NULL;
@@ -1296,7 +1295,7 @@ SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   FileInfo info;
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
     return new s3::ReadStream(path, s3_access_id_, s3_secret_key_, s3_session_token_,
-                              s3_region_, s3_endpoint_, s3_verify_ssl_, s3_isAWS_, info.size);
+                              s3_region_, s3_endpoint_, s3_verify_ssl_, s3_is_aws_, info.size);
   } else {
     CHECK(allow_null) << " S3FileSystem: fail to open \"" << path.str() << "\"";
     return NULL;
