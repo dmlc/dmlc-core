@@ -46,6 +46,9 @@ inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
   return key ^ (value + 0x9e3779b9 + (key << 6) + (key >> 2));
 }
 
+/*
+ * \brief OMP Exception class catches, saves and rethrows exception from OMP blocks
+ */
 class OMPException {
  private:
   std::exception_ptr omp_exception_;
