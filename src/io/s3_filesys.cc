@@ -1070,6 +1070,8 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     if (!s3_session_token_.empty()) {
       slist = curl_slist_append(slist, stoken.str().c_str());
     }
+    char errbuf[CURL_ERROR_SIZE];
+    CHECK(curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, &errbuf) == CURLE_OK);
     CHECK(curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) == CURLE_OK);
     CHECK(curl_easy_setopt(curl, CURLOPT_URL, surl.str().c_str()) == CURLE_OK);
     CHECK(curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L) == CURLE_OK);
@@ -1080,7 +1082,7 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
       CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L) == CURLE_OK);
       CHECK(curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L) == CURLE_OK);
     }
-    CHECK(curl_easy_perform(curl) == CURLE_OK);
+    CHECK(curl_easy_perform(curl) == CURLE_OK) << "Error: " << errbuf;
     curl_slist_free_all(slist);
     curl_easy_cleanup(curl);
 
