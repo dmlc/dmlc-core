@@ -51,7 +51,9 @@ inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
  */
 class OMPException {
  private:
+  // exception_ptr member to store the exception
   std::exception_ptr omp_exception_;
+  // mutex to be acquired during catch to set the exception_ptr
   std::mutex mutex_;
 
  public:
