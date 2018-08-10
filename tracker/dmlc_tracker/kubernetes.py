@@ -40,7 +40,7 @@ def create_sched_svc_manifest(name, port):
 def create_job_manifest(envs, commands, name, image, template_file):
     if template_file is not None:
         with open( template_file ) as f:
-            job=yaml.load(f)
+            job=yaml.safe_load(f)
             job["metadata"]["name"]=name
             job["spec"]["template"]["metadata"]["labels"]["app"]=name
             job["spec"]["template"]["spec"]["containers"][0]["image"]=image
