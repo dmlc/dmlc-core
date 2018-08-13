@@ -46,7 +46,7 @@ inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
   return key ^ (value + 0x9e3779b9 + (key << 6) + (key >> 2));
 }
 
-/*
+/*!
  * \brief OMP Exception class catches, saves and rethrows exception from OMP blocks
  */
 class OMPException {
@@ -57,7 +57,7 @@ class OMPException {
   std::mutex mutex_;
 
  public:
-  /*
+  /*!
    * \brief Parallel OMP blocks should be placed within Run to save exception
    */
   template <typename Function, typename... Parameters>
@@ -72,7 +72,7 @@ class OMPException {
     }
   }
 
-  /*
+  /*!
    * \brief should be called from the main thread to rethrow the exception
    */
   void Rethrow() {
