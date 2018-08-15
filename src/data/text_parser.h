@@ -119,7 +119,7 @@ inline bool TextParserBase<IndexType, DType>::FillData(
   const char *head = reinterpret_cast<char *>(chunk.dptr);
 #pragma omp parallel num_threads(nthread)
   {
-  omp_exc_.Run([=] {
+  omp_exc_.Run([&] {
     // threadid
     int tid = omp_get_thread_num();
     size_t nstep = (chunk.size + nthread - 1) / nthread;
