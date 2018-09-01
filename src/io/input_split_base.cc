@@ -226,6 +226,11 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
                             max_size - olen);
   nread += olen;
   if (nread == 0) return false;
+  if (nread == olen) { // add extra newline to handle files with NOEOL
+    char *bufptr = reinterpret_cast<char*>(buf);
+    bufptr[nread] = '\n';
+    nread++;
+  }
 
   const char *bptr = reinterpret_cast<const char*>(buf);
   // return the last position where a record starts
