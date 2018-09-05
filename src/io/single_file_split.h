@@ -7,7 +7,7 @@
 #ifndef DMLC_IO_SINGLE_FILE_SPLIT_H_
 #define DMLC_IO_SINGLE_FILE_SPLIT_H_
 
-#include <dmlc/build_config.h>
+#include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <sys/stat.h>

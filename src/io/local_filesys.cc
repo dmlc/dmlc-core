@@ -1,6 +1,6 @@
 // Copyright by Contributors
 
-#include <dmlc/build_config.h>
+#include <dmlc/base.h>
 #include <dmlc/logging.h>
 #include <errno.h>
 extern "C" {
