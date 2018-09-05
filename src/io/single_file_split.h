@@ -7,6 +7,7 @@
 #ifndef DMLC_IO_SINGLE_FILE_SPLIT_H_
 #define DMLC_IO_SINGLE_FILE_SPLIT_H_
 
+#include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <sys/stat.h>
@@ -14,9 +15,6 @@
 #include <string>
 #include <algorithm>
 
-#if defined(__FreeBSD__) && DMLC_USE_FOPEN64
-#define fopen64 std::fopen
-#endif
 
 namespace dmlc {
 namespace io {

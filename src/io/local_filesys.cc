@@ -1,5 +1,6 @@
 // Copyright by Contributors
 
+#include <dmlc/base.h>
 #include <dmlc/logging.h>
 #include <errno.h>
 extern "C" {
@@ -16,10 +17,6 @@ extern "C" {
 #endif
 
 #include "./local_filesys.h"
-
-#if defined(__FreeBSD__) && DMLC_USE_FOPEN64
-#define fopen64 std::fopen
-#endif
 
 
 namespace dmlc {
