@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <future>
 #include <cstdlib>
 #include <gtest/gtest.h>
 
@@ -153,6 +154,38 @@ TEST(InputSplit, test_split_csv_noeol) {
   /* Check matrix dimensions: must be 3x4 */
   ASSERT_EQ(num_row, 3U);
   ASSERT_EQ(num_col, 4U);
+}
+
+TEST(InputSplit, test_split_libsvm_noeol) {
+  {
+    /* Create a test case for partitioned libsvm with NOEOL */
+    TemporaryDirectory tempdir;
+    const char* line
+      = "1 3:1 10:1 11:1 21:1 30:1 34:1 36:1 40:1 41:1 53:1 58:1 65:1 69:1 "
+        "77:1 86:1 88:1 92:1 95:1 102:1 105:1 117:1 124:1";
+    {
+      const std::string filename = tempdir.AddFile("train_0.libsvm");
+      std::ofstream of(filename.c_str(), std::ios::binary);
+      of << line << "\n";
+    }
+    {
+      const std::string filename = tempdir.AddFile("train_1.libsvm");
+      std::ofstream of(filename.c_str(), std::ios::binary);
+      of << line;  // NOEOL (no '\n' at end of file)
+    }
+    /* Run test with 1 sec timeout */
+    std::promise<bool> finish_flag;
+    auto finish_flag_result = finish_flag.get_future();
+    std::thread([&tempdir](std::promise<bool>& finish_flag) {
+      std::unique_ptr<dmlc::Parser<uint32_t> > parser(
+        dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "libsvm"));
+      size_t num_row, num_col;
+      CountDimensions(parser.get(), &num_row, &num_col);
+      finish_flag.set_value(true);
+    }, std::ref(finish_flag)).detach();
+    EXPECT_TRUE(finish_flag_result.wait_for(std::chrono::milliseconds(1000))
+                != std::future_status::timeout);
+  }
 }
 
 TEST(InputSplit, test_split_libsvm) {
