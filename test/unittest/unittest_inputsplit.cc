@@ -1,6 +1,4 @@
-#include "../src/data/csv_parser.h"
-#include "../src/data/libsvm_parser.h"
-#include "../include/dmlc/data.h"
+#include <dmlc/data.h>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -44,9 +42,8 @@ class TemporaryDirectory {
     char tmproot[MAX_PATH] = {0};
     const DWORD dw_retval = GetTempPathA(MAX_PATH, tmproot);
     if (dw_retval > MAX_PATH || dw_retval == 0) {
-      std::cerr << "TemporaryDirectory(): "
-                << "Could not create temporary directory" << std::endl;
-      exit(-1);
+      LOG(FATAL) << "TemporaryDirectory(): "
+                 << "Could not create temporary directory";
     }
     /* generate a unique 8-letter alphanumeric string */
     const std::string letters = "abcdefghijklmnopqrstuvwxyz0123456789_";
@@ -62,9 +59,8 @@ class TemporaryDirectory {
     char tmpdir[MAX_PATH] = {0};
     PathCombineA(tmpdir, tmproot, uniqstr.c_str());
     if (!CreateDirectoryA(tmpdir, NULL)) {
-      std::cerr << "TemporaryDirectory(): "
-                << "Could not create temporary directory" << std::endl;
-      exit(-1);
+      LOG(FATAL) << "TemporaryDirectory(): "
+                 << "Could not create temporary directory";
     }
     path = std::string(tmpdir);
 #else
@@ -88,27 +84,43 @@ class TemporaryDirectory {
     dirtemplate_buf.push_back('\0');
     char* tmpdir = mkdtemp(&dirtemplate_buf[0]);
     if (!tmpdir) {
-      std::cerr << "TemporaryDirectory(): "
-                << "Could not create temporary directory" << std::endl;
-      exit(-1);
+      LOG(FATAL) << "TemporaryDirectory(): "
+                 << "Could not create temporary directory";
     }
     path = std::string(tmpdir);
 #endif
-    std::cerr << "Created temporary directory " << path << std::endl;
+    LOG(INFO) << "Created temporary directory " << path;
   }
+
   ~TemporaryDirectory() {
-#if _WIN32
-    if (!RemoveDirectoryA(path.c_str())) {
-#else
-    if (rmdir(path.c_str()) == -1) {
-#endif
-      std::cerr << "~TemporaryDirectory(): "
-                << "Could not remove temporary directory " << path << std::endl;
-      exit(-1);
+    for (const std::string& filename : file_list) {
+      if (std::remove(filename.c_str()) != 0) {
+        LOG(FATAL) << "Couldn't remove file " << filename;
+      }
     }
-    std::cerr << "Successfully deleted temporary directory " << path << std::endl;
+#if _WIN32
+    const bool rmdir_success = (RemoveDirectoryA(path.c_str()) != 0);
+#else
+    const bool rmdir_success = (rmdir(path.c_str()) == 0);
+#endif
+    if (rmdir_success) {
+      LOG(INFO) << "Successfully deleted temporary directory " << path;
+    } else {
+      LOG(FATAL) << "~TemporaryDirectory(): "
+                 << "Could not remove temporary directory " << path;
+    }
   }
+
+  std::string AddFile(const std::string& filename) {
+    const std::string file_path = this->path + "/" + filename;
+    file_list.push_back(file_path);
+    return file_path;
+  }
+
   std::string path;
+
+ private:
+  std::vector<std::string> file_list;
 };
 
 TEST(InputSplit, test_split_csv_noeol) {
@@ -117,17 +129,17 @@ TEST(InputSplit, test_split_csv_noeol) {
     /* Create a test case for partitioned csv with NOEOL */
     TemporaryDirectory tempdir;
     {
-      std::string filename = tempdir.path + "/train_0.csv";
+      const std::string filename = tempdir.AddFile("train_0.csv");
       std::ofstream of(filename.c_str(), std::ios::binary);
       of << "0,1,1,1";  // NOEOL (no '\n' at end of file)
     }
     {
-      std::string filename = tempdir.path + "/train_1.csv";
+      const std::string filename = tempdir.AddFile("train_1.csv");
       std::ofstream of(filename.c_str(), std::ios::binary);
       of << "0,1,1,2\n";
     }
     {
-      std::string filename = tempdir.path + "/train_2.csv";
+      const std::string filename = tempdir.AddFile("train_2.csv");
       std::ofstream of(filename.c_str(), std::ios::binary);
       of << "0,1,1,2\n";
     }
@@ -136,15 +148,6 @@ TEST(InputSplit, test_split_csv_noeol) {
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
         dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "csv"));
       CountDimensions(parser.get(), &num_row, &num_col);
-    }
-    /* Clean up */
-    for (int i = 0; i < 3; ++i) {
-      std::string filename
-        = tempdir.path + "/train_" + std::to_string(i) + ".csv";
-      if (std::remove(filename.c_str()) != 0) {
-        std::cerr << "Couldn't remove file " << filename << std::endl;
-        exit(-1);
-      }
     }
   }
   /* Check matrix dimensions: must be 3x4 */
@@ -157,9 +160,10 @@ TEST(InputSplit, test_split_libsvm) {
   {
     /* Create a test case for partitioned libsvm */
     TemporaryDirectory tempdir;
-    for (int i = 0; i < 5; ++i) {
-      std::string filename
-        = tempdir.path + "/test_" + std::to_string(i) + ".libsvm";
+    const int nfile = 5;
+    for (int file_id = 0; file_id < nfile; ++file_id) {
+      const std::string filename
+        = tempdir.AddFile(std::string("test_") + std::to_string(file_id) + ".libsvm");
       std::ofstream of(filename.c_str(), std::ios::binary);
       of << "1 3:1 10:1 11:1 21:1 30:1 34:1 36:1 40:1 41:1 53:1 58:1 65:1 69:1 "
          << "77:1 86:1 88:1 92:1 95:1 102:1 105:1 117:1 124:1\n";
@@ -169,15 +173,6 @@ TEST(InputSplit, test_split_libsvm) {
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
         dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "libsvm"));
       CountDimensions(parser.get(), &num_row, &num_col);
-    }
-    /* Clean up */
-    for (int i = 0; i < 5; ++i) {
-      std::string filename
-        = tempdir.path + "/test_" + std::to_string(i) + ".libsvm";
-      if (std::remove(filename.c_str()) != 0) {
-        std::cerr << "Couldn't remove file " << filename << std::endl;
-        exit(-1);
-      }
     }
   }
   /* Check matrix dimensions: must be 5x125 */
@@ -194,8 +189,8 @@ TEST(InputSplit, test_split_libsvm_distributed) {
         "77:1 86:1 88:1 92:1 95:1 102:1 105:1 117:1 124:1\n";
     const int nfile = 5;
     for (int file_id = 0; file_id < nfile; ++file_id) {
-      std::string filename
-        = tempdir.path + "/test_" + std::to_string(file_id) + ".libsvm";
+      const std::string filename
+        = tempdir.AddFile(std::string("test_") + std::to_string(file_id) + ".libsvm");
       std::ofstream of(filename.c_str(), std::ios::binary);
       const int nrepeat = (file_id == 0 ? 6 : 1);
       for (int i = 0; i < nrepeat; ++i) {
@@ -213,16 +208,6 @@ TEST(InputSplit, test_split_libsvm_distributed) {
       CountDimensions(parser.get(), &num_row, &num_col);
       ASSERT_EQ(num_row, expected_dims[part_id][0]);
       ASSERT_EQ(num_col, expected_dims[part_id][1]);
-    }
-
-    /* Clean up */
-    for (int file_id = 0; file_id < nfile; ++file_id) {
-      std::string filename
-        = tempdir.path + "/test_" + std::to_string(file_id) + ".libsvm";
-      if (std::remove(filename.c_str()) != 0) {
-        std::cerr << "Couldn't remove file " << filename << std::endl;
-        exit(-1);
-      }
     }
   }
 }
