@@ -22,7 +22,6 @@ if(GTEST_FOUND)
     enable_testing()
     find_package(Threads REQUIRED)
     file(GLOB_RECURSE UNIT_TEST_SOURCE "*.cc")
-    include_directories(cpp/include)
     include_directories(${GTEST_INCLUDE_DIRS})
     add_executable(${PROJECT_NAME}_unit_tests ${UNIT_TEST_SOURCE})
     set_property(TARGET ${PROJECT_NAME}_unit_tests
