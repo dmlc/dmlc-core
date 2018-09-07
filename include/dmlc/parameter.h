@@ -975,59 +975,6 @@ class FieldEntry<bool>
     os << static_cast<int>(value);
   }
 };
-
-
-// specialize define for float. Uses stof for platform independent handling of
-// INF, -INF, NAN, etc.
-#if DMLC_USE_CXX11
-template <>
-class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
- public:
-  // parent
-  typedef FieldEntryNumeric<FieldEntry<float>, float> Parent;
-  // override set
-  virtual void Set(void *head, const std::string &value) const {
-    try {
-      this->Get(head) = std::stof(value);
-    } catch (const std::invalid_argument &) {
-      std::ostringstream os;
-      os << "Invalid Parameter format for " << key_ << " expect " << type_
-         << " but value=\'" << value << '\'';
-      throw dmlc::ParamError(os.str());
-    } catch (const std::out_of_range&) {
-      std::ostringstream os;
-      os << "Out of range value for " << key_ << ", value=\'" << value << '\'';
-      throw dmlc::ParamError(os.str());
-    }
-  }
-};
-
-// specialize define for double. Uses stod for platform independent handling of
-// INF, -INF, NAN, etc.
-template <>
-class FieldEntry<double>
-    : public FieldEntryNumeric<FieldEntry<double>, double> {
- public:
-  // parent
-  typedef FieldEntryNumeric<FieldEntry<double>, double> Parent;
-  // override set
-  virtual void Set(void *head, const std::string &value) const {
-    try {
-      this->Get(head) = std::stod(value);
-    } catch (const std::invalid_argument &) {
-      std::ostringstream os;
-      os << "Invalid Parameter format for " << key_ << " expect " << type_
-         << " but value=\'" << value << '\'';
-      throw dmlc::ParamError(os.str());
-    } catch (const std::out_of_range&) {
-      std::ostringstream os;
-      os << "Out of range value for " << key_ << ", value=\'" << value << '\'';
-      throw dmlc::ParamError(os.str());
-    }
-  }
-};
-#endif  // DMLC_USE_CXX11
-
 }  // namespace parameter
 //! \endcond
 
