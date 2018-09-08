@@ -43,11 +43,11 @@ class LocaleObject {
  public:
 #ifdef _WIN32  /* Windows-specific */
   using locale_type = _locale_t;
-  LocaleObject(const char* locale)
+  explicit LocaleObject(const char* locale)
     : locale_(_create_locale(LC_NUMERIC, locale)) {}
 #else
   using locale_type = locale_t;
-  LocaleObject(const char* locale)
+  explicit LocaleObject(const char* locale)
     : locale_(newlocale(LC_NUMERIC_MASK, locale, static_cast<locale_type>(0))) {}
 #endif
 
@@ -115,7 +115,7 @@ inline double locale_agnostic_stod(const std::string& value) {
 }
 #endif
 
-}  // namespace anonymous
+}  // anonymous namespace
 
 namespace dmlc {
 // this file is backward compatible with non-c++11
