@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <cmath>
 #include <sstream>
 #include <limits>
 #include <map>
@@ -17,12 +18,104 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <stdexcept>
 #include <iostream>
 #include "./base.h"
 #include "./json.h"
 #include "./logging.h"
 #include "./type_traits.h"
 #include "./optional.h"
+
+/* platform specific headers */
+#if defined(_WIN32)       // Windows
+#include <errno.h>
+#elif defined(__APPLE__)  // Mac OSX
+#include <xlocale.h>
+#else                     // Other UNIX-like systems
+#include <clocale>
+#endif
+
+namespace {
+
+/*! \brief Wrapper for locale object */
+
+class LocaleObject {
+ public:
+#ifdef _WIN32  /* Windows-specific */
+  using locale_type = _locale_t;
+  LocaleObject(const char* locale)
+    : locale_(_create_locale(LC_NUMERIC, locale)) {}
+#else
+  using locale_type = locale_t;
+  LocaleObject(const char* locale)
+    : locale_(newlocale(LC_NUMERIC_MASK, locale, static_cast<locale_type>(0))) {}
+#endif
+
+  locale_type GetLocale() const {
+    return locale_;
+  }
+
+#ifdef _WIN32  /* Windows-specific */
+  ~LocaleObject() {
+    _free_locale(locale_);
+  }
+#else
+  ~LocaleObject() {
+    freelocale(locale_);
+  }
+#endif
+
+ private:
+  locale_type locale_;
+};
+
+#ifdef _WIN32  /* Windows-specific */
+inline float locale_agnostic_stof(const std::string& value) {
+  LocaleObject new_locale("C");
+  const char* str_source = value.c_str();
+  char* endptr;
+  const float parsed_value = _strtof_l(str_source, &endptr, new_locale.GetLocale());
+  if (errno == ERANGE) {
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
+  return parsed_value;
+}
+
+inline double locale_agnostic_stod(const std::string& value) {
+  LocaleObject new_locale("C");
+  const char* str_source = value.c_str();
+  char* endptr;
+  const double parsed_value = _strtod_l(str_source, &endptr, new_locale.GetLocale());
+  if (errno == ERANGE) {
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
+  return parsed_value;
+}
+#else
+inline float locale_agnostic_stof(const std::string& value) {
+  LocaleObject new_locale("C");
+  const locale_t current_locale = uselocale(static_cast<locale_t>(0));
+  uselocale(new_locale.GetLocale());
+  const float parsed_value = std::stof(value);
+  uselocale(current_locale);
+  return parsed_value;
+}
+
+inline double locale_agnostic_stod(const std::string& value) {
+  LocaleObject new_locale("C");
+  const locale_t current_locale = uselocale(static_cast<locale_t>(0));
+  uselocale(new_locale.GetLocale());
+  const double parsed_value = std::stod(value);
+  uselocale(current_locale);
+  return parsed_value;
+}
+#endif
+
+}  // namespace anonymous
 
 namespace dmlc {
 // this file is backward compatible with non-c++11
@@ -988,7 +1081,7 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
   // override set
   virtual void Set(void *head, const std::string &value) const {
     try {
-      this->Get(head) = std::stof(value);
+      this->Get(head) = locale_agnostic_stof(value);
     } catch (const std::invalid_argument &) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_ << " expect " << type_
@@ -1013,7 +1106,7 @@ class FieldEntry<double>
   // override set
   virtual void Set(void *head, const std::string &value) const {
     try {
-      this->Get(head) = std::stod(value);
+      this->Get(head) = locale_agnostic_stod(value);
     } catch (const std::invalid_argument &) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_ << " expect " << type_
