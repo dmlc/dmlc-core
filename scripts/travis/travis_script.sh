@@ -30,3 +30,22 @@ if [ ${TASK} == "unittest_gtest" ]; then
     make all
     test/unittest/dmlc_unittest
 fi
+
+if [ ${TASK} == "cmake_test" ]; then
+    # Build GTest with CMake
+    wget -nc https://github.com/google/googletest/archive/release-1.7.0.zip
+    unzip -n release-1.7.0.zip
+    mv googletest-release-1.7.0 gtest && cd gtest
+    cmake . && make
+    mkdir lib && mv libgtest.a lib
+    cd ..
+    rm -rf release-1.7.0.zip
+
+    # Build dmlc-core with CMake, including unit tests
+    rm -rf build
+    mkdir build && cd build
+    cmake .. -DGTEST_ROOT=$PWD/../gtest/
+    make
+    cd ..
+    ./build/test/unittest/dmlc_unit_tests
+fi

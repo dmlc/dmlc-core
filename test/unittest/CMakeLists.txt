@@ -1,5 +1,7 @@
 # ---[ Google Test
-if(NOT GTEST_ROOT)
+if(GTEST_ROOT)
+    find_package(GTest)
+else()
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/googletest")
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/googletest")
         set(GTEST_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/googletest")
