@@ -190,9 +190,6 @@
 #endif
 #endif
 
-#include <dmlc/build_config.h>
-
-
 extern "C" {
 #include <sys/types.h>
 }
@@ -281,5 +278,10 @@ inline const char* BeginPtr(const std::string &str) {
 #define constexpr const
 #define alignof __alignof
 #endif
+
+/* If fopen64 is not defined by current machine,
+   replace fopen64 with std::fopen. Always keep this #include at the bottom
+   of dmlc/base.h */
+#include <dmlc/build_config.h>
 
 #endif  // DMLC_BASE_H_
