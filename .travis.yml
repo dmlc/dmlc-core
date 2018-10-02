@@ -9,7 +9,13 @@ matrix:
   - env: TASK=unittest_gtest
     os: linux
     python: '3.6'
+  - env: TASK=cmake_test
+    os: linux
+    python: '3.6'
   - env: TASK=unittest_gtest
+    language: ruby
+    os: osx
+  - env: TASK=cmake_test
     language: ruby
     os: osx
 

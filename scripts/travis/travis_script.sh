@@ -30,3 +30,30 @@ if [ ${TASK} == "unittest_gtest" ]; then
     make all
     test/unittest/dmlc_unittest
 fi
+
+if [ ${TASK} == "cmake_test" ]; then
+    # Build GTest with CMake
+    wget -nc https://github.com/google/googletest/archive/release-1.7.0.zip
+    unzip -n release-1.7.0.zip
+    mv googletest-release-1.7.0 gtest && cd gtest
+    if [ ${TRAVIS_OS_NAME} == "osx" ]; then
+        CC=gcc-7 CXX=g++-7 cmake . && make
+    else
+        cmake . && make
+    fi
+    mkdir lib && mv libgtest.a lib
+    cd ..
+    rm -rf release-1.7.0.zip
+
+    # Build dmlc-core with CMake, including unit tests
+    rm -rf build
+    mkdir build && cd build
+    if [ ${TRAVIS_OS_NAME} == "osx" ]; then
+        CC=gcc-7 CXX=g++-7 cmake .. -DGTEST_ROOT=$PWD/../gtest/
+    else
+        cmake .. -DGTEST_ROOT=$PWD/../gtest/
+    fi
+    make
+    cd ..
+    ./build/test/unittest/dmlc_unit_tests
+fi
