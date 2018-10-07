@@ -6,7 +6,7 @@
 extern "C" {
 #include <sys/stat.h>
 }
-#ifndef _MSC_VER
+#ifndef _WIN32
 extern "C" {
 #include <sys/types.h>
 #include <dirent.h>
@@ -70,6 +70,7 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
   ret.path = path;
   if (stat(path.name.c_str(), &sb) == -1) {
     int errsv = errno;
+#ifndef _WIN32
     // If lstat succeeds where stat failed, assume a problematic
     // symlink and treat this as if it were a 0-length file.
     if (lstat(path.name.c_str(), &sb) == 0) {
@@ -79,6 +80,7 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
                 << path.name << " error: " << strerror(errsv);
       return ret;
     }
+#endif
     LOG(FATAL) << "LocalFileSystem.GetPathInfo: "
                << path.name << " error: " << strerror(errsv);
   }
