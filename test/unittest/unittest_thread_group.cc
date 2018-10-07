@@ -3,11 +3,10 @@
 #include <dmlc/blockingconcurrentqueue.h>
 #include <dmlc/thread_group.h>
 #include <gtest/gtest.h>
-#if defined(_MSC_VER) && _MSC_VER <= 1800
-#include <Windows.h>
-#endif
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
+#define NOMINMAX
+#include <Windows.h>
 static void usleep(__int64 usec)
 {
   HANDLE timer;
@@ -20,6 +19,8 @@ static void usleep(__int64 usec)
   WaitForSingleObject(timer, INFINITE);
   CloseHandle(timer);
 }
+#else
+#include <unistd.h>   // for usleep()
 #endif  // _WIN32
 
 static std::atomic<int> thread_count(0);
