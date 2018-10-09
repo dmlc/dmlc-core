@@ -33,6 +33,10 @@ namespace dmlc {
  */
 class TemporaryDirectory {
  public:
+  /*!
+   * \brief Default constructor. Creates a new temporary directory
+   * \param verbose whether to emit extra messages
+   */
   explicit TemporaryDirectory(bool verbose = false)
     : verbose_(verbose) {
 #if _WIN32
@@ -93,7 +97,7 @@ class TemporaryDirectory {
   }
 
   ~TemporaryDirectory() {
-    for (const std::string& filename : file_list) {
+    for (const std::string& filename : file_list_) {
       if (std::remove(filename.c_str()) != 0) {
         LOG(FATAL) << "Couldn't remove file " << filename;
       }
@@ -113,16 +117,25 @@ class TemporaryDirectory {
     }
   }
 
+  /*!
+   * \brief Add a file under the temporary directory, to be tracked. When the
+   *        directory gets deleted, the file will get deleted also.
+   * \param filename name of the file
+   * \return full path of the file
+   */
   std::string AddFile(const std::string& filename) {
     const std::string file_path = this->path + "/" + filename;
-    file_list.push_back(file_path);
+    file_list_.push_back(file_path);
     return file_path;
   }
 
+  /* \brief Path of the temporary directory */
   std::string path;
 
  private:
-  std::vector<std::string> file_list;
+  /* \brief List of files being tracked  */
+  std::vector<std::string> file_list_;
+  /* \brief Whether to emit extra messages */
   bool verbose_;
 };
 
