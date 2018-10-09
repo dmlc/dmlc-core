@@ -23,6 +23,14 @@
 
 namespace dmlc {
 
+/*!
+ * \brief Manager class for temporary directories. Whenever a new object is
+ *        constructed, a temporary directory is created. The directory is
+ *        deleted when the object is deleted or goes out of scope.
+ *        NOTE. The class needs to keep track of all files inside the temporary
+ *        directory in order to delete the directory successfully in the end.
+ *        Thus, the user should call AddFile() method to add each file.
+ */
 class TemporaryDirectory {
  public:
   explicit TemporaryDirectory(bool verbose = false)
