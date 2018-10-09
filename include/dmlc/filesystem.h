@@ -1,4 +1,15 @@
+/*!
+ *  Copyright (c) 2018 by Contributors
+ * \file filesystem.h
+ * \brief Utilities to manipulate files
+ * \author Hyunsu Philip Cho
+ */
+#ifndef DMLC_FILESYSTEM_H_
+#define DMLC_FILESYSTEM_H_
+
 #include <dmlc/logging.h>
+#include <string>
+#include <vector>
 
 /* platform specific headers */
 #ifdef _WIN32
@@ -14,7 +25,7 @@ namespace dmlc {
 
 class TemporaryDirectory {
  public:
-  TemporaryDirectory(bool verbose = false)
+  explicit TemporaryDirectory(bool verbose = false)
     : verbose_(verbose) {
 #if _WIN32
     /* locate the root directory of temporary area */
@@ -108,3 +119,4 @@ class TemporaryDirectory {
 };
 
 }  // namespace dmlc
+#endif  // DMLC_FILESYSTEM_H_
