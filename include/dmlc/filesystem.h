@@ -129,13 +129,13 @@ class TemporaryDirectory {
     return file_path;
   }
 
-  /* \brief Path of the temporary directory */
+  /*! \brief Path of the temporary directory */
   std::string path;
 
  private:
-  /* \brief List of files being tracked  */
+  /*! \brief List of files being tracked  */
   std::vector<std::string> file_list_;
-  /* \brief Whether to emit extra messages */
+  /*! \brief Whether to emit extra messages */
   bool verbose_;
 };
 
