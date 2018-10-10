@@ -10,7 +10,7 @@
 #if DMLC_USE_FOPEN64 && \
   (!defined(__GNUC__) || (defined __ANDROID__) || (defined __FreeBSD__) \
   || (defined __APPLE__) || ((defined __MINGW32__) && !(defined __MINGW64__)))
-  #warning "Redefining fopen64 with std::fopen"
+  #define DMLC_EMIT_FOPEN64_REDEFINE_WARNING
   #define fopen64 std::fopen
 #endif
 
