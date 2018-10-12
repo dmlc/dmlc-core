@@ -337,14 +337,14 @@ class PSTracker(object):
     """
     Tracker module for PS
     """
-    def __init__(self, hostIP, cmd, port=9091, port_end=9999, dmlc_envs=None):
+    def __init__(self, hostIP, cmd, port=9091, port_end=9999, envs=None):
         """
         Starts the PS scheduler
         """
         self.cmd = cmd
         if cmd is None:
             return
-        dmlc_envs = {} if dmlc_envs is None else dmlc_envs
+        envs = {} if envs is None else envs
         self.hostIP = hostIP
         sock = socket.socket(get_family(hostIP), socket.SOCK_STREAM)
         for port in range(port, port_end):
@@ -356,10 +356,11 @@ class PSTracker(object):
             except socket.error:
                 continue
         env = os.environ.copy()
+
         env['DMLC_ROLE'] = 'scheduler'
         env['DMLC_PS_ROOT_URI'] = str(self.hostIP)
         env['DMLC_PS_ROOT_PORT'] = str(self.port)
-        for k, v in dmlc_envs.items():
+        for k, v in envs.items():
             env[k] = str(v)
         self.thread = Thread(
             target=(lambda: subprocess.check_call(self.cmd, env=env, shell=True)), args=())
@@ -405,25 +406,26 @@ def get_host_ip(hostIP=None):
             hostIP = s.getsockname()[0]
     return hostIP
 
-def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None, addnl_envs=None):
+
+def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
     if nserver == 0:
         pscmd = None
 
-    dmlc_envs = {'DMLC_NUM_WORKER' : nworker,
+    envs = {'DMLC_NUM_WORKER' : nworker,
             'DMLC_NUM_SERVER' : nserver}
     hostIP = get_host_ip(hostIP)
 
     if nserver == 0:
         rabit = RabitTracker(hostIP=hostIP, nslave=nworker)
-        dmlc_envs.update(rabit.slave_envs())
+        envs.update(rabit.slave_envs())
         rabit.start(nworker)
         if rabit.alive():
-           fun_submit(nworker, nserver, dmlc_envs)
+           fun_submit(nworker, nserver, envs) 
     else:
-        pserver = PSTracker(hostIP=hostIP, cmd=pscmd, dmlc_envs=dmlc_envs)
-        dmlc_envs.update(pserver.slave_envs())
+        pserver = PSTracker(hostIP=hostIP, cmd=pscmd, envs=envs)
+        envs.update(pserver.slave_envs())
         if pserver.alive():
-            fun_submit(nworker, nserver, dmlc_envs, addnl_envs)
+            fun_submit(nworker, nserver, envs)
 
     if nserver == 0:
         rabit.join()
