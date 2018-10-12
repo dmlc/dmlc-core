@@ -17,6 +17,7 @@ dmlccore_option(USE_AZURE "Build with AZURE support" OFF)
 dmlccore_option(USE_S3 "Build with S3 support" OFF)
 dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler supports it" OFF)
+dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
 
 # include path
 include_directories("include")
@@ -165,6 +166,8 @@ endif()
 set(LINT_DIRS include src scripts)
 add_custom_target(dmlc_lint COMMAND ${CMAKE_COMMAND} -DMSVC=${MSVC} -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}  -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR} -DLINT_DIRS=${LINT_DIRS} -DPROJECT_NAME=dmlc -P ${PROJECT_SOURCE_DIR}/cmake/lint.cmake)
 
-# Setup testing
-include(CTest)
-add_subdirectory(test/unittest)
+if(GOOGLE_TEST)
+  # Setup testing
+  include(CTest)
+  add_subdirectory(test/unittest)
+endif()
