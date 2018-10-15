@@ -30,37 +30,16 @@ install:
 
 build_script:
     - cd %APPVEYOR_BUILD_FOLDER%
-    - ps: |
-          Invoke-WebRequest https://github.com/google/googletest/archive/release-1.7.0.zip -OutFile release-1.7.0.zip
-          7z x release-1.7.0.zip
-          Rename-Item -Path googletest-release-1.7.0 -NewName gtest
-
     - if /i "%target%" == "msvc" (
-        cd gtest &&
-        cmake . -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" &&
-        msbuild gtest.sln &&
-        mkdir lib &&
-        move %configuration%\gtest.lib lib\gtest.lib &&
-        move %configuration%\gtest_main.lib lib\gtest_main.lib &&
-        cd .. &&
-        del release-1.7.0.zip &&
         mkdir build_msvc%ver% &&
         cd build_msvc%ver% &&
-        cmake .. -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" -DGTEST_ROOT=%cd%\..\gtest &&
+        cmake .. -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" -DGOOGLE_TEST=ON &&
         msbuild dmlc.sln
       )
     - if /i "%target%" == "mingw" (
-        cd gtest &&
-        cmake . -G"%generator%" &&
-        make -j2 &&
-        mkdir lib &&
-        move libgtest.a lib\libgtest.a &&
-        move libgtest_main.a lib\libgtest_main.a &&
-        cd .. &&
-        del release-1.7.0.zip &&
         mkdir build_mingw &&
         cd build_mingw &&
-        cmake .. -G"%generator%" -DGTEST_ROOT=%cd%\..\gtest &&
+        cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
         make -j2
       )
 

@@ -19,6 +19,7 @@ dmlccore_option(USE_AZURE "Build with AZURE support" OFF)
 dmlccore_option(USE_S3 "Build with S3 support" OFF)
 dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler supports it" OFF)
+dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
 
 # include path
 set(INCLUDE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -178,5 +179,25 @@ set(LINT_DIRS include src scripts)
 add_custom_target(dmlc_lint COMMAND ${CMAKE_COMMAND} -DMSVC=${MSVC} -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}  -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR} -DLINT_DIRS=${LINT_DIRS} -DPROJECT_NAME=dmlc -P ${PROJECT_SOURCE_DIR}/cmake/lint.cmake)
 
 # Setup testing
-include(CTest)
-add_subdirectory(test/unittest)
+if(GOOGLE_TEST)
+  # Download and unpack googletest at configure time
+  message("${CMAKE_LOCAL}/gtest_cmake.in -> ${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt")
+  configure_file("${CMAKE_LOCAL}/gtest_cmake.in" "${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
+  execute_process(COMMAND "${CMAKE_COMMAND}" --build .
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
+  # Prevent GoogleTest from overriding our compiler/linker options
+  # when building with Visual Studio
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+  # Add googletest directly to our build. This adds
+  # the following targets: gtest, gtest_main, gmock
+  # and gmock_main
+  add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
+                   "${CMAKE_BINARY_DIR}/googletest-build")
+  include_directories("${gtest_SOURCE_DIR}/include"
+                      "${gmock_SOURCE_DIR}/include")
+  include(CTest)
+  add_subdirectory(test/unittest)
+endif()
