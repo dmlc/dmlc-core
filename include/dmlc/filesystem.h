@@ -10,6 +10,7 @@
 #include <dmlc/logging.h>
 #include <string>
 #include <vector>
+#include <random>
 
 /* platform specific headers */
 #ifdef _WIN32

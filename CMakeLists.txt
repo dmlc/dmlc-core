@@ -58,6 +58,10 @@ else()
   add_definitions(-DDMLC_USE_AZURE=0)
 endif()
 
+if(WIN32 AND (NOT MSVC))  # On Windows, link Shlwapi.lib for non-MSVC compilers
+  list(APPEND dmlccore_LINKER_LIBS Shlwapi)
+endif()
+
 # Older stdc++ enable c++11 items
 add_definitions(-D__USE_XOPEN2K8)
 
