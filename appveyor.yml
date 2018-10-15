@@ -56,5 +56,5 @@ test_script:
         )
       )
     - if /i "%target%" == "mingw" (
-        .\build\test\unittest\dmlc_unit_tests.exe
+        .\build_mingw\test\unittest\dmlc_unit_tests.exe
       )
