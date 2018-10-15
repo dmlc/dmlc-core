@@ -75,18 +75,12 @@ TEST(InputSplit, test_split_libsvm_noeol) {
       std::ofstream of(filename.c_str(), std::ios::binary);
       of << line;  // NOEOL (no '\n' at end of file)
     }
-    /* Run test with 1 sec timeout */
-    std::promise<bool> finish_flag;
-    auto finish_flag_result = finish_flag.get_future();
-    std::thread([&tempdir](std::promise<bool>& finish_flag) {
-      std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-        dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "libsvm"));
-      size_t num_row, num_col;
-      CountDimensions(parser.get(), &num_row, &num_col);
-      finish_flag.set_value(true);
-    }, std::ref(finish_flag)).detach();
-    EXPECT_TRUE(finish_flag_result.wait_for(std::chrono::milliseconds(1000))
-                != std::future_status::timeout);
+    std::unique_ptr<dmlc::Parser<uint32_t> > parser(
+      dmlc::Parser<uint32_t>::Create(tempdir.path.c_str(), 0, 1, "libsvm"));
+    size_t num_row, num_col;
+    CountDimensions(parser.get(), &num_row, &num_col);
+    ASSERT_EQ(num_row, 2);
+    ASSERT_EQ(num_col, 125);
   }
 }
 

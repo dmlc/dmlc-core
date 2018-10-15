@@ -8,5 +8,9 @@
 #include <dmlc/base.h>
 
 #ifdef DMLC_EMIT_FOPEN64_REDEFINE_WARNING
-  #warning "Redefining fopen64 with std::fopen"
+  #ifdef _MSC_VER
+    #pragma message("Redefining fopen64 with std::fopen")
+  #else
+    #warning "Redefining fopen64 with std::fopen"
+  #endif  // _MSC_VER
 #endif  // DMLC_EMIT_FOPEN64_REDEFINE_WARNING

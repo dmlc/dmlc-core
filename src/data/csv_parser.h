@@ -101,10 +101,10 @@ ParseBlock(const char *begin,
         v = strtof(p, &endptr);
       // If DType is int32
       } else if (std::is_same<DType, int32_t>::value) {
-        v = static_cast<int32_t>(strtol(p, &endptr, 0));
+        v = static_cast<int32_t>(strtoll(p, &endptr, 0));
       // If DType is int64
       } else if (std::is_same<DType, int64_t>::value) {
-        v = static_cast<int64_t>(strtol(p, &endptr, 0));
+        v = static_cast<int64_t>(strtoll(p, &endptr, 0));
       // If DType is all other types
       } else {
         LOG(FATAL) << "Only float32, int32, and int64 are supported for the time being";

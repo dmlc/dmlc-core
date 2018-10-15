@@ -1,0 +1,60 @@
+environment:
+    matrix:
+        - target: msvc
+          ver: 2013
+          generator: "Visual Studio 12 2013 Win64"
+          configuration: Release
+        - target: msvc
+          ver: 2015
+          generator: "Visual Studio 14 2015 Win64"
+          configuration: Debug
+        - target: msvc
+          ver: 2015
+          generator: "Visual Studio 14 2015 Win64"
+          configuration: Release
+        - target: mingw
+          generator: "Unix Makefiles"
+
+matrix:
+  fast_finish: false
+
+platform:
+    - x64
+
+install:
+    - git submodule update --init --recursive
+    # MinGW
+    - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+    - gcc -v
+    - ls -l C:\
+
+build_script:
+    - cd %APPVEYOR_BUILD_FOLDER%
+    - if /i "%target%" == "msvc" (
+        mkdir build_msvc%ver% &&
+        cd build_msvc%ver% &&
+        if /i "%generator%" == "Visual Studio 12 2013 Win64" (
+          cmake .. -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" &&
+          msbuild dmlc.sln
+        ) else (
+          cmake .. -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" -DGOOGLE_TEST=ON &&
+          msbuild dmlc.sln
+        )
+      )
+    - if /i "%target%" == "mingw" (
+        mkdir build_mingw &&
+        cd build_mingw &&
+        cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
+        make -j2
+      )
+
+test_script:
+    - cd %APPVEYOR_BUILD_FOLDER%
+    - if /i "%target%" == "msvc" (
+        if /i not "%generator%" == "Visual Studio 12 2013 Win64" (
+          .\build_msvc%ver%\test\unittest\%configuration%\dmlc_unit_tests.exe
+        )
+      )
+    - if /i "%target%" == "mingw" (
+        .\build_mingw\test\unittest\dmlc_unit_tests.exe
+      )
