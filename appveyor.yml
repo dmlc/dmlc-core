@@ -15,6 +15,9 @@ environment:
         - target: mingw
           generator: "Unix Makefiles"
 
+matrix:
+  fast_finish: true
+
 platform:
     - x64
 
@@ -37,8 +40,8 @@ build_script:
         cmake . -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" &&
         msbuild gtest.sln &&
         mkdir lib &&
-        move %configuration%\gtest.lib lib\gtest.lib
-        move %configuration%\gtest_main.lib lib\gtest_main.lib
+        move %configuration%\gtest.lib lib\gtest.lib &&
+        move %configuration%\gtest_main.lib lib\gtest_main.lib &&
         cd .. &&
         del release-1.7.0.zip &&
         mkdir build_msvc%ver% &&
