@@ -33,8 +33,13 @@ build_script:
     - if /i "%target%" == "msvc" (
         mkdir build_msvc%ver% &&
         cd build_msvc%ver% &&
-        cmake .. -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" -DGOOGLE_TEST=ON &&
-        msbuild dmlc.sln
+        if /i "%generator%" == "Visual Studio 12 2013 Win64" (
+          cmake .. -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" &&
+          msbuild dmlc.sln
+        ) else (
+          cmake .. -G"%generator%" -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" -DGOOGLE_TEST=ON &&
+          msbuild dmlc.sln
+        )
       )
     - if /i "%target%" == "mingw" (
         mkdir build_mingw &&
@@ -46,7 +51,9 @@ build_script:
 test_script:
     - cd %APPVEYOR_BUILD_FOLDER%
     - if /i "%target%" == "msvc" (
-        .\build\test\unittest\%configuration%\dmlc_unit_tests.exe
+        if /i not "%generator%" == "Visual Studio 12 2013 Win64" (
+          .\build\test\unittest\%configuration%\dmlc_unit_tests.exe
+        )
       )
     - if /i "%target%" == "mingw" (
         .\build\test\unittest\dmlc_unit_tests.exe

@@ -180,6 +180,12 @@ add_custom_target(dmlc_lint COMMAND ${CMAKE_COMMAND} -DMSVC=${MSVC} -DPYTHON_EXE
 
 # Setup testing
 if(GOOGLE_TEST)
+  if(MSVC)
+    if(MSVC_VERSION LESS 1900)
+      message(FATAL_ERROR "Need Visual Studio 2015 or newer to compile unit tests")
+    endif()
+  endif()
+
   # Download and unpack googletest at configure time
   message("${CMAKE_LOCAL}/gtest_cmake.in -> ${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt")
   configure_file("${CMAKE_LOCAL}/gtest_cmake.in" "${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt")
