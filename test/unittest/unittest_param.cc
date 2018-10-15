@@ -13,7 +13,7 @@ DMLC_REGISTER_PARAMETER(LearningRateParam);
 TEST(Parameter, parsing_small_float) {
   LearningRateParam param;
   std::map<std::string, std::string> kwargs;
-  kwargs["learning_rate"] = "9.4039548065783e-39";
+  kwargs["learning_rate"] = "1e-100";
   EXPECT_THROW(
       param.Init(kwargs),
       dmlc::ParamError
