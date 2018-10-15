@@ -52,7 +52,7 @@ test_script:
     - cd %APPVEYOR_BUILD_FOLDER%
     - if /i "%target%" == "msvc" (
         if /i not "%generator%" == "Visual Studio 12 2013 Win64" (
-          .\build\test\unittest\%configuration%\dmlc_unit_tests.exe
+          .\build_msvc%ver%\test\unittest\%configuration%\dmlc_unit_tests.exe
         )
       )
     - if /i "%target%" == "mingw" (
