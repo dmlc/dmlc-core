@@ -63,6 +63,13 @@ if(WIN32 AND (NOT MSVC))  # On Windows, link Shlwapi.lib for non-MSVC compilers
   list(APPEND dmlccore_LINKER_LIBS Shlwapi)
 endif()
 
+# Check location of clock_gettime; if it's in librt, link it
+include(CheckLibraryExists)
+CHECK_LIBRARY_EXISTS(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME_IN_LIBRT)
+if(HAVE_CLOCK_GETTIME_IN_LIBRT)
+  list(APPEND dmlccore_LINKER_LIBS rt)
+endif()
+
 # Older stdc++ enable c++11 items
 add_definitions(-D__USE_XOPEN2K8)
 
