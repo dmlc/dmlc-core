@@ -117,7 +117,7 @@ TEST(CSVParser, test_int32_parse) {
   char *out_data = const_cast<char *>(data.c_str());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
   for (size_t i = 0; i < rctr->value.size(); i++) {
-    CHECK((i+20000000) == rctr->value[i]);
+    CHECK((i+20000000) == (size_t)rctr->value[i]);
   }
 }
 
@@ -134,7 +134,7 @@ TEST(CSVParser, test_int64_parse) {
   char *out_data = const_cast<char *>(data.c_str());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
   for (size_t i = 0; i < rctr->value.size(); i++) {
-    CHECK((i+2147483648) == rctr->value[i]);
+    CHECK((i+2147483648) == (size_t)rctr->value[i]);
   }
 }
 
