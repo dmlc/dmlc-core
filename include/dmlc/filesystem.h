@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 #include <random>
-#include <memory>
 
 /* platform specific headers */
 #ifdef _WIN32
@@ -128,7 +127,7 @@ class TemporaryDirectory {
 
   inline void RecursiveDelete(const std::string& path) {
     io::URI uri(path.c_str());
-    std::unique_ptr<io::FileSystem> fs(io::FileSystem::GetInstance(uri));
+    io::FileSystem* fs = io::FileSystem::GetInstance(uri);
     std::vector<io::FileInfo> file_list;
     fs->ListDirectory(uri, &file_list);
     for (io::FileInfo info : file_list) {
