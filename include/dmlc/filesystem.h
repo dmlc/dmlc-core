@@ -29,17 +29,16 @@
 namespace dmlc {
 
 /*!
- * \brief Manager class for temporary directories. Whenever a new object is
- *        constructed, a temporary directory is created. The directory is
- *        deleted when the object is deleted or goes out of scope.
- *        NOTE. The class needs to keep track of all files inside the temporary
- *        directory in order to delete the directory successfully in the end.
- *        Thus, the user should call AddFile() method to add each file.
+ * \brief Manager class for temporary directories. Whenever a new
+ *        TemporaryDirectory object is constructed, a temporary directory is
+ *        created. The directory is deleted when the object is deleted or goes
+ *        out of scope.
  */
 class TemporaryDirectory {
  public:
   /*!
-   * \brief Default constructor. Creates a new temporary directory
+   * \brief Default constructor. Creates a new temporary directory with a unique
+   *        name.
    * \param verbose whether to emit extra messages
    */
   explicit TemporaryDirectory(bool verbose = false)
@@ -101,16 +100,22 @@ class TemporaryDirectory {
     }
   }
 
+  /*! \brief Destructor. Will perform recursive deletion via RecursiveDelete() */
   ~TemporaryDirectory() {
     RecursiveDelete(path);
   }
 
+  /*! \brief Full path of the temporary directory */
   std::string path;
 
  private:
   /*! \brief Whether to emit extra messages */
   bool verbose_;
 
+  /*!
+   * \brief Determine whether a given path is a symbolic link
+   * \param path String representation of path
+   */
   inline bool IsSymlink(const std::string& path) {
 #ifdef _WIN32
     DWORD attr = GetFileAttributesA(path.c_str());
@@ -125,6 +130,10 @@ class TemporaryDirectory {
 #endif  // _WIN32
   }
 
+  /*!
+   * \brief Delete a directory recursively, along with sub-directories and files.
+   * \param path String representation of path. It must refer to a directory.
+   */
   inline void RecursiveDelete(const std::string& path) {
     io::URI uri(path.c_str());
     io::FileSystem* fs = io::FileSystem::GetInstance(uri);
