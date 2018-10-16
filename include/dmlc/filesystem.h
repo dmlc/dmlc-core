@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <memory>
 
 /* platform specific headers */
 #ifdef _WIN32
@@ -18,9 +19,13 @@
 #include <windows.h>
 #include <Shlwapi.h>
 #pragma comment(lib, "Shlwapi.lib")
-#else
+#else  // _WIN32
 #include <unistd.h>
-#endif
+#include <sys/stat.h>
+#include <sys/types.h>
+#endif  // _WIN32
+
+#include "../../src/io/filesys.h"
 
 namespace dmlc {
 
@@ -66,7 +71,7 @@ class TemporaryDirectory {
                  << "Could not create temporary directory";
     }
     path = std::string(tmpdir);
-#else
+#else  // _WIN32
     std::string tmproot; /* root directory of temporary area */
     std::string dirtemplate; /* template for temporary directory name */
     /* Get TMPDIR env variable or fall back to /tmp/ */
@@ -91,16 +96,49 @@ class TemporaryDirectory {
                  << "Could not create temporary directory";
     }
     path = std::string(tmpdir);
-#endif
+#endif  // _WIN32
     if (verbose_) {
       LOG(INFO) << "Created temporary directory " << path;
     }
   }
 
   ~TemporaryDirectory() {
-    for (const std::string& filename : file_list_) {
-      if (std::remove(filename.c_str()) != 0) {
-        LOG(FATAL) << "Couldn't remove file " << filename;
+    RecursiveDelete(path);
+  }
+
+  std::string path;
+
+ private:
+  /*! \brief Whether to emit extra messages */
+  bool verbose_;
+
+  inline bool IsSymlink(const std::string& path) {
+#ifdef _WIN32
+    DWORD attr = GetFileAttributesA(path.c_str());
+    CHECK_NE(attr, INVALID_FILE_ATTRIBUTES)
+      << "dmlc::TemporaryDirectory::IsSymlink(): Unable to read file attributes";
+    return attr & FILE_ATTRIBUTE_REPARSE_POINT;
+#else  // _WIN32
+    struct stat sb;
+    CHECK_EQ(lstat(path.c_str(), &sb), 0)
+      << "dmlc::TemporaryDirectory::IsSymlink(): Unable to read file attributes";
+    return S_ISLNK(sb.st_mode);
+#endif  // _WIN32
+  }
+
+  inline void RecursiveDelete(const std::string& path) {
+    io::URI uri(path.c_str());
+    std::unique_ptr<io::FileSystem> fs(io::FileSystem::GetInstance(uri));
+    std::vector<io::FileInfo> file_list;
+    fs->ListDirectory(uri, &file_list);
+    for (io::FileInfo info : file_list) {
+      CHECK(!IsSymlink(info.path.name))
+        << "Symlink not supported in TemporaryDirectory";
+      if (info.type == io::FileType::kDirectory) {
+        RecursiveDelete(info.path.name);
+      } else {
+        CHECK_EQ(std::remove(info.path.name.c_str()), 0)
+          << "Couldn't remove file " << info.path.name;
       }
     }
 #if _WIN32
@@ -117,27 +155,6 @@ class TemporaryDirectory {
                  << "Could not remove temporary directory " << path;
     }
   }
-
-  /*!
-   * \brief Add a file under the temporary directory, to be tracked. When the
-   *        directory gets deleted, the file will get deleted also.
-   * \param filename name of the file
-   * \return full path of the file
-   */
-  std::string AddFile(const std::string& filename) {
-    const std::string file_path = this->path + "/" + filename;
-    file_list_.push_back(file_path);
-    return file_path;
-  }
-
-  /*! \brief Path of the temporary directory */
-  std::string path;
-
- private:
-  /*! \brief List of files being tracked  */
-  std::vector<std::string> file_list_;
-  /*! \brief Whether to emit extra messages */
-  bool verbose_;
 };
 
 }  // namespace dmlc
