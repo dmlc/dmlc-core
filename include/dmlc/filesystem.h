@@ -32,7 +32,8 @@ namespace dmlc {
  * \brief Manager class for temporary directories. Whenever a new
  *        TemporaryDirectory object is constructed, a temporary directory is
  *        created. The directory is deleted when the object is deleted or goes
- *        out of scope.
+ *        out of scope. Note: no symbolic links are allowed inside the
+ *        temporary directory.
  *
  * Usage example:
  * \code
@@ -53,8 +54,8 @@ namespace dmlc {
 class TemporaryDirectory {
  public:
   /*!
-   * \brief Default constructor. Creates a new temporary directory with a unique
-   *        name.
+   * \brief Default constructor.
+   *        Creates a new temporary directory with a unique name.
    * \param verbose whether to emit extra messages
    */
   explicit TemporaryDirectory(bool verbose = false)
