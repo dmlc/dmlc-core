@@ -33,6 +33,22 @@ namespace dmlc {
  *        TemporaryDirectory object is constructed, a temporary directory is
  *        created. The directory is deleted when the object is deleted or goes
  *        out of scope.
+ *
+ * Usage example:
+ * \code
+ *
+ *   void foo() {
+ *     dmlc::TemporaryDirectory tempdir;
+ *     // Create a file my_file.txt inside the temporary directory
+ *     std::ofstream of(tempdir.path + "/my_file.txt");
+ *     // ... write to my_file.txt ...
+ *
+ *     // ... use my_file.txt
+ *
+ *     // When tempdir goes out of scope, the temporary directory is deleted
+ *   }
+ *
+ * \endcode
  */
 class TemporaryDirectory {
  public:
