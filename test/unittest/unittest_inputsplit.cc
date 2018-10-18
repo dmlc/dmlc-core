@@ -32,18 +32,15 @@ TEST(InputSplit, test_split_csv_noeol) {
     /* Create a test case for partitioned csv with NOEOL */
     dmlc::TemporaryDirectory tempdir;
     {
-      const std::string filename = tempdir.AddFile("train_0.csv");
-      std::ofstream of(filename.c_str(), std::ios::binary);
+      std::ofstream of(tempdir.path + "/train_0.csv", std::ios::binary);
       of << "0,1,1,1";  // NOEOL (no '\n' at end of file)
     }
     {
-      const std::string filename = tempdir.AddFile("train_1.csv");
-      std::ofstream of(filename.c_str(), std::ios::binary);
+      std::ofstream of(tempdir.path + "/train_1.csv", std::ios::binary);
       of << "0,1,1,2\n";
     }
     {
-      const std::string filename = tempdir.AddFile("train_2.csv");
-      std::ofstream of(filename.c_str(), std::ios::binary);
+      std::ofstream of(tempdir.path + "/train_2.csv", std::ios::binary);
       of << "0,1,1,2\n";
     }
     /* Load the test case with InputSplit and obtain matrix dimensions */
@@ -66,13 +63,11 @@ TEST(InputSplit, test_split_libsvm_noeol) {
       = "1 3:1 10:1 11:1 21:1 30:1 34:1 36:1 40:1 41:1 53:1 58:1 65:1 69:1 "
         "77:1 86:1 88:1 92:1 95:1 102:1 105:1 117:1 124:1";
     {
-      const std::string filename = tempdir.AddFile("train_0.libsvm");
-      std::ofstream of(filename.c_str(), std::ios::binary);
+      std::ofstream of(tempdir.path + "/train_0.libsvm", std::ios::binary);
       of << line << "\n";
     }
     {
-      const std::string filename = tempdir.AddFile("train_1.libsvm");
-      std::ofstream of(filename.c_str(), std::ios::binary);
+      std::ofstream of(tempdir.path + "/train_1.libsvm", std::ios::binary);
       of << line;  // NOEOL (no '\n' at end of file)
     }
     std::unique_ptr<dmlc::Parser<uint32_t> > parser(
@@ -91,9 +86,8 @@ TEST(InputSplit, test_split_libsvm) {
     dmlc::TemporaryDirectory tempdir;
     const int nfile = 5;
     for (int file_id = 0; file_id < nfile; ++file_id) {
-      const std::string filename
-        = tempdir.AddFile(std::string("test_") + std::to_string(file_id) + ".libsvm");
-      std::ofstream of(filename.c_str(), std::ios::binary);
+      std::ofstream of(tempdir.path + "/test_" + std::to_string(file_id) + ".libsvm",
+                       std::ios::binary);
       of << "1 3:1 10:1 11:1 21:1 30:1 34:1 36:1 40:1 41:1 53:1 58:1 65:1 69:1 "
          << "77:1 86:1 88:1 92:1 95:1 102:1 105:1 117:1 124:1\n";
     }
@@ -118,9 +112,8 @@ TEST(InputSplit, test_split_libsvm_distributed) {
         "77:1 86:1 88:1 92:1 95:1 102:1 105:1 117:1 124:1\n";
     const int nfile = 5;
     for (int file_id = 0; file_id < nfile; ++file_id) {
-      const std::string filename
-        = tempdir.AddFile(std::string("test_") + std::to_string(file_id) + ".libsvm");
-      std::ofstream of(filename.c_str(), std::ios::binary);
+      std::ofstream of(tempdir.path + "/test_" + std::to_string(file_id) + ".libsvm",
+                       std::ios::binary);
       const int nrepeat = (file_id == 0 ? 6 : 1);
       for (int i = 0; i < nrepeat; ++i) {
         of << line;
