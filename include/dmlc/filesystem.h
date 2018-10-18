@@ -8,6 +8,7 @@
 #define DMLC_FILESYSTEM_H_
 
 #include <dmlc/logging.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <random>

@@ -33,9 +33,9 @@ TEST(TemporaryDirectory, test_basic) {
     for (int i = 0; i < num_file; ++i) {
       std::ifstream fin(tempdir.path + "/" + std::to_string(i) + ".txt");
       std::string s;
-      ASSERT_TRUE(std::getline(fin, s));
+      ASSERT_TRUE(static_cast<bool>(std::getline(fin, s)));
       ASSERT_EQ(s, std::string("0,1,1," + std::to_string(i + 1)));
-      ASSERT_FALSE(std::getline(fin, s));
+      ASSERT_FALSE(static_cast<bool>(std::getline(fin, s)));
     }
   }
   // Test the directory is indeed deleted.
