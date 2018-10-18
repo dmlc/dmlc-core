@@ -29,6 +29,9 @@ class RecordIOSplitter : public InputSplitBase {
     this->ResetPartition(rank, nsplit);
   }
 
+  bool IsTextParser(void) {
+    return false;
+  }
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk);
 
  protected:

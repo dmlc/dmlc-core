@@ -27,6 +27,9 @@ class LineSplitter : public InputSplitBase {
     this->ResetPartition(rank, nsplit);
   }
 
+  bool IsTextParser(void) {
+    return true;
+  }
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk);
  protected:
   virtual size_t SeekRecordBegin(Stream *fi);
