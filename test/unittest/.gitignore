@@ -1,1 +1,3 @@
 dmlc_unittest
+build_config.h
+cifar10_val.rec

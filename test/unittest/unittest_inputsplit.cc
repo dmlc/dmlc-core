@@ -133,3 +133,24 @@ TEST(InputSplit, test_split_libsvm_distributed) {
     }
   }
 }
+
+#ifdef DMLC_UNIT_TESTS_USE_CMAKE
+/* Don't run the following when CMake is not used */
+
+#include <build_config.h>
+
+TEST(InputSplit, test_recordio) {
+  dmlc::TemporaryDirectory tempdir;
+
+  std::unique_ptr<dmlc::InputSplit> source(
+    dmlc::InputSplit::Create(CMAKE_CURRENT_SOURCE_DIR "/cifar10_val.rec", 0, 1, "recordio"));
+  source->BeforeFirst();
+  dmlc::InputSplit::Blob rec;
+  size_t sum = 0;
+  while (source->NextRecord(&rec)) {
+    sum += rec.size;
+  }
+  LOG(INFO) << sum << " bytes read from cifar10_val.rec";
+}
+
+#endif  // DMLC_UNIT_TESTS_DOWNLOAD_FILES
