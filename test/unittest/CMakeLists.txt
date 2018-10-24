@@ -9,15 +9,6 @@ add_executable(${PROJECT_NAME}_unit_tests ${UNIT_TEST_SOURCE})
 set_property(TARGET ${PROJECT_NAME}_unit_tests
         PROPERTY RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
 
-# File downloads
-message(STATUS "Downloading http://data.mxnet.io/data/cifar10/cifar10_val.rec...") 
-file(DOWNLOAD "http://data.mxnet.io/data/cifar10/cifar10_val.rec"
-     ${CMAKE_CURRENT_SOURCE_DIR}/cifar10_val.rec
-     INACTIVITY_TIMEOUT 30
-     TIMEOUT 300
-     SHOW_PROGRESS
-     EXPECTED_HASH SHA512=48c532f7b6a50c41b3117a2b2e6311a9061d05326757f03da5a7df191764b3a79f17afed8b5a76aee300ffca65519fb4dd45382898a3d1c83ddd8718bc6ca566)
-
 message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in -> ${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
 

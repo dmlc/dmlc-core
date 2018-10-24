@@ -10,8 +10,10 @@
 #include <cstdlib>
 #include <gtest/gtest.h>
 
-static inline void CountDimensions(dmlc::Parser<uint32_t>* parser,
-                                   size_t* out_num_row, size_t* out_num_col) {
+namespace {
+
+inline void CountDimensions(dmlc::Parser<uint32_t>* parser,
+                            size_t* out_num_row, size_t* out_num_col) {
   size_t num_row = 0;
   size_t num_col = 0;
   while (parser->Next()) {
@@ -25,6 +27,14 @@ static inline void CountDimensions(dmlc::Parser<uint32_t>* parser,
   *out_num_row = num_row;
   *out_num_col = num_col;
 }
+
+struct RecordIOHeader {
+  uint32_t flag;
+  float label;
+  uint64_t image_id[2];
+};
+
+}  // namespace anonymous
 
 TEST(InputSplit, test_split_csv_noeol) {
   size_t num_row, num_col;
@@ -143,14 +153,33 @@ TEST(InputSplit, test_recordio) {
   dmlc::TemporaryDirectory tempdir;
 
   std::unique_ptr<dmlc::InputSplit> source(
-    dmlc::InputSplit::Create(CMAKE_CURRENT_SOURCE_DIR "/cifar10_val.rec", 0, 1, "recordio"));
+    dmlc::InputSplit::Create(CMAKE_CURRENT_SOURCE_DIR "/sample.rec", 0, 1, "recordio"));
+
   source->BeforeFirst();
   dmlc::InputSplit::Blob rec;
-  size_t sum = 0;
+  char* content;
+  RecordIOHeader header;
+  size_t content_size;
+
+  int idx = 1;
+
   while (source->NextRecord(&rec)) {
-    sum += rec.size;
+    ASSERT_GT(rec.size, sizeof(header));
+    std::memcpy(&header, rec.dptr, sizeof(header));
+    content = reinterpret_cast<char*>(rec.dptr) + sizeof(header);
+    content_size = rec.size - sizeof(header);
+
+    std::string expected;
+    for (int i = 0; i < 10; ++i) {
+      expected += std::to_string(idx) + "\n";
+    }
+
+    ASSERT_EQ(header.label, static_cast<float>(idx % 2));
+    ASSERT_EQ(header.image_id[0], idx);
+    ASSERT_EQ(std::string(content, content_size), expected);
+
+    ++idx;
   }
-  LOG(INFO) << sum << " bytes read from cifar10_val.rec";
 }
 
 #endif  // DMLC_UNIT_TESTS_DOWNLOAD_FILES
