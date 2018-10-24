@@ -8,9 +8,15 @@ file(GLOB_RECURSE UNIT_TEST_SOURCE "*.cc")
 add_executable(${PROJECT_NAME}_unit_tests ${UNIT_TEST_SOURCE})
 set_property(TARGET ${PROJECT_NAME}_unit_tests
         PROPERTY RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
+
+message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in -> ${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
+
 target_link_libraries(${PROJECT_NAME}_unit_tests
         gtest
         dmlc
         Threads::Threads
         )
+target_compile_definitions(${PROJECT_NAME}_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE)
+target_include_directories(${PROJECT_NAME}_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(AllTestsIn${PROJECT_NAME}UnitTests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_NAME}_unit_tests)

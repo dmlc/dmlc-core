@@ -38,6 +38,9 @@ class IndexedRecordIOSplitter : public InputSplitBase {
     this->ResetPartition(rank, nsplit);
   }
 
+  bool IsTextParser(void) override {
+    return false;
+  }
   bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) override;
   bool ReadChunk(void *buf, size_t *size) override;
   bool NextChunk(Blob *out_chunk) override;

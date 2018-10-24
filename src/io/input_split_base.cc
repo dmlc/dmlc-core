@@ -175,6 +175,8 @@ void InputSplitBase::InitInputFileInfo(const std::string& uri,
 }
 
 size_t InputSplitBase::Read(void *ptr, size_t size) {
+  const bool is_text_parser = this->IsTextParser();
+
   if (fs_ == NULL) {
     return 0;
   }
@@ -191,7 +193,9 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     offset_curr_ += n;
     if (nleft == 0) break;
     if (n == 0) {
-      buf[0] = '\n'; ++buf; --nleft;  // insert a newline between files
+      if (is_text_parser) {
+        buf[0] = '\n'; ++buf; --nleft;  // insert a newline between files
+      }
       if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
         LOG(ERROR) << "curr=" << offset_curr_
                    << ",begin=" << offset_begin_
@@ -226,12 +230,18 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
                             max_size - olen);
   nread += olen;
   if (nread == 0) return false;
-  if (nread == olen) {  // add extra newline to handle files with NOEOL
-    char *bufptr = reinterpret_cast<char*>(buf);
-    bufptr[nread] = '\n';
-    nread++;
+  if (this->IsTextParser()) {
+    if (nread == olen) {  // add extra newline to handle files with NOEOL
+      char *bufptr = reinterpret_cast<char*>(buf);
+      bufptr[nread] = '\n';
+      nread++;
+    }
+  } else {
+    if (nread != max_size) {
+      *size = nread;
+      return true;
+    }
   }
-
   const char *bptr = reinterpret_cast<const char*>(buf);
   // return the last position where a record starts
   const char *bend = this->FindLastRecordBegin(bptr, bptr + nread);

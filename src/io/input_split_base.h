@@ -93,6 +93,12 @@ class InputSplitBase : public InputSplit {
    */
   virtual bool ExtractNextRecord(Blob *out_rec, Chunk *chunk) = 0;
   /*!
+   * \brief query whether this object is a text parser
+   * \return true if this object represents a text parser; false if it represents
+   *         a binary parser
+   */
+  virtual bool IsTextParser(void) = 0;
+  /*!
    * \brief fill the given
    *  chunk with new data without using internal
    *  temporary chunk
