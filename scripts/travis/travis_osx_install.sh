@@ -11,7 +11,7 @@ fi
 softwareupdate --list
 softwareupdate --install "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4"
 
+brew install gcc@7 || brew link --overwrite gcc@7
 brew update
 brew upgrade python3
-brew install gcc@7 || brew link --overwrite gcc@7
 python3 -m pip install --upgrade pip
