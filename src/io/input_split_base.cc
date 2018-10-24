@@ -194,7 +194,9 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     if (nleft == 0) break;
     if (n == 0) {
       if (is_text_parser) {
-        buf[0] = '\n'; ++buf; --nleft;  // insert a newline between files
+        // Insert a newline between files to handle files with NOEOL.
+        // See https://github.com/dmlc/dmlc-core/pull/385 for explanation.
+        buf[0] = '\n'; ++buf; --nleft;
       }
       if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
         LOG(ERROR) << "curr=" << offset_curr_
@@ -231,7 +233,9 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
   nread += olen;
   if (nread == 0) return false;
   if (this->IsTextParser()) {
-    if (nread == olen) {  // add extra newline to handle files with NOEOL
+    if (nread == olen) {
+      // Insert a newline between files to handle files with NOEOL.
+      // See https://github.com/dmlc/dmlc-core/pull/452 for explanation.
       char *bufptr = reinterpret_cast<char*>(buf);
       bufptr[nread] = '\n';
       nread++;
