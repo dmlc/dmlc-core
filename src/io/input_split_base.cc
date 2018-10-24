@@ -175,6 +175,8 @@ void InputSplitBase::InitInputFileInfo(const std::string& uri,
 }
 
 size_t InputSplitBase::Read(void *ptr, size_t size) {
+  const bool is_text_parser = this->IsTextParser();
+
   if (fs_ == NULL) {
     return 0;
   }
@@ -191,7 +193,7 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
     offset_curr_ += n;
     if (nleft == 0) break;
     if (n == 0) {
-      if (this->IsTextParser()) {
+      if (is_text_parser) {
         buf[0] = '\n'; ++buf; --nleft;  // insert a newline between files
       }
       if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
