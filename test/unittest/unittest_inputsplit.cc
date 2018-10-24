@@ -182,4 +182,4 @@ TEST(InputSplit, test_recordio) {
   }
 }
 
-#endif  // DMLC_UNIT_TESTS_DOWNLOAD_FILES
+#endif  // DMLC_UNIT_TESTS_USE_CMAKE
