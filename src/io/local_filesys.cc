@@ -6,15 +6,15 @@
 extern "C" {
 #include <sys/stat.h>
 }
-#ifndef _MSC_VER
+#ifndef _WIN32
 extern "C" {
 #include <sys/types.h>
 #include <dirent.h>
 }
-#else
+#else  // _WIN32
 #include <Windows.h>
 #define stat _stat64
-#endif
+#endif  // _WIN32
 
 #include "./local_filesys.h"
 
@@ -39,16 +39,16 @@ class FileStream : public SeekStream {
   virtual void Seek(size_t pos) {
 #ifndef _MSC_VER
     CHECK(!std::fseek(fp_, static_cast<long>(pos), SEEK_SET));  // NOLINT(*)
-#else
+#else  // _MSC_VER
     CHECK(!_fseeki64(fp_, pos, SEEK_SET));
-#endif
+#endif  // _MSC_VER
   }
   virtual size_t Tell(void) {
 #ifndef _MSC_VER
     return std::ftell(fp_);
-#else
+#else  // _MSC_VER
     return _ftelli64(fp_);
-#endif
+#endif  // _MSC_VER
   }
   virtual bool AtEnd(void) const {
     return std::feof(fp_) != 0;
@@ -66,13 +66,24 @@ class FileStream : public SeekStream {
 
 FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
   struct stat sb;
-  if (stat(path.name.c_str(), &sb) == -1) {
-    int errsv = errno;
-    LOG(FATAL) << "LocalFileSystem.GetPathInfo " << path.name
-               << " Error:" << strerror(errsv);
-  }
   FileInfo ret;
   ret.path = path;
+  if (stat(path.name.c_str(), &sb) == -1) {
+    int errsv = errno;
+#ifndef _WIN32
+    // If lstat succeeds where stat failed, assume a problematic
+    // symlink and treat this as if it were a 0-length file.
+    if (lstat(path.name.c_str(), &sb) == 0) {
+      ret.size = 0;
+      ret.type = kFile;
+      LOG(INFO) << "LocalFileSystem.GetPathInfo: detected symlink "
+                << path.name << " error: " << strerror(errsv);
+      return ret;
+    }
+#endif  // _WIN32
+    LOG(FATAL) << "LocalFileSystem.GetPathInfo: "
+               << path.name << " error: " << strerror(errsv);
+  }
   ret.size = sb.st_size;
 
   if ((sb.st_mode & S_IFMT) == S_IFDIR) {
@@ -84,7 +95,7 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
 }
 
 void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_list) {
-#ifndef _MSC_VER
+#ifndef _WIN32
   DIR *dir = opendir(path.name.c_str());
   if (dir == NULL) {
     int errsv = errno;
@@ -105,7 +116,7 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
     out_list->push_back(GetPathInfo(pp));
   }
   closedir(dir);
-#else
+#else  // _WIN32
   WIN32_FIND_DATA fd;
   std::string pattern = path.name + "/*";
   HANDLE handle = FindFirstFile(pattern.c_str(), &fd);
@@ -128,7 +139,7 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
     }
   }  while (FindNextFile(handle, &fd));
   FindClose(handle);
-#endif
+#endif  // _WIN32
 }
 
 SeekStream *LocalFileSystem::Open(const URI &path,
@@ -136,7 +147,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
                                   bool allow_null) {
   bool use_stdio = false;
   FILE *fp = NULL;
-#ifdef _MSC_VER
+#ifdef _WIN32
   const int fname_length = MultiByteToWideChar(CP_UTF8, 0, path.name.c_str(), -1, nullptr, 0);
   CHECK(fname_length > 0) << " LocalFileSystem::Open \"" << path.str()
                           << "\": " << "Invalid character sequence.";
@@ -155,7 +166,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
   if (!wcscmp(fname.c_str(), L"stdout")) {
     use_stdio = true; fp = stdout;
   }
-#endif
+#endif  // DMLC_DISABLE_STDIN
   if (!wcsncmp(fname.c_str(), L"file://", 7)) { fname = fname.substr(7); }
   if (!use_stdio) {
     std::wstring flag(wmode.c_str());
@@ -163,11 +174,11 @@ SeekStream *LocalFileSystem::Open(const URI &path,
     if (flag == L"r") flag = L"rb";
 #if DMLC_USE_FOPEN64
     fp = _wfopen(fname.c_str(), flag.c_str());
-#else
+#else  // DMLC_USE_FOPEN64
     fp = fopen(fname, flag.c_str());
-#endif
+#endif  // DMLC_USE_FOPEN64
   }
-#else
+#else  // _WIN32
   const char *fname = path.name.c_str();
   using namespace std;
 #ifndef DMLC_DISABLE_STDIN
@@ -177,7 +188,7 @@ SeekStream *LocalFileSystem::Open(const URI &path,
   if (!strcmp(fname, "stdout")) {
     use_stdio = true; fp = stdout;
   }
-#endif
+#endif  // DMLC_DISABLE_STDIN
   if (!strncmp(fname, "file://", 7)) fname += 7;
   if (!use_stdio) {
     std::string flag = mode;
@@ -185,11 +196,11 @@ SeekStream *LocalFileSystem::Open(const URI &path,
     if (flag == "r") flag = "rb";
 #if DMLC_USE_FOPEN64
     fp = fopen64(fname, flag.c_str());
-#else
+#else  // DMLC_USE_FOPEN64
     fp = fopen(fname, flag.c_str());
-#endif
+#endif  // DMLC_USE_FOPEN64
   }
-#endif
+#endif  // _WIN32
   if (fp != NULL) {
     return new FileStream(fp, use_stdio);
   } else {
