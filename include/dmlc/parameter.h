@@ -44,11 +44,11 @@ class LocaleObject {
 #ifdef _WIN32  /* Windows-specific */
   using locale_type = _locale_t;
   explicit LocaleObject(const char* locale)
-    : locale_(_create_locale(LC_NUMERIC, locale)) {}
+    : locale_(_create_locale(LC_ALL, locale)) {}
 #else
   using locale_type = locale_t;
   explicit LocaleObject(const char* locale)
-    : locale_(newlocale(LC_NUMERIC_MASK, locale, static_cast<locale_type>(0))) {}
+    : locale_(newlocale(LC_ALL_MASK, locale, static_cast<locale_type>(0))) {}
 #endif
 
   locale_type GetLocale() const {
