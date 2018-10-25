@@ -74,8 +74,11 @@ inline float locale_agnostic_stof(const std::string& value) {
   LocaleObject new_locale("C");
   const char* str_source = value.c_str();
   char* endptr;
-  const float parsed_value = _strtof_l(str_source, &endptr, new_locale.GetLocale());
-  if (errno == ERANGE) {
+  const double parsed_value = _strtod_l(str_source, &endptr, new_locale.GetLocale());
+  if (errno == ERANGE
+      || parsed_value < static_cast<double>(std::numeric_limits<float>::denorm_min())
+      || parsed_value > static_cast<double>(std::numeric_limits<float>::max()) {
+    // Detect ERANGE for single-precision float
     throw std::out_of_range("Out of range value");
   } else if (const_cast<const char*>(endptr) == str_source) {
     throw std::invalid_argument("No conversion could be performed");
@@ -95,7 +98,7 @@ inline double locale_agnostic_stod(const std::string& value) {
   }
   return parsed_value;
 }
-#else
+#else  // _WIN32
 inline float locale_agnostic_stof(const std::string& value) {
   LocaleObject new_locale("C");
   const locale_t current_locale = uselocale(static_cast<locale_t>(0));
@@ -113,7 +116,7 @@ inline double locale_agnostic_stod(const std::string& value) {
   uselocale(current_locale);
   return parsed_value;
 }
-#endif
+#endif  // _WIN32
 
 }  // anonymous namespace
 
