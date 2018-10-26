@@ -147,7 +147,7 @@ TEST(InputSplit, test_split_libsvm_distributed) {
 #ifdef DMLC_UNIT_TESTS_USE_CMAKE
 /* Don't run the following when CMake is not used */
 
-#include <build_config.h>
+#include "./build_config.h"
 
 TEST(InputSplit, test_recordio) {
   dmlc::TemporaryDirectory tempdir;

@@ -125,7 +125,7 @@ TEST(Lockfree, BlockingConcurrentQueue) {
 
   for(size_t x = 0; x < ITEM_COUNT; ++x) {
     std::unique_lock<std::mutex> lk(data->cs_map_);
-    data->thread_map_.insert(x);
+    data->thread_map_.insert(static_cast<int>(x));
     threads.create(TName("BlockingPullThread", x), true, BlockingPullThread<BlockingQueue>, x, data);
   }
   data->ready_->signal();

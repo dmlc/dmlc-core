@@ -1,9 +1,8 @@
 // Copyright by Contributors
 #define DMLC_LOG_FATAL_THROW 0
+
 #include <dmlc/logging.h>
 #include <gtest/gtest.h>
-
-using namespace std;
 
 TEST(Logging, basics) {
   LOG(INFO) << "hello";
