@@ -52,16 +52,33 @@ inline float locale_agnostic_stof(const std::string& value) {
   const locale_type new_locale = create_locale("C");
   const locale_type current_locale = uselocale(static_cast<locale_t>(0));
   uselocale(new_locale);
-  const float parsed_value = std::stof(value);
+  const char* str_source = value.c_str();
+  char* endptr;
+  const double parsed_value = std::strtod(str_source, &endptr);
+  if (errno == ERANGE
+      || parsed_value < static_cast<double>(std::numeric_limits<float>::denorm_min())
+      || parsed_value > static_cast<double>(std::numeric_limits<float>::max())) {
+    // Detect ERANGE for single-precision float
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
   uselocale(current_locale);
   free_locale(new_locale);
-  return parsed_value;
+  return static_cast<float>(parsed_value);
 }
 inline double locale_agnostic_stod(const std::string& value) {
   const locale_type new_locale = create_locale("C");
   const locale_type current_locale = uselocale(static_cast<locale_t>(0));
   uselocale(new_locale);
-  const double parsed_value = std::stod(value);
+  const char* str_source = value.c_str();
+  char* endptr;
+  const double parsed_value = std::strtod(str_source, &endptr);
+  if (errno == ERANGE) {
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
   uselocale(current_locale);
   free_locale(new_locale);
   return parsed_value;
@@ -98,7 +115,7 @@ inline float locale_agnostic_stof(const std::string& value) {
     throw std::invalid_argument("No conversion could be performed");
   }
   free_locale(new_locale);
-  return parsed_value;
+  return static_cast<float>(parsed_value);
 }
 inline double locale_agnostic_stod(const std::string& value) {
   const locale_type new_locale = create_locale("C");
@@ -127,10 +144,29 @@ inline locale_type create_locale(const char* locale) {
 }
 inline void free_locale(locale_type locale) {}
 inline float locale_agnostic_stof(const std::string& value) {
-  return std::stof(value);
+  const char* str_source = value.c_str();
+  char* endptr;
+  const double parsed_value = std::strtod(str_source, &endptr);
+  if (errno == ERANGE
+      || parsed_value < static_cast<double>(std::numeric_limits<float>::denorm_min())
+      || parsed_value > static_cast<double>(std::numeric_limits<float>::max())) {
+    // Detect ERANGE for single-precision float
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
+  return static_cast<float>(parsed_value);
 }
 inline double locale_agnostic_stod(const std::string& value) {
-  return std::stod(value);
+  const char* str_source = value.c_str();
+  char* endptr;
+  const double parsed_value = std::strtod(str_source, &endptr);
+  if (errno == ERANGE) {
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
+  return parsed_value;
 }
 
 #ifdef _MSC_VER
