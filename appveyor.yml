@@ -1,13 +1,13 @@
 environment:
     matrix:
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-          target: msys2
-          generator: "Unix Makefiles"
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
           target: mingw
-          generator: "Unix Makefiles"
+          generator: "MinGW Makefiles"
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
           target: cygwin
+          generator: "Unix Makefiles"
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          target: msys2
           generator: "Unix Makefiles"
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
           target: msvc
@@ -43,11 +43,20 @@ platform:
 
 install:
     - git submodule update --init --recursive
+    # Set PATH
     - if /i "%target%" == "msys2" set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
-    - if /i "%target%" == "mingw" set PATH=C:\MinGW-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH%
+    - if /i "%target%" == "mingw" set PATH=C:\MinGW-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH:C:\Program Files\Git\usr\bin;=%
     - if /i "%target%" == "cygwin" set PATH=C:\cygwin64\bin;C:\cygwin64\usr\bin;%PATH%
-    - if /i not "%target%" == "msvc" gcc -v
-    - ls -l C:\
+    # Install packages and show information
+    - if /i "%target%" == "msys2" (
+        gcc -v
+      )
+    - if /i "%target%" == "mingw" (
+        gcc -v
+      )
+    - if /i "%target%" == "cygwin" (
+        gcc -v
+      )
 
 build_script:
     - cd %APPVEYOR_BUILD_FOLDER%
@@ -66,19 +75,19 @@ build_script:
         mkdir build_msys2 &&
         cd build_msys2 &&
         cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
-        make -j2
+        cmake --build . -- -j2
       )
     - if /i "%target%" == "mingw" (
         mkdir build_mingw &&
         cd build_mingw &&
         cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
-        make -j2
+        cmake --build . -- -j2
       )
     - if /i "%target%" == "cygwin" (
         mkdir build_cygwin &&
         cd build_cygwin &&
-        cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
-        make -j2
+        cmake .. -G"%generator%" -DGOOGLE_TEST=ON -DOpenMP_gomp_LIBRARY=-lgomp &&
+        cmake --build . -- -j2
       )
 
 test_script:
