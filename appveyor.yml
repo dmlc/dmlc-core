@@ -1,5 +1,14 @@
 environment:
     matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          target: msys2
+          generator: "Unix Makefiles"
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          target: mingw
+          generator: "Unix Makefiles"
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          target: cygwin
+          generator: "Unix Makefiles"
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
           target: msvc
           ver: 2013
@@ -25,15 +34,6 @@ environment:
           ver: 2017
           generator: "Visual Studio 15 2017 Win64"
           configuration: Release
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-          target: msys2
-          generator: "Unix Makefiles"
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-          target: mingw
-          generator: "Unix Makefiles"
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-          target: cygwin
-          generator: "Unix Makefiles"
 
 matrix:
     fast_finish: false
