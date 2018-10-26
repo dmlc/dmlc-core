@@ -73,7 +73,23 @@ endif()
 # Older stdc++ enable c++11 items
 add_definitions(-D__USE_XOPEN2K8)
 
+# Check headers and symbols
 check_symbol_exists(fopen64 stdio.h FOPEN_64_PRESENT)
+
+if(APPLE)
+  check_symbol_exists(uselocale xlocale.h USE_LOCALE_PRESENT)
+  check_symbol_exists(newlocale xlocale.h NEW_LOCALE_PRESENT)
+  check_symbol_exists(freelocale xlocale.h FREE_LOCALE_PRESENT)
+elseif(WIN32)
+  check_symbol_exists(_create_locale locale.h CREATE_LOCALE_PRESENT)
+  check_symbol_exists(_strtod_l stdlib.h STRTOD_L_PRESENT)
+  check_symbol_exists(_free_locale locale.h FREE_LOCALE_PRESENT)
+else()
+  check_symbol_exists(uselocale locale.h USE_LOCALE_PRESENT)
+  check_symbol_exists(newlocale locale.h NEW_LOCALE_PRESENT)
+  check_symbol_exists(freelocale locale.h FREE_LOCALE_PRESENT)
+endif()
+
 message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> ${INCLUDE_DMLC_DIR}/build_config.h")
 configure_file("${CMAKE_LOCAL}/build_config.h.in" "${INCLUDE_DMLC_DIR}/build_config.h")
 

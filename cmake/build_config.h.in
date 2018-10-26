@@ -8,4 +8,10 @@
   #define fopen64 std::fopen
 #endif
 
+#cmakedefine USE_LOCALE_PRESENT
+#cmakedefine NEW_LOCALE_PRESENT
+#cmakedefine FREE_LOCALE_PRESENT
+#cmakedefine CREATE_LOCALE_PRESENT
+#cmakedefine STRTOD_L_PRESENT
+
 #endif  // DMLC_BUILD_CONFIG_H_
