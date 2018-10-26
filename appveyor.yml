@@ -43,16 +43,10 @@ platform:
 
 install:
     - git submodule update --init --recursive
-    - if /i "%target%" == "msys2" (
-        set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
-      )
-    - if /i "%target%" == "mingw" (
-        set PATH=C:\MinGW-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH%
-      )
-    - if /i "%target%" == "cygwin" (
-        set PATH=C:\cygwin64\bin;C:\cygwin64\usr\bin;%PATH%
-      )
-    - gcc -v
+    - if /i "%target%" == "msys2" set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+    - if /i "%target%" == "mingw" set PATH=C:\MinGW-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH%
+    - if /i "%target%" == "cygwin" set PATH=C:\cygwin64\bin;C:\cygwin64\usr\bin;%PATH%
+    - if /i not "%target%" == "msvc" gcc -v
     - ls -l C:\
 
 build_script:
