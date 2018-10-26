@@ -41,4 +41,9 @@
   #define DMLC_LOG_STACK_TRACE_SIZE 10
 #endif
 
+/* default logic for detecting existence of nanosleep() */
+#if !(defined _WIN32) || (defined __CYGWIN__)
+  #define DMLC_NANOSLEEP_PRESENT
+#endif
+
 #endif  // DMLC_BUILD_CONFIG_H_

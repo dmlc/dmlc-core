@@ -99,6 +99,8 @@ else()
   check_symbol_exists(freelocale locale.h DMLC_FREE_LOCALE_PRESENT)
 endif()
 
+check_symbol_exists(nanosleep time.h DMLC_NANOSLEEP_PRESENT)
+
 message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> ${INCLUDE_DMLC_DIR}/build_config.h")
 configure_file("${CMAKE_LOCAL}/build_config.h.in" "${INCLUDE_DMLC_DIR}/build_config.h")
 

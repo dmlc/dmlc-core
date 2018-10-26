@@ -22,4 +22,6 @@
   #define DMLC_LOG_STACK_TRACE_SIZE 10
 #endif
 
+#cmakedefine DMLC_NANOSLEEP_PRESENT
+
 #endif  // DMLC_BUILD_CONFIG_H_
