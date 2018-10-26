@@ -37,39 +37,79 @@
 
 namespace {
 
-/*! \brief Wrapper for locale object */
+/*! \brief Wrapper for locale functions */
 
+#if defined(_WIN32)
+#if defined(CREATE_LOCALE_PRESENT) && defined(STRTOD_L_PRESENT) \
+    && defined(FREE_LOCALE_PRESENT)
+
+/* Windows, and all necessary functions present */
+using locale_type = _locale_t;
+inline locale_type create_locale(const char* locale) {
+  _create_locale(LC_ALL, locale);
+}
+inline void free_locale(locale_type locale) {
+  _free_locale(locale);
+}
+
+#else  // defined(CREATE_LOCALE_PRESENT) ...
+
+/* Windows, but some necessary functions missing */
+using locale_type = int;
+inline locale_type create_locale(const char* locale) {
+  return 0;
+}
+inline void free_locale(locale_type locale) {}
+inline double _strtod_l(const char* str, char** str_end, locale_type locale) {
+  return std::strtod(str, str_end);  // fail-safe implementation
+}
+
+#endif  // defined(CREATE_LOCALE_PRESENT) ...
+#else  // defined(_WIN32)
+#if defined(USE_LOCALE_PRESENT) && defined(NEW_LOCALE_PRESENT) \
+    && defined(FREE_LOCALE_PRESENT)
+
+/* UNIX-like system, and all necessary functions present */
+using locale_type = locale_t;
+inline locale_type create_locale(const char* locale) {
+  return newlocale(LC_ALL_MASK, locale, static_cast<locale_type>(0));
+}
+inline void free_locale(locale_type locale) {
+  freelocale(locale);
+}
+
+#else  // defined(USE_LOCALE_PRESENT) ...
+
+/* UNIX-like system, but some necessary functions missing */
+using locale_type = int;
+inline locale_type create_locale(const char* locale) {
+  return 0;
+}
+inline void free_locale(locale_type locale) {}
+inline locale_type uselocale(locale_type locale) {
+  return 0;
+}
+
+#endif  // defined(USE_LOCALE_PRESENT) ...
+#endif  // defined(_WIN32)
+
+/*! \brief Wrapper for locale object */
 class LocaleObject {
  public:
-#ifdef _WIN32  /* Windows-specific */
-  using locale_type = _locale_t;
   explicit LocaleObject(const char* locale)
-    : locale_(_create_locale(LC_ALL, locale)) {}
-#else
-  using locale_type = locale_t;
-  explicit LocaleObject(const char* locale)
-    : locale_(newlocale(LC_ALL_MASK, locale, static_cast<locale_type>(0))) {}
-#endif
-
+    : locale_(create_locale(locale)) {}
   locale_type GetLocale() const {
     return locale_;
   }
-
-#ifdef _WIN32  /* Windows-specific */
   ~LocaleObject() {
-    _free_locale(locale_);
+    free_locale(locale_);
   }
-#else
-  ~LocaleObject() {
-    freelocale(locale_);
-  }
-#endif
-
  private:
   locale_type locale_;
 };
 
 #ifdef _WIN32  /* Windows-specific */
+
 inline float locale_agnostic_stof(const std::string& value) {
   LocaleObject new_locale("C");
   const char* str_source = value.c_str();
@@ -98,7 +138,9 @@ inline double locale_agnostic_stod(const std::string& value) {
   }
   return parsed_value;
 }
+
 #else  // _WIN32
+
 inline float locale_agnostic_stof(const std::string& value) {
   LocaleObject new_locale("C");
   const locale_t current_locale = uselocale(static_cast<locale_t>(0));
@@ -116,6 +158,7 @@ inline double locale_agnostic_stod(const std::string& value) {
   uselocale(current_locale);
   return parsed_value;
 }
+
 #endif  // _WIN32
 
 }  // anonymous namespace
