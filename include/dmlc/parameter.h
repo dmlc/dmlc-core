@@ -137,12 +137,6 @@ inline double locale_agnostic_stod(const std::string& value) {
 namespace {
 
 /* necessary functions missing */
-
-using locale_type = int;
-inline locale_type create_locale(const char* locale) {
-  return 0;
-}
-inline void free_locale(locale_type locale) {}
 inline float locale_agnostic_stof(const std::string& value) {
   const char* str_source = value.c_str();
   char* endptr;
@@ -170,9 +164,9 @@ inline double locale_agnostic_stod(const std::string& value) {
 }
 
 #ifdef _MSC_VER
-  #pragma message(": warning : dmlc::Parameter parsing will not be locale-dependent")
+  #pragma message(": warning : dmlc::Parameter parsing will be locale-dependent")
 #else
-  #warning "dmlc::Parameter parsing will not be locale-dependent"
+  #warning "dmlc::Parameter parsing will be locale-dependent"
 #endif
 
 }  // anonymous namespace
