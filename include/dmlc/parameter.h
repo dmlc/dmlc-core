@@ -46,7 +46,7 @@ namespace {
 /* Windows, and all necessary functions present */
 using locale_type = _locale_t;
 inline locale_type create_locale(const char* locale) {
-  _create_locale(LC_ALL, locale);
+  return _create_locale(LC_ALL, locale);
 }
 inline void free_locale(locale_type locale) {
   _free_locale(locale);
@@ -117,7 +117,7 @@ inline float locale_agnostic_stof(const std::string& value) {
   const double parsed_value = _strtod_l(str_source, &endptr, new_locale.GetLocale());
   if (errno == ERANGE
       || parsed_value < static_cast<double>(std::numeric_limits<float>::denorm_min())
-      || parsed_value > static_cast<double>(std::numeric_limits<float>::max()) {
+      || parsed_value > static_cast<double>(std::numeric_limits<float>::max())) {
     // Detect ERANGE for single-precision float
     throw std::out_of_range("Out of range value");
   } else if (const_cast<const char*>(endptr) == str_source) {
