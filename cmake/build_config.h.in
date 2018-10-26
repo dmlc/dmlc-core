@@ -1,17 +1,25 @@
 #ifndef DMLC_BUILD_CONFIG_H_
 #define DMLC_BUILD_CONFIG_H_
 
-#cmakedefine FOPEN_64_PRESENT
+#cmakedefine DMLC_FOPEN_64_PRESENT
 
-#if !defined(FOPEN_64_PRESENT) && DMLC_USE_FOPEN64
+#if !defined(DMLC_FOPEN_64_PRESENT) && DMLC_USE_FOPEN64
   #define DMLC_EMIT_FOPEN64_REDEFINE_WARNING
   #define fopen64 std::fopen
 #endif
 
-#cmakedefine USE_LOCALE_PRESENT
-#cmakedefine NEW_LOCALE_PRESENT
-#cmakedefine FREE_LOCALE_PRESENT
-#cmakedefine CREATE_LOCALE_PRESENT
-#cmakedefine STRTOD_L_PRESENT
+#cmakedefine DMLC_USE_LOCALE_PRESENT
+#cmakedefine DMLC_NEW_LOCALE_PRESENT
+#cmakedefine DMLC_FREE_LOCALE_PRESENT
+#cmakedefine DMLC_CREATE_LOCALE_PRESENT
+#cmakedefine DMLC_STRTOD_L_PRESENT
+#cmakedefine DMLC_WIN32_FREE_LOCALE_PRESENT
+
+#cmakedefine DMLC_EXECINFO_H_PRESENT
+
+#ifdef DMLC_EXECINFO_H_PRESENT
+  #define DMLC_LOG_STACK_TRACE 1
+  #define DMLC_LOG_STACK_TRACE_SIZE 10
+#endif
 
 #endif  // DMLC_BUILD_CONFIG_H_

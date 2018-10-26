@@ -74,26 +74,35 @@ endif()
 add_definitions(-D__USE_XOPEN2K8)
 
 # Check headers and symbols
-check_symbol_exists(fopen64 stdio.h FOPEN_64_PRESENT)
-
-if(APPLE)
-  check_symbol_exists(uselocale xlocale.h USE_LOCALE_PRESENT)
-  check_symbol_exists(newlocale xlocale.h NEW_LOCALE_PRESENT)
-  check_symbol_exists(freelocale xlocale.h FREE_LOCALE_PRESENT)
-elseif(WIN32)
-  check_symbol_exists(_create_locale locale.h CREATE_LOCALE_PRESENT)
-  check_symbol_exists(_strtod_l stdlib.h STRTOD_L_PRESENT)
-  check_symbol_exists(_free_locale locale.h FREE_LOCALE_PRESENT)
+include(CheckSymbolExists)
+check_symbol_exists(fopen64 stdio.h DMLC_FOPEN_64_PRESENT)
+find_path(CXXABI_H cxxabi.h)
+find_path(EXECINFO_H execinfo.h)
+if (CXXABI_H AND EXECINFO_H)
+  set(DMLC_EXECINFO_H_PRESENT 1)
+  message(STATUS "Looking for execinfo.h - found")
 else()
-  check_symbol_exists(uselocale locale.h USE_LOCALE_PRESENT)
-  check_symbol_exists(newlocale locale.h NEW_LOCALE_PRESENT)
-  check_symbol_exists(freelocale locale.h FREE_LOCALE_PRESENT)
+  set(DMLC_EXECINFO_H_PRESENT 0)
+  message(STATUS "Looking for execinfo.h - not found")
+endif()
+
+check_symbol_exists(_create_locale locale.h DMLC_CREATE_LOCALE_PRESENT)
+check_symbol_exists(_strtod_l stdlib.h DMLC_STRTOD_L_PRESENT)
+check_symbol_exists(_free_locale locale.h DMLC_WIN32_FREE_LOCALE_PRESENT)
+if(APPLE)
+  check_symbol_exists(uselocale xlocale.h DMLC_USE_LOCALE_PRESENT)
+  check_symbol_exists(newlocale xlocale.h DMLC_NEW_LOCALE_PRESENT)
+  check_symbol_exists(freelocale xlocale.h DMLC_FREE_LOCALE_PRESENT)
+else()
+  check_symbol_exists(uselocale locale.h DMLC_USE_LOCALE_PRESENT)
+  check_symbol_exists(newlocale locale.h DMLC_NEW_LOCALE_PRESENT)
+  check_symbol_exists(freelocale locale.h DMLC_FREE_LOCALE_PRESENT)
 endif()
 
 message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> ${INCLUDE_DMLC_DIR}/build_config.h")
 configure_file("${CMAKE_LOCAL}/build_config.h.in" "${INCLUDE_DMLC_DIR}/build_config.h")
 
-# compile
+# compiler flags
 if(MSVC)
   add_definitions(-DDMLC_USE_CXX11)
   foreach(flag_var
@@ -121,9 +130,6 @@ else(MSVC)
   else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
   endif()
-  #if(SUPPORT_CXX0X)
-  #	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c++0x")
-  #endif()
   if(SUPPORT_MSSE2)
   	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2")
   endif()
@@ -179,6 +185,8 @@ endif()
 
 add_library(dmlc ${SOURCE})
 target_link_libraries(dmlc ${dmlccore_LINKER_LIBS})
+target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
+  -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE)
 
 # ---[ Install Includes
 if(INSTALL_INCLUDE_DIR)
@@ -206,3 +214,4 @@ if(GOOGLE_TEST)
   include(CTest)
   add_subdirectory(test/unittest)
 endif()
+

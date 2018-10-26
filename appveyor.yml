@@ -1,11 +1,11 @@
 environment:
     matrix:
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-          target: mingw
-          generator: "MinGW Makefiles"
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
           target: cygwin
           generator: "Unix Makefiles"
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          target: mingw
+          generator: "MinGW Makefiles"
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
           target: msys2
           generator: "Unix Makefiles"
@@ -36,7 +36,7 @@ environment:
           configuration: Release
 
 matrix:
-    fast_finish: false
+    fast_finish: true
 
 platform:
     - x64
