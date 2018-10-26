@@ -1,30 +1,57 @@
 environment:
     matrix:
-        - target: msvc
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          target: msvc
           ver: 2013
           generator: "Visual Studio 12 2013 Win64"
           configuration: Release
-        - target: msvc
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          target: msvc
           ver: 2015
           generator: "Visual Studio 14 2015 Win64"
           configuration: Debug
-        - target: msvc
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          target: msvc
           ver: 2015
           generator: "Visual Studio 14 2015 Win64"
           configuration: Release
-        - target: mingw
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          target: msvc
+          ver: 2017
+          generator: "Visual Studio 15 2017 Win64"
+          configuration: Debug
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          target: msvc
+          ver: 2017
+          generator: "Visual Studio 15 2017 Win64"
+          configuration: Release
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          target: msys2
+          generator: "Unix Makefiles"
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          target: mingw
+          generator: "Unix Makefiles"
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          target: cygwin
           generator: "Unix Makefiles"
 
 matrix:
-  fast_finish: false
+    fast_finish: false
 
 platform:
     - x64
 
 install:
     - git submodule update --init --recursive
-    # MinGW
-    - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+    - if /i "%target%" == "msys2" (
+        set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+      )
+    - if /i "%target%" == "mingw" (
+        set PATH=C:\MinGW-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH%
+      )
+    - if /i "%target%" == "cygwin" (
+        set PATH=C:\cygwin64\bin;C:\cygwin64\usr\bin;%PATH%
+      )
     - gcc -v
     - ls -l C:\
 
@@ -41,9 +68,21 @@ build_script:
           msbuild dmlc.sln
         )
       )
+    - if /i "%target%" == "msys2" (
+        mkdir build_msys2 &&
+        cd build_msys2 &&
+        cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
+        make -j2
+      )
     - if /i "%target%" == "mingw" (
         mkdir build_mingw &&
         cd build_mingw &&
+        cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
+        make -j2
+      )
+    - if /i "%target%" == "cygwin" (
+        mkdir build_cygwin &&
+        cd build_cygwin &&
         cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
         make -j2
       )
@@ -55,6 +94,12 @@ test_script:
           .\build_msvc%ver%\test\unittest\%configuration%\dmlc_unit_tests.exe
         )
       )
+    - if /i "%target%" == "msys2" (
+        .\build_msys2\test\unittest\dmlc_unit_tests.exe
+      )
     - if /i "%target%" == "mingw" (
         .\build_mingw\test\unittest\dmlc_unit_tests.exe
+      )
+    - if /i "%target%" == "cygwin" (
+        .\build_cygwin\test\unittest\dmlc_unit_tests.exe
       )
