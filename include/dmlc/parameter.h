@@ -170,9 +170,9 @@ inline double locale_agnostic_stod(const std::string& value) {
 }
 
 #ifdef _MSC_VER
-  #pragma message(": warning : dmlc::Parameter parsing will not be locale-agnostic; make sure to use the right decimal separator")
+  #pragma message(": warning : dmlc::Parameter parsing will not be locale-dependent")
 #else
-  #warning "dmlc::Parameter parsing will not be locale-agnostic; make sure to use the right decimal separator"
+  #warning "dmlc::Parameter parsing will not be locale-dependent"
 #endif
 
 }  // anonymous namespace
