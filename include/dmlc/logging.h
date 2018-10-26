@@ -320,11 +320,11 @@ inline std::string Demangle(char const *msg_str) {
 }
 
 inline std::string StackTrace(
-    const int stack_size = DMLC_LOG_STACK_TRACE_SIZE) {
+    const size_t stack_size = DMLC_LOG_STACK_TRACE_SIZE) {
   using std::string;
   std::ostringstream stacktrace_os;
   std::vector<void*> stack(stack_size);
-  int nframes = backtrace(stack.data(), stack_size);
+  int nframes = backtrace(stack.data(), static_cast<int>(stack_size));
   stacktrace_os << "Stack trace returned " << nframes << " entries:" << std::endl;
   char **msgs = backtrace_symbols(stack.data(), nframes);
   if (msgs != nullptr) {
@@ -344,7 +344,7 @@ inline std::string demangle(char const* msg_str) {
   return std::string();
 }
 
-inline std::string StackTrace(const int stack_size = 0) {
+inline std::string StackTrace(const size_t stack_size = 0) {
   return std::string("stack traces not available when "
   "DMLC_LOG_STACK_TRACE is disabled at compile time.");
 }

@@ -17,9 +17,8 @@ add_executable(${PROJECT_NAME}_unit_tests ${UNIT_TEST_SOURCE})
 set_property(TARGET ${PROJECT_NAME}_unit_tests
   PROPERTY RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
 
-message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in -> ${CMAKE_CURRENT_BINARY_DIR}/build_config.h")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/build_config.h")
-target_include_directories(${PROJECT_NAME}_unit_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in -> ${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
 
 target_compile_definitions(${PROJECT_NAME}_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE)
 target_include_directories(${PROJECT_NAME}_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -4,8 +4,6 @@
 #include <dmlc/logging.h>
 #include <gtest/gtest.h>
 
-#include <string>
-
 TEST(Logging, basics) {
   LOG(INFO) << "hello";
   LOG(ERROR) << "error";
