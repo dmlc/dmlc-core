@@ -37,21 +37,6 @@
 #define DMLC_LOG_CUSTOMIZE 0
 #endif
 
-/*!
- * \brief Whether to print stack trace for fatal error,
- * enabled on linux when using gcc.
- */
-#if (defined(__GNUC__) && !defined(__MINGW32__)\
-     && !defined(__sun) && !defined(__SVR4)\
-     && !(defined __MINGW64__) && !(defined __ANDROID__))
-#if (!defined(DMLC_LOG_STACK_TRACE))
-#define DMLC_LOG_STACK_TRACE 1
-#endif
-#if (!defined(DMLC_LOG_STACK_TRACE_SIZE))
-#define DMLC_LOG_STACK_TRACE_SIZE 10
-#endif
-#endif
-
 /*! \brief whether compile with hdfs support */
 #ifndef DMLC_USE_HDFS
 #define DMLC_USE_HDFS 0
@@ -280,8 +265,9 @@ inline const char* BeginPtr(const std::string &str) {
 #endif
 
 /* If fopen64 is not defined by current machine,
-   replace fopen64 with std::fopen. Always keep this #include at the bottom
-   of dmlc/base.h */
+   replace fopen64 with std::fopen. Also determine ability to print stack trace
+   for fatal error and define DMLC_LOG_STACK_TRACE if stack trace can be
+   produced. Always keep this #include at the bottom of dmlc/base.h */
 #include <dmlc/build_config.h>
 
 #endif  // DMLC_BASE_H_

@@ -4,11 +4,11 @@
 #include <dmlc/thread_group.h>
 #include <gtest/gtest.h>
 
-#if defined(_WIN32)
+#if (defined _WIN32)
+
 #define NOMINMAX
 #include <Windows.h>
-static void usleep(__int64 usec)
-{
+static inline void dmlc_usleep(__int64 usec) {
   HANDLE timer;
   LARGE_INTEGER ft;
 
@@ -19,9 +19,28 @@ static void usleep(__int64 usec)
   WaitForSingleObject(timer, INFINITE);
   CloseHandle(timer);
 }
+
+#elif (defined DMLC_NANOSLEEP_PRESENT)
+
+#include <sys/types.h>  // for useconds_t, time_t
+#include <time.h>  // for timespec, nanosleep
+
+static inline int dmlc_usleep(useconds_t useconds) {
+  timespec ts;
+  ts.tv_sec = static_cast<time_t>(useconds / 1000000);
+  ts.tv_nsec = static_cast<long>(useconds % 1000000 * 1000ul);
+  return nanosleep(&ts, NULL);
+}
+
 #else
+
 #include <unistd.h>   // for usleep()
-#endif  // _WIN32
+
+static inline int dmlc_usleep(useconds_t useconds) {
+  return usleep(useconds);
+}
+
+#endif
 
 static std::atomic<int> thread_count(0);
 
@@ -30,7 +49,7 @@ static inline std::string TName(const std::string& s, int x) { return s + "-" + 
 static int this_is_thread_func(std::string label, const bool with_delay) {
   ++thread_count;
   if(with_delay) {
-    usleep(1e4);
+    dmlc_usleep(1e4);
   }
   --thread_count;
   return 0;

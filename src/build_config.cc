@@ -9,8 +9,8 @@
 
 #ifdef DMLC_EMIT_FOPEN64_REDEFINE_WARNING
   #ifdef _MSC_VER
-    #pragma message("Redefining fopen64 with std::fopen")
+    #pragma message(": warning : Redefining fopen64 with std::fopen")
   #else
     #warning "Redefining fopen64 with std::fopen"
-  #endif  // _MSC_VER
+  #endif
 #endif  // DMLC_EMIT_FOPEN64_REDEFINE_WARNING
