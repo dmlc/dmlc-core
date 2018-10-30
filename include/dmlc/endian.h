@@ -8,7 +8,7 @@
 
 #include "./base.h"
 
-#if defined(__APPLE__) || defined(_WIN32)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(_WIN32)
 #define DMLC_LITTLE_ENDIAN 1
 #else
 #include <endian.h>
