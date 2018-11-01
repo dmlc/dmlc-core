@@ -44,7 +44,7 @@
 
 #if defined(__APPLE__) || defined(_WIN32)
   #define DMLC_LITTLE_ENDIAN 1
-#elif defined (__GLIBC__)
+#elif defined(__GLIBC__)
   // GNU libc offers the helpful header <endian.h> which defines __BYTE_ORDER
   #include <endian.h>
   #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
