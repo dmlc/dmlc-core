@@ -12,7 +12,7 @@
   // If compiled with CMake, use CMake's endian detection logic
   #define DMLC_LITTLE_ENDIAN DMLC_CMAKE_LITTLE_ENDIAN
 #else
-  #define "./endian_detection.h"
+  #include "./endian_detection.h"
 #endif
 
 /*! \brief whether serialize using little endian */
