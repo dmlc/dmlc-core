@@ -8,11 +8,34 @@
 
 #include "./base.h"
 
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(_WIN32)
-#define DMLC_LITTLE_ENDIAN 1
+#ifdef DMLC_CMAKE_LITTLE_ENDIAN
+  // If compiled with CMake, use CMake's endian detection logic
+  #define DMLC_LITTLE_ENDIAN DMLC_CMAKE_LITTLE_ENDIAN
 #else
-#include <endian.h>
-#define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
+  #if defined(__APPLE__) || defined(_WIN32)
+    #define DMLC_LITTLE_ENDIAN 1
+  #elif defined (__GLIBC__)
+    // GNU libc offers the helpful header <endian.h> which defines __BYTE_ORDER
+    #include <endian.h>
+    #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
+  #elif defined(__NetBSD__) || defined(__FreeBSD__) ||  \
+        defined(__OpenBSD__) || (__DragonFly__)
+    #if defined(__OpenBSD__)
+      #include <machine/endian.h>
+    #else
+      #include <sys/endian.h>
+    #endif
+    #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
+  #elif defined(__ANDROID__)
+    #include "machine/_types.h"
+    #ifdef __ARMEB__
+      #define DMLC_LITTLE_ENDIAN 0
+    #else
+      #define DMLC_LITTLE_ENDIAN 1
+    #endif
+  #else
+    #error "Unable to determine endianness of your machine; use CMake to compile"
+  #endif
 #endif
 
 /*! \brief whether serialize using little endian */
