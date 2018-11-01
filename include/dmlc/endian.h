@@ -12,7 +12,17 @@
   // If compiled with CMake, use CMake's endian detection logic
   #define DMLC_LITTLE_ENDIAN DMLC_CMAKE_LITTLE_ENDIAN
 #else
-  #include "./endian_detection.h"
+  #if defined(__APPLE__) || defined(_WIN32)
+    #define DMLC_LITTLE_ENDIAN 1
+  #elif defined(__GLIBC__)
+    #include <endian.h>
+    #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
+  #elif defined(__FreeBSD__)
+    #include <sys/endian.h>
+    #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
+  #else
+    #error "Unable to determine endianness of your machine; use CMake to compile"
+  #endif
 #endif
 
 /*! \brief whether serialize using little endian */
