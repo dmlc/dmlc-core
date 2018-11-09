@@ -363,7 +363,7 @@ class PSTracker(object):
         for k, v in envs.items():
             env[k] = str(v)
         self.thread = Thread(
-            target=(lambda: subprocess.check_call(self.cmd, env=env, shell=True)), args=())
+            target=(lambda: subprocess.check_call(self.cmd, env=env, shell=True, executable='/bin/bash')), args=())
         self.thread.setDaemon(True)
         self.thread.start()
 
@@ -420,7 +420,7 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
         envs.update(rabit.slave_envs())
         rabit.start(nworker)
         if rabit.alive():
-           fun_submit(nworker, nserver, envs) 
+           fun_submit(nworker, nserver, envs)
     else:
         pserver = PSTracker(hostIP=hostIP, cmd=pscmd, envs=envs)
         envs.update(pserver.slave_envs())
