@@ -16,7 +16,7 @@ test/split_test: test/split_test.cc libdmlc.a
 test/libsvm_parser_test: test/libsvm_parser_test.cc src/data/libsvm_parser.h libdmlc.a
 test/libfm_parser_test: test/libfm_parser_test.cc src/data/libfm_parser.h libdmlc.a
 test/csv_parser_test: test/csv_parser_test.cc src/data/csv_parser.h libdmlc.a
-test/strtonum_test: test/strtonum_test.cc src/data/strtonum.h
+test/strtonum_test: test/strtonum_test.cc
 test/logging_test: test/logging_test.cc
 test/parameter_test: test/parameter_test.cc
 test/registry_test: test/registry_test.cc

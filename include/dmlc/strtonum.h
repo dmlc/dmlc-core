@@ -10,6 +10,7 @@
 #include <type_traits>
 #endif
 
+#include <limits>
 #include <cstdint>
 #include "./base.h"
 #include "./logging.h"
