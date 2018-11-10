@@ -18,6 +18,13 @@ TEST(Parameter, parsing_float) {
 
   kwargs["float_param"] = "0";
   ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["float_param"] = "0.015625";  // can be represented exactly in IEEE 754
+  ASSERT_NO_THROW(param.Init(kwargs));
+  ASSERT_EQ(param.float_param, 0.015625f);
+  kwargs["float_param"] = "-0.015625";  // can be represented exactly in IEEE 754
+  ASSERT_NO_THROW(param.Init(kwargs));
+  ASSERT_EQ(param.float_param, -0.015625f);
+
   kwargs["float_param"] = "1e-10";
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "1e10";
@@ -32,6 +39,13 @@ TEST(Parameter, parsing_float) {
 
   kwargs["double_param"] = "0";
   ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["double_param"] = "0.00048828125";  // can be represented exactly in IEEE 754
+  ASSERT_NO_THROW(param.Init(kwargs));
+  ASSERT_EQ(param.double_param, 0.00048828125);
+  kwargs["double_param"] = "-0.00048828125";  // can be represented exactly in IEEE 754
+  ASSERT_NO_THROW(param.Init(kwargs));
+  ASSERT_EQ(param.double_param, -0.00048828125);
+
   kwargs["double_param"] = "1e-10";
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["double_param"] = "1e10";
