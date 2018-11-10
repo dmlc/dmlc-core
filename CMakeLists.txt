@@ -81,19 +81,6 @@ check_symbol_exists(fopen64 stdio.h DMLC_FOPEN_64_PRESENT)
 check_include_file_cxx(cxxabi.h DMLC_CXXABI_H_PRESENT)
 check_include_file(execinfo.h DMLC_EXECINFO_H_PRESENT)
 
-check_symbol_exists(_create_locale locale.h DMLC_CREATE_LOCALE_PRESENT)
-check_symbol_exists(_strtod_l stdlib.h DMLC_STRTOD_L_PRESENT)
-check_symbol_exists(_free_locale locale.h DMLC_WIN32_FREE_LOCALE_PRESENT)
-if(APPLE)
-  check_symbol_exists(uselocale xlocale.h DMLC_USE_LOCALE_PRESENT)
-  check_symbol_exists(newlocale xlocale.h DMLC_NEW_LOCALE_PRESENT)
-  check_symbol_exists(freelocale xlocale.h DMLC_FREE_LOCALE_PRESENT)
-else()
-  check_symbol_exists(uselocale locale.h DMLC_USE_LOCALE_PRESENT)
-  check_symbol_exists(newlocale locale.h DMLC_NEW_LOCALE_PRESENT)
-  check_symbol_exists(freelocale locale.h DMLC_FREE_LOCALE_PRESENT)
-endif()
-
 check_symbol_exists(nanosleep time.h DMLC_NANOSLEEP_PRESENT)
 
 # Check endianness

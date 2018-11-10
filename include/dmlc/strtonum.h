@@ -1,16 +1,20 @@
 /*!
- *x  Copyright (c) 2015 by Contributors
+ * Copyright (c) 2015-2018 by Contributors
  * \file strtonum.h
- * \brief A faster implementation of strtod, ...
+ * \brief A faster implementation of strtof and strtod
  */
-#ifndef DMLC_DATA_STRTONUM_H_
-#define DMLC_DATA_STRTONUM_H_
+#ifndef DMLC_STRTONUM_H_
+#define DMLC_STRTONUM_H_
+
+#if DMLC_USE_CXX11
+#include <type_traits>
+#endif
+
 #include <cstdint>
-#include "dmlc/base.h"
-#include "dmlc/logging.h"
+#include "./base.h"
+#include "./logging.h"
 
 namespace dmlc {
-namespace data {
 inline bool isspace(char c) {
   return (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f');
 }
@@ -33,10 +37,21 @@ inline bool isdigitchars(char c) {
 const int kStrtofMaxDigits = 19;
 
 /*!
- * \brief A faster version of strtof
+ * \brief A faster version of strtof / strtod
  * TODO the current version does not support INF, NAN, and hex number
  */
-inline float strtof(const char *nptr, char **endptr) {
+template <typename FloatType, bool CheckRange = false>
+inline FloatType ParseFloat(const char* nptr, char** endptr) {
+#if DMLC_USE_CXX11
+  static_assert(std::is_same<FloatType, double>::value
+                || std::is_same<FloatType, float>::value,
+               "ParseFloat is defined only for 'float' and 'double' types");
+  constexpr int kMaxExponent
+    = (std::is_same<FloatType, double>::value ? 308 : 38);
+#else
+  const int kMaxExponent = (sizeof(FloatType) == sizeof(double) ? 308 : 38);
+#endif
+
   const char *p = nptr;
   // Skip leading white space, if any. Not necessary
   while (isspace(*p) ) ++p;
@@ -50,7 +65,7 @@ inline float strtof(const char *nptr, char **endptr) {
   }
 
   // Get digits before decimal point or exponent, if any.
-  float value;
+  FloatType value;
   for (value = 0; isdigit(*p); ++p) {
     value = value * 10.0f + (*p - '0');
   }
@@ -65,11 +80,11 @@ inline float strtof(const char *nptr, char **endptr) {
       if (digit_cnt < kStrtofMaxDigits) {
         val2 = val2 * 10 + (*p - '0');
         pow10 *= 10;
-      }
+      }  // when kStrtofMaxDigits is read, ignored following digits
       ++p;
       ++digit_cnt;
     }
-    value += static_cast<float>(
+    value += static_cast<FloatType>(
         static_cast<double>(val2) / static_cast<double>(pow10));
   }
 
@@ -77,7 +92,7 @@ inline float strtof(const char *nptr, char **endptr) {
   if ((*p == 'e') || (*p == 'E')) {
     ++p;
     bool frac = false;
-    float scale = 1.0;
+    FloatType scale = 1.0;
     unsigned expon;
     // Get sign of exponent, if any.
     if (*p == '-') {
@@ -90,7 +105,14 @@ inline float strtof(const char *nptr, char **endptr) {
     for (expon = 0; isdigit(*p); p += 1) {
       expon = expon * 10 + (*p - '0');
     }
-    if (expon > 38) expon = 38;
+    if (expon > kMaxExponent) {  // out of range, clip or raise error
+      if (CheckRange) {
+        errno = ERANGE;
+        if (endptr) *endptr = (char*)p;  // NOLINT(*)
+        return std::numeric_limits<FloatType>::infinity();
+      }
+      expon = kMaxExponent;
+    }
     // Calculate scaling factor.
     while (expon >=  8) { scale *= 1E8;  expon -=  8; }
     while (expon >   0) { scale *= 10.0; expon -=  1; }
@@ -100,6 +122,34 @@ inline float strtof(const char *nptr, char **endptr) {
 
   if (endptr) *endptr = (char*)p;  // NOLINT(*)
   return sign ? value : - value;
+}
+
+/*!
+ * \brief A faster version of strtof
+ */
+inline float strtof(const char* nptr, char** endptr) {
+  return ParseFloat<float>(nptr, endptr);
+}
+
+/*!
+ * \brief A faster version of strtof, with range checking
+ */
+inline float strtof_check_range(const char* nptr, char** endptr) {
+  return ParseFloat<float, true>(nptr, endptr);
+}
+
+/*!1
+ * \brief A faster version of strtod
+ */
+inline double strtod(const char* nptr, char** endptr) {
+  return ParseFloat<double>(nptr, endptr);
+}
+
+/*!
+ * \brief A faster version of strtod, with range checking
+ */
+inline double strtod_check_range(const char* nptr, char** endptr) {
+  return ParseFloat<double, true>(nptr, endptr);
 }
 
 /**
@@ -307,6 +357,6 @@ inline int ParseTriple(const char * begin, const char * end,
   v3 = Str2Type<T3>(p, q);
   return 3;
 }
-}  // namespace data
 }  // namespace dmlc
-#endif  // DMLC_DATA_STRTONUM_H_
+
+#endif  // DMLC_STRTONUM_H_

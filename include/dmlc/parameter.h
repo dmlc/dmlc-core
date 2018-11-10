@@ -26,136 +26,16 @@
 #include "./logging.h"
 #include "./type_traits.h"
 #include "./optional.h"
+#include "./strtonum.h"
 
 /*! \brief Wrapper for locale functions */
-
-#if defined(DMLC_USE_LOCALE_PRESENT) && defined(DMLC_NEW_LOCALE_PRESENT) \
-    && defined(DMLC_FREE_LOCALE_PRESENT)
-
-#if defined(__APPLE__)
-  #include <xlocale.h>
-#else
-  #include <locale.h>
-#endif
-
 namespace {
 
-/* UNIX-like system, and all necessary functions present */
-using locale_type = locale_t;
-inline locale_type create_locale(const char* locale) {
-  return newlocale(LC_ALL_MASK, locale, static_cast<locale_type>(0));
-}
-inline void free_locale(locale_type locale) {
-  freelocale(locale);
-}
-inline float locale_agnostic_stof(const std::string& value) {
-  const locale_type new_locale = create_locale("C");
-  const locale_type current_locale = uselocale(static_cast<locale_t>(0));
-  uselocale(new_locale);
-  const char* str_source = value.c_str();
-  char* endptr;
-  const double parsed_value = std::strtod(str_source, &endptr);
-  if (errno == ERANGE
-      || parsed_value < static_cast<double>(std::numeric_limits<float>::denorm_min())
-      || parsed_value > static_cast<double>(std::numeric_limits<float>::max())) {
-    // Detect ERANGE for single-precision float
-    throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
-    throw std::invalid_argument("No conversion could be performed");
-  }
-  uselocale(current_locale);
-  free_locale(new_locale);
-  return static_cast<float>(parsed_value);
-}
-inline double locale_agnostic_stod(const std::string& value) {
-  const locale_type new_locale = create_locale("C");
-  const locale_type current_locale = uselocale(static_cast<locale_t>(0));
-  uselocale(new_locale);
-  const char* str_source = value.c_str();
-  char* endptr;
-  const double parsed_value = std::strtod(str_source, &endptr);
-  if (errno == ERANGE) {
-    throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
-    throw std::invalid_argument("No conversion could be performed");
-  }
-  uselocale(current_locale);
-  free_locale(new_locale);
-  return parsed_value;
-}
-
-}  // anonymous namespace
-
-#elif defined(DMLC_CREATE_LOCALE_PRESENT) && defined(DMLC_STRTOD_L_PRESENT) \
-      && defined(DMLC_WIN32_FREE_LOCALE_PRESENT)
-
-#include <locale.h>
-
-namespace {
-
-/* Windows, and all necessary functions present */
-using locale_type = _locale_t;
-inline locale_type create_locale(const char* locale) {
-  return _create_locale(LC_ALL, locale);
-}
-inline void free_locale(locale_type locale) {
-  _free_locale(locale);
-}
-inline float locale_agnostic_stof(const std::string& value) {
-  const locale_type new_locale = create_locale("C");
-  const char* str_source = value.c_str();
-  char* endptr;
-  const double parsed_value = _strtod_l(str_source, &endptr, new_locale);
-  if (errno == ERANGE
-      || parsed_value < static_cast<double>(std::numeric_limits<float>::denorm_min())
-      || parsed_value > static_cast<double>(std::numeric_limits<float>::max())) {
-    // Detect ERANGE for single-precision float
-    throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
-    throw std::invalid_argument("No conversion could be performed");
-  }
-  free_locale(new_locale);
-  return static_cast<float>(parsed_value);
-}
-inline double locale_agnostic_stod(const std::string& value) {
-  const locale_type new_locale = create_locale("C");
-  const char* str_source = value.c_str();
-  char* endptr;
-  const double parsed_value = _strtod_l(str_source, &endptr, new_locale);
-  if (errno == ERANGE) {
-    throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
-    throw std::invalid_argument("No conversion could be performed");
-  }
-  free_locale(new_locale);
-  return parsed_value;
-}
-}  // anonymous namespace
-
-#else
-
-namespace {
-
-/* necessary functions missing */
 inline float locale_agnostic_stof(const std::string& value) {
   const char* str_source = value.c_str();
   char* endptr;
-  const double parsed_value = std::strtod(str_source, &endptr);
-  if (errno == ERANGE
-      || parsed_value < static_cast<double>(std::numeric_limits<float>::denorm_min())
-      || parsed_value > static_cast<double>(std::numeric_limits<float>::max())) {
-    // Detect ERANGE for single-precision float
-    throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
-    throw std::invalid_argument("No conversion could be performed");
-  }
-  return static_cast<float>(parsed_value);
-}
-inline double locale_agnostic_stod(const std::string& value) {
-  const char* str_source = value.c_str();
-  char* endptr;
-  const double parsed_value = std::strtod(str_source, &endptr);
-  if (errno == ERANGE) {
+  const float parsed_value = dmlc::strtof_check_range(str_source, &endptr);
+  if (errno == ERANGE && parsed_value == std::numeric_limits<float>::infinity()) {
     throw std::out_of_range("Out of range value");
   } else if (const_cast<const char*>(endptr) == str_source) {
     throw std::invalid_argument("No conversion could be performed");
@@ -163,15 +43,19 @@ inline double locale_agnostic_stod(const std::string& value) {
   return parsed_value;
 }
 
-#ifdef _MSC_VER
-  #pragma message(": warning : dmlc::Parameter parsing will be locale-dependent")
-#else
-  #warning "dmlc::Parameter parsing will be locale-dependent"
-#endif
+inline double locale_agnostic_stod(const std::string& value) {
+  const char* str_source = value.c_str();
+  char* endptr;
+  const double parsed_value = dmlc::strtod_check_range(str_source, &endptr);
+  if (errno == ERANGE && parsed_value == std::numeric_limits<float>::infinity()) {
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
+  return parsed_value;
+}
 
 }  // anonymous namespace
-
-#endif
 
 namespace dmlc {
 // this file is backward compatible with non-c++11
