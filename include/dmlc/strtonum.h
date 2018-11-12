@@ -94,11 +94,27 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     = (std::is_same<FloatType, double>::value ? 0x20000000000000ULL : 0x1000000ULL);
     // Largest integer that IEEE 754 floating-point value is capable of
     // representing exactly
+  constexpr FloatType kMaxSignificandForMaxExponent
+    = static_cast<FloatType>(std::is_same<FloatType, double>::value
+                             ? 1.79769313486231570 : 3.402823466);
+    // If a floating-point value has kMaxExponent, what is
+    //   the largest possible significand value?
+  constexpr FloatType kMaxSignificandForNegMaxExponent
+    = static_cast<FloatType>(std::is_same<FloatType, double>::value
+                             ? 2.22507385850720139 : 1.175494351);
+    // If a floating-point value has -kMaxExponent, what is
+    //   the largest possible significand value?
 #else
   const unsigned kMaxExponent
     = (sizeof(FloatType) == sizeof(double) ? 308U : 38U);
   const uint64_t kMaxPreDecimalDigits
-    = (std::is_same<FloatType, double>::value ? 0x20000000000000ULL : 0x1000000ULL);
+    = (sizeof(FloatType) == sizeof(double) ? 0x20000000000000ULL : 0x1000000ULL);
+  const FloatType kMaxSignificandForMaxExponent
+    = static_cast<FloatType>(sizeof(FloatType) == sizeof(double)
+                             ? 1.79769313486231570 : 3.402823466);
+  const FloatType kMaxSignificandForNegMaxExponent
+    = static_cast<FloatType>(sizeof(FloatType) == sizeof(double)
+                             ? 2.22507385850720139 : 1.175494351);
 #endif
 
   const char *p = nptr;
@@ -164,6 +180,18 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
         return std::numeric_limits<FloatType>::infinity();
       }
       expon = kMaxExponent;
+    }
+    // handle edge case where exponent is exactly kMaxExponent
+    if (expon == kMaxExponent
+        && ((!frac && value > kMaxSignificandForMaxExponent)
+           || (frac && value < kMaxSignificandForNegMaxExponent))) {
+      if (CheckRange) {
+        errno = ERANGE;
+        if (endptr) *endptr = (char*)p;  // NOLINT(*)
+        return std::numeric_limits<FloatType>::infinity();
+      }
+      value = (frac ? kMaxSignificandForMaxExponent
+                    : kMaxSignificandForNegMaxExponent);
     }
     // Calculate scaling factor.
     while (expon >= 8U) { scale *= static_cast<FloatType>(1E8f);  expon -= 8U; }

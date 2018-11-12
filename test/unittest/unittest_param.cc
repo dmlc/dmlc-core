@@ -29,6 +29,10 @@ TEST(Parameter, parsing_float) {
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "1e10";
   ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["float_param"] = "3.4e+38";
+  ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["float_param"] = "1.2e-38";
+  ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "16777216.01";
   ASSERT_NO_THROW(param.Init(kwargs));
 
@@ -36,6 +40,10 @@ TEST(Parameter, parsing_float) {
   kwargs["float_param"] = "1e-100";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
   kwargs["float_param"] = "1e100";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "3.5e+38";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "1.1e-38";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
 
   // Too many digits before the decimal point should throw error
@@ -73,6 +81,10 @@ TEST(Parameter, parsing_float) {
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["double_param"] = "1e100";
   ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["double_param"] = "1.7e+308";
+  ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["double_param"] = "2.3e-308";
+  ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["double_param"] = "16777217.01";
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["double_param"] = "100000000.01";
@@ -84,6 +96,10 @@ TEST(Parameter, parsing_float) {
   kwargs["double_param"] = "1e-500";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
   kwargs["double_param"] = "1e500";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["double_param"] = "1.8e+308";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["double_param"] = "2.2e-308";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
 
   // Too many digits before the decimal point should throw error
