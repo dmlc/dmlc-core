@@ -199,6 +199,10 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     // Return signed and scaled floating point result.
     value = frac ? (value / scale) : (value * scale);
   }
+  // Consume 'f' suffix, if any
+  if (*p == 'f' || *p == 'F') {
+    ++p;
+  }
 
   if (endptr) *endptr = (char*)p;  // NOLINT(*)
   return sign ? value : - value;
