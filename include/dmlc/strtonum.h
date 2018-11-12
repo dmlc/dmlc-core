@@ -10,6 +10,7 @@
 #include <type_traits>
 #endif
 
+#include <string>
 #include <limits>
 #include <cstdint>
 #include "./base.h"
