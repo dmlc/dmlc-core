@@ -8,6 +8,7 @@
 #define DMLC_DATA_LIBSVM_PARSER_H_
 
 #include <dmlc/data.h>
+#include <dmlc/strtonum.h>
 #include <dmlc/parameter.h>
 #include <map>
 #include <string>
@@ -16,7 +17,6 @@
 #include <cstring>
 #include "./row_block.h"
 #include "./text_parser.h"
-#include "./strtonum.h"
 
 namespace dmlc {
 namespace data {

@@ -8,13 +8,6 @@
   #define fopen64 std::fopen
 #endif
 
-#cmakedefine DMLC_USE_LOCALE_PRESENT
-#cmakedefine DMLC_NEW_LOCALE_PRESENT
-#cmakedefine DMLC_FREE_LOCALE_PRESENT
-#cmakedefine DMLC_CREATE_LOCALE_PRESENT
-#cmakedefine DMLC_STRTOD_L_PRESENT
-#cmakedefine DMLC_WIN32_FREE_LOCALE_PRESENT
-
 #cmakedefine DMLC_CXXABI_H_PRESENT
 #cmakedefine DMLC_EXECINFO_H_PRESENT
 

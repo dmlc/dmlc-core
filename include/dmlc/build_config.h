@@ -17,21 +17,6 @@
   #define fopen64 std::fopen
 #endif
 
-/* default logic for locale functionality */
-#if (defined _WIN32) && !(defined __CYGWIN__)
-
-  #define DMLC_CREATE_LOCALE_PRESENT
-  #define DMLC_STRTOD_L_PRESENT
-  #define DMLC_WIN32_FREE_LOCALE_PRESENT
-
-#else
-
-  #define DMLC_USE_LOCALE_PRESENT
-  #define DMLC_NEW_LOCALE_PRESENT
-  #define DMLC_FREE_LOCALE_PRESENT
-
-#endif
-
 /* default logic for stack trace */
 #if (defined(__GNUC__) && !defined(__MINGW32__)\
      && !defined(__sun) && !defined(__SVR4)\

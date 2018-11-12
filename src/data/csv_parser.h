@@ -8,6 +8,7 @@
 #define DMLC_DATA_CSV_PARSER_H_
 
 #include <dmlc/data.h>
+#include <dmlc/strtonum.h>
 #include <dmlc/parameter.h>
 #include <cmath>
 #include <cstring>
@@ -16,7 +17,6 @@
 #include <limits>
 #include "./row_block.h"
 #include "./text_parser.h"
-#include "./strtonum.h"
 
 namespace dmlc {
 namespace data {
