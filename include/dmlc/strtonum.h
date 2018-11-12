@@ -88,10 +88,11 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
   static_assert(std::is_same<FloatType, double>::value
                 || std::is_same<FloatType, float>::value,
                "ParseFloat is defined only for 'float' and 'double' types");
-  constexpr int kMaxExponent
-    = (std::is_same<FloatType, double>::value ? 308 : 38);
+  constexpr unsigned kMaxExponent
+    = (std::is_same<FloatType, double>::value ? 308U : 38U);
 #else
-  const int kMaxExponent = (sizeof(FloatType) == sizeof(double) ? 308 : 38);
+  const unsigned kMaxExponent
+    = (sizeof(FloatType) == sizeof(double) ? 308U : 38U);
 #endif
 
   const char *p = nptr;
@@ -109,7 +110,8 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
   // Get digits before decimal point or exponent, if any.
   FloatType value;
   for (value = 0; isdigit(*p); ++p) {
-    value = value * 10.0f + (*p - '0');
+    value = value * static_cast<FloatType>(10.0f)
+            + static_cast<FloatType>(*p - '0');
   }
 
   // Get digits after decimal point, if any.
@@ -120,8 +122,8 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     ++p;
     while (isdigit(*p)) {
       if (digit_cnt < kStrtofMaxDigits) {
-        val2 = val2 * 10 + (*p - '0');
-        pow10 *= 10;
+        val2 = val2 * 10ULL + static_cast<uint64_t>(*p - '0');
+        pow10 *= 10ULL;
       }  // when kStrtofMaxDigits is read, ignored following digits
       ++p;
       ++digit_cnt;
@@ -134,7 +136,7 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
   if ((*p == 'e') || (*p == 'E')) {
     ++p;
     bool frac = false;
-    FloatType scale = 1.0;
+    FloatType scale = static_cast<FloatType>(1.0f);
     unsigned expon;
     // Get sign of exponent, if any.
     if (*p == '-') {
@@ -144,8 +146,8 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
       ++p;
     }
     // Get digits of exponent, if any.
-    for (expon = 0; isdigit(*p); p += 1) {
-      expon = expon * 10 + (*p - '0');
+    for (expon = 0; isdigit(*p); ++p) {
+      expon = expon * 10U + static_cast<unsigned>(*p - '0');
     }
     if (expon > kMaxExponent) {  // out of range, clip or raise error
       if (CheckRange) {
@@ -156,8 +158,8 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
       expon = kMaxExponent;
     }
     // Calculate scaling factor.
-    while (expon >=  8) { scale *= 1E8;  expon -=  8; }
-    while (expon >   0) { scale *= 10.0; expon -=  1; }
+    while (expon >= 8U) { scale *= static_cast<FloatType>(1E8f);  expon -= 8U; }
+    while (expon >  0U) { scale *= static_cast<FloatType>(10.0f); expon -= 1U; }
     // Return signed and scaled floating point result.
     value = frac ? (value / scale) : (value * scale);
   }
@@ -246,7 +248,7 @@ inline SignedIntType ParseSignedInt(const char* nptr, char** endptr, int base) {
                 && std::is_integral<SignedIntType>::value,
                 "ParseSignedInt is defined for signed integers only");
 #endif
-  CHECK_LE(base, 10);
+  CHECK(base <= 10 && base >= 2);
   const char* p = nptr;
   // Skip leading white space, if any. Not necessary
   while (isspace(*p) ) ++p;
@@ -260,8 +262,9 @@ inline SignedIntType ParseSignedInt(const char* nptr, char** endptr, int base) {
   }
 
   SignedIntType value;
+  const SignedIntType base_val = static_cast<SignedIntType>(base);
   for (value = 0; isdigit(*p); ++p) {
-    value = value * base + (*p - '0');
+    value = value * base_val + static_cast<SignedIntType>(*p - '0');
   }
 
   if (endptr) *endptr = (char*)p;  // NOLINT(*)
@@ -286,7 +289,7 @@ inline UnsignedIntType ParseUnsignedInt(const char* nptr, char** endptr, int bas
                 && std::is_integral<UnsignedIntType>::value,
                 "ParseUnsignedInt is defined for unsigned integers only");
 #endif
-  CHECK_LE(base, 10);
+  CHECK(base <= 10 && base >= 2);
   const char *p = nptr;
   // Skip leading white space, if any. Not necessary
   while (isspace(*p)) ++p;
@@ -303,8 +306,9 @@ inline UnsignedIntType ParseUnsignedInt(const char* nptr, char** endptr, int bas
   CHECK_EQ(sign, true);
 
   UnsignedIntType value;
+  const UnsignedIntType base_val = static_cast<UnsignedIntType>(base);
   for (value = 0; isdigit(*p); ++p) {
-    value = value * base + (*p - '0');
+    value = value * base_val + static_cast<UnsignedIntType>(*p - '0');
   }
 
   if (endptr) *endptr = (char*)p; // NOLINT(*)
