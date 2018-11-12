@@ -171,6 +171,7 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
  *        std::strtof() for more information. Note that this function does not
  *        check for overflow. Use strtof_check_range() to check for overflow.
  * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not handle long decimals (> 19 digits) correctly
  * \param nptr Beginning of the string that's to be converted into float
  * \param endptr After the conversion, this pointer will be set to point one
  *               past the last character used in the conversion.
@@ -186,6 +187,7 @@ inline float strtof(const char* nptr, char** endptr) {
  *        overflow. If the converted value is outside the range for the float
  *        type, errno is set to ERANGE and HUGE_VALF is returned.
  * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not handle long decimals (> 19 digits) correctly
  * \param nptr Beginning of the string that's to be converted into float
  * \param endptr After the conversion, this pointer will be set to point one
  *               past the last character used in the conversion.
@@ -200,6 +202,7 @@ inline float strtof_check_range(const char* nptr, char** endptr) {
  *        std::strtof() for more information. Note that this function does not
  *        check for overflow. Use strtod_check_range() to check for overflow.
  * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not handle long decimals (> 19 digits) correctly
  * \param nptr Beginning of the string that's to be converted into double
  * \param endptr After the conversion, this pointer will be set to point one
  *               past the last character used in the conversion.
@@ -215,6 +218,7 @@ inline double strtod(const char* nptr, char** endptr) {
  *        overflow. If the converted value is outside the range for the double
  *        type, errno is set to ERANGE and HUGE_VAL is returned.
  * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not handle long decimals (> 19 digits) correctly
  * \param nptr Beginning of the string that's to be converted into double
  * \param endptr After the conversion, this pointer will be set to point one
  *               past the last character used in the conversion.
@@ -336,6 +340,8 @@ inline long atol(const char* p) {  // NOLINT(*)
 /*!
  * \brief A faster implementation of atof(). Unlike std::atof(), this function
  *        returns float type.
+ * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not handle long decimals (> 19 digits) correctly
  * \param nptr Beginning of the string that's to be converted into float
  * \return Converted value, in float type
  */
@@ -347,6 +353,8 @@ inline float atof(const char* nptr) {
  * \brief A faster implementation of stof(). See documentation of std::stof()
  *        for more information. This function will test for overflow and
  *        invalid arguments.
+ * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not handle long decimals (> 19 digits) correctly
  * \param value The string to convert into float
  * \param pos If not null, it will store the number of characters processed
  * \return Converted value, in float type
@@ -373,6 +381,8 @@ inline float stof(const std::string& value, size_t* pos = nullptr) {
  * \brief A faster implementation of stod(). See documentation of std::stod()
  *        for more information. This function will test for overflow and
  *        invalid arguments.
+ * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not handle long decimals (> 19 digits) correctly
  * \param value The string to convert into double
  * \param pos If not null, it will store the number of characters processed
  * \return Converted value, in double type
