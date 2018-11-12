@@ -28,35 +28,6 @@
 #include "./optional.h"
 #include "./strtonum.h"
 
-/*! \brief Wrapper for locale functions */
-namespace {
-
-inline float locale_agnostic_stof(const std::string& value) {
-  const char* str_source = value.c_str();
-  char* endptr;
-  const float parsed_value = dmlc::strtof_check_range(str_source, &endptr);
-  if (errno == ERANGE && parsed_value == std::numeric_limits<float>::infinity()) {
-    throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
-    throw std::invalid_argument("No conversion could be performed");
-  }
-  return parsed_value;
-}
-
-inline double locale_agnostic_stod(const std::string& value) {
-  const char* str_source = value.c_str();
-  char* endptr;
-  const double parsed_value = dmlc::strtod_check_range(str_source, &endptr);
-  if (errno == ERANGE && parsed_value == std::numeric_limits<float>::infinity()) {
-    throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
-    throw std::invalid_argument("No conversion could be performed");
-  }
-  return parsed_value;
-}
-
-}  // anonymous namespace
-
 namespace dmlc {
 // this file is backward compatible with non-c++11
 /*! \brief Error throwed by parameter checking */
@@ -1020,8 +991,9 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
   typedef FieldEntryNumeric<FieldEntry<float>, float> Parent;
   // override set
   virtual void Set(void *head, const std::string &value) const {
+    size_t pos = 0;  // number of characters processed by dmlc::stof()
     try {
-      this->Get(head) = locale_agnostic_stof(value);
+      this->Get(head) = dmlc::stof(value, &pos);
     } catch (const std::invalid_argument &) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_ << " expect " << type_
@@ -1030,6 +1002,13 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
     } catch (const std::out_of_range&) {
       std::ostringstream os;
       os << "Out of range value for " << key_ << ", value=\'" << value << '\'';
+      throw dmlc::ParamError(os.str());
+    }
+    CHECK_LE(pos, value.length());  // just in case
+    if (pos < value.length()) {
+      std::ostringstream os;
+      os << "Some trailing characters could not be parsed: \'"
+         << value.substr(pos) << "\'";
       throw dmlc::ParamError(os.str());
     }
   }
@@ -1045,8 +1024,9 @@ class FieldEntry<double>
   typedef FieldEntryNumeric<FieldEntry<double>, double> Parent;
   // override set
   virtual void Set(void *head, const std::string &value) const {
+    size_t pos = 0;  // number of characters processed by dmlc::stod()
     try {
-      this->Get(head) = locale_agnostic_stod(value);
+      this->Get(head) = dmlc::stod(value, &pos);
     } catch (const std::invalid_argument &) {
       std::ostringstream os;
       os << "Invalid Parameter format for " << key_ << " expect " << type_
@@ -1055,6 +1035,13 @@ class FieldEntry<double>
     } catch (const std::out_of_range&) {
       std::ostringstream os;
       os << "Out of range value for " << key_ << ", value=\'" << value << '\'';
+      throw dmlc::ParamError(os.str());
+    }
+    CHECK_LE(pos, value.length());  // just in case
+    if (pos < value.length()) {
+      std::ostringstream os;
+      os << "Some trailing characters could not be parsed: \'"
+         << value.substr(pos) << "\'";
       throw dmlc::ParamError(os.str());
     }
   }

@@ -35,6 +35,16 @@ TEST(Parameter, parsing_float) {
   kwargs["float_param"] = "1e100";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
 
+  // Invalid inputs should be detected
+  kwargs["float_param"] = "foobar";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "foo1.2";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "1.2e10foo";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "1.2e-2 foo";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+
   kwargs = std::map<std::string, std::string>();
 
   kwargs["double_param"] = "0";
@@ -58,5 +68,15 @@ TEST(Parameter, parsing_float) {
   kwargs["double_param"] = "1e-500";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
   kwargs["double_param"] = "1e500";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+
+  // Invalid inputs should be detected
+  kwargs["double_param"] = "foobar";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["double_param"] = "foo1.2";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["double_param"] = "1.2e10foo";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["double_param"] = "1.2e-2 foo";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
 }

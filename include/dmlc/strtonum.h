@@ -343,6 +343,58 @@ inline float atof(const char* nptr) {
 }
 
 /*!
+ * \brief A faster implementation of stof(). See documentation of std::stof()
+ *        for more information. This function will test for overflow and
+ *        invalid arguments.
+ * \param value The string to convert into float
+ * \param pos If not null, it will store the number of characters processed
+ * \return Converted value, in float type
+ * \throw std::out_of_range If the converted value would fall out of the range
+ *                          of the double type
+ * \throw std::invalid_argument If no conversion could be performed
+ */
+inline float stof(const std::string& value, size_t* pos = nullptr) {
+  const char* str_source = value.c_str();
+  char* endptr;
+  const float parsed_value = dmlc::strtof_check_range(str_source, &endptr);
+  if (errno == ERANGE && parsed_value == std::numeric_limits<float>::infinity()) {
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
+  if (pos) {
+    *pos = static_cast<size_t>(const_cast<const char*>(endptr) - str_source);
+  }
+  return parsed_value;
+}
+
+/*!
+ * \brief A faster implementation of stod(). See documentation of std::stod()
+ *        for more information. This function will test for overflow and
+ *        invalid arguments.
+ * \param value The string to convert into double
+ * \param pos If not null, it will store the number of characters processed
+ * \return Converted value, in double type
+ * \throw std::out_of_range If the converted value would fall out of the range
+ *                          of the double type
+ * \throw std::invalid_argument If no conversion could be performed
+ */
+inline double stod(const std::string& value, size_t* pos = nullptr) {
+  const char* str_source = value.c_str();
+  char* endptr;
+  const double parsed_value = dmlc::strtod_check_range(str_source, &endptr);
+  if (errno == ERANGE && parsed_value == std::numeric_limits<double>::infinity()) {
+    throw std::out_of_range("Out of range value");
+  } else if (const_cast<const char*>(endptr) == str_source) {
+    throw std::invalid_argument("No conversion could be performed");
+  }
+  if (pos) {
+    *pos = static_cast<size_t>(const_cast<const char*>(endptr) - str_source);
+  }
+  return parsed_value;
+}
+
+/*!
  * \brief Interface class that defines a single method get() to convert
  *        a string into type T. Define template specialization of this class
  *        to define the conversion method for a particular type.
