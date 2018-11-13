@@ -190,8 +190,8 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
         if (endptr) *endptr = (char*)p;  // NOLINT(*)
         return std::numeric_limits<FloatType>::infinity();
       }
-      value = (frac ? kMaxSignificandForMaxExponent
-                    : kMaxSignificandForNegMaxExponent);
+      value = (frac ? kMaxSignificandForNegMaxExponent
+                    : kMaxSignificandForMaxExponent);
     }
     // Calculate scaling factor.
     while (expon >= 8U) { scale *= static_cast<FloatType>(1E8f);  expon -= 8U; }
