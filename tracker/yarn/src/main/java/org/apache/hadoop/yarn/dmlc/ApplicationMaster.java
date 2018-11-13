@@ -279,7 +279,6 @@ public class ApplicationMaster {
             diagnostics = "Diagnostics." + ", num_tasks" + this.numTasks
                 + ", finished=" + this.finishedTasks.size() + ", failed="
                 + this.killedTasks.size() + "\n" + this.abortDiagnosis;
-            nmClient.stop();
             LOG.info(diagnostics);
         } catch (Exception e) {
             diagnostics = e.toString();
