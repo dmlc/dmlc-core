@@ -29,6 +29,10 @@ TEST(Parameter, parsing_float) {
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "1e10";
   ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["float_param"] = "1.2f";
+  ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["float_param"] = "1.2e-2f";
+  ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "3.4e+38";
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "1.2e-38";
@@ -76,6 +80,10 @@ TEST(Parameter, parsing_float) {
   kwargs["double_param"] = "1e-10";
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["double_param"] = "1e10";
+  ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["double_param"] = "1.2f";
+  ASSERT_NO_THROW(param.Init(kwargs));
+  kwargs["double_param"] = "1.2e-2f";
   ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["double_param"] = "1e-100";
   ASSERT_NO_THROW(param.Init(kwargs));
