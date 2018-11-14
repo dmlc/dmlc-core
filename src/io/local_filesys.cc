@@ -11,9 +11,11 @@ extern "C" {
 #include <sys/types.h>
 #include <dirent.h>
 }
+#define stat_struct stat
 #else  // _WIN32
 #include <Windows.h>
 #define stat _stat64
+#define stat_struct __stat64
 #endif  // _WIN32
 
 #include "./local_filesys.h"
@@ -65,7 +67,7 @@ class FileStream : public SeekStream {
 };
 
 FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
-  struct stat sb;
+  struct stat_struct sb;
   FileInfo ret;
   ret.path = path;
   if (stat(path.name.c_str(), &sb) == -1) {

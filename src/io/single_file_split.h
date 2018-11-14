@@ -15,6 +15,13 @@
 #include <string>
 #include <algorithm>
 
+#ifdef _WIN32
+#define stat_struct __stat64
+#define fstat _fstat64
+#define fileno _fileno
+#else  // _WIN32
+#define stat_struct stat
+#endif  // _WIN32
 
 namespace dmlc {
 namespace io {
@@ -52,7 +59,7 @@ class SingleFileSplit : public InputSplit {
     buffer_size_ = std::max(chunk_size, buffer_size_);
   }
   virtual size_t GetTotalSize(void) {
-    struct stat buf;
+    struct stat_struct buf;
     fstat(fileno(fp_), &buf);
     return buf.st_size;
   }
