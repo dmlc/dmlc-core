@@ -15,6 +15,10 @@
 #include <string>
 #include <algorithm>
 
+#ifdef _WIN32
+#define fstat _fstat64
+#define fileno _fileno
+#endif  // _WIN32
 
 namespace dmlc {
 namespace io {

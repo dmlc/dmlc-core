@@ -1,5 +1,8 @@
 environment:
     matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          target: mingw32
+          generator: "MinGW Makefiles"
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
           target: cygwin
           generator: "Unix Makefiles"
@@ -45,6 +48,7 @@ install:
     - git submodule update --init --recursive
     # Set PATH
     - if /i "%target%" == "msys2" set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+    - if /i "%target%" == "mingw32" set PATH=C:\MinGW\bin;%PATH:C:\Program Files\Git\usr\bin;=%
     - if /i "%target%" == "mingw" set PATH=C:\MinGW-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH:C:\Program Files\Git\usr\bin;=%
     - if /i "%target%" == "cygwin" set PATH=C:\cygwin64\bin;C:\cygwin64\usr\bin;%PATH%
     # Install packages and show information
@@ -77,6 +81,12 @@ build_script:
         cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
         cmake --build . -- -j2
       )
+    - if /i "%target%" == "mingw32" (
+        mkdir build_mingw32 &&
+        cd build_mingw32 &&
+        cmake .. -G"%generator%" -DGOOGLE_TEST=ON &&
+        cmake --build . -- -j2
+      )
     - if /i "%target%" == "mingw" (
         mkdir build_mingw &&
         cd build_mingw &&
@@ -99,6 +109,9 @@ test_script:
       )
     - if /i "%target%" == "msys2" (
         .\build_msys2\test\unittest\dmlc_unit_tests.exe
+      )
+    - if /i "%target%" == "mingw32" (
+        .\build_mingw32\test\unittest\dmlc_unit_tests.exe
       )
     - if /i "%target%" == "mingw" (
         .\build_mingw\test\unittest\dmlc_unit_tests.exe
