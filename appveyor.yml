@@ -48,7 +48,7 @@ install:
     - git submodule update --init --recursive
     # Set PATH
     - if /i "%target%" == "msys2" set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
-    - if /i "%target%" == "mingw32" set PATH=C:\MinGW\bin;%PATH:C:\Program Files\Git\usr\bin;=%
+    - if /i "%target%" == "mingw32" set PATH=C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin;%PATH:C:\Program Files\Git\usr\bin;=%
     - if /i "%target%" == "mingw" set PATH=C:\MinGW-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH:C:\Program Files\Git\usr\bin;=%
     - if /i "%target%" == "cygwin" set PATH=C:\cygwin64\bin;C:\cygwin64\usr\bin;%PATH%
     # Install packages and show information
