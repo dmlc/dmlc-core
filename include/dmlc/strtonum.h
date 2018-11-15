@@ -90,10 +90,6 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
                "ParseFloat is defined only for 'float' and 'double' types");
   constexpr unsigned kMaxExponent
     = (std::is_same<FloatType, double>::value ? 308U : 38U);
-  constexpr uint64_t kMaxPreDecimalDigits
-    = (std::is_same<FloatType, double>::value ? 0x20000000000000ULL : 0x1000000ULL);
-    // Largest integer that IEEE 754 floating-point value is capable of
-    // representing exactly
   constexpr FloatType kMaxSignificandForMaxExponent
     = static_cast<FloatType>(std::is_same<FloatType, double>::value
                              ? 1.79769313486231570 : 3.402823466);
@@ -107,8 +103,6 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
 #else
   const unsigned kMaxExponent
     = (sizeof(FloatType) == sizeof(double) ? 308U : 38U);
-  const uint64_t kMaxPreDecimalDigits
-    = (sizeof(FloatType) == sizeof(double) ? 0x20000000000000ULL : 0x1000000ULL);
   const FloatType kMaxSignificandForMaxExponent
     = static_cast<FloatType>(sizeof(FloatType) == sizeof(double)
                              ? 1.79769313486231570 : 3.402823466);
@@ -134,8 +128,6 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
   for (predec = 0; isdigit(*p); ++p) {
     predec = predec * 10ULL + static_cast<uint64_t>(*p - '0');
   }
-  CHECK_LE(predec, kMaxPreDecimalDigits)
-    << "Too many digits before the decimal point; use scientific notation instead";
   FloatType value = static_cast<FloatType>(predec);
 
   // Get digits after decimal point, if any.
