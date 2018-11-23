@@ -24,6 +24,7 @@
      && !defined(__CYGWIN__)
   #define DMLC_LOG_STACK_TRACE 1
   #define DMLC_LOG_STACK_TRACE_SIZE 10
+  #define DMLC_EXECINFO_H <execinfo.h>
 #endif
 
 /* default logic for detecting existence of nanosleep() */
