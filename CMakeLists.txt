@@ -79,9 +79,18 @@ include(CheckIncludeFile)
 include(CheckIncludeFileCXX)
 check_symbol_exists(fopen64 stdio.h DMLC_FOPEN_64_PRESENT)
 check_include_file_cxx(cxxabi.h DMLC_CXXABI_H_PRESENT)
-check_include_file(execinfo.h DMLC_EXECINFO_H_PRESENT)
-
 check_symbol_exists(nanosleep time.h DMLC_NANOSLEEP_PRESENT)
+
+# Check existence of backtrace(3)
+find_package(Backtrace)
+if(Backtrace_FOUND)
+  set(DMLC_EXECINFO_H_PRESENT 1)
+  set(DMLC_EXECINFO_H ${Backtrace_HEADER})
+  include_directories(${Backtrace_INCLUDE_DIRS})
+  list(APPEND dmlccore_LINKER_LIBS ${Backtrace_LIBRARIES})
+else()
+  set(DMLC_EXECINFO_H_PRESENT 0)
+endif()
 
 # Check endianness
 include(TestBigEndian)

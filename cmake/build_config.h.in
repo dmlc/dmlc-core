@@ -14,6 +14,7 @@
 #if (defined DMLC_CXXABI_H_PRESENT) && (defined DMLC_EXECINFO_H_PRESENT)
   #define DMLC_LOG_STACK_TRACE 1
   #define DMLC_LOG_STACK_TRACE_SIZE 10
+  #cmakedefine DMLC_EXECINFO_H <${DMLC_EXECINFO_H}>
 #endif
 
 #cmakedefine DMLC_NANOSLEEP_PRESENT

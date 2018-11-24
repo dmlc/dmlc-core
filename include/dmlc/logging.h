@@ -17,10 +17,7 @@
 
 #if DMLC_LOG_STACK_TRACE
 #include <cxxabi.h>
-#endif
-
-#if DMLC_LOG_STACK_TRACE
-#include <execinfo.h>
+#include DMLC_EXECINFO_H
 #endif
 
 namespace dmlc {
