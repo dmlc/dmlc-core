@@ -100,7 +100,7 @@ struct ParamFieldInfo {
 };
 
 /*!
- * \brief Parameter is the base type every parameter struct should inheritate from
+ * \brief Parameter is the base type every parameter struct should inherit from
  * The following code is a complete example to setup parameters.
  * \code
  *   struct Param : public dmlc::Parameter<Param> {
@@ -255,7 +255,7 @@ struct Parameter {
  *   };
  * \endcode
  *
- * This macro need to be put in a source file so that registeration only happens once.
+ * This macro need to be put in a source file so that registration only happens once.
  * Refer to example code in Parameter for details
  *
  * \param PType the name of parameter struct.
@@ -297,7 +297,7 @@ struct Parameter {
 
 //! \endcond
 /*!
- * \brief internal namespace for parameter manangement
+ * \brief internal namespace for parameter management
  * There is no need to use it directly in normal case
  */
 namespace parameter {
