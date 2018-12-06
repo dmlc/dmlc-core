@@ -557,7 +557,7 @@ class AnyJSONManager {
 
   template<typename T>
   inline static void WriteAny(JSONWriter *writer, const any &data) {
-    writer->Write(dmlc::get<T>(data));
+    writer->Write(dmlc::unsafe_get<T>(data));
   }
   template<typename T>
   inline static void ReadAny(JSONReader *reader, any* data) {
