@@ -88,7 +88,7 @@ class JSONReader {
    *  // value can be any type that is json serializable.
    *  std::string value;
    *  reader->BeginArray();
-   *  while (reader->NextObjectArrayItem(&value)) {
+   *  while (reader->NextArrayItem(&value)) {
    *    // do somthing to value
    *  }
    * \endcode
