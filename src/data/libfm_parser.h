@@ -54,6 +54,7 @@ class LibFMParser : public TextParserBase<IndexType, DType> {
     param_.Init(args);
     CHECK_EQ(param_.format, "libfm");
   }
+  ~LibFMParser() {}
 
  protected:
   virtual void ParseBlock(const char *begin,
