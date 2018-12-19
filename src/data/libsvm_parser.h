@@ -54,6 +54,7 @@ class LibSVMParser : public TextParserBase<IndexType> {
     param_.Init(args);
     CHECK_EQ(param_.format, "libsvm");
   }
+  ~LibSVMParser(){}
 
  protected:
   virtual void ParseBlock(const char *begin,
