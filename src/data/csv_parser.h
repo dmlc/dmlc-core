@@ -61,6 +61,7 @@ class CSVParser : public TextParserBase<IndexType, DType> {
           || param_.label_column < 0)
       << "Must have distinct columns for labels and instance weights";
   }
+  ~CSVParser() {}
 
  protected:
   virtual void ParseBlock(const char *begin,
