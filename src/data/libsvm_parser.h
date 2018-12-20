@@ -47,6 +47,7 @@ class LibSVMParser : public TextParserBase<IndexType> {
  public:
   explicit LibSVMParser(InputSplit *source, int nthread)
       : LibSVMParser(source, std::map<std::string, std::string>(), nthread) {}
+  ~LibSVMParser() {}
   explicit LibSVMParser(InputSplit *source,
                         const std::map<std::string, std::string>& args,
                         int nthread)
@@ -54,7 +55,6 @@ class LibSVMParser : public TextParserBase<IndexType> {
     param_.Init(args);
     CHECK_EQ(param_.format, "libsvm");
   }
-  ~LibSVMParser() {}
 
  protected:
   virtual void ParseBlock(const char *begin,
