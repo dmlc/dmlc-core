@@ -11,7 +11,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_LOCAL}/Modules)
 
 include(CheckCXXSymbolExists)
 include(cmake/Utils.cmake)
-#include(cmake/dmlccore.cmake)
 
 # Options
 dmlccore_option(USE_HDFS "Build with HDFS support" OFF)
@@ -199,7 +198,17 @@ if(INSTALL_INCLUDE_DIR)
 endif()
 
 # ---[ Install the archive static lib and header files
-install(TARGETS dmlc ARCHIVE DESTINATION lib${LIB_SUFFIX} LIBRARY DESTINATION lib${LIB_SUFFIX})
+include(GNUInstallDirs)
+install(TARGETS dmlc
+  EXPORT DMLCTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(EXPORT DMLCTargets
+  FILE DMLCTargets.cmake
+  NAMESPACE dmlc::
+  EXPORT_LINK_INTERFACE_LIBRARIES
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dmlc)
+
 install(DIRECTORY include DESTINATION .)
 install(DIRECTORY doc DESTINATION .)
 
@@ -216,4 +225,3 @@ if(GOOGLE_TEST)
   include(CTest)
   add_subdirectory(test/unittest)
 endif()
-
