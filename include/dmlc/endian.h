@@ -20,6 +20,8 @@
   #elif defined(__FreeBSD__)
     #include <sys/endian.h>
     #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
+  #elif defined(__EMSCRIPTEN__)
+    #define DMLC_LITTLE_ENDIAN 1
   #else
     #error "Unable to determine endianness of your machine; use CMake to compile"
   #endif
@@ -51,4 +53,3 @@ inline void ByteSwap(void* data, size_t elem_bytes, size_t num_elems) {
 
 }  // namespace dmlc
 #endif  // DMLC_ENDIAN_H_
-
