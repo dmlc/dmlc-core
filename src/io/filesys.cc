@@ -1,5 +1,6 @@
 // Copyright by Contributors
 #include <queue>
+#include <dmlc/filesystem.h>
 
 #include "./filesys.h"
 
@@ -25,4 +26,34 @@ void FileSystem::ListDirectoryRecursive(const URI &path,
 }
 
 }  // namespace io
+
+void TemporaryDirectory::RecursiveDelete(const std::string &path) {
+  io::URI uri(path.c_str());
+  io::FileSystem* fs = io::FileSystem::GetInstance(uri);
+  std::vector<io::FileInfo> file_list;
+  fs->ListDirectory(uri, &file_list);
+  for (io::FileInfo info : file_list) {
+    CHECK(!IsSymlink(info.path.name))
+        << "Symlink not supported in TemporaryDirectory";
+    if (info.type == io::FileType::kDirectory) {
+      RecursiveDelete(info.path.name);
+    } else {
+      CHECK_EQ(std::remove(info.path.name.c_str()), 0)
+          << "Couldn't remove file " << info.path.name;
+    }
+  }
+#if _WIN32
+  const bool rmdir_success = (RemoveDirectoryA(path.c_str()) != 0);
+#else
+  const bool rmdir_success = (rmdir(path.c_str()) == 0);
+#endif
+  if (rmdir_success) {
+    if (verbose_) {
+      LOG(INFO) << "Successfully deleted temporary directory " << path;
+    }
+  } else {
+    LOG(FATAL) << "~TemporaryDirectory(): "
+               << "Could not remove temporary directory " << path;
+  }
+}
 }  // namespace dmlc
