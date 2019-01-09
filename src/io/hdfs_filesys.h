@@ -11,7 +11,7 @@ extern "C" {
 }
 #include <vector>
 #include <string>
-#include "./filesys.h"
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {
