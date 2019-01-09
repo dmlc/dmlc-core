@@ -613,7 +613,6 @@ class FileSystem {
   /*!
    * \brief open a stream
    * \param path path to file
-   * \param uri the uri of the input, can contain hdfs prefix
    * \param flag can be "w", "r", "a
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
