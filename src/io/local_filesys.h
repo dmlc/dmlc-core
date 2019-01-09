@@ -8,7 +8,7 @@
 #define DMLC_IO_LOCAL_FILESYS_H_
 
 #include <vector>
-#include "./filesys.h"
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {

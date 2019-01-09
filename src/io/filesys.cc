@@ -2,8 +2,6 @@
 #include <queue>
 #include <dmlc/filesystem.h>
 
-#include "./filesys.h"
-
 namespace dmlc {
 namespace io {
 

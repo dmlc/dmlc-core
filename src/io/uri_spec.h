@@ -15,7 +15,6 @@
 #include <map>
 #include <vector>
 #include <utility>
-#include "./filesys.h"
 
 namespace dmlc {
 namespace io {
