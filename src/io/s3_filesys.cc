@@ -1182,10 +1182,10 @@ S3FileSystem::S3FileSystem() {
     s3_is_aws_ = false;
   }
   if (region == NULL) {
-    LOG(WARNING) << "No AWS Region set, using default region us-east-1";
+    LOG(WARNING) << "No AWS Region set, using default region us-east-1. Need to set enviroment variable S3_REGION to set region.";
     s3_region_ = "us-east-1";
   } else if (strcmp(region, "") == 0) {
-    LOG(WARNING) << "AWS Region was set to empty string, using default region us-east-1";
+    LOG(WARNING) << "AWS Region was set to empty string, using default region us-east-1. Need to set enviroment variable S3_REGION to set region.";
     s3_region_ = "us-east-1";
   } else {
     s3_region_ = region;
