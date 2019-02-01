@@ -68,8 +68,14 @@ class LogCheckError {
  public:
   LogCheckError() : str(nullptr) {}
   explicit LogCheckError(const std::string& str_) : str(new std::string(str_)) {}
+  LogCheckError(const LogCheckError& other) = delete;
+  LogCheckError(LogCheckError&& other) : str(other.str) {
+    other.str = nullptr;
+  }
   ~LogCheckError() { if (str != nullptr) delete str; }
-  operator bool() {return str != nullptr; }
+  operator bool() const { return str != nullptr; }
+  LogCheckError& operator=(const LogCheckError& other) = delete;
+  LogCheckError& operator=(LogCheckError&& other) = delete;
   std::string* str;
 };
 
