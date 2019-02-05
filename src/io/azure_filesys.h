@@ -7,9 +7,9 @@
 #ifndef DMLC_IO_AZURE_FILESYS_H_
 #define DMLC_IO_AZURE_FILESYS_H_
 
+#include <dmlc/filesystem.h>
 #include <vector>
 #include <string>
-#include "./filesys.h"
 
 namespace dmlc {
 namespace io {

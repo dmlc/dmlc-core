@@ -9,7 +9,6 @@
 #include "io/recordio_split.h"
 #include "io/indexed_recordio_split.h"
 #include "io/single_file_split.h"
-#include "io/filesys.h"
 #include "io/local_filesys.h"
 #include "io/cached_input_split.h"
 #include "io/threaded_input_split.h"

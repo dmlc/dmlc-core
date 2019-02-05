@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(dmlc C CXX)
+project(dmlc VERSION 0.3 LANGUAGES C CXX)
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
   include(${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
@@ -11,7 +11,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_LOCAL}/Modules)
 
 include(CheckCXXSymbolExists)
 include(cmake/Utils.cmake)
-#include(cmake/dmlccore.cmake)
 
 # Options
 dmlccore_option(USE_HDFS "Build with HDFS support" OFF)
@@ -24,7 +23,7 @@ dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
 # include path
 set(INCLUDE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(INCLUDE_DMLC_DIR "${INCLUDE_ROOT}/dmlc")
-include_directories("${INCLUDE_ROOT}")
+# include_directories("${INCLUDE_ROOT}")
 
 set(dmlccore_LINKER_LIBS "")
 # HDFS configurations
@@ -187,6 +186,9 @@ endif()
 
 add_library(dmlc ${SOURCE})
 target_link_libraries(dmlc ${dmlccore_LINKER_LIBS})
+target_include_directories(dmlc PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
   -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE)
 
@@ -199,9 +201,35 @@ if(INSTALL_INCLUDE_DIR)
 endif()
 
 # ---[ Install the archive static lib and header files
-install(TARGETS dmlc ARCHIVE DESTINATION lib${LIB_SUFFIX} LIBRARY DESTINATION lib${LIB_SUFFIX})
+include(GNUInstallDirs)
+install(TARGETS dmlc
+  EXPORT DMLCTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(EXPORT DMLCTargets
+  FILE DMLCTargets.cmake
+  NAMESPACE dmlc::
+  EXPORT_LINK_INTERFACE_LIBRARIES
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dmlc)
+
 install(DIRECTORY include DESTINATION .)
 install(DIRECTORY doc DESTINATION .)
+
+# ---[ Package configurations
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${CMAKE_SOURCE_DIR}/cmake/dmlc-config.cmake.in
+  ${CMAKE_BINARY_DIR}/cmake/dmlc-config.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dmlc)
+write_basic_package_version_file(
+  ${CMAKE_BINARY_DIR}/cmake/dmlc-config-version.cmake
+  VERSION ${DMLC_VERSION}
+  COMPATIBILITY AnyNewerVersion)
+install(
+  FILES
+  ${CMAKE_BINARY_DIR}/cmake/dmlc-config.cmake
+  ${CMAKE_BINARY_DIR}/cmake/dmlc-config-version.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dmlc)
 
 # ---[ Linter target
 if(MSVC)
@@ -216,4 +244,3 @@ if(GOOGLE_TEST)
   include(CTest)
   add_subdirectory(test/unittest)
 endif()
-

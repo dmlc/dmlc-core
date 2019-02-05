@@ -9,9 +9,10 @@
 extern "C" {
 #include <hdfs.h>
 }
+#include <dmlc/filesystem.h>
+
 #include <vector>
 #include <string>
-#include "./filesys.h"
 
 namespace dmlc {
 namespace io {
