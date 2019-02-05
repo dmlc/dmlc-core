@@ -218,7 +218,7 @@ install(DIRECTORY doc DESTINATION .)
 # ---[ Package configurations
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
-  ${CMAKE_SOURCE_DIR}/cmake/dmlc-config.cmake.in
+  ${CMAKE_LOCAL}/dmlc-config.cmake.in
   ${CMAKE_BINARY_DIR}/cmake/dmlc-config.cmake
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dmlc)
 write_basic_package_version_file(
