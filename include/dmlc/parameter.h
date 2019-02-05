@@ -310,7 +310,7 @@ namespace parameter {
 class FieldAccessEntry {
  public:
   FieldAccessEntry()
-      : has_default_(false) {}
+      : has_default_(false), index_(0) {}
   /*! \brief destructor */
   virtual ~FieldAccessEntry() {}
   /*!
