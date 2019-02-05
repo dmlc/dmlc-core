@@ -1,6 +1,8 @@
 group: travis_latest
 language: python
 
+osx_image: xcode10.1
+
 matrix:
   include:
   - env: TASK=lint
@@ -32,6 +34,11 @@ addons:
       - unzip
       - gcc-4.8
       - g++-4.8
+  homebrew:
+    packages:
+      - gcc@7
+      - python3
+    update: true
 
 before_install:
   - export TRAVIS=scripts/travis
