@@ -24,8 +24,6 @@ static void usleep(__int64 usec)
 
 static std::atomic<int> thread_count(0);
 
-static inline std::string TName(const std::string& s, int x) { return s + "-" + std::to_string(x); }
-
 static int this_is_thread_func(std::string label, const bool with_delay) {
   ++thread_count;
   if(with_delay) {
