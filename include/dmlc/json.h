@@ -11,6 +11,7 @@
 #include <vector>
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
 #include <iostream>
+#include <sstream>
 #endif
 #include <cctype>
 #include <string>
