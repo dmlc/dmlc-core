@@ -14,6 +14,7 @@
 #include <mutex>
 #include <vector>
 #include <condition_variable>
+#include <utility>
 #include "dmlc/base.h"
 
 namespace dmlc {

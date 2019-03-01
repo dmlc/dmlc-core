@@ -13,6 +13,8 @@
 #include <mutex>
 #include <set>
 #include <thread>
+#include <memory>
+#include <utility>
 #include <unordered_set>
 #include <unordered_map>
 #if defined(DMLC_USE_CXX14) || __cplusplus > 201103L  /* C++14 */
