@@ -48,6 +48,19 @@ inline bool isdigit(char c) {
 }
 
 /*!
+ * \brief Inline implementation of isalpha(). Tests whether the given character
+ *        is an alphabet letter
+ * \param c Character to test
+ * \return Result of the test
+ */
+inline bool isalpha(char c) {
+  static_assert(
+    static_cast<int>('A') == 65 && static_cast<int>('Z' - 'A') == 25,
+    "Only system with ASCII character set is supported");
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+/*!
  * \brief Tests whether the given character is a valid letter in the string
  *        representation of a floating-point value, i.e. decimal digits,
  *        signs (+/-), decimal point (.), or exponent marker (e/E).
@@ -69,7 +82,7 @@ const int kStrtofMaxDigits = 19;
 
 /*!
  * \brief Common implementation for dmlc::strtof() and dmlc::strtod()
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * \param nptr Beginning of the string that's to be converted into a
  *             floating-point number
  * \param endptr After the conversion, this pointer will be set to point one
@@ -121,6 +134,43 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     sign = false; ++p;
   } else if (*p == '+') {
     ++p;
+  }
+
+  // Handle INF and NAN
+  {
+    int i = 0;
+    // case-insensitive match for INF and INFINITY
+    while (i < 8 && static_cast<char>((*p) | 32) == "infinity"[i]) {
+      ++i; ++p;
+    }
+    if (i == 3 || i == 8) {
+      if (endptr) *endptr = (char*)p;  // NOLINT(*)
+      return sign ?  std::numeric_limits<FloatType>::infinity()
+                  : -std::numeric_limits<FloatType>::infinity();
+    } else {
+      p -= i;
+    }
+
+    // case-insensitive match for NAN
+    i = 0;
+    while (i < 3 && static_cast<char>((*p) | 32) == "nan"[i]) {
+      ++i; ++p;
+    }
+    if (i == 3) {
+      // Got NAN; check if the value is of form NAN(char_sequence)
+      if (*p == '(') {
+        ++p;
+        while (isdigit(*p) || isalpha(*p) || *p == '_') ++p;
+        CHECK_EQ(*p, ')') << "Invalid NAN literal";
+        ++p;
+      }
+      static_assert(std::numeric_limits<FloatType>::has_quiet_NaN,
+        "Only system with quiet NaN is supported");
+      if (endptr) *endptr = (char*)p;  // NOLINT(*)
+      return std::numeric_limits<FloatType>::quiet_NaN();
+    } else {
+      p -= i;
+    }
   }
 
   // Get digits before decimal point or exponent, if any.
@@ -206,7 +256,7 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
  * \brief A faster implementation of strtof(). See documentation of
  *        std::strtof() for more information. Note that this function does not
  *        check for overflow. Use strtof_check_range() to check for overflow.
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * TODO: the current version does not handle long decimals: you may only have
  *       up to 19 digits after the decimal point, and you cannot have too many
  *       digits before the decimal point either.
@@ -224,7 +274,7 @@ inline float strtof(const char* nptr, char** endptr) {
  *        std::strtof() for more information. This function will check for
  *        overflow. If the converted value is outside the range for the float
  *        type, errno is set to ERANGE and HUGE_VALF is returned.
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * TODO: the current version does not handle long decimals: you may only have
  *       up to 19 digits after the decimal point, and you cannot have too many
  *       digits before the decimal point either.
@@ -241,7 +291,7 @@ inline float strtof_check_range(const char* nptr, char** endptr) {
  * \brief A faster implementation of strtod(). See documentation of
  *        std::strtof() for more information. Note that this function does not
  *        check for overflow. Use strtod_check_range() to check for overflow.
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * TODO: the current version does not handle long decimals: you may only have
  *       up to 19 digits after the decimal point, and you cannot have too many
  *       digits before the decimal point either.
@@ -259,7 +309,7 @@ inline double strtod(const char* nptr, char** endptr) {
  *        std::strtod() for more information. This function will check for
  *        overflow. If the converted value is outside the range for the double
  *        type, errno is set to ERANGE and HUGE_VAL is returned.
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * TODO: the current version does not handle long decimals: you may only have
  *       up to 19 digits after the decimal point, and you cannot have too many
  *       digits before the decimal point either.
@@ -388,7 +438,7 @@ inline long atol(const char* p) {  // NOLINT(*)
 /*!
  * \brief A faster implementation of atof(). Unlike std::atof(), this function
  *        returns float type. Note that this function does not check for overflow.
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * TODO: the current version does not handle long decimals: you may only have
  *       up to 19 digits after the decimal point, and you cannot have too many
  *       digits before the decimal point either.
@@ -403,7 +453,7 @@ inline float atof(const char* nptr) {
  * \brief A faster implementation of stof(). See documentation of std::stof()
  *        for more information. This function will test for overflow and
  *        invalid arguments.
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * TODO: the current version does not handle long decimals: you may only have
  *       up to 19 digits after the decimal point, and you cannot have too many
  *       digits before the decimal point either.
@@ -433,7 +483,7 @@ inline float stof(const std::string& value, size_t* pos = nullptr) {
  * \brief A faster implementation of stod(). See documentation of std::stod()
  *        for more information. This function will test for overflow and
  *        invalid arguments.
- * TODO: the current version does not support INF, NAN, and hex number
+ * TODO: the current version does not support hex number
  * TODO: the current version does not handle long decimals: you may only have
  *       up to 19 digits after the decimal point, and you cannot have too many
  *       digits before the decimal point either.

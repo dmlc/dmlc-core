@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include <dmlc/parameter.h>
+#include <vector>
+#include <string>
+#include <cmath>
 
 struct LearningParam : public dmlc::Parameter<LearningParam> {
   float float_param;
@@ -120,5 +123,37 @@ TEST(Parameter, parsing_float) {
   kwargs["double_param"] = "1.2e10foo";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
   kwargs["double_param"] = "1.2e-2 foo";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+
+  // INF and NAN
+  kwargs = std::map<std::string, std::string>();
+  errno = 0;  // clear errno, to clear previous range error
+  for (const char* s : {
+      "inf", "+inf", "-inf", "INF", "+INF", "-INF", "infinity", "+infinity",
+      "-infinity", "INFINITY", "+INFINITY", "-INFINITY"}) {
+    kwargs["float_param"] = s;
+    ASSERT_NO_THROW(param.Init(kwargs));
+    ASSERT_TRUE(std::isinf(param.float_param));
+    kwargs["double_param"] = s;
+    ASSERT_NO_THROW(param.Init(kwargs));
+    ASSERT_TRUE(std::isinf(param.double_param));
+  }
+  for (const char* s : {
+      "nan", "NAN", "nan(foobar)", "NAN(FooBar)", "NaN", "NaN(foo_bar_12)",
+      "+nan", "+NAN", "+nan(foobar)", "+NAN(FooBar)", "+NaN", "+NaN(foo_bar_12)",
+      "-nan", "-NAN", "-nan(foobar)", "-NAN(FooBar)", "-NaN",
+      "-NaN(foo_bar_12)"}) {
+    kwargs["float_param"] = s;
+    ASSERT_NO_THROW(param.Init(kwargs));
+    ASSERT_TRUE(std::isnan(param.float_param));
+    kwargs["double_param"] = s;
+    ASSERT_NO_THROW(param.Init(kwargs));
+    ASSERT_TRUE(std::isnan(param.double_param));
+  }
+  kwargs["float_param"] = "infamous";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "infinity war";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "Nanny";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
 }
