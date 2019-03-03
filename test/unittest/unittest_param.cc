@@ -150,4 +150,10 @@ TEST(Parameter, parsing_float) {
     ASSERT_NO_THROW(param.Init(kwargs));
     ASSERT_TRUE(std::isnan(param.double_param));
   }
+  kwargs["float_param"] = "infamous";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "infinity war";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+  kwargs["float_param"] = "Nanny";
+  ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
 }
