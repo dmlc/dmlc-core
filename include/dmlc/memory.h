@@ -6,6 +6,8 @@
 #ifndef DMLC_MEMORY_H_
 #define DMLC_MEMORY_H_
 
+#include <memory>
+#include <utility>
 #include <vector>
 #include "./base.h"
 #include "./logging.h"

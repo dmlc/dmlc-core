@@ -12,6 +12,7 @@
 #include <deque>
 #include <queue>
 #include <mutex>
+#include <utility>
 #include <vector>
 #include <condition_variable>
 #include "dmlc/base.h"
