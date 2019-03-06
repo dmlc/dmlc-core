@@ -8,12 +8,13 @@ import subprocess
 import logging
 from threading import Thread
 from . import tracker
+import pdb
 
 def exec_cmd(cmd, role, taskid, pass_env):
     """Execute the command line command."""
     if cmd[0].find('/') == -1 and os.path.exists(cmd[0]) and os.name != 'nt':
         cmd[0] = './' + cmd[0]
-    cmd = ' '.join(cmd)
+    cmdline = ' '.join(cmd)
     env = os.environ.copy()
     for k, v in pass_env.items():
         env[k] = str(v)
@@ -21,25 +22,39 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env['DMLC_TASK_ID'] = str(taskid)
     env['DMLC_ROLE'] = role
     env['DMLC_JOB_CLUSTER'] = 'local'
-
     num_retry = env.get('DMLC_NUM_ATTEMPT', 0)
+
+    #overwrite default num of retry with commandline value
+    for parm in cmd:
+        if parm.startswith('DMLC_NUM_ATTEMPT'):
+            num_retry = int(parm.split('=')[1])
+    logging.debug('num of retry %d',num_retry)
 
     while True:
         if os.name == 'nt':
-            ret = subprocess.call(cmd, shell=True, env=env)
+            ret = subprocess.call(cmdline, shell=True, env=env)
         else:
-            ret = subprocess.call(cmd, shell=True, executable='bash', env=env)
+            ret = subprocess.call(cmdline, shell=True, executable='bash', env=env)
         if ret == 0:
             logging.debug('Thread %d exit with 0', taskid)
             return
         else:
             num_retry -= 1
+            newcmd = []
             if num_retry >= 0:
+                # failure trail increase by 1 and restart failed worker
+                for arg in cmd:
+                    if arg.startswith('rabit_num_trial'):
+                        val = arg.split('=')[1]
+                        arg = arg.replace(val, str(int(val)+1))
+                    newcmd.append(arg)
+                cmdline = ' '.join(newcmd)
+                cmd = newcmd
                 continue
             if os.name == 'nt':
                 sys.exit(-1)
             else:
-                raise RuntimeError('Get nonzero return code=%d on %s %s' % (ret, cmd, env))
+                raise RuntimeError('Get nonzero return code=%d on %s' % (ret, cmd))
 
 
 def submit(args):
