@@ -25,7 +25,7 @@ namespace dmlc {
 class Spinlock {
  public:
 #ifdef _MSC_VER
-    Spinlock() {
+  Spinlock() {
     lock_.clear();
   }
 #else

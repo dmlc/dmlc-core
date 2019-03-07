@@ -8,7 +8,6 @@ import subprocess
 import logging
 from threading import Thread
 from . import tracker
-import pdb
 
 def exec_cmd(cmd, role, taskid, pass_env):
     """Execute the command line command."""
@@ -25,9 +24,9 @@ def exec_cmd(cmd, role, taskid, pass_env):
     num_retry = env.get('DMLC_NUM_ATTEMPT', 0)
 
     #overwrite default num of retry with commandline value
-    for parm in cmd:
-        if parm.startswith('DMLC_NUM_ATTEMPT'):
-            num_retry = int(parm.split('=')[1])
+    for param in cmd:
+        if param.startswith('DMLC_NUM_ATTEMPT'):
+            num_retry = int(param.split('=')[1])
     logging.debug('num of retry %d',num_retry)
 
     while True:
@@ -54,7 +53,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
             if os.name == 'nt':
                 sys.exit(-1)
             else:
-                raise RuntimeError('Get nonzero return code=%d on %s' % (ret, cmd))
+                raise RuntimeError('Get nonzero return code=%d on %s %s' % (ret, cmd, env))
 
 
 def submit(args):
