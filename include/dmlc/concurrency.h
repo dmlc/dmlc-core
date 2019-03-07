@@ -13,6 +13,7 @@
 #include <queue>
 #include <mutex>
 #include <vector>
+#include <utility>
 #include <condition_variable>
 #include "dmlc/base.h"
 
@@ -24,7 +25,7 @@ namespace dmlc {
 class Spinlock {
  public:
 #ifdef _MSC_VER
-  Spinlock() {
+    Spinlock() {
     lock_.clear();
   }
 #else

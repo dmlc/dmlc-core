@@ -25,7 +25,7 @@ struct nullopt_t {
   explicit nullopt_t(int a) {}
 #else
   /*! \brief dummy constructor */
-  constexpr nullopt_t(int a) {}
+  explicit nullopt_t(int a) {}
 #endif
 };
 
