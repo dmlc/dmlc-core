@@ -20,7 +20,7 @@ if [ ${TASK} == "unittest_gtest" ]; then
     make -f scripts/packages.mk gtest
     if [ ${TRAVIS_OS_NAME} != "osx" ]; then
         echo "USE_S3=1" >> config.mk
-        echo "export CXX = g++-7" >> config.mk
+        echo "export CXX = g++-4.8" >> config.mk
     else
         echo "USE_S3=0" >> config.mk
         echo "USE_OPENMP=0" >> config.mk
