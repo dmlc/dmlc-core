@@ -21,12 +21,14 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env['DMLC_TASK_ID'] = str(taskid)
     env['DMLC_ROLE'] = role
     env['DMLC_JOB_CLUSTER'] = 'local'
+    # keep use DMLC_NUM_ATTEMPT for backward compatible reason
     num_retry = env.get('DMLC_NUM_ATTEMPT', 0)
 
-    #overwrite default num of retry with commandline value
+    # overwrite default num of retry with commandline value
     for param in cmd:
-        if param.startswith('DMLC_NUM_ATTEMPT'):
+        if param.startswith('DMLC_MAX_RETRY'):
             num_retry = int(param.split('=')[1])
+
     logging.debug('num of retry %d',num_retry)
 
     while True:
@@ -43,7 +45,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
             if num_retry >= 0:
                 # failure trail increase by 1 and restart failed worker
                 for arg in cmd:
-                    if arg.startswith('rabit_num_trial'):
+                    if arg.startswith('DMLC_NUM_ATTEMPT'):
                         val = arg.split('=')[1]
                         arg = arg.replace(val, str(int(val)+1))
                     newcmd.append(arg)
