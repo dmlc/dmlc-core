@@ -21,6 +21,7 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env['DMLC_TASK_ID'] = str(taskid)
     env['DMLC_ROLE'] = role
     env['DMLC_JOB_CLUSTER'] = 'local'
+
     # keep use DMLC_NUM_ATTEMPT for backward compatible reason
     num_retry = env.get('DMLC_NUM_ATTEMPT', 0)
 
