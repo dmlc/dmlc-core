@@ -7,6 +7,8 @@
 #define DMLC_MEMORY_H_
 
 #include <vector>
+#include <memory>
+#include <utility>
 #include "./base.h"
 #include "./logging.h"
 #include "./thread_local.h"

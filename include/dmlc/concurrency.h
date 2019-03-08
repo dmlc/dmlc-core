@@ -13,6 +13,7 @@
 #include <queue>
 #include <mutex>
 #include <vector>
+#include <utility>
 #include <condition_variable>
 #include "dmlc/base.h"
 

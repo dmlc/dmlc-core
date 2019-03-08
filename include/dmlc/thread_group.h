@@ -11,6 +11,8 @@
 #include <dmlc/logging.h>
 #include <string>
 #include <mutex>
+#include <utility>
+#include <memory>
 #include <set>
 #include <thread>
 #include <unordered_set>
