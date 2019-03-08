@@ -162,6 +162,8 @@ def get_opts(args=None):
     parser.add_argument('--kube-server-template', default=None, type=str,
                         help=('Manifest template for servers. Used only in Kubernetes mode.' +
                               'Can be used to override defaults.'))
+    parser.add_argument('--local-num-attempt', default=0, type=int,
+                        help=('Number of attempt local tracker can restart slave.'))
     (args, unknown) = parser.parse_known_args(args)
     args.command += unknown
 

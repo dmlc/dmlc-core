@@ -9,7 +9,7 @@ import logging
 from threading import Thread
 from . import tracker
 
-def exec_cmd(cmd, role, taskid, pass_env):
+def exec_cmd(cmd, num_attempt, role, taskid, pass_env):
     """Execute the command line command."""
     if cmd[0].find('/') == -1 and os.path.exists(cmd[0]) and os.name != 'nt':
         cmd[0] = './' + cmd[0]
@@ -22,13 +22,9 @@ def exec_cmd(cmd, role, taskid, pass_env):
     env['DMLC_ROLE'] = role
     env['DMLC_JOB_CLUSTER'] = 'local'
 
-    # keep use DMLC_NUM_ATTEMPT for backward compatible reason
-    num_retry = env.get('DMLC_NUM_ATTEMPT', 0)
-
-    # overwrite default num of retry with commandline value
-    for param in cmd:
-        if param.startswith('DMLC_MAX_RETRY'):
-            num_retry = int(param.split('=')[1])
+    # backward compatibility
+    num_retry = env.get('DMLC_NUM_ATTEMPT', num_attempt)
+    num_trial = 0
 
     logging.debug('num of retry %d',num_retry)
 
@@ -41,17 +37,11 @@ def exec_cmd(cmd, role, taskid, pass_env):
             logging.debug('Thread %d exit with 0', taskid)
             return
         else:
+            num_trial += 1
             num_retry -= 1
-            newcmd = []
+
             if num_retry >= 0:
-                # failure trail increase by 1 and restart failed worker
-                for arg in cmd:
-                    if arg.startswith('DMLC_NUM_ATTEMPT'):
-                        val = arg.split('=')[1]
-                        arg = arg.replace(val, str(int(val)+1))
-                    newcmd.append(arg)
-                cmdline = ' '.join(newcmd)
-                cmd = newcmd
+                cmdline = ' '.join(cmd + ['DMLC_NUM_ATTEMPT=' + str(num_trial)])
                 continue
             if os.name == 'nt':
                 sys.exit(-1)
@@ -78,7 +68,7 @@ def submit(args):
                 role = 'worker'
             else:
                 role = 'server'
-            procs[i] = Thread(target=exec_cmd, args=(args.command, role, i, envs))
+            procs[i] = Thread(target=exec_cmd, args=(args.command, args.local_num_attempt, role, i, envs))
             procs[i].setDaemon(True)
             procs[i].start()
 
