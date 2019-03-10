@@ -222,25 +222,13 @@ TEST(CSVParser, test_weight_column_2) {
   }
 }
 
-TEST(LibSVMParser, test_qid) {
+void test_qid(std::string data) {
   using namespace parser_test;
   InputSplit *source = nullptr;
   const std::map<std::string, std::string> args;
   std::unique_ptr<LibSVMParserTest<unsigned>> parser(
       new LibSVMParserTest<unsigned>(source, args, 1));
   RowBlockContainer<unsigned>* rctr = new RowBlockContainer<unsigned>();
-  std::string data = R"qid(3 qid:1 1:1 2:1 3:0 4:0.2 5:0
-                           2 qid:1 1:0 2:0 3:1 4:0.1 5:1
-                           1 qid:1 1:0 2:1 3:0 4:0.4 5:0
-                           1 qid:1 1:0 2:0 3:1 4:0.3 5:0
-                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0
-                           2 qid:2 1:1 2:0 3:1 4:0.4 5:0
-                           1 qid:2 1:0 2:0 3:1 4:0.1 5:0
-                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0
-                           2 qid:3 1:0 2:0 3:1 4:0.1 5:1
-                           3 qid:3 1:1 2:1 3:0 4:0.3 5:0
-                           4 qid:3 1:1 2:0 3:0 4:0.4 5:1
-                           1 qid:3 1:0 2:1 3:1 4:0.5 5:0)qid";
   char* out_data = const_cast<char*>(data.c_str());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr);
   const std::vector<size_t> expected_offset{
@@ -268,6 +256,39 @@ TEST(LibSVMParser, test_qid) {
   CHECK(rctr->qid == expected_qid);
   CHECK(rctr->index == expected_index);
   CHECK(rctr->value == expected_value);
+}
+
+TEST(LibSVMParser, test_qid) {
+  std::string data = R"qid(3 qid:1 1:1 2:1 3:0 4:0.2 5:0
+                           2 qid:1 1:0 2:0 3:1 4:0.1 5:1
+                           1 qid:1 1:0 2:1 3:0 4:0.4 5:0
+                           1 qid:1 1:0 2:0 3:1 4:0.3 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0
+                           2 qid:2 1:1 2:0 3:1 4:0.4 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.1 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0
+                           2 qid:3 1:0 2:0 3:1 4:0.1 5:1
+                           3 qid:3 1:1 2:1 3:0 4:0.3 5:0
+                           4 qid:3 1:1 2:0 3:0 4:0.4 5:1
+                           1 qid:3 1:0 2:1 3:1 4:0.5 5:0)qid";
+  test_qid(data);
+}
+
+TEST(LibSVMParser, test_qid_with_comment) {
+  std::string data = R"qid(# what does foo bar mean anyway
+                           3 qid:1 1:1 2:1 3:0 4:0.2 5:0 # foo
+                           2 qid:1 1:0 2:0 3:1 4:0.1 5:1
+                           1 qid:1 1:0 2:1 3:0 4:0.4 5:0
+                           1 qid:1 1:0 2:0 3:1 4:0.3 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0 # bar
+                           2 qid:2 1:1 2:0 3:1 4:0.4 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.1 5:0
+                           1 qid:2 1:0 2:0 3:1 4:0.2 5:0
+                           2 qid:3 1:0 2:0 3:1 4:0.1 5:1
+                           3 qid:3 1:1 2:1 3:0 4:0.3 5:0
+                           4 qid:3 1:1 2:0 3:0 4:0.4 5:1
+                           1 qid:3 1:0 2:1 3:1 4:0.5 5:0)qid";
+  test_qid(data);
 }
 
 TEST(LibSVMParser, test_excess_decimal_digits) {
