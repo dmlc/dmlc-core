@@ -310,8 +310,8 @@ inline std::string Demangle(char const *msg_str) {
 
     int status = 0;
     size_t length = string::npos;
-    std::unique_ptr<char, decltype(&std::free)> demangled_symbol =
-            {abi::__cxa_demangle(symbol.c_str(), 0, &length, &status), &std::free};
+    std::unique_ptr<char, void (*)(void *__ptr)> demangled_symbol =
+        {abi::__cxa_demangle(symbol.c_str(), 0, &length, &status), &std::free};
     if (demangled_symbol && status == 0 && length > 0) {
       string symbol_str(demangled_symbol.get());
       std::ostringstream os;
