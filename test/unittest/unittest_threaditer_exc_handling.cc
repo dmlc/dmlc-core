@@ -4,6 +4,11 @@
 #include <dmlc/threadediter.h>
 #include <gtest/gtest.h>
 
+enum ExcType {
+  kDMLCException,
+  kStdException,
+};
+
 using namespace dmlc;
 namespace producer_test {
 inline void delay(int sleep) {
@@ -21,15 +26,21 @@ struct IntProducerNextExc : public ThreadedIter<int>::Producer {
   int counter;
   int maxcap;
   int sleep;
-  IntProducerNextExc(int maxcap, int sleep)
-      : counter(0), maxcap(maxcap), sleep(sleep) {}
+  ExcType exc_type;
+
+  IntProducerNextExc(int maxcap, int sleep, ExcType exc_type = ExcType::kDMLCException)
+      : counter(0), maxcap(maxcap), sleep(sleep), exc_type(exc_type) {}
   virtual void BeforeFirst(void) { counter = 0; }
   virtual bool Next(int **inout_dptr) {
     if (counter == maxcap)
       return false;
     if (counter == (maxcap - 1)) {
       counter++;
-      LOG(FATAL) << "Test Throw exception";
+      if (exc_type == kDMLCException) {
+        LOG(FATAL) << "Test Throw exception";
+      } else {
+        throw std::exception();
+      }
     }
     // allocate space if not exist
     if (*inout_dptr == NULL) {
@@ -42,15 +53,21 @@ struct IntProducerNextExc : public ThreadedIter<int>::Producer {
 };
 
 struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
-  IntProducerBeforeFirst() {}
+  ExcType exc_type;
+  IntProducerBeforeFirst(ExcType exc_type = ExcType::kDMLCException)
+      : exc_type(exc_type) {}
   virtual void BeforeFirst(void) {
-    LOG(FATAL) << "Throw exception in before first";
+    if (exc_type == ExcType::kDMLCException) {
+      LOG(FATAL) << "Throw exception in before first";
+    } else {
+      throw std::exception();
+    }
   }
   virtual bool Next(int **inout_dptr) { return true; }
 };
 }
 
-TEST(ThreadedIter, exception) {
+TEST(ThreadedIter, dmlc_exception) {
   using namespace producer_test;
   int *value;
   ThreadedIter<int> iter2;
@@ -99,4 +116,56 @@ TEST(ThreadedIter, exception) {
     caught = true;
   }
   CHECK(caught);
+}
+
+TEST(ThreadedIter, std_exception) {
+  using namespace producer_test;
+  int *value;
+  ThreadedIter<int> iter2;
+  iter2.set_max_capacity(7);
+  IntProducerNextExc prod(5, 100, ExcType::kStdException);
+  bool caught = false;
+  iter2.Init(&prod);
+  iter2.BeforeFirst();
+  try {
+    delay(700);
+    iter2.Recycle(&value);
+  } catch (dmlc::Error &e) {
+    caught = true;
+    LOG(INFO) << "recycle exception caught";
+  }
+  CHECK(caught);
+  iter2.Init(&prod);
+  caught = false;
+  iter2.BeforeFirst();
+  try {
+    while (iter2.Next(&value)) {
+      iter2.Recycle(&value);
+    }
+  } catch (dmlc::Error &e) {
+    caught = true;
+    LOG(INFO) << "next exception caught";
+  }
+  CHECK(caught);
+  LOG(INFO) << "finish";
+  ThreadedIter<int> iter3;
+  iter3.set_max_capacity(1);
+  IntProducerBeforeFirst prod2(ExcType::kStdException);
+  iter3.Init(&prod2);
+  caught = false;
+  try {
+    iter3.BeforeFirst();
+  } catch (dmlc::Error &e) {
+    caught = true;
+    LOG(INFO) << "beforefirst exception caught";
+  }
+  caught = false;
+  try {
+  iter3.BeforeFirst();
+  } catch (dmlc::Error &e) {
+    LOG(INFO) << "beforefirst exception thrown/caught";
+    caught = true;
+  }
+  CHECK(caught);
+
 }
