@@ -108,7 +108,7 @@ class LogCheckError {
 #define CHECK_BINARY_OP(name, op, x, y)                               \
   if (dmlc::LogCheckError _check_err = dmlc::LogCheck##name(x, y))    \
     dmlc::LogMessageFatal(__FILE__, __LINE__).stream()                \
-      << "Check failed: " << #x " " #op " " #y << *(_check_err.str)
+      << "Check failed: " << #x " " #op " " #y << *(_check_err.str) << ": "
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-compare"
@@ -124,7 +124,7 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #define CHECK(x)                                           \
   if (!(x))                                                \
     dmlc::LogMessageFatal(__FILE__, __LINE__).stream()     \
-      << "Check failed: " #x << ' '
+      << "Check failed: " #x << ": "
 #define CHECK_LT(x, y) CHECK_BINARY_OP(_LT, <, x, y)
 #define CHECK_GT(x, y) CHECK_BINARY_OP(_GT, >, x, y)
 #define CHECK_LE(x, y) CHECK_BINARY_OP(_LE, <=, x, y)
@@ -322,18 +322,21 @@ inline std::string Demangle(char const *msg_str) {
   return string(msg_str);
 }
 
+// By default skip the first frame because
+// that belongs to ~LogMessageFatal
 inline std::string StackTrace(
+    size_t start_frame = 1,
     const size_t stack_size = DMLC_LOG_STACK_TRACE_SIZE) {
   using std::string;
   std::ostringstream stacktrace_os;
   std::vector<void*> stack(stack_size);
   int nframes = backtrace(stack.data(), static_cast<int>(stack_size));
-  stacktrace_os << "Stack trace returned " << nframes << " entries:" << std::endl;
+  stacktrace_os << "Stack trace:\n";
   char **msgs = backtrace_symbols(stack.data(), nframes);
   if (msgs != nullptr) {
-    for (int frameno = 0; frameno < nframes; ++frameno) {
+    for (int frameno = start_frame; frameno < nframes; ++frameno) {
       string msg = dmlc::Demangle(msgs[frameno]);
-      stacktrace_os << "[bt] (" << frameno << ") " << msg << "\n";
+      stacktrace_os << "  [bt] (" << frameno - start_frame << ") " << msg << "\n";
     }
   }
   free(msgs);
@@ -347,8 +350,9 @@ inline std::string demangle(char const* msg_str) {
   return std::string();
 }
 
-inline std::string StackTrace(const size_t stack_size = 0) {
-  return std::string("stack traces not available when "
+inline std::string StackTrace(size_t start_frame = 1,
+                              const size_t stack_size = 0) {
+  return std::string("Stack trace not available when "
   "DMLC_LOG_STACK_TRACE is disabled at compile time.");
 }
 
@@ -370,7 +374,7 @@ class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
   ~LogMessageFatal() {
-    log_stream_ << "\n\n" << StackTrace() << "\n";
+    log_stream_ << "\n" << StackTrace() << "\n";
     abort();
   }
 
@@ -388,7 +392,7 @@ class LogMessageFatal {
   std::ostringstream &stream() { return log_stream_; }
   ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    log_stream_ << "\n\n" << StackTrace() << "\n";
+    log_stream_ << "\n" << StackTrace() << "\n";
 #endif
 
     // throwing out of destructor is evil
