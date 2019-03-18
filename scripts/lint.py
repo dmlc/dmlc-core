@@ -106,7 +106,7 @@ class LintHelper(object):
         """Print summary of lint."""
         nerr = 0
         nerr += LintHelper._print_summary_map(strm, self.cpp_header_map, 'cpp-header')
-        nerr += LintHelper._print_summary_map(strm, self.cpp_src_map, 'cpp-soruce')
+        nerr += LintHelper._print_summary_map(strm, self.cpp_src_map, 'cpp-source')
         nerr += LintHelper._print_summary_map(strm, self.python_map, 'python')
         if nerr == 0:
             strm.write('All passed!\n')
