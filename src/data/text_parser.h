@@ -117,23 +117,27 @@ inline bool TextParserBase<IndexType, DType>::FillData(
   bytes_read_ += chunk.size;
   CHECK_NE(chunk.size, 0U);
   const char *head = reinterpret_cast<char *>(chunk.dptr);
-#pragma omp parallel num_threads(nthread)
-  {
-  omp_exc_.Run([&] {
-    // threadid
-    int tid = omp_get_thread_num();
-    size_t nstep = (chunk.size + nthread - 1) / nthread;
-    size_t sbegin = std::min(tid * nstep, chunk.size);
-    size_t send = std::min((tid + 1) * nstep, chunk.size);
-    const char *pbegin = BackFindEndLine(head + sbegin, head);
-    const char *pend;
-    if (tid + 1 == nthread) {
-      pend = head + send;
-    } else {
-      pend = BackFindEndLine(head + send, head);
-    }
-    ParseBlock(pbegin, pend, &(*data)[tid]);
-  });
+
+  std::vector<std::thread> threads;
+  for (int tid = 0; tid < nthread; ++tid) {
+    threads.push_back(std::thread([&chunk, head, data, nthread, tid, this] {
+      this->omp_exc_.Run([&] {
+        size_t nstep = (chunk.size + nthread - 1) / nthread;
+        size_t sbegin = std::min(tid * nstep, chunk.size);
+        size_t send = std::min((tid + 1) * nstep, chunk.size);
+        const char *pbegin = BackFindEndLine(head + sbegin, head);
+        const char *pend;
+        if (tid + 1 == nthread) {
+          pend = head + send;
+        } else {
+          pend = BackFindEndLine(head + send, head);
+        }
+        ParseBlock(pbegin, pend, &(*data)[tid]);
+      });
+    }));
+  }
+  for (int i = 0; i < nthread; ++i) {
+    threads[i].join();
   }
   omp_exc_.Rethrow();
 
