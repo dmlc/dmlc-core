@@ -56,7 +56,7 @@ template<typename DType>
 class DataIter {
  public:
   /*! \brief destructor */
-  virtual ~DataIter(void) {}
+  virtual ~DataIter(void) DMLC_THROW_EXCEPTION {}
   /*! \brief set before first of the item */
   virtual void BeforeFirst(void) = 0;
   /*! \brief move to next item */

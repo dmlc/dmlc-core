@@ -231,7 +231,7 @@ class InputSplit {
     return NextChunk(out_chunk);
   }
   /*! \brief destructor*/
-  virtual ~InputSplit(void) {}
+  virtual ~InputSplit(void) DMLC_THROW_EXCEPTION {}
   /*!
    * \brief reset the Input split to a certain part id,
    *  The InputSplit will be pointed to the head of the new specified segment.

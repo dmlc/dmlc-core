@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <mutex>
+#include <utility>
 #include "./logging.h"
 
 namespace dmlc {
