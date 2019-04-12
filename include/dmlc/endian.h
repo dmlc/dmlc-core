@@ -14,7 +14,7 @@
 #else
   #if defined(__APPLE__) || defined(_WIN32)
     #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__GLIBC__) || defined(__ANDROID__)
+  #elif defined(__GLIBC__) || defined(__ANDROID__) || defined(__RISCV__)
     #include <endian.h>
     #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
   #elif defined(__FreeBSD__)
