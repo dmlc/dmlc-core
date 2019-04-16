@@ -68,7 +68,8 @@ def submit(args):
                 role = 'worker'
             else:
                 role = 'server'
-            # the problem of
+
+            # the problem of https://bugs.python.org/issue20318
             # using thread means branch from same process shared by all threads
             # observed issue of subprocess call stuck and not return when rabit exit(-2)
             # exec_cmd use subprocess which branch from each worker process chenqin
