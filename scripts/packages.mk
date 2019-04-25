@@ -9,8 +9,8 @@ ${CACHE_PREFIX}/include/gtest:
 	wget https://github.com/google/googletest/archive/release-1.7.0.zip
 	unzip release-1.7.0.zip
 	mv googletest-release-1.7.0 gtest
-	cd gtest; g++ -I. -Iinclude -pthread -c src/gtest-all.cc -o gtest-all.o; cd ..
-	ar -rv libgtest.a gtest/gtest-all.o
+	cd gtest; $(CXX) $(CXXFLAGS) -I. -Iinclude -pthread -c src/gtest-all.cc -o gtest-all.o; cd ..
+	$(AR) -rv libgtest.a gtest/gtest-all.o
 	mkdir -p ${CACHE_PREFIX}/include ${CACHE_PREFIX}/lib
 	cp -r gtest/include/gtest ${CACHE_PREFIX}/include
 	mv libgtest.a ${CACHE_PREFIX}/lib
