@@ -37,6 +37,17 @@
 #define DMLC_LOG_CUSTOMIZE 0
 #endif
 
+/*!
+ * \brief Whether to enable debug logging feature.
+ */
+#ifndef DMLC_LOG_DEBUG
+#ifdef NDEBUG
+#define DMLC_LOG_DEBUG 0
+#else
+#define DMLC_LOG_DEBUG 1
+#endif
+#endif
+
 /*! \brief whether compile with hdfs support */
 #ifndef DMLC_USE_HDFS
 #define DMLC_USE_HDFS 0
