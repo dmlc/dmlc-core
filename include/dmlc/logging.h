@@ -64,6 +64,24 @@ inline void InitLogging(const char*) {
   // DO NOTHING
 }
 
+// get debug option from env variable.
+inline bool DebugLoggingEnabled() {
+  static int state = 0;
+  if (state == 0) {
+    if (auto var = std::getenv("DMLC_LOG_DEBUG")) {
+      if (std::string(var) == "1") {
+        state = 1;
+      } else {
+        state = -1;
+      }
+    } else {
+      // by default always enable debug logging.
+      state = 1;
+    }
+  }
+  return state == 1;
+}
+
 class LogCheckError {
  public:
   LogCheckError() : str(nullptr) {}
@@ -133,8 +151,9 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #define CHECK_NE(x, y) CHECK_BINARY_OP(_NE, !=, x, y)
 #define CHECK_NOTNULL(x) \
   ((x) == NULL ? dmlc::LogMessageFatal(__FILE__, __LINE__).stream() << "Check  notnull: "  #x << ' ', (x) : (x)) // NOLINT(*)
+
 // Debug-only checking.
-#ifdef NDEBUG
+#if DMLC_LOG_DEBUG
 #define DCHECK(x) \
   while (false) CHECK(x)
 #define DCHECK_LT(x, y) \
@@ -157,7 +176,7 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #define DCHECK_GE(x, y) CHECK((x) >= (y))
 #define DCHECK_EQ(x, y) CHECK((x) == (y))
 #define DCHECK_NE(x, y) CHECK((x) != (y))
-#endif  // NDEBUG
+#endif  // DMLC_LOG_DEBUG
 
 #if DMLC_LOG_CUSTOMIZE
 #define LOG_INFO dmlc::CustomLogMessage(__FILE__, __LINE__)
@@ -177,17 +196,20 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #define LOG_IF(severity, condition) \
   !(condition) ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
 
-#ifdef NDEBUG
+#if DMLC_LOG_DEBUG
+
+#define LOG_DFATAL LOG_FATAL
+#define DFATAL FATAL
+#define DLOG(severity) LOG_IF(severity, ::dmlc::DebugLoggingEnabled())
+#define DLOG_IF(severity, condition) LOG_IF(severity, ::dmlc::DebugLoggingEnabled() && (condition))
+
+#else
+
 #define LOG_DFATAL LOG_ERROR
 #define DFATAL ERROR
 #define DLOG(severity) true ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
 #define DLOG_IF(severity, condition) \
   (true || !(condition)) ? (void)0 : dmlc::LogMessageVoidify() & LOG(severity)
-#else
-#define LOG_DFATAL LOG_FATAL
-#define DFATAL FATAL
-#define DLOG(severity) LOG(severity)
-#define DLOG_IF(severity, condition) LOG_IF(severity, condition)
 #endif
 
 // Poor man version of LOG_EVERY_N
