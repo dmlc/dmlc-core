@@ -19,6 +19,7 @@ dmlccore_option(USE_S3 "Build with S3 support" OFF)
 dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler supports it" OFF)
 dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
+dmlccore_option(INSTALL_DOCUMENTATION "Install documentation" OFF)
 
 # include path
 set(INCLUDE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -192,16 +193,12 @@ target_include_directories(dmlc PUBLIC
 target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
   -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE)
 
+include(GNUInstallDirs)
 # ---[ Install Includes
-if(INSTALL_INCLUDE_DIR)
-  add_custom_command(TARGET dmlc POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${PROJECT_SOURCE_DIR}/include ${INSTALL_INCLUDE_DIR}/
-    )
-endif()
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/dmlc
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # ---[ Install the archive static lib and header files
-include(GNUInstallDirs)
 install(TARGETS dmlc
   EXPORT DMLCTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -212,8 +209,10 @@ install(EXPORT DMLCTargets
   EXPORT_LINK_INTERFACE_LIBRARIES
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dmlc)
 
-install(DIRECTORY include DESTINATION .)
-install(DIRECTORY doc DESTINATION .)
+# ---[ Install documentation
+if(INSTALL_DOCUMENTATION)
+  install(DIRECTORY doc DESTINATION ${CMAKE_INSTALL_DATADIR})
+endif()
 
 # ---[ Package configurations
 include(CMakePackageConfigHelpers)
