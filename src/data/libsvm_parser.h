@@ -64,6 +64,25 @@ class LibSVMParser : public TextParserBase<IndexType> {
   LibSVMParserParam param_;
 };
 
+template <char kSymbol = '#'>
+std::ptrdiff_t IgnoreCommentAndBlank(char const* beg,
+                                     char const* line_end) {
+  char const* p = beg;
+  std::ptrdiff_t length = std::distance(beg, line_end);
+  while (p != line_end) {
+    if (*p == kSymbol) {
+      // advance to line end, `ParsePair' will return empty line.
+      return length;
+    }
+    if (!isblank(*p)) {
+      return std::distance(beg, p);  // advance to p
+    }
+    p++;
+  }
+  // advance to line end, `ParsePair' will return empty line.
+  return length;
+}
+
 template <typename IndexType, typename DType>
 void LibSVMParser<IndexType, DType>::
 ParseBlock(const char *begin,
@@ -82,6 +101,8 @@ ParseBlock(const char *begin,
     const char * q = NULL;
     real_t label;
     real_t weight;
+    std::ptrdiff_t advanced = IgnoreCommentAndBlank(p, lend);
+    p += advanced;
     int r = ParsePair<real_t, real_t>(p, lend, &q, label, weight);
     if (r < 1) {
       // empty line
@@ -110,8 +131,12 @@ ParseBlock(const char *begin,
     while (p != lend) {
       IndexType featureId;
       real_t value;
+      std::ptrdiff_t advanced = IgnoreCommentAndBlank(p, lend);
+      p += advanced;
       int r = ParsePair<IndexType, real_t>(p, lend, &q, featureId, value);
       if (r < 1) {
+        // q is set to line end by `ParsePair', here is p. The latter terminates
+        // while loop of parsing features.
         p = q;
         continue;
       }
