@@ -1014,7 +1014,7 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
     }
   }
 
-  protected:
+ protected:
   // print the value
   virtual void PrintValue(std::ostream &os, float value) const {  // NOLINT(*)
     os << std::setprecision(std::numeric_limits<float>::max_digits10) << value;
@@ -1053,7 +1053,7 @@ class FieldEntry<double>
     }
   }
 
-  protected:
+ protected:
   // print the value
   virtual void PrintValue(std::ostream &os, double value) const {  // NOLINT(*)
     os << std::setprecision(std::numeric_limits<double>::max_digits10) << value;
