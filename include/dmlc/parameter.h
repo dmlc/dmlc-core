@@ -20,6 +20,7 @@
 #include <utility>
 #include <stdexcept>
 #include <iostream>
+#include <iomanip>
 #include <cerrno>
 #include "./base.h"
 #include "./json.h"
@@ -1012,6 +1013,12 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
       throw dmlc::ParamError(os.str());
     }
   }
+
+ protected:
+  // print the value
+  virtual void PrintValue(std::ostream &os, float value) const {  // NOLINT(*)
+    os << std::setprecision(std::numeric_limits<float>::max_digits10) << value;
+  }
 };
 
 // specialize define for double. Uses stod for platform independent handling of
@@ -1044,6 +1051,12 @@ class FieldEntry<double>
          << value.substr(pos) << "\'";
       throw dmlc::ParamError(os.str());
     }
+  }
+
+ protected:
+  // print the value
+  virtual void PrintValue(std::ostream &os, double value) const {  // NOLINT(*)
+    os << std::setprecision(std::numeric_limits<double>::max_digits10) << value;
   }
 };
 #endif  // DMLC_USE_CXX11
