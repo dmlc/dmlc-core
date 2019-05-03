@@ -12,10 +12,13 @@
 #else
 
 #if defined(__ANDROID__)
+#undef __GOMP_NOTHROW
 #define __GOMP_NOTHROW
 #elif defined(__cplusplus)
+#undef __GOMP_NOTHROW
 #define __GOMP_NOTHROW throw()
 #else
+#undef __GOMP_NOTHROW
 #define __GOMP_NOTHROW __attribute__((__nothrow__))
 #endif
 
