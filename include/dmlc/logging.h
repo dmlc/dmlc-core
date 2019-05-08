@@ -17,6 +17,7 @@
 
 #if DMLC_LOG_STACK_TRACE
 #include <cxxabi.h>
+#include <sstream>
 #include DMLC_EXECINFO_H
 #endif
 
@@ -32,6 +33,68 @@ struct Error : public std::runtime_error {
    */
   explicit Error(const std::string &s) : std::runtime_error(s) {}
 };
+
+#if DMLC_LOG_STACK_TRACE
+inline std::string Demangle(char const *msg_str) {
+  using std::string;
+  string msg(msg_str);
+  size_t symbol_start = string::npos;
+  size_t symbol_end = string::npos;
+  if ( ((symbol_start = msg.find("_Z")) != string::npos)
+       && (symbol_end = msg.find_first_of(" +", symbol_start)) ) {
+    string left_of_symbol(msg, 0, symbol_start);
+    string symbol(msg, symbol_start, symbol_end - symbol_start);
+    string right_of_symbol(msg, symbol_end);
+
+    int status = 0;
+    size_t length = string::npos;
+    std::unique_ptr<char, void (*)(void *__ptr)> demangled_symbol =
+        {abi::__cxa_demangle(symbol.c_str(), 0, &length, &status), &std::free};
+    if (demangled_symbol && status == 0 && length > 0) {
+      string symbol_str(demangled_symbol.get());
+      std::ostringstream os;
+      os << left_of_symbol << symbol_str << right_of_symbol;
+      return os.str();
+    }
+  }
+  return string(msg_str);
+}
+
+// By default skip the first frame because
+// that belongs to ~LogMessageFatal
+inline std::string StackTrace(
+    size_t start_frame = 1,
+    const size_t stack_size = DMLC_LOG_STACK_TRACE_SIZE) {
+  using std::string;
+  std::ostringstream stacktrace_os;
+  std::vector<void*> stack(stack_size);
+  int nframes = backtrace(stack.data(), static_cast<int>(stack_size));
+  stacktrace_os << "Stack trace:\n";
+  char **msgs = backtrace_symbols(stack.data(), nframes);
+  if (msgs != nullptr) {
+    for (int frameno = start_frame; frameno < nframes; ++frameno) {
+      string msg = dmlc::Demangle(msgs[frameno]);
+      stacktrace_os << "  [bt] (" << frameno - start_frame << ") " << msg << "\n";
+    }
+  }
+  free(msgs);
+  string stack_trace = stacktrace_os.str();
+  return stack_trace;
+}
+
+#else  // DMLC_LOG_STACK_TRACE is off
+
+inline std::string demangle(char const* msg_str) {
+  return std::string();
+}
+
+inline std::string StackTrace(size_t start_frame = 1,
+                              const size_t stack_size = 0) {
+  return std::string("Stack trace not available when "
+  "DMLC_LOG_STACK_TRACE is disabled at compile time.");
+}
+
+#endif  // DMLC_LOG_STACK_TRACE
 }  // namespace dmlc
 
 #if DMLC_USE_GLOG
@@ -316,69 +379,6 @@ class LogMessage {
 };
 #endif
 
-
-
-#if DMLC_LOG_STACK_TRACE
-inline std::string Demangle(char const *msg_str) {
-  using std::string;
-  string msg(msg_str);
-  size_t symbol_start = string::npos;
-  size_t symbol_end = string::npos;
-  if ( ((symbol_start = msg.find("_Z")) != string::npos)
-       && (symbol_end = msg.find_first_of(" +", symbol_start)) ) {
-    string left_of_symbol(msg, 0, symbol_start);
-    string symbol(msg, symbol_start, symbol_end - symbol_start);
-    string right_of_symbol(msg, symbol_end);
-
-    int status = 0;
-    size_t length = string::npos;
-    std::unique_ptr<char, void (*)(void *__ptr)> demangled_symbol =
-        {abi::__cxa_demangle(symbol.c_str(), 0, &length, &status), &std::free};
-    if (demangled_symbol && status == 0 && length > 0) {
-      string symbol_str(demangled_symbol.get());
-      std::ostringstream os;
-      os << left_of_symbol << symbol_str << right_of_symbol;
-      return os.str();
-    }
-  }
-  return string(msg_str);
-}
-
-// By default skip the first frame because
-// that belongs to ~LogMessageFatal
-inline std::string StackTrace(
-    size_t start_frame = 1,
-    const size_t stack_size = DMLC_LOG_STACK_TRACE_SIZE) {
-  using std::string;
-  std::ostringstream stacktrace_os;
-  std::vector<void*> stack(stack_size);
-  int nframes = backtrace(stack.data(), static_cast<int>(stack_size));
-  stacktrace_os << "Stack trace:\n";
-  char **msgs = backtrace_symbols(stack.data(), nframes);
-  if (msgs != nullptr) {
-    for (int frameno = start_frame; frameno < nframes; ++frameno) {
-      string msg = dmlc::Demangle(msgs[frameno]);
-      stacktrace_os << "  [bt] (" << frameno - start_frame << ") " << msg << "\n";
-    }
-  }
-  free(msgs);
-  string stack_trace = stacktrace_os.str();
-  return stack_trace;
-}
-
-#else  // DMLC_LOG_STACK_TRACE is off
-
-inline std::string demangle(char const* msg_str) {
-  return std::string();
-}
-
-inline std::string StackTrace(size_t start_frame = 1,
-                              const size_t stack_size = 0) {
-  return std::string("Stack trace not available when "
-  "DMLC_LOG_STACK_TRACE is disabled at compile time.");
-}
-
-#endif  // DMLC_LOG_STACK_TRACE
 
 #if defined(_LIBCPP_SGX_NO_IOSTREAMS)
 class LogMessageFatal : public LogMessage {
