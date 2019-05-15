@@ -37,8 +37,10 @@ void TemporaryDirectory::RecursiveDelete(const std::string &path) {
     if (info.type == io::FileType::kDirectory) {
       RecursiveDelete(info.path.name);
     } else {
-      CHECK_EQ(std::remove(info.path.name.c_str()), 0)
-          << "Couldn't remove file " << info.path.name;
+      if (std::remove(info.path.name.c_str()) != 0) {
+        LOG(INFO) << "Couldn't remove file " << info.path.name
+                  << "; you may want to remove it manually";
+      }
     }
   }
 #if _WIN32
@@ -51,8 +53,9 @@ void TemporaryDirectory::RecursiveDelete(const std::string &path) {
       LOG(INFO) << "Successfully deleted temporary directory " << path;
     }
   } else {
-    LOG(FATAL) << "~TemporaryDirectory(): "
-               << "Could not remove temporary directory " << path;
+    LOG(INFO) << "~TemporaryDirectory(): "
+              << "Could not remove temporary directory " << path
+              << "; you may want to remove it manually";
   }
 }
 }  // namespace dmlc
