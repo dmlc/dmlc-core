@@ -115,6 +115,14 @@ class SeekStream: public Stream {
   /*! \brief tell the position of the stream */
   virtual size_t Tell(void) = 0;
   /*!
+   * \brief Resize internal I/O buffer. Only applicable for local filesystem.
+   * \param bufsize new buffer size
+   * \return whether buffer was successfully resized
+   */
+  virtual bool ResizeIOBuffer(size_t bufsize) {
+    return false;
+  }
+  /*!
    * \brief generic factory function
    *  create an SeekStream for read only,
    *  the stream will close the underlying files upon deletion

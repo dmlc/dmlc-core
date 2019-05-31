@@ -38,6 +38,9 @@ class FileStream : public SeekStream {
     CHECK(std::fwrite(ptr, 1, size, fp_) == size)
         << "FileStream.Write incomplete";
   }
+  virtual bool ResizeIOBuffer(size_t bufsize) {
+    return (std::setvbuf(fp_, NULL, _IOFBF, bufsize) == 0);
+  }
   virtual void Seek(size_t pos) {
 #ifndef _MSC_VER
     CHECK(!std::fseek(fp_, static_cast<long>(pos), SEEK_SET));  // NOLINT(*)
