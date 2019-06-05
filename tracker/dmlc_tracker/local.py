@@ -42,6 +42,7 @@ def exec_cmd(cmd, num_attempt, role, taskid, pass_env):
 
             if num_retry >= 0:
                 cmdline = ' '.join(cmd + ['DMLC_NUM_ATTEMPT=' + str(num_trial)])
+                #cmdline = 'gdb ../../xgboost'
                 continue
             if os.name == 'nt':
                 sys.exit(-1)
