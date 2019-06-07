@@ -138,8 +138,8 @@ inline bool DebugLoggingEnabled() {
         state = -1;
       }
     } else {
-      // by default always enable debug logging.
-      state = 1;
+      // by default hide debug logging.
+      state = -1;
     }
   }
   return state == 1;
