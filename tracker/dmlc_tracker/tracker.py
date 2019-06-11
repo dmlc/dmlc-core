@@ -262,10 +262,22 @@ class RabitTracker(object):
         pending = []
         # lazy initialize tree_map
         tree_map = None
+        # configurations
+        configurations = {}
 
         while len(shutdown) != nslave:
             fd, s_addr = self.sock.accept()
             s = SlaveEntry(fd, s_addr)
+            if s.cmd == 'set':
+                key = s.sock.recvstr()
+                value = s.sock.recvstr()
+                logging.info(key.strip(), value.strip())
+                configurations[key] = value
+                continue
+            if s.cmd == 'get':
+                key = s.sock.recvstr()
+                s.sock.sendstr('none' if configurations[key] is None else configurations[key])
+                continue
             if s.cmd == 'print':
                 msg = s.sock.recvstr()
                 logging.info(msg.strip())
