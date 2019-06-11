@@ -42,7 +42,6 @@ def exec_cmd(cmd, num_attempt, role, taskid, pass_env):
 
             if num_retry >= 0:
                 cmdline = ' '.join(cmd + ['DMLC_NUM_ATTEMPT=' + str(num_trial)])
-                #cmdline = 'gdb ../../xgboost'
                 continue
             if os.name == 'nt':
                 sys.exit(-1)
@@ -63,27 +62,17 @@ def submit(args):
         nserver: number of server nodes to start up
         envs: enviroment variables to be added to the starting programs
         """
-        procs = []
+        procs = {}
         for i in range(nworker + nserver):
             if i < nworker:
                 role = 'worker'
             else:
                 role = 'server'
-
-            # the problem of https://bugs.python.org/issue20318
-            # using thread means branch from same process shared by all threads
-            # observed issue of subprocess call stuck and not return when rabit exit(-2)
-            # exec_cmd use subprocess which branch from each worker process chenqin
-            child = os.fork()
-            if child:
-                procs.append(child)
-            else:
-                exec_cmd(args.command, args.local_num_attempt, role, i, envs)
-                return
-
-        for child in procs:
-            os.waitpid(child, 0)
+            procs[i] = Thread(target=exec_cmd, args=(args.command, args.local_num_attempt, role, i, envs))
+            procs[i].setDaemon(True)
+            procs[i].start()
 
     # call submit, with nslave, the commands to run each job and submit function
     tracker.submit(args.num_workers, args.num_servers, fun_submit=mthread_submit,
                    pscmd=(' '.join(args.command)))
+

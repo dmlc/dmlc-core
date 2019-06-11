@@ -271,7 +271,6 @@ class RabitTracker(object):
             if s.cmd == 'set':
                 key = s.sock.recvstr()
                 value = s.sock.recvstr()
-                logging.info(key.strip(), value.strip())
                 configurations[key] = value
                 continue
             if s.cmd == 'get':
