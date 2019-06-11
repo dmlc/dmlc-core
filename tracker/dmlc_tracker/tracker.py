@@ -276,7 +276,7 @@ class RabitTracker(object):
                 continue
             if s.cmd == 'get':
                 key = s.sock.recvstr()
-                s.sock.sendstr('none' if configurations[key] is None else configurations[key])
+                s.sock.sendstr(configurations.get(key, 'none'))
                 continue
             if s.cmd == 'print':
                 msg = s.sock.recvstr()
