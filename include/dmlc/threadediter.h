@@ -373,7 +373,7 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
         }
         if (notify)
           consumer_cond_.notify_all();
-      } catch (dmlc::Error &e) {
+      } catch (std::exception &e) {
         // Shouldn't throw exception in destructor
         DCHECK(producer_sig_ != kDestroy);
         {
@@ -465,8 +465,13 @@ template <typename DType> inline void ThreadedIter<DType>::ThrowExceptionIfSet(v
       tmp_exception = iter_exception_;
     }
   }
-  if (tmp_exception)
-    std::rethrow_exception(tmp_exception);
+  if (tmp_exception) {
+    try {
+      std::rethrow_exception(tmp_exception);
+    } catch (std::exception& exc) {
+      LOG(FATAL) << exc.what();
+    }
+  }
 }
 
 template <typename DType> inline void ThreadedIter<DType>::ClearException(void) {
