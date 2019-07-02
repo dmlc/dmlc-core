@@ -85,7 +85,7 @@ def create_sched_job_manifest( wk_num, ps_num, envs, image,  commands):
     envs.append( client.V1EnvVar( name="DMLC_ROLE", value="scheduler" ))
     name = ""
     for i in envs:
-        if i.name is "DMLC_PS_ROOT_URI":
+        if i.name == "DMLC_PS_ROOT_URI":
             name = i.value
             break
     return create_job_manifest(envs, commands, name, image, None )
