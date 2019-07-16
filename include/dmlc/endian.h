@@ -10,11 +10,8 @@
 #include <cstdint>
 
 /*! \brief Endian detection via type punning */
-inline int __dmlc_is_system_little_endian() {
-  const uint32_t value = 0x01;
-  const void* address = static_cast<const void*>(&value);
-  const uint8_t* least_significant_address = static_cast<const uint8_t*>(address);
-  return ((*least_significant_address == 0x01) ? 1 : 0);
+constexpr inline int __dmlc_is_system_little_endian() {
+  return ((0xDD == (const uint8_t&)0xAABBCCDD) ? 1 : 0);
 }
 
 #define DMLC_LITTLE_ENDIAN __dmlc_is_system_little_endian()
