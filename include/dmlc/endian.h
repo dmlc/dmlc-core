@@ -6,8 +6,8 @@
 #ifndef DMLC_ENDIAN_H_
 #define DMLC_ENDIAN_H_
 
-#include "./base.h"
 #include <cstdint>
+#include "./base.h"
 
 /*! \brief Endian detection via type punning */
 constexpr inline int __dmlc_is_system_little_endian() {
