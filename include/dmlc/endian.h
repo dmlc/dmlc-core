@@ -7,32 +7,17 @@
 #define DMLC_ENDIAN_H_
 
 #include "./base.h"
+#include <cstdint>
 
-#ifdef DMLC_CMAKE_LITTLE_ENDIAN
-  // If compiled with CMake, use CMake's endian detection logic
-  #define DMLC_LITTLE_ENDIAN DMLC_CMAKE_LITTLE_ENDIAN
-#else
-  #if defined(__APPLE__) || defined(_WIN32)
-    #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__GLIBC__) || defined(__ANDROID__) || defined(__RISCV__)
-    #include <endian.h>
-    #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
-  #elif defined(__FreeBSD__)
-    #include <sys/endian.h>
-    #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
-  #elif defined(__EMSCRIPTEN__)
-    #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__sun) && defined(__SVR4)
-    // Solaris supports x86 (little endian) and SPARC (big endian)
-    #if defined(__x86_64) || defined(__i386__)
-      #define DMLC_LITTLE_ENDIAN 1
-    #else
-      #define DMLC_LITTLE_ENDIAN 0
-    #endif
-  #else
-    #error "Unable to determine endianness of your machine; use CMake to compile"
-  #endif
-#endif
+/*! \brief Endian detection via type punning */
+inline int __dmlc_is_system_little_endian() {
+  const uint32_t value = 0x01;
+  const void* address = static_cast<const void*>(&value);
+  const uint8_t* least_significant_address = static_cast<const uint8_t*>(address);
+  return ((*least_significant_address == 0x01) ? 1 : 0);
+}
+
+#define DMLC_LITTLE_ENDIAN __dmlc_is_system_little_endian()
 
 /*! \brief whether serialize using little endian */
 #define DMLC_IO_NO_ENDIAN_SWAP (DMLC_LITTLE_ENDIAN == DMLC_IO_USE_LITTLE_ENDIAN)
