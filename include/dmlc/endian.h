@@ -6,32 +6,23 @@
 #ifndef DMLC_ENDIAN_H_
 #define DMLC_ENDIAN_H_
 
+#include <cstdint>
 #include "./base.h"
 
-#ifdef DMLC_CMAKE_LITTLE_ENDIAN
-  // If compiled with CMake, use CMake's endian detection logic
-  #define DMLC_LITTLE_ENDIAN DMLC_CMAKE_LITTLE_ENDIAN
+#if defined(_WIN32) || defined (_MSC_VER)
+
+/* Windows OS uses little endian exclusively */
+#define DMLC_LITTLE_ENDIAN 1
+
 #else
-  #if defined(__APPLE__) || defined(_WIN32)
-    #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__GLIBC__) || defined(__ANDROID__) || defined(__RISCV__)
-    #include <endian.h>
-    #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
-  #elif defined(__FreeBSD__)
-    #include <sys/endian.h>
-    #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
-  #elif defined(__EMSCRIPTEN__)
-    #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__sun) && defined(__SVR4)
-    // Solaris supports x86 (little endian) and SPARC (big endian)
-    #if defined(__x86_64) || defined(__i386__)
-      #define DMLC_LITTLE_ENDIAN 1
-    #else
-      #define DMLC_LITTLE_ENDIAN 0
-    #endif
-  #else
-    #error "Unable to determine endianness of your machine; use CMake to compile"
-  #endif
+
+/*! \brief Endian detection via type punning */
+constexpr inline int __dmlc_is_system_little_endian() {
+  return ((0xDD == (const uint8_t&)0xAABBCCDD) ? 1 : 0);
+}
+
+#define DMLC_LITTLE_ENDIAN __dmlc_is_system_little_endian()
+
 #endif
 
 /*! \brief whether serialize using little endian */

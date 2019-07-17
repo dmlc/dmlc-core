@@ -17,14 +17,15 @@ fi
 
 if [ ${TASK} == "unittest_gtest" ]; then
     cp make/config.mk .
-    make -f scripts/packages.mk gtest
     if [ ${TRAVIS_OS_NAME} != "osx" ]; then
         echo "USE_S3=1" >> config.mk
         echo "export CXX = g++-4.8" >> config.mk
+        export CXX=g++-4.8
     else
         echo "USE_S3=0" >> config.mk
         echo "USE_OPENMP=0" >> config.mk
     fi
+    make -f scripts/packages.mk gtest
     echo "GTEST_PATH="${CACHE_PREFIX} >> config.mk
     echo "BUILD_TEST=1" >> config.mk
     make all
