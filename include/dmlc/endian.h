@@ -9,12 +9,21 @@
 #include <cstdint>
 #include "./base.h"
 
+#if defined(_WIN32) || defined (_MSC_VER)
+
+/* Windows OS uses little endian exclusively */
+#define DMLC_LITTLE_ENDIAN 1
+
+#else
+
 /*! \brief Endian detection via type punning */
 constexpr inline int __dmlc_is_system_little_endian() {
   return ((0xDD == (const uint8_t&)0xAABBCCDD) ? 1 : 0);
 }
 
 #define DMLC_LITTLE_ENDIAN __dmlc_is_system_little_endian()
+
+#endif
 
 /*! \brief whether serialize using little endian */
 #define DMLC_IO_NO_ENDIAN_SWAP (DMLC_LITTLE_ENDIAN == DMLC_IO_USE_LITTLE_ENDIAN)
