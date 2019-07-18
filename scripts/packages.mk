@@ -6,7 +6,7 @@
 # rules for gtest
 ${CACHE_PREFIX}/include/gtest:
 	rm -rf gtest release-1.8.1.zip
-	wget https://github.com/google/googletest/archive/release-1.7.0.zip
+	wget https://github.com/google/googletest/archive/release-1.8.1.zip
 	unzip release-1.8.1.zip
 	mv googletest-release-1.8.1 gtest
 	cd gtest; $(CXX) $(CXXFLAGS) -I. -Iinclude -pthread -c src/gtest-all.cc -o gtest-all.o; cd ..
