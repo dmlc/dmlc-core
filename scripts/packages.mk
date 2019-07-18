@@ -12,7 +12,7 @@ ${CACHE_PREFIX}/include/gtest:
 	cd gtest; $(CXX) $(CXXFLAGS) -Igoogletest -Igoogletest/include -pthread -c googletest/src/gtest-all.cc -o gtest-all.o; cd ..
 	$(AR) -rv libgtest.a gtest/gtest-all.o
 	mkdir -p ${CACHE_PREFIX}/include ${CACHE_PREFIX}/lib
-	cp -r gtest/include/gtest ${CACHE_PREFIX}/include
+	cp -r gtest/googletest/include/gtest ${CACHE_PREFIX}/include
 	mv libgtest.a ${CACHE_PREFIX}/lib
 	rm -rf release-1.7.0.zip
 
