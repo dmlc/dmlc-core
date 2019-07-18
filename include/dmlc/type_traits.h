@@ -171,6 +171,7 @@ DMLC_DECLARE_TRAITS(is_floating_point, double, true);
 DMLC_DECLARE_TYPE_NAME(float, "float");
 DMLC_DECLARE_TYPE_NAME(double, "double");
 DMLC_DECLARE_TYPE_NAME(int, "int");
+DMLC_DECLARE_TYPE_NAME(int64_t, "long");
 DMLC_DECLARE_TYPE_NAME(uint32_t, "int (non-negative)");
 DMLC_DECLARE_TYPE_NAME(uint64_t, "long (non-negative)");
 DMLC_DECLARE_TYPE_NAME(std::string, "string");
