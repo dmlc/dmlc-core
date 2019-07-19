@@ -14,21 +14,18 @@
 #else
   #if defined(__APPLE__) || defined(_WIN32)
     #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__GLIBC__) || defined(__ANDROID__) || defined(__RISCV__)
+  #elif defined(__GLIBC__) || defined(__GNU_LIBRARY__) \
+        || defined(__ANDROID__) || defined(__RISCV__)
     #include <endian.h>
     #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
-  #elif defined(__FreeBSD__)
+  #elif defined(__FreeBSD__) || defined(__OpenBSD__)
     #include <sys/endian.h>
     #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
   #elif defined(__EMSCRIPTEN__)
     #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__sun) && defined(__SVR4)
-    // Solaris supports x86 (little endian) and SPARC (big endian)
-    #if defined(__x86_64) || defined(__i386__)
-      #define DMLC_LITTLE_ENDIAN 1
-    #else
-      #define DMLC_LITTLE_ENDIAN 0
-    #endif
+  #elif defined(__sun)
+    #include <sys/isa_defs.h>
+    #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
   #else
     #error "Unable to determine endianness of your machine; use CMake to compile"
   #endif
