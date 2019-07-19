@@ -4,6 +4,7 @@
 
 #include <dmlc/io.h>
 #include <dmlc/memory_io.h>
+#include <dmlc/parameter.h>
 #include <dmlc/logging.h>
 #include <gtest/gtest.h>
 #include <sstream>
@@ -99,5 +100,27 @@ TEST(Serializer, endian) {
     ASSERT_EQ(blob[1], 0);
     ASSERT_EQ(blob[2], 0);
     ASSERT_EQ(blob[3], 0);
+  }
+}
+
+#ifndef DMLC_LITTLE_ENDIAN
+  #error "DMLC_LITTLE_ENDIAN must be defined"
+#endif
+
+TEST(Serializer, endian_detection) {
+  std::string little_endian_flag
+    = dmlc::GetEnv("DMLC_UNIT_TEST_LITTLE_ENDIAN", std::string("NULL"));
+  if (little_endian_flag == "0" || little_endian_flag == "1") {
+    // DMLC_UNIT_TEST_LITTLE_ENDIAN env var needs to be set, so that
+    // CI can provide the correct endian value
+    if (little_endian_flag == "1") {
+      std::cout << "Assert that this machine is little endian..." << std::endl;
+      ASSERT_TRUE(DMLC_LITTLE_ENDIAN);
+    } else {
+      std::cout << "Assert that this machine is big endian..." << std::endl;
+      ASSERT_FALSE(DMLC_LITTLE_ENDIAN);
+    }
+  } else {
+    std::cout << "\x1B[33mWarning\u001B[0m: Skipping this test because DMLC_UNIT_TEST_LITTLE_ENDIAN is not set" << std::endl;
   }
 }

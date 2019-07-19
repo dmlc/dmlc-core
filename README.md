@@ -21,6 +21,10 @@ Contents
 * [Documentation and Tutorials](http://dmlc-core.readthedocs.org/en/latest/)
 * [Contributing](#contributing)
 
+Known Issues
+------------
+* RecordIO format is not portable across different processor endians. So it is not possible to save RecordIO file on a x86 machine and then load it on a SPARC machine, because x86 is little endian while SPARC is big endian.
+
 
 Contributing
 ------------
