@@ -92,6 +92,15 @@ else()
   set(DMLC_EXECINFO_H_PRESENT 0)
 endif()
 
+# Check endianness
+include(TestBigEndian)
+test_big_endian(BIG_ENDIAN)
+if(BIG_ENDIAN)
+  set(DMLC_CMAKE_LITTLE_ENDIAN 0)
+else()
+  set(DMLC_CMAKE_LITTLE_ENDIAN 1)
+endif()
+
 message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> ${INCLUDE_DMLC_DIR}/build_config.h")
 configure_file("${CMAKE_LOCAL}/build_config.h.in" "${INCLUDE_DMLC_DIR}/build_config.h")
 
