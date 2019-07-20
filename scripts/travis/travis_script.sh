@@ -15,6 +15,9 @@ if [ ${TRAVIS_OS_NAME} == "osx" ]; then
     export NO_OPENMP=1
 fi
 
+# For all tests other than s390x_test, expect little endian
+export DMLC_UNIT_TEST_LITTLE_ENDIAN=1
+
 if [ ${TASK} == "unittest_gtest" ]; then
     cp make/config.mk .
     if [ ${TRAVIS_OS_NAME} != "osx" ]; then
@@ -44,4 +47,11 @@ if [ ${TASK} == "cmake_test" ]; then
     make
     cd ..
     ./build/test/unittest/dmlc_unit_tests
+fi
+
+if [ ${TASK} == "s390x_test" ]; then
+    # Run unit tests inside emulated s390x Docker container (uses QEMU transparently).
+    # This should help us achieve compatibility with big endian targets.
+    scripts/travis/s390x/ci_build.sh s390_container scripts/travis/s390x/build_via_cmake.sh
+    scripts/travis/s390x/ci_build.sh s390_container -e DMLC_UNIT_TEST_LITTLE_ENDIAN=0 build/test/unittest/dmlc_unit_tests
 fi

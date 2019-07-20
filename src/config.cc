@@ -38,7 +38,7 @@ class Tokenizer {
     state_ = kNone;
     tok->buf.clear();
     tok->is_string = false;
-    char ch;
+    int ch;
     while ( (ch = PeekChar()) != EOF && state_ != kFinish ) {
       switch (ch) {
       case ' ': case '\t': case '\n': case '\r':
@@ -75,7 +75,7 @@ class Tokenizer {
 
   void ParseString(string* tok) {
     EatChar();  // eat the first quotation mark
-    char ch;
+    int ch;
     while ( (ch = PeekChar()) != '\"' ) {
       switch (ch) {
         case '\\':
@@ -99,7 +99,7 @@ class Tokenizer {
   }
 
   void ParseComments() {
-    char ch;
+    int ch;
     while ( (ch = PeekChar()) ) {
       if (ch == '\n' || ch == '\r' || ch == EOF) {
         break;  // end of comment
@@ -109,7 +109,7 @@ class Tokenizer {
   }
 
  private:
-  char PeekChar() {
+  int PeekChar() {
     return is_.peek();
   }
   void EatChar() {

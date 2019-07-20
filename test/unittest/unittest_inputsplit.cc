@@ -148,6 +148,13 @@ TEST(InputSplit, test_split_libsvm_distributed) {
 /* Don't run the following when CMake is not used */
 
 #include "./build_config.h"
+#include <dmlc/build_config.h>
+
+#ifndef DMLC_CMAKE_LITTLE_ENDIAN
+  #error "DMLC_CMAKE_LITTLE_ENDIAN not defined"
+#endif // DMLC_CMAKE_LITTLE_ENDIAN
+
+#if DMLC_CMAKE_LITTLE_ENDIAN
 
 TEST(InputSplit, test_recordio) {
   dmlc::TemporaryDirectory tempdir;
@@ -181,5 +188,7 @@ TEST(InputSplit, test_recordio) {
     ++idx;
   }
 }
+
+#endif  // DMLC_CMAKE_LITTLE_ENDIAN
 
 #endif  // DMLC_UNIT_TESTS_USE_CMAKE

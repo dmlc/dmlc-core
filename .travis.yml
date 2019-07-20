@@ -1,5 +1,6 @@
 group: travis_latest
 language: python
+services: docker
 
 osx_image: xcode10.1
 
@@ -20,6 +21,9 @@ matrix:
   - env: TASK=cmake_test
     language: ruby
     os: osx
+  - env: TASK=s390x_test
+    os: linux
+    python: '3.6'
 
 # dependent apt packages
 addons:
@@ -49,6 +53,11 @@ install:
   - if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then brew install python; fi
   - python3 --version ; python3 -m pip --version
   - python3 -m pip install cpplint pylint flake8
+  - |
+    # Set up QEMU to run s390x Docker container
+    if [[ ${TASK} == "s390x_test" ]]; then
+      docker run --rm --privileged multiarch/qemu-user-static:register --reset
+    fi
 
 before_script:
   # stop the build if there are Python syntax errors or undefined names
