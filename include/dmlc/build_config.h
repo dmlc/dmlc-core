@@ -22,7 +22,7 @@
      && !defined(__sun) && !defined(__SVR4)\
      && !(defined __MINGW64__) && !(defined __ANDROID__))\
      && !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)\
-     && !defined(__RISCV__)
+     && !defined(__RISCV__) && !defined(__hexagon__)
   #define DMLC_LOG_STACK_TRACE 1
   #define DMLC_LOG_STACK_TRACE_SIZE 10
   #define DMLC_EXECINFO_H <execinfo.h>
