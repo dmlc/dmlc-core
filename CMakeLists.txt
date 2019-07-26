@@ -20,6 +20,7 @@ dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler supports it" OFF)
 dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
 dmlccore_option(INSTALL_DOCUMENTATION "Install documentation" OFF)
+dmlccore_option(DMLC_FORCE_SHARED_CRT "Build with dynamic CRT on Windows (/MD)" OFF)
 
 # include path
 set(INCLUDE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -107,13 +108,15 @@ configure_file("${CMAKE_LOCAL}/build_config.h.in" "${INCLUDE_DMLC_DIR}/build_con
 # compiler flags
 if(MSVC)
   add_definitions(-DDMLC_USE_CXX11)
-  foreach(flag_var
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-    if(${flag_var} MATCHES "/MD")
-      string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-    endif(${flag_var} MATCHES "/MD")
-  endforeach(flag_var)
+  if(NOT BUILD_SHARED_LIBS AND NOT DMLC_FORCE_SHARED_CRT)
+    foreach(flag_var
+          CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+          CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+      if(${flag_var} MATCHES "/MD")
+        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+      endif(${flag_var} MATCHES "/MD")
+    endforeach(flag_var)
+  endif()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else(MSVC)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
