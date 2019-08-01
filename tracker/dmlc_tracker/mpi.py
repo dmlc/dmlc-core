@@ -28,7 +28,7 @@ def get_mpi_env(envs):
     if b'Open MPI' in out:
         for k, v in envs.items():
             cmd += ' -x %s=%s' % (k, str(v))
-    elif b'mpich' in err:
+    elif b'mpich' in out:
         for k, v in envs.items():
             cmd += ' -env %s %s' % (k, str(v))
     else:
