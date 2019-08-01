@@ -24,7 +24,7 @@ set_property(TARGET dmlc_unit_tests
 message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in -> ${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
 
-target_compile_definitions(dmlc_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE ${ENABLE_GNU_EXTENSION_FLAGS})
+target_compile_definitions(dmlc_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE -DDMLC_CORE_USE_CMAKE ${ENABLE_GNU_EXTENSION_FLAGS})
 target_include_directories(dmlc_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(GTest)
