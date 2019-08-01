@@ -279,6 +279,10 @@ inline const char* BeginPtr(const std::string &str) {
    replace fopen64 with std::fopen. Also determine ability to print stack trace
    for fatal error and define DMLC_LOG_STACK_TRACE if stack trace can be
    produced. Always keep this #include at the bottom of dmlc/base.h */
+#ifdef DMLC_CORE_USE_CMAKE
 #include <dmlc/build_config.h>
+#else
+#include <dmlc/build_config_default.h>
+#endif
 
 #endif  // DMLC_BASE_H_
