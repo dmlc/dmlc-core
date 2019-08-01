@@ -1,12 +1,12 @@
 /*!
  * Copyright (c) 2018 by Contributors
- * \file build_config.h
+ * \file build_config_default.h
  * \brief Default detection logic for fopen64 and other symbols.
  *        May be overriden by CMake
  * \author KOLANICH
  */
-#ifndef DMLC_BUILD_CONFIG_H_
-#define DMLC_BUILD_CONFIG_H_
+#ifndef DMLC_BUILD_CONFIG_DEFAULT_H_
+#define DMLC_BUILD_CONFIG_DEFAULT_H_
 
 /* default logic for fopen64 */
 #if DMLC_USE_FOPEN64 && \
@@ -33,4 +33,4 @@
   #define DMLC_NANOSLEEP_PRESENT
 #endif
 
-#endif  // DMLC_BUILD_CONFIG_H_
+#endif  // DMLC_BUILD_CONFIG_DEFAULT_H_
