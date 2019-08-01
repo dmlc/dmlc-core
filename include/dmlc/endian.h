@@ -23,9 +23,13 @@
     #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
   #elif defined(__EMSCRIPTEN__)
     #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__sun)
+  #elif defined(__sun) || defined(sun)
     #include <sys/isa_defs.h>
-    #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
+    #if defined(_LITTLE_ENDIAN)
+      #define DMLC_LITTLE_ENDIAN 1
+    #else
+      #define DMLC_LITTLE_ENDIAN 0
+    #endif
   #else
     #error "Unable to determine endianness of your machine; use CMake to compile"
   #endif
