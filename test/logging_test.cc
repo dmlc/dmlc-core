@@ -5,7 +5,7 @@ int main(void) {
   LOG(ERROR) << "error";
   try {
     LOG(FATAL)<<'a'<<11<<33;
-  } catch (dmlc::Error e) {
+  } catch (dmlc::Error& e) {
     LOG(INFO) << "catch " << e.what();
   }
   CHECK(2!=3) << "test";

@@ -21,6 +21,10 @@ dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler support
 dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
 dmlccore_option(INSTALL_DOCUMENTATION "Install documentation" OFF)
 dmlccore_option(DMLC_FORCE_SHARED_CRT "Build with dynamic CRT on Windows (/MD)" OFF)
+dmlccore_option(DMLC_USE_SANITIZER "Use santizer flags; to specify a custom path for sanitizers, set this variable a value that's not ON or OFF" OFF)
+set(DMLC_ENABLED_SANITIZERS "address" "leak" CACHE STRING
+  "Semicolon separated list of sanitizer names. E.g 'address;leak'. Supported sanitizers are
+  address, leak and thread.")
 
 # include path
 set(INCLUDE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -28,6 +32,15 @@ set(INCLUDE_DMLC_DIR "${INCLUDE_ROOT}/dmlc")
 # include_directories("${INCLUDE_ROOT}")
 
 set(dmlccore_LINKER_LIBS "")
+
+# Sanitizer
+if (DMLC_USE_SANITIZER)
+  # Older CMake versions have had troubles with Sanitizer
+  cmake_minimum_required(VERSION 3.12)
+  include(cmake/Sanitizer.cmake)
+  enable_sanitizers("${DMLC_ENABLED_SANITIZERS}")
+endif (DMLC_USE_SANITIZER)
+
 # HDFS configurations
 if(USE_HDFS)
  find_package(HDFS REQUIRED)
