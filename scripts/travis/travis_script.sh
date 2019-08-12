@@ -52,8 +52,8 @@ fi
 if [ ${TASK} == "sanitizer_test" ]; then
     rm -rf build
     mkdir build && cd build
-    cmake .. -DGOOGLE_TEST=ON -DUSE_SANITIZER=ON \
-             -DENABLED_SANITIZERS="thread" -DCMAKE_BUILD_TYPE=Debug ..
+    cmake .. -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON \
+             -DDMLC_ENABLED_SANITIZERS="thread" -DCMAKE_BUILD_TYPE=Debug ..
     make -j2
     cd ..
     ./build/test/unittest/dmlc_unit_tests || true   # For now just display sanitizer errors
