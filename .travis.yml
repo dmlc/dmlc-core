@@ -15,6 +15,9 @@ matrix:
   - env: TASK=cmake_test
     os: linux
     python: '3.6'
+  - env: TASK=sanitizer_test
+    os: linux
+    python: '3.6'
   - env: TASK=unittest_gtest
     language: ruby
     os: osx

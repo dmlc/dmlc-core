@@ -49,6 +49,16 @@ if [ ${TASK} == "cmake_test" ]; then
     ./build/test/unittest/dmlc_unit_tests
 fi
 
+if [ ${TASK} == "sanitizer_test" ]; then
+    rm -rf build
+    mkdir build && cd build
+    cmake .. -DGOOGLE_TEST=ON -DUSE_SANITIZER=ON \
+             -DENABLED_SANITIZERS="thread" -DCMAKE_BUILD_TYPE=Debug ..
+    make -j2
+    cd ..
+    ./build/test/unittest/dmlc_unit_tests || true   # For now just display sanitizer errors
+fi
+
 if [ ${TASK} == "s390x_test" ]; then
     # Run unit tests inside emulated s390x Docker container (uses QEMU transparently).
     # This should help us achieve compatibility with big endian targets.
