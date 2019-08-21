@@ -2,6 +2,7 @@
 #include <dmlc/parameter.h>
 #include <vector>
 #include <string>
+#include <utility>
 #include <cmath>
 
 struct LearningParam : public dmlc::Parameter<LearningParam> {
@@ -20,7 +21,8 @@ TEST(Parameter, parsing_float) {
   std::map<std::string, std::string> kwargs;
 
   kwargs["float_param"] = "0";
-  ASSERT_NO_THROW(param.Init(kwargs));
+  param.Init(kwargs);
+  // ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "0.015625";  // can be represented exactly in IEEE 754
   ASSERT_NO_THROW(param.Init(kwargs));
   ASSERT_EQ(param.float_param, 0.015625f);
@@ -156,4 +158,31 @@ TEST(Parameter, parsing_float) {
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
   kwargs["float_param"] = "Nanny";
   ASSERT_THROW(param.Init(kwargs), dmlc::ParamError);
+}
+
+TEST(Parameter, Update) {
+  LearningParam param;
+  bool changed = false;
+  using Args = std::vector<std::pair<std::string, std::string> >;
+  auto unknown =
+      param.UpdateAllowUnknown(Args{{"float_param", "0.02"},
+                                    {"foo", "bar"}}, &changed);
+  ASSERT_EQ(unknown.size(), 1);
+  ASSERT_EQ(unknown[0].first, "foo");
+  ASSERT_EQ(unknown[0].second, "bar");
+  ASSERT_NEAR(param.float_param, 0.02f, 1e-6);
+  ASSERT_TRUE(changed);
+
+  param.float_param = 0.02;
+  param.UpdateAllowUnknown(Args{{"float_param", "0.02"},
+                                {"foo", "bar"}}, &changed);
+  ASSERT_FALSE(changed);
+
+  param.UpdateAllowUnknown(Args{{"foo", "bar"}}, &changed);
+  ASSERT_FALSE(changed);
+
+  param.UpdateAllowUnknown(Args{{"double_param", "0.13"},
+                                {"foo", "bar"}}, &changed);
+  ASSERT_NEAR(param.float_param, 0.02f, 1e-6);  // stays the same
+  ASSERT_NEAR(param.double_param, 0.13, 1e-6);
 }
