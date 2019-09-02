@@ -1089,7 +1089,7 @@ inline void SetEnv(const char *key,
   parameter::FieldEntry<ValueType> e;
   e.Init(key, &value, value);
 #ifdef _WIN32
-  _putenv(key, e.GetStringValue(&value).c_str());
+  _putenv_s(key, e.GetStringValue(&value).c_str());
 #else
   setenv(key, e.GetStringValue(&value).c_str(), 1);
 #endif  // _WIN32
