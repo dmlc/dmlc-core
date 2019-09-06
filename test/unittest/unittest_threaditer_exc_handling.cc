@@ -69,7 +69,7 @@ struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
 
 TEST(ThreadedIter, dmlc_exception) {
   using namespace producer_test;
-  int *value;
+  int* value = nullptr;
   ThreadedIter<int> iter2;
   iter2.set_max_capacity(7);
   IntProducerNextExc prod(5, 100);
@@ -116,11 +116,12 @@ TEST(ThreadedIter, dmlc_exception) {
     caught = true;
   }
   CHECK(caught);
+  delete(value);
 }
 
 TEST(ThreadedIter, std_exception) {
   using namespace producer_test;
-  int *value;
+  int *value = nullptr;
   ThreadedIter<int> iter2;
   iter2.set_max_capacity(7);
   IntProducerNextExc prod(5, 100, ExcType::kStdException);
@@ -167,5 +168,5 @@ TEST(ThreadedIter, std_exception) {
     caught = true;
   }
   CHECK(caught);
-
+  delete(value);
 }
