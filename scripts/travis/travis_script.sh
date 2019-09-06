@@ -4,23 +4,23 @@ set -e
 set -x
 
 # main script of travis
-if [ ${TASK} == "lint" ]; then
+if [[ ${TASK} == "lint" ]]; then
     make lint
     make doxygen 2>log.txt
     (cat log.txt| grep -v ENABLE_PREPROCESSING |grep -v "unsupported tag" |grep warning) && exit 1
     exit 0
 fi
 
-if [ ${TRAVIS_OS_NAME} == "osx" ]; then
+if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
     export NO_OPENMP=1
 fi
 
 # For all tests other than s390x_test, expect little endian
 export DMLC_UNIT_TEST_LITTLE_ENDIAN=1
 
-if [ ${TASK} == "unittest_gtest" ]; then
+if [[ ${TASK} == "unittest_gtest" ]]; then
     cp make/config.mk .
-    if [ ${TRAVIS_OS_NAME} != "osx" ]; then
+    if [[ ${TRAVIS_OS_NAME} != "osx" ]]; then
         echo "USE_S3=1" >> config.mk
         echo "export CXX = g++-4.8" >> config.mk
         export CXX=g++-4.8
@@ -35,7 +35,7 @@ if [ ${TASK} == "unittest_gtest" ]; then
     test/unittest/dmlc_unittest
 fi
 
-if [ ${TASK} == "cmake_test" ]; then
+if [[ ${TASK} == "cmake_test" ]]; then
     # Build dmlc-core with CMake, including unit tests
     rm -rf build
     mkdir build && cd build
@@ -49,7 +49,7 @@ if [ ${TASK} == "cmake_test" ]; then
     ./build/test/unittest/dmlc_unit_tests
 fi
 
-if [ ${TASK} == "sanitizer_test" ]; then
+if [[ ${TASK} == "sanitizer_test" ]]; then
     rm -rf build
     mkdir build && cd build
     cmake .. -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON \
@@ -59,7 +59,7 @@ if [ ${TASK} == "sanitizer_test" ]; then
     ./build/test/unittest/dmlc_unit_tests || true   # For now just display sanitizer errors
 fi
 
-if [ ${TASK} == "s390x_test" ]; then
+if [[ ${TASK} == "s390x_test" ]]; then
     # Run unit tests inside emulated s390x Docker container (uses QEMU transparently).
     # This should help us achieve compatibility with big endian targets.
     scripts/travis/s390x/ci_build.sh s390_container scripts/travis/s390x/build_via_cmake.sh
