@@ -111,7 +111,7 @@ else()
 endif()
 
 message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> include/dmlc/build_config.h")
-configure_file("${CMAKE_LOCAL}/build_config.h.in" "include/dmlc/build_config.h")
+configure_file("cmake/build_config.h.in" "include/dmlc/build_config.h")
 
 # compiler flags
 if(MSVC)
