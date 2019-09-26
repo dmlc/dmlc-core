@@ -166,11 +166,13 @@ struct Parameter {
 
   template <typename Container>
   std::vector<std::pair<std::string, std::string> >
-  UpdateAllowUnknown(Container const& kwargs, bool* changed) {
+  UpdateAllowUnknown(Container const& kwargs, bool* out_changed = nullptr) {
     std::vector<std::pair<std::string, std::string> > unknown;
-    *changed = PType::__MANAGER__()->RunUpdate(static_cast<PType*>(this),
-                                               kwargs.begin(), kwargs.end(),
-                                               parameter::kAllowUnknown, &unknown, nullptr);
+    bool changed {false};
+    changed = PType::__MANAGER__()->RunUpdate(static_cast<PType*>(this),
+                                              kwargs.begin(), kwargs.end(),
+                                              parameter::kAllowUnknown, &unknown, nullptr);
+    if (out_changed) { *out_changed = changed; }
     return unknown;
   }
 
