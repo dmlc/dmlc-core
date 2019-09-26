@@ -179,9 +179,9 @@ def main():
     file_type = args.filetype
     allow_type = []
     if file_type in ('python', 'all'):
-        allow_type += [x for x in PYTHON_SUFFIX]
+        allow_type += PYTHON_SUFFIX
     if file_type in ('cpp', 'all'):
-        allow_type += [x for x in CXX_SUFFIX]
+        allow_type += CXX_SUFFIX
     allow_type = set(allow_type)
     if sys.version_info.major == 2 and os.name != 'nt':
         sys.stderr = codecs.StreamReaderWriter(sys.stderr,
