@@ -372,7 +372,7 @@ class FieldAccessEntry {
   ptrdiff_t offset_;
   /*! \brief get pointer to parameter */
   char* GetRawPtr(void* head) const {
-    return (char*)(head) + offset_;
+    return reinterpret_cast<char*>(head) + offset_;
   }
   /*!
    * \brief print string representation of default value
@@ -636,8 +636,9 @@ class FieldEntryBase : public FieldAccessEntry {
     std::istringstream is(value);
     is >> now;
     // don't require = operator
-    bool is_same = std::equal((char*)&now, (char*)&now + sizeof(now),
-                              (char*)&old);
+    bool is_same = std::equal(
+        reinterpret_cast<char*>(&now), reinterpret_cast<char*>(&now) + sizeof(now),
+        reinterpret_cast<char*>(&old));
     return is_same;
   }
   std::string GetStringValue(void *head) const override {
@@ -662,7 +663,7 @@ class FieldEntryBase : public FieldAccessEntry {
     return info;
   }
   // implement set head to default value
-  virtual void SetDefault(void *head) const override {
+  void SetDefault(void *head) const override {
     if (!has_default_) {
       std::ostringstream os;
       os << "Required parameter " << key_
