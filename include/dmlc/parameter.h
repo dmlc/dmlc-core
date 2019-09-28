@@ -164,6 +164,18 @@ struct Parameter {
     return unknown;
   }
 
+  /*!
+   * \brief Update the parameter by keyword arguments.  This is same as
+   * `InitAllowUnknown', but without setting not provided parameters to their default.
+   *
+   * \tparam Container container type
+   *
+   * \param kwargs map of keyword arguments, or vector of pairs
+   * \param out_changed (optional) Output whether any parameter is changed during update.
+   *
+   * \throw ParamError when something go wrong.
+   * \return vector of pairs of unknown arguments.
+   */
   template <typename Container>
   std::vector<std::pair<std::string, std::string> >
   UpdateAllowUnknown(Container const& kwargs, bool* out_changed = nullptr) {
