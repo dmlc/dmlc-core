@@ -26,11 +26,6 @@ set(DMLC_ENABLED_SANITIZERS "address" "leak" CACHE STRING
   "Semicolon separated list of sanitizer names. E.g 'address;leak'. Supported sanitizers are
   address, leak and thread.")
 
-# include path
-set(INCLUDE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(INCLUDE_DMLC_DIR "${INCLUDE_ROOT}/dmlc")
-# include_directories("${INCLUDE_ROOT}")
-
 set(dmlccore_LINKER_LIBS "")
 
 # Sanitizer
@@ -115,8 +110,8 @@ else()
   set(DMLC_CMAKE_LITTLE_ENDIAN 1)
 endif()
 
-message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> ${INCLUDE_DMLC_DIR}/build_config.h")
-configure_file("${CMAKE_LOCAL}/build_config.h.in" "${INCLUDE_DMLC_DIR}/build_config.h")
+message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> include/dmlc/build_config.h")
+configure_file("cmake/build_config.h.in" "include/dmlc/build_config.h")
 
 # compiler flags
 if(MSVC)
@@ -205,6 +200,7 @@ add_library(dmlc ${SOURCE})
 target_link_libraries(dmlc ${dmlccore_LINKER_LIBS})
 target_include_directories(dmlc PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
   -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE
@@ -215,6 +211,8 @@ include(GNUInstallDirs)
 # ---[ Install Includes
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/dmlc
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/dmlc/build_config.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dmlc)
 
 # ---[ Install the archive static lib and header files
 install(TARGETS dmlc

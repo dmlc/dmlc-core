@@ -46,4 +46,3 @@ build
 # CLion
 .idea
 cmake-build-*
-/include/dmlc/build_config.h
