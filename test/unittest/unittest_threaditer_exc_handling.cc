@@ -30,6 +30,7 @@ struct IntProducerNextExc : public ThreadedIter<int>::Producer {
 
   IntProducerNextExc(int maxcap, int sleep, ExcType exc_type = ExcType::kDMLCException)
       : counter(0), maxcap(maxcap), sleep(sleep), exc_type(exc_type) {}
+  virtual ~IntProducerNextExc() = default;
   virtual void BeforeFirst(void) { counter = 0; }
   virtual bool Next(int **inout_dptr) {
     if (counter == maxcap)
@@ -39,6 +40,7 @@ struct IntProducerNextExc : public ThreadedIter<int>::Producer {
       if (exc_type == kDMLCException) {
         LOG(FATAL) << "Test Throw exception";
       } else {
+        LOG(WARNING) << "Throw std::exception";
         throw std::exception();
       }
     }
@@ -56,6 +58,7 @@ struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
   ExcType exc_type;
   IntProducerBeforeFirst(ExcType exc_type = ExcType::kDMLCException)
       : exc_type(exc_type) {}
+  virtual ~IntProducerBeforeFirst() = default;
   virtual void BeforeFirst(void) {
     if (exc_type == ExcType::kDMLCException) {
       LOG(FATAL) << "Throw exception in before first";
@@ -72,9 +75,9 @@ TEST(ThreadedIter, dmlc_exception) {
   int* value = nullptr;
   ThreadedIter<int> iter2;
   iter2.set_max_capacity(7);
-  IntProducerNextExc prod(5, 100);
+  auto prod = std::make_shared<IntProducerNextExc>(5, 100);
   bool caught = false;
-  iter2.Init(&prod);
+  iter2.Init(prod);  // t1 is created in here, not passing ownership
   iter2.BeforeFirst();
   try {
     delay(700);
@@ -84,7 +87,7 @@ TEST(ThreadedIter, dmlc_exception) {
     LOG(INFO) << "recycle exception caught";
   }
   CHECK(caught);
-  iter2.Init(&prod);
+  iter2.Init(prod);
   caught = false;
   iter2.BeforeFirst();
   try {
@@ -99,8 +102,8 @@ TEST(ThreadedIter, dmlc_exception) {
   LOG(INFO) << "finish";
   ThreadedIter<int> iter3;
   iter3.set_max_capacity(1);
-  IntProducerBeforeFirst prod2;
-  iter3.Init(&prod2);
+  auto prod2 = std::make_shared<IntProducerBeforeFirst>();
+  iter3.Init(prod2);
   caught = false;
   try {
     iter3.BeforeFirst();
@@ -124,9 +127,9 @@ TEST(ThreadedIter, std_exception) {
   int *value = nullptr;
   ThreadedIter<int> iter2;
   iter2.set_max_capacity(7);
-  IntProducerNextExc prod(5, 100, ExcType::kStdException);
+  auto prod =std::make_shared<IntProducerNextExc>(5, 100, ExcType::kStdException);
   bool caught = false;
-  iter2.Init(&prod);
+  iter2.Init(prod);
   iter2.BeforeFirst();
   try {
     delay(700);
@@ -136,7 +139,7 @@ TEST(ThreadedIter, std_exception) {
     LOG(INFO) << "recycle exception caught";
   }
   CHECK(caught);
-  iter2.Init(&prod);
+  iter2.Init(prod);
   caught = false;
   iter2.BeforeFirst();
   try {
@@ -151,8 +154,8 @@ TEST(ThreadedIter, std_exception) {
   LOG(INFO) << "finish";
   ThreadedIter<int> iter3;
   iter3.set_max_capacity(1);
-  IntProducerBeforeFirst prod2(ExcType::kStdException);
-  iter3.Init(&prod2);
+  auto prod2 = std::make_shared<IntProducerBeforeFirst>(ExcType::kStdException);
+  iter3.Init(prod2);
   caught = false;
   try {
     iter3.BeforeFirst();

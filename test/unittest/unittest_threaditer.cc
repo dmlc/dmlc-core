@@ -44,9 +44,10 @@ TEST(ThreadedIter, basics) {
   using namespace producer_test;
   ThreadedIter<int> iter;
   iter.set_max_capacity(1);
-  IntProducer prod(10, 100);
+  // IntProducer prod(10, 100);
+  auto prod = std::make_shared<IntProducer>(10, 100);
   int d = 100;
-  iter.Init(&prod);
+  iter.Init(prod);
   int counter = 0;
   while (iter.Next()) {
     CHECK(counter == iter.Value());
