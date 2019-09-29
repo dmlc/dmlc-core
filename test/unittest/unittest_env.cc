@@ -18,7 +18,8 @@ TEST(Env, Blank) {
   setenv(var_name, "bar", 1);
   res = dmlc::GetEnv(var_name, std::string("bar"));
   GTEST_ASSERT_EQ(res, "bar");
-  putenv(const_cast<char *>((std::string() + var_name + "=").c_str()));
+  auto assignment = (std::string{var_name} + "=");
+  putenv(const_cast<char *>(assignment.c_str()));
   const char *s = ::getenv(var_name);  // On Mac, this may return an empty string
   if (s) {
     // Some implementations will return an empty string instead of null
