@@ -80,7 +80,7 @@ TEST(ThreadedIter, dmlc_exception) {
   iter2.Init(prod);  // t1 is created in here, not passing ownership
   iter2.BeforeFirst();
   try {
-    delay(700);
+    delay(1000);
     iter2.Recycle(&value);
   } catch (dmlc::Error &e) {
     caught = true;
