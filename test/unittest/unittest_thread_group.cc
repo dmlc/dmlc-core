@@ -238,4 +238,3 @@ TEST(ThreadGroup, TimerThreadSimple) {
   GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
   GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 20 of them
 }
-

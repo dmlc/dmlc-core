@@ -85,7 +85,7 @@ class ThreadedIter : public DataIter<DType> {
   class Producer {
    public:
     // virtual destructor
-    virtual ~Producer() {}
+    virtual ~Producer() = default;
     /*! \brief reset the producer to beginning */
     virtual void BeforeFirst(void) {
       NotImplemented();
@@ -110,7 +110,7 @@ class ThreadedIter : public DataIter<DType> {
    * \param max_capacity maximum capacity of the queue
    */
   explicit ThreadedIter(size_t max_capacity = 8)
-      : producer_owned_(NULL),
+      : producer_(nullptr),
         producer_thread_(nullptr),
         max_capacity_(max_capacity),
         nwait_consumer_(0),
@@ -135,14 +135,11 @@ class ThreadedIter : public DataIter<DType> {
     max_capacity_ = max_capacity;
   }
   /*!
-   * \brief initialize the producer and start the thread
-   *   can only be called once
+   * \brief initialize the producer and start the thread can only be
+   *   called once
    * \param producer pointer to the producer
-   * \param pass_ownership whether pass the ownership to the iter
-   *    if this is true, the threaditer will delete the producer
-   *    when destructed
    */
-  inline void Init(Producer *producer, bool pass_ownership = false);
+  inline void Init(std::shared_ptr<Producer> producer);
   /*!
    * \brief initialize the producer and start the thread
    *  pass in two function(closure) of producer to represent the producer
@@ -246,7 +243,9 @@ class ThreadedIter : public DataIter<DType> {
     kDestroy
   };
   /*! \brief producer class */
-  Producer *producer_owned_;
+  // Producer *producer_owned_;
+  std::shared_ptr<Producer> producer_;
+
   /*! \brief signal to producer */
   std::atomic<Signal> producer_sig_;
   /*! \brief whether the special signal other than kProduce is procssed */
@@ -303,8 +302,8 @@ template <typename DType> inline void ThreadedIter<DType>::Destroy(void) {
     delete queue_.front();
     queue_.pop();
   }
-  if (producer_owned_ != NULL) {
-    delete producer_owned_;
+  if (producer_ != NULL) {
+    producer_.reset();
   }
   if (out_data_ != NULL) {
     delete out_data_;
@@ -314,9 +313,8 @@ template <typename DType> inline void ThreadedIter<DType>::Destroy(void) {
 
 template<typename DType>
 inline void ThreadedIter<DType>::
-Init(Producer *producer, bool pass_ownership) {
-  CHECK(producer_owned_ == NULL) << "can only call Init once";
-  if (pass_ownership) producer_owned_ = producer;
+Init(std::shared_ptr<Producer> producer) {
+  CHECK(producer_ == NULL) << "can only call Init once";
   auto next = [producer](DType **dptr) {
       return producer->Next(dptr);
   };
