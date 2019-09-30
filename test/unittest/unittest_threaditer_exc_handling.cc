@@ -132,7 +132,7 @@ TEST(ThreadedIter, std_exception) {
   iter2.Init(prod);
   iter2.BeforeFirst();
   try {
-    delay(700);
+    delay(1000);
     iter2.Recycle(&value);
   } catch (dmlc::Error &e) {
     caught = true;
