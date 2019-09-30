@@ -135,12 +135,11 @@ class ThreadedIter : public DataIter<DType> {
     max_capacity_ = max_capacity;
   }
   /*!
-   * \brief initialize the producer and start the thread
-   *   can only be called once
+   * \brief initialize the producer and start the thread can only be
+   *   called once
    * \param producer pointer to the producer
    */
   inline void Init(std::shared_ptr<Producer> producer);
-  // inline void Init(std::unique_ptr<Producer> producer);
   /*!
    * \brief initialize the producer and start the thread
    *  pass in two function(closure) of producer to represent the producer
