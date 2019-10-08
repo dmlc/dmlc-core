@@ -22,7 +22,7 @@ TEST(Parameter, parsing_float) {
 
   kwargs["float_param"] = "0";
   param.Init(kwargs);
-  // ASSERT_NO_THROW(param.Init(kwargs));
+  ASSERT_NO_THROW(param.Init(kwargs));
   kwargs["float_param"] = "0.015625";  // can be represented exactly in IEEE 754
   ASSERT_NO_THROW(param.Init(kwargs));
   ASSERT_EQ(param.float_param, 0.015625f);
@@ -183,6 +183,7 @@ TEST(Parameter, Update) {
 
   param.UpdateAllowUnknown(Args{{"double_param", "0.13"},
                                 {"foo", "bar"}}, &changed);
+  ASSERT_TRUE(changed);
   ASSERT_NEAR(param.float_param, 0.02f, 1e-6);  // stays the same
   ASSERT_NEAR(param.double_param, 0.13, 1e-6);
 }
