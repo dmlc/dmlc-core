@@ -52,7 +52,7 @@ def main():
         (classpath, _) = subprocess.Popen('%s/bin/hadoop classpath' % hadoop_home,
                                           stdout=subprocess.PIPE, shell=True,
                                           env=os.environ).communicate()
-        for f in classpath.split(':'):
+        for f in classpath.decode('utf-8').split(':'):
             class_path += glob.glob(f)
 
     if java_home:
