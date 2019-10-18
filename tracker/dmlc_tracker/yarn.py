@@ -45,12 +45,12 @@ def yarn_submit(args, nworker, nserver, pass_env):
     # detech hadoop version
     (out, _) = subprocess.Popen('%s version' % hadoop_binary,
                                 shell=True, stdout=subprocess.PIPE).communicate()
-    out = out.split('\n')[0].split()
+    out = out.decode('utf-8').split('\n')[0].split()
     assert out[0] == 'Hadoop', 'cannot parse hadoop version string'
     hadoop_version = int(out[1].split('.')[0])
     (classpath, _) = subprocess.Popen('%s classpath' % hadoop_binary,
                                       shell=True, stdout=subprocess.PIPE).communicate()
-    classpath = classpath.strip()
+    classpath = classpath.decode('utf-8').strip()
 
     if hadoop_version < 2:
         raise RuntimeError('Hadoop Version is %s, dmlc_yarn will need Yarn(Hadoop 2.0)' % out[1])
