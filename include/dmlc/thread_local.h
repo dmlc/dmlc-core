@@ -36,7 +36,7 @@ class ThreadLocalStore {
  public:
   /*! \return get a thread local singleton */
   static T* Get() {
-#if DMLC_CXX11_THREAD_LOCAL
+#if DMLC_CXX11_THREAD_LOCAL && DMLC_MODERN_THREAD_LOCAL == 1
     static thread_local T inst;
     return &inst;
 #else
