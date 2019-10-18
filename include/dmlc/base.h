@@ -92,6 +92,12 @@
 #endif
 #endif
 
+/*! \brief Whether to use modern thread local construct */
+#ifndef DMLC_MODERN_THREAD_LOCAL
+#define DMLC_MODERN_THREAD_LOCAL 1
+#endif
+
+
 
 /*! \brief whether RTTI is enabled */
 #ifndef DMLC_ENABLE_RTTI
