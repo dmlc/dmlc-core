@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # pylint: disable=invalid-name
 """The container launcher script that launches DMLC with the right env variable."""
+from __future__ import absolute_import
+
 import glob
 import sys
 import os
 import subprocess
+from .util import py_str
 
 def unzip_archives(ar_list, env):
     for fname in ar_list:
@@ -52,6 +55,7 @@ def main():
         (classpath, _) = subprocess.Popen('%s/bin/hadoop classpath' % hadoop_home,
                                           stdout=subprocess.PIPE, shell=True,
                                           env=os.environ).communicate()
+        classpath = py_str(class_path)
         for f in classpath.split(':'):
             class_path += glob.glob(f)
 

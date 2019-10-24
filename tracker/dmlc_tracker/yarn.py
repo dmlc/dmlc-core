@@ -5,6 +5,7 @@ dmlc will run as a Yarn application
 # pylint: disable=invalid-name, too-many-locals, too-many-branches, missing-docstring
 from __future__ import absolute_import
 import os
+import sys
 import subprocess
 import warnings
 import logging
@@ -12,6 +13,7 @@ import platform
 from threading import Thread
 from . import opts
 from . import tracker
+from .util import py_str
 
 def yarn_submit(args, nworker, nserver, pass_env):
     """Submission function for YARN."""
@@ -45,12 +47,12 @@ def yarn_submit(args, nworker, nserver, pass_env):
     # detech hadoop version
     (out, _) = subprocess.Popen('%s version' % hadoop_binary,
                                 shell=True, stdout=subprocess.PIPE).communicate()
-    out = out.split('\n')[0].split()
+    out = py_str(out).split('\n')[0].split()
     assert out[0] == 'Hadoop', 'cannot parse hadoop version string'
     hadoop_version = int(out[1].split('.')[0])
     (classpath, _) = subprocess.Popen('%s classpath' % hadoop_binary,
                                       shell=True, stdout=subprocess.PIPE).communicate()
-    classpath = classpath.strip()
+    classpath = py_str(classpath).strip()
 
     if hadoop_version < 2:
         raise RuntimeError('Hadoop Version is %s, dmlc_yarn will need Yarn(Hadoop 2.0)' % out[1])
