@@ -43,7 +43,9 @@ class ThreadLocalStore {
     static MX_THREAD_LOCAL T* ptr = nullptr;
     if (ptr == nullptr) {
       ptr = new T();
-      Singleton()->RegisterDelete(ptr);
+      // Syntactic work-around for the nvcc of the initial cuda v10.1 release,
+      // which fails to compile 'Singleton()->' below. Fixed in v10.1 update 1.
+      (*Singleton()).RegisterDelete(ptr);
     }
     return ptr;
 #endif
