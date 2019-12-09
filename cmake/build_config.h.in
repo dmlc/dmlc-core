@@ -12,8 +12,12 @@
 #cmakedefine DMLC_EXECINFO_H_PRESENT
 
 #if (defined DMLC_CXXABI_H_PRESENT) && (defined DMLC_EXECINFO_H_PRESENT)
+  #ifndef DMLC_LOG_STACK_TRACE
   #define DMLC_LOG_STACK_TRACE 1
+  #endif
+  #ifndef DMLC_LOG_STACK_TRACE_SIZE
   #define DMLC_LOG_STACK_TRACE_SIZE 10
+  #endif
   #cmakedefine DMLC_EXECINFO_H <${DMLC_EXECINFO_H}>
 #endif
 
