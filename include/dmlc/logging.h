@@ -43,7 +43,7 @@ inline size_t LogStackTraceLevel() {
       return level + 1;
     }
   }
-  return 0;
+  return DMLC_LOG_STACK_TRACE_SIZE;
 }
 
 inline std::string Demangle(char const *msg_str) {
