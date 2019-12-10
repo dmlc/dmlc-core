@@ -11,7 +11,7 @@
 #include <omp.h>
 #else
 
-#if defined(__ANDROID__) && defined (__clang__)
+#if defined(__ANDROID__) || defined (__clang__)
 #undef __GOMP_NOTHROW
 #define __GOMP_NOTHROW
 #elif defined(__cplusplus)
