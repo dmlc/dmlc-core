@@ -97,6 +97,10 @@ inline std::string StackTrace(
 
 #else  // DMLC_LOG_STACK_TRACE is off
 
+inline size_t LogStackTraceLevel() {
+  return 0;
+}
+
 inline std::string demangle(char const* msg_str) {
   return std::string();
 }
