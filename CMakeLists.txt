@@ -68,6 +68,27 @@ else()
   add_definitions(-DDMLC_USE_AZURE=0)
 endif()
 
+# OpenMP
+if(USE_OPENMP)
+  find_package(OpenMP REQUIRED)
+
+  if(APPLE)
+    # Require CMake 3.12+ for Mac to ensure that OpenMP can be located
+    cmake_minimum_required(VERSION 3.12)
+  endif()
+
+  # For CMake < 3.9, we need to make target OpenMP::OpenMP_CXX ourselves
+  if(NOT TARGET OpenMP::OpenMP_CXX)
+    find_package(Threads REQUIRED)
+    add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
+    set_property(TARGET OpenMP::OpenMP_CXX
+                 PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
+    set_property(TARGET OpenMP::OpenMP_CXX
+                 PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
+  endif()
+  list(APPEND dmlccore_LINKER_LIBS OpenMP::OpenMP_CXX)
+endif()
+
 if(WIN32 AND (NOT MSVC))  # On Windows, link Shlwapi.lib for non-MSVC compilers
   list(APPEND dmlccore_LINKER_LIBS Shlwapi)
 endif()
@@ -160,22 +181,6 @@ else(MSVC)
   endif()
 endif(MSVC)
 
-if(USE_OPENMP)
-  if(MSVC)
-    set(OPENMP_FOUND ON)
-    set(OpenMP_C_FLAGS "-openmp")
-    set(OpenMP_CXX_FLAGS ${OpenMP_C_FLAGS})
-  else()
-    find_package(OpenMP REQUIRED)
-  endif()
-  if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-  endif()
-endif()
-
 FILE(GLOB SOURCE "src/*.cc")
 FILE(GLOB_RECURSE SOURCE_INCLUDE "include/*")
 list(APPEND SOURCE ${SOURCE_INCLUDE})
@@ -197,7 +202,7 @@ if(USE_AZURE)
 endif()
 
 add_library(dmlc ${SOURCE})
-target_link_libraries(dmlc ${dmlccore_LINKER_LIBS})
+target_link_libraries(dmlc PRIVATE ${dmlccore_LINKER_LIBS})
 target_include_directories(dmlc PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
