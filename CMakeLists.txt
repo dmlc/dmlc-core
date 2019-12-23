@@ -70,12 +70,12 @@ endif()
 
 # OpenMP
 if(USE_OPENMP)
-  find_package(OpenMP REQUIRED)
-
   if(APPLE)
-    # Require CMake 3.12+ for Mac to ensure that OpenMP can be located
-    cmake_minimum_required(VERSION 3.12)
+    # Require CMake 3.16+ for Mac to ensure that OpenMP can be located
+    cmake_minimum_required(VERSION 3.16)
   endif()
+
+  find_package(OpenMP REQUIRED)
 
   # For CMake < 3.9, we need to make target OpenMP::OpenMP_CXX ourselves
   if(NOT TARGET OpenMP::OpenMP_CXX)
