@@ -29,11 +29,15 @@ class Spinlock {
     lock_.clear();
   }
 #else
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wbraced-scalar-init"
+#endif  // defined(__clang__)
   Spinlock() : lock_(ATOMIC_FLAG_INIT) {
   }
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif  // defined(__clang__)
 #endif
   ~Spinlock() = default;
   /*!
