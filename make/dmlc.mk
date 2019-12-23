@@ -20,10 +20,8 @@ else
 endif
 
 ifneq ($(USE_OPENMP), 0)
-ifneq ($(UNAME), Darwin)
 	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
-endif
 endif
 
 ifeq (-android, $(findstring -android,$(MACHINE)))

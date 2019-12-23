@@ -43,6 +43,7 @@ addons:
       - g++-4.8
   homebrew:
     packages:
+      - gcc@8
       - cmake
       - libomp
       - python3

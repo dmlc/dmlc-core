@@ -22,8 +22,9 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
         export CXX=g++-4.8
     else
         echo "USE_S3=0" >> config.mk
-        # OpenMP is only available on Mac OSX when CMake is used
-        echo "USE_OPENMP=0" >> config.mk
+        echo "USE_OPENMP=1" >> config.mk
+        echo "export CXX=g++-8" >> config.mk
+        export CXX=g++-8
     fi
     make -f scripts/packages.mk gtest
     echo "GTEST_PATH="${CACHE_PREFIX} >> config.mk
