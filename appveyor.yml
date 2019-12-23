@@ -96,7 +96,7 @@ build_script:
     - if /i "%target%" == "cygwin" (
         mkdir build_cygwin &&
         cd build_cygwin &&
-        cmake .. -G"%generator%" -DCMAKE_VERBOSE_MAKEFILE=ON -DGOOGLE_TEST=ON -DOpenMP_gomp_LIBRARY=-lgomp &&
+        cmake .. -G"%generator%" -DCMAKE_VERBOSE_MAKEFILE=ON -DGOOGLE_TEST=ON -DOpenMP_gomp_LIBRARY:FILEPATH=-lgomp &&
         cmake --build . -- -j2
       )
 
