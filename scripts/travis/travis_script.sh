@@ -11,10 +11,6 @@ if [[ ${TASK} == "lint" ]]; then
     exit 0
 fi
 
-if [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
-    export NO_OPENMP=1
-fi
-
 # For all tests other than s390x_test, expect little endian
 export DMLC_UNIT_TEST_LITTLE_ENDIAN=1
 
@@ -26,6 +22,7 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
         export CXX=g++-4.8
     else
         echo "USE_S3=0" >> config.mk
+        # OpenMP is only available on Mac OSX when CMake is used
         echo "USE_OPENMP=0" >> config.mk
     fi
     make -f scripts/packages.mk gtest
@@ -39,11 +36,7 @@ if [[ ${TASK} == "cmake_test" ]]; then
     # Build dmlc-core with CMake, including unit tests
     rm -rf build
     mkdir build && cd build
-    if [ ${TRAVIS_OS_NAME} == "osx" ]; then
-        CC=gcc-7 CXX=g++-7 cmake .. -DGOOGLE_TEST=ON
-    else
-        cmake .. -DGOOGLE_TEST=ON
-    fi
+    cmake .. -DGOOGLE_TEST=ON
     make
     cd ..
     ./build/test/unittest/dmlc_unit_tests
