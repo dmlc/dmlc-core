@@ -61,4 +61,8 @@ else()
     ${GTEST_LIBRARIES} dmlc Threads::Threads)
 endif()
 
+if(USE_OPENMP)
+  target_link_libraries(dmlc_unit_tests OpenMP::OpenMP_CXX)
+endif()
+
 add_test(AllTestsInDMLCUnitTests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/dmlc_unit_tests)
