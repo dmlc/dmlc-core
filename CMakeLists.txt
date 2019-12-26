@@ -70,8 +70,9 @@ endif()
 
 # OpenMP
 if(USE_OPENMP)
-  if(APPLE)
+  if(APPLE AND (NOT CMAKE_COMPILER_IS_GNUCC))
     # Require CMake 3.16+ for Mac to ensure that OpenMP can be located
+    # (Exception: it's okay if Homebrew GCC is used)
     cmake_minimum_required(VERSION 3.16)
   endif()
 
