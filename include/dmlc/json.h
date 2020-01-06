@@ -89,7 +89,8 @@ class JSONReader {
    *  // value can be any type that is json serializable.
    *  std::string value;
    *  reader->BeginArray();
-   *  while (reader->NextArrayItem(&value)) {
+   *  while (reader->NextArrayItem()) {
+   *    reader->Read(&value);
    *    // do somthing to value
    *  }
    * \endcode
@@ -738,7 +739,7 @@ inline void JSONReader::BeginArray() {
   int ch = NextNonSpace();
   CHECK_EQ(ch, '[')
       << "Error at" << line_info()
-      << ", Expect \'{\' but get \'" << static_cast<char>(ch) << '\'';
+      << ", Expect \'[\' but get \'" << static_cast<char>(ch) << '\'';
   scope_counter_.push_back(0);
 }
 
