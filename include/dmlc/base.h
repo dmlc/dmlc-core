@@ -148,6 +148,15 @@
 #define DMLC_ATTRIBUTE_UNUSED
 #endif
 
+/*! \brief helper macro to supress Undefined Behavior Sanitizer for a specific function */
+#if defined(__clang__)
+#define DMLC_SUPPRESS_UBSAN __attribute__((no_sanitize("undefined")))
+#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 409)
+#define DMLC_SUPPRESS_UBSAN __attribute__((no_sanitize_undefined))
+#else
+#define DMLC_SUPPRESS_UBSAN
+#endif
+
 /*! \brief helper macro to generate string concat */
 #define DMLC_STR_CONCAT_(__x, __y) __x##__y
 #define DMLC_STR_CONCAT(__x, __y) DMLC_STR_CONCAT_(__x, __y)
