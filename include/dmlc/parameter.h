@@ -642,6 +642,10 @@ class FieldEntryBase : public FieldAccessEntry {
       throw dmlc::ParamError(os.str());
     }
   }
+
+  // Don't check this function for Undefined Behavior (UB), as the function
+  // reads from a possibly uninitialized field
+  DMLC_SUPPRESS_UBSAN
   bool Same(void* head, std::string const& value) const override {
     DType old = this->Get(head);
     DType now;
