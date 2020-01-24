@@ -45,6 +45,13 @@ def submit(args):
         if len(h.strip()) > 0:
             # parse addresses of the form ip:port
             h = h.strip()
+
+            # parse mpi host file form ip slots=??
+            # this is to create an unified api for mpi and ssh
+            i = h.find("slots=")
+            if i != -1:
+                h = h[:i].strip()
+
             i = h.find(":")
             p = "22"
             if i != -1:
