@@ -51,6 +51,7 @@ namespace dmlc { DMLC_DECLARE_TRAITS(has_saveload, MyClass, true); }
 
 // test serializer
 TEST(Serializer, basics) {
+  CHECK(false) << "LLLLL";
   int n = 10;
   std::vector<int> a;
   for (int i = 0; i < n; ++i) {
