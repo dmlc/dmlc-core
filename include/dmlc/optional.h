@@ -46,15 +46,25 @@ class optional {
   optional() : is_none(true) {}
   /*! \brief construct an optional object with value */
   explicit optional(const T& value) {
+#pragma GCC diagnostic push
+#if __GNUC__ >= 6
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     is_none = false;
     new (&val) T(value);
+#pragma GCC diagnostic pop
   }
   /*! \brief construct an optional object with another optional object */
   optional(const optional<T>& other) {
+#pragma GCC diagnostic push
+#if __GNUC__ >= 6
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     is_none = other.is_none;
     if (!is_none) {
       new (&val) T(other.value());
     }
+#pragma GCC diagnostic pop
   }
   /*! \brief deconstructor */
   ~optional() {
