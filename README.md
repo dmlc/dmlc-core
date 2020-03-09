@@ -1,7 +1,7 @@
 Distributed Machine Learning Common Codebase
 ============================================
 
-[![Build Status](https://travis-ci.org/dmlc/dmlc-core.svg?branch=master)](https://travis-ci.org/dmlc/dmlc-core)
+[![Build Status](https://github.com/dmlc/dmlc-core/workflows/continuous%20build/badge.svg)](https://github.com/dmlc/dmlc-core/actions)
 [![Documentation Status](https://readthedocs.org/projects/dmlc-core/badge/?version=latest)](http://dmlc-core.readthedocs.org/en/latest/)
 [![GitHub license](http://dmlc.github.io/img/apache2.svg)](./LICENSE)
 

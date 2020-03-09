@@ -3,8 +3,12 @@
 set -e
 set -x
 
-# main script of travis
 if [[ ${TASK} == "lint" ]]; then
+    # stop the build if there are Python syntax errors or undefined names
+    python3 -m flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+    # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+    python3 -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
     make lint
     make doxygen 2>log.txt
     (cat log.txt| grep -v ENABLE_PREPROCESSING |grep -v "unsupported tag" |grep warning) && exit 1
@@ -16,7 +20,7 @@ export DMLC_UNIT_TEST_LITTLE_ENDIAN=1
 
 if [[ ${TASK} == "unittest_gtest" ]]; then
     cp make/config.mk .
-    if [[ ${TRAVIS_OS_NAME} != "osx" ]]; then
+    if [[ $(uname) != "Darwin" ]]; then
         echo "USE_S3=1" >> config.mk
         echo "export CXX = g++-4.8" >> config.mk
         export CXX=g++-4.8
@@ -27,7 +31,7 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
         export CXX=g++-8
     fi
     make -f scripts/packages.mk gtest
-    echo "GTEST_PATH="${CACHE_PREFIX} >> config.mk
+    echo "GTEST_PATH="/tmp/gtest >> config.mk
     echo "BUILD_TEST=1" >> config.mk
     make all
     test/unittest/dmlc_unittest
@@ -56,6 +60,6 @@ fi
 if [[ ${TASK} == "s390x_test" ]]; then
     # Run unit tests inside emulated s390x Docker container (uses QEMU transparently).
     # This should help us achieve compatibility with big endian targets.
-    scripts/travis/s390x/ci_build.sh s390_container scripts/travis/s390x/build_via_cmake.sh
-    scripts/travis/s390x/ci_build.sh s390_container -e DMLC_UNIT_TEST_LITTLE_ENDIAN=0 build/test/unittest/dmlc_unit_tests
+    scripts/s390x/ci_build.sh s390_container scripts/s390x/build_via_cmake.sh
+    scripts/s390x/ci_build.sh s390_container -e DMLC_UNIT_TEST_LITTLE_ENDIAN=0 build/test/unittest/dmlc_unit_tests
 fi
