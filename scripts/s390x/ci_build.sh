@@ -34,7 +34,7 @@ COMMAND=("$@")
 
 DOCKER_BINARY="docker"
 DOCKER_CONTEXT_PATH="${SCRIPT_DIR}"
-WORKSPACE="${WORKSPACE:-${SCRIPT_DIR}/../../../}"
+WORKSPACE="${WORKSPACE:-${SCRIPT_DIR}/../../}"
 
 # Bash on Ubuntu on Windows
 UBUNTU_ON_WINDOWS=$([ -e /proc/version ] && grep -l Microsoft /proc/version || echo "")
