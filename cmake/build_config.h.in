@@ -4,7 +4,6 @@
 #cmakedefine DMLC_FOPEN_64_PRESENT
 
 #if !defined(DMLC_FOPEN_64_PRESENT) && DMLC_USE_FOPEN64
-  #define DMLC_EMIT_FOPEN64_REDEFINE_WARNING
   #define fopen64 std::fopen
 #endif
 
