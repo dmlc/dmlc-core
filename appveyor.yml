@@ -1,5 +1,15 @@
 environment:
     matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          target: msvc
+          ver: 2019
+          generator: "Visual Studio 16 2019"
+          configuration: Debug
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          target: msvc
+          ver: 2019
+          generator: "Visual Studio 16 2019"
+          configuration: Release
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
           target: mingw32
           generator: "MinGW Makefiles"
@@ -69,6 +79,9 @@ build_script:
         cd build_msvc%ver% &&
         if /i "%generator%" == "Visual Studio 12 2013 Win64" (
           cmake .. -G"%generator%" -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" &&
+          msbuild dmlc.sln
+        ) else if /i "%generator%" == "Visual Studio 16 2019" (
+          cmake .. -G"%generator%" -A x64 -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" -DGOOGLE_TEST=ON &&
           msbuild dmlc.sln
         ) else (
           cmake .. -G"%generator%" -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CONFIGURATION_TYPES="Release;Debug;" -DGOOGLE_TEST=ON &&
