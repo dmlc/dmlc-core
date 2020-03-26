@@ -1922,7 +1922,7 @@ class ConcurrentQueue {
         // See http://stackoverflow.com/questions/18223161/what-are-the-c11-memory-ordering-guarantees-in-this-corner-case
         std::atomic_thread_fence(std::memory_order_acquire);
 
-        // Increment optimistic counter, then check if it went over the boundary.
+        // Increment optimistic counter, then check if it went over the boundary
         auto myDequeueCount = this->dequeueOptimisticCount.fetch_add(1, std::memory_order_relaxed);
 
         // Note that since dequeueOvercommit must be <= dequeueOptimisticCount (because dequeueOvercommit is only ever
