@@ -1,5 +1,15 @@
 environment:
     matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          target: msvc
+          ver: 2019
+          generator: "Visual Studio 16 2019 Win64"
+          configuration: Debug
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          target: msvc
+          ver: 2019
+          generator: "Visual Studio 16 2019 Win64"
+          configuration: Release
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
           target: mingw32
           generator: "MinGW Makefiles"
