@@ -75,18 +75,19 @@ TEST(CSVParser, test_ignore_bom) {
   std::unique_ptr<CSVParserTest<unsigned>> parser(
       new CSVParserTest<unsigned>(source, args, 1));
   std::string data = "\xEF\xBB\xBF\x31\n\xEF\xBB\x32\n";
-  char *out_data = (char *)data.c_str();
+  char *out_data = const_cast<char *>(data.c_str());
   std::unique_ptr<RowBlockContainer<unsigned> > rctr {new RowBlockContainer<unsigned>()};
   parser->CallParseBlock(out_data, out_data + data.size(), rctr.get());
-  CHECK(rctr->value[0] == 1);
-  CHECK(rctr->value[1] == 0);
+  CHECK(rctr->value.size() == 1);
+  CHECK(rctr->value.at(0) == 1);
+
   data = "\xEF\xBB\xBF\x31\n\xEF\xBB\xBF\x32\n";
-  out_data = (char *)data.c_str();
+  out_data = const_cast<char *>(data.c_str());
   rctr.reset(new RowBlockContainer<unsigned>());
   parser->CallParseBlock(out_data, out_data + data.size(), rctr.get());
-
-  CHECK(rctr->value[0] == 1);
-  CHECK(rctr->value[1] == 2);
+  CHECK(rctr->value.size() == 2);
+  CHECK(rctr->value.at(0) == 1);
+  CHECK(rctr->value.at(1) == 2);
 }
 
 TEST(CSVParser, test_standard_case) {
@@ -101,6 +102,27 @@ TEST(CSVParser, test_standard_case) {
   parser->CallParseBlock(out_data, out_data + data.size(), rctr.get());
   for (size_t i = 0; i < rctr->value.size(); i++) {
     CHECK(i == rctr->value[i]);
+  }
+}
+
+TEST(CSVParser, missing_values) {
+  using namespace parser_test;
+  InputSplit *source = nullptr;
+  const std::map<std::string, std::string> args;
+  std::unique_ptr<CSVParserTest<unsigned>> parser(
+      new CSVParserTest<unsigned>(source, args, 1));
+  std::unique_ptr<RowBlockContainer<unsigned>> rctr { new RowBlockContainer<unsigned>() };
+  std::string data = "0,,,3\n4,5,6,7\n8,9,10,11\n";
+  char *out_data = const_cast<char *>(data.c_str());
+  parser->CallParseBlock(out_data, out_data + data.size(), rctr.get());
+  CHECK_EQ(rctr->value.size(), 10);
+  CHECK(rctr->value[0] == 0);
+  CHECK(rctr->index[0] == 0);
+  CHECK_EQ(rctr->value[1], 3);
+  CHECK(rctr->index[1] == 3);
+
+  for (size_t i = 2; i < rctr->value.size(); ++i) {
+    CHECK_EQ(rctr->value[i], i + 2);
   }
 }
 

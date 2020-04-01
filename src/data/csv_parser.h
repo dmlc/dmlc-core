@@ -109,7 +109,6 @@ ParseBlock(const char *begin,
       } else {
         LOG(FATAL) << "Only float32, int32, and int64 are supported for the time being";
       }
-      p = (endptr >= lend) ? lend : endptr;
 
       if (column_index == param_.label_column) {
         label = v;
@@ -117,9 +116,14 @@ ParseBlock(const char *begin,
                  && column_index == param_.weight_column) {
         weight = v;
       } else {
-        out->value.push_back(v);
-        out->index.push_back(idx++);
+        if (std::distance(p, static_cast<char const*>(endptr)) != 0) {
+          out->value.push_back(v);
+          out->index.push_back(idx++);
+        } else {
+          idx++;
+        }
       }
+      p = (endptr >= lend) ? lend : endptr;
       ++column_index;
       while (*p != param_.delimiter[0] && p != lend) ++p;
       if (p == lend && idx == 0) {
