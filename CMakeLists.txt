@@ -26,7 +26,37 @@ set(DMLC_ENABLED_SANITIZERS "address" "leak" CACHE STRING
   "Semicolon separated list of sanitizer names. E.g 'address;leak'. Supported sanitizers are
   address, leak and thread.")
 
-set(dmlccore_LINKER_LIBS "")
+include(CheckCXXCompilerFlag)
+if(USE_CXX14_IF_AVAILABLE)
+  check_cxx_compiler_flag("-std=c++14" SUPPORT_CXX14)
+endif()
+if(SUPPORT_CXX14)
+  set(CMAKE_CXX_STANDARD 14)
+else()
+  set(CMAKE_CXX_STANDARD 11)
+endif()
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+FILE(GLOB SOURCE "src/*.cc")
+FILE(GLOB_RECURSE SOURCE_INCLUDE "include/*")
+list(APPEND SOURCE ${SOURCE_INCLUDE})
+list(APPEND SOURCE "src/io/line_split.cc")
+list(APPEND SOURCE "src/io/recordio_split.cc")
+list(APPEND SOURCE "src/io/indexed_recordio_split.cc")
+list(APPEND SOURCE "src/io/input_split_base.cc")
+list(APPEND SOURCE "src/io/filesys.cc")
+list(APPEND SOURCE "src/io/local_filesys.cc")
+if(USE_HDFS)
+  list(APPEND SOURCE "src/io/hdfs_filesys.cc")
+endif()
+if(USE_S3)
+  list(APPEND SOURCE "src/io/s3_filesys.cc")
+endif()
+if(USE_AZURE)
+  list(APPEND SOURCE "src/io/azure_filesys.cc")
+endif()
+
+add_library(dmlc ${SOURCE})
 
 # Sanitizer
 if (DMLC_USE_SANITIZER)
@@ -38,34 +68,32 @@ endif (DMLC_USE_SANITIZER)
 
 # HDFS configurations
 if(USE_HDFS)
- find_package(HDFS REQUIRED)
- find_package(JNI REQUIRED)
- include_directories(${HDFS_INCLUDE_DIR})
- list(APPEND dmlccore_LINKER_LIBS ${HDFS_STATIC_LIB} ${JAVA_JVM_LIBRARY})
- add_definitions(-DDMLC_USE_HDFS=1)
+  find_package(HDFS REQUIRED)
+  find_package(JNI REQUIRED)
+  target_include_directories(dmlc PRIVATE ${HDFS_INCLUDE_DIR})
+  target_link_libraries(dmlc PRIVATE ${HDFS_STATIC_LIB} ${JAVA_JVM_LIBRARY})
+  target_compile_definitions(dmlc PRIVATE -DDMLC_USE_HDFS=1)
 else()
- add_definitions(-DDMLC_USE_HDFS=0)
+  target_compile_definitions(dmlc PRIVATE -DDMLC_USE_HDFS=0)
 endif()
 # S3 configurations
 if(USE_S3)
- find_package(CURL REQUIRED)
- include_directories(SYSTEM ${CURL_INCLUDE_DIR})
- list(APPEND dmlccore_LINKER_LIBS ${CURL_LIBRARY})
+  find_package(CURL REQUIRED)
+  target_include_directories(dmlc SYSTEM PRIVATE ${CURL_INCLUDE_DIR})
+  target_link_libraries(dmlc PRIVATE ${CURL_LIBRARY})
 
- find_package(OpenSSL REQUIRED)
- include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
- list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_LIBRARY} ${OPENSSL_LIBRARIES})
- list(APPEND dmlccore_LINKER_LIBS ${OPENSSL_CRYPTO_LIBRARY})
-
- add_definitions(-DDMLC_USE_S3=1)
+  find_package(OpenSSL REQUIRED)
+  target_include_directories(dmlc SYSTEM PRIVATE ${OPENSSL_INCLUDE_DIR})
+  target_link_libraries(dmlc PRIVATE ${OPENSSL_LIBRARY} ${OPENSSL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY})
+  target_compile_definitions(dmlc PRIVATE -DDMLC_USE_S3=1)
 else()
- add_definitions(-DDMLC_USE_S3=0)
+  target_compile_definitions(dmlc PRIVATE -DDMLC_USE_S3=0)
 endif()
 # Azure configurations
 if(USE_AZURE)
-  add_definitions(-DDMLC_USE_AZURE=1)
+  target_compile_definitions(dmlc PRIVATE -DDMLC_USE_AZURE=1)
 else()
-  add_definitions(-DDMLC_USE_AZURE=0)
+  target_compile_definitions(dmlc PRIVATE -DDMLC_USE_AZURE=0)
 endif()
 
 # OpenMP
@@ -87,22 +115,19 @@ if(USE_OPENMP)
     set_property(TARGET OpenMP::OpenMP_CXX
                  PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
   endif()
-  list(APPEND dmlccore_LINKER_LIBS OpenMP::OpenMP_CXX)
+  target_link_libraries(dmlc PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 if(WIN32 AND (NOT MSVC))  # On Windows, link Shlwapi.lib for non-MSVC compilers
-  list(APPEND dmlccore_LINKER_LIBS Shlwapi)
+  target_link_libraries(dmlc PRIVATE Shlwapi)
 endif()
 
 # Check location of clock_gettime; if it's in librt, link it
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME_IN_LIBRT)
 if(HAVE_CLOCK_GETTIME_IN_LIBRT)
-  list(APPEND dmlccore_LINKER_LIBS rt)
+  target_link_libraries(dmlc PRIVATE rt)
 endif()
-
-# Older stdc++ enable c++11 items
-add_definitions(-D__USE_XOPEN2K8)
 
 # Check headers and symbols
 include(CheckSymbolExists)
@@ -117,8 +142,8 @@ find_package(Backtrace)
 if(Backtrace_FOUND)
   set(DMLC_EXECINFO_H_PRESENT 1)
   set(DMLC_EXECINFO_H ${Backtrace_HEADER})
-  include_directories(${Backtrace_INCLUDE_DIRS})
-  list(APPEND dmlccore_LINKER_LIBS ${Backtrace_LIBRARIES})
+  target_include_directories(dmlc SYSTEM PRIVATE ${Backtrace_INCLUDE_DIRS})
+  target_link_libraries(dmlc PRIVATE ${Backtrace_LIBRARIES})
 else()
   set(DMLC_EXECINFO_H_PRESENT 0)
 endif()
@@ -135,9 +160,18 @@ endif()
 message(STATUS "${CMAKE_LOCAL}/build_config.h.in -> include/dmlc/build_config.h")
 configure_file("cmake/build_config.h.in" "include/dmlc/build_config.h")
 
+target_include_directories(dmlc PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
+  -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE)
+target_compile_definitions(dmlc PUBLIC -DDMLC_CORE_USE_CMAKE)
+# DMLC_CORE_USE_CMAKE macro constant indicates the use of CMake
+
 # compiler flags
 if(MSVC)
-  add_definitions(-DDMLC_USE_CXX11)
+  target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11)
   if(NOT BUILD_SHARED_LIBS AND NOT DMLC_FORCE_SHARED_CRT)
     foreach(flag_var
           CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
@@ -148,70 +182,25 @@ if(MSVC)
     endforeach(flag_var)
   endif()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-else(MSVC)
+else()
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-  include(CheckCXXCompilerFlag)
-  if(USE_CXX14_IF_AVAILABLE)
-    check_cxx_compiler_flag("-std=c++14"    SUPPORT_CXX14)
-  endif()
-  check_cxx_compiler_flag("-std=c++11"    SUPPORT_CXX11)
-  check_cxx_compiler_flag("-std=c++0x"    SUPPORT_CXX0X)
-  check_cxx_compiler_flag("-msse2"        SUPPORT_MSSE2)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unknown-pragmas -fPIC")
-  if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
-  elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
-  else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-  endif()
+  check_cxx_compiler_flag("-msse2" SUPPORT_MSSE2)
   if(SUPPORT_MSSE2)
-  	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2")
+    target_compile_options(dmlc PRIVATE -msse2)
   endif()
-  set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS})
+  target_compile_options(dmlc PRIVATE -Wall -Wno-unknown-pragmas -fPIC)
+  if(CMAKE_BUILD_TYPE STREQUAL "DEBUG" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(dmlc PRIVATE -g -O0)
+  else()
+    target_compile_options(dmlc PRIVATE -O3)
+  endif()
+
+  target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11)
   if(SUPPORT_CXX14)
-    add_definitions(-DDMLC_USE_CXX14=1)
-    add_definitions(-DDMLC_USE_CXX11=1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-  elseif(SUPPORT_CXX11)
-    add_definitions(-DDMLC_USE_CXX11=1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  elseif(SUPPORT_CXX0X)
-    add_definitions(-DDMLC_USE_CXX11=1)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX14)
   endif()
-endif(MSVC)
-
-FILE(GLOB SOURCE "src/*.cc")
-FILE(GLOB_RECURSE SOURCE_INCLUDE "include/*")
-list(APPEND SOURCE ${SOURCE_INCLUDE})
-list(APPEND SOURCE "src/io/line_split.cc")
-list(APPEND SOURCE "src/io/recordio_split.cc")
-list(APPEND SOURCE "src/io/indexed_recordio_split.cc")
-list(APPEND SOURCE "src/io/input_split_base.cc")
-list(APPEND SOURCE "src/io/filesys.cc")
-list(APPEND SOURCE "src/io/local_filesys.cc")
-
-if(USE_HDFS)
-  list(APPEND SOURCE "src/io/hdfs_filesys.cc")
-endif()
-if(USE_S3)
-  list(APPEND SOURCE "src/io/s3_filesys.cc")
-endif()
-if(USE_AZURE)
-  list(APPEND SOURCE "src/io/azure_filesys.cc")
 endif()
 
-add_library(dmlc ${SOURCE})
-target_link_libraries(dmlc PRIVATE ${dmlccore_LINKER_LIBS})
-target_include_directories(dmlc PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
-target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
-  -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE
-  -DDMLC_CORE_USE_CMAKE)
-# DMLC_CORE_USE_CMAKE macro constant indicates the use of CMake
 
 include(GNUInstallDirs)
 # ---[ Install Includes
