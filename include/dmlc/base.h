@@ -48,6 +48,13 @@
 #endif
 #endif
 
+/*!
+ * \brief Whether to disable date message on the log.
+ */
+#ifndef DMLC_LOG_NODATE
+#define DMLC_LOG_NODATE 0
+#endif
+
 /*! \brief whether compile with hdfs support */
 #ifndef DMLC_USE_HDFS
 #define DMLC_USE_HDFS 0

@@ -305,7 +305,7 @@ class DateLogger {
 #endif
   }
   const char* HumanDate() {
-#ifndef _LIBCPP_SGX_CONFIG
+#if !defined(_LIBCPP_SGX_CONFIG) && DMLC_LOG_NODATE == 0
 #if defined(_MSC_VER)
     _strtime_s(buffer_, sizeof(buffer_));
 #else
@@ -320,8 +320,10 @@ class DateLogger {
     snprintf(buffer_, sizeof(buffer_), "%02d:%02d:%02d",
              pnow->tm_hour, pnow->tm_min, pnow->tm_sec);
 #endif
-#endif  // _LIBCPP_SGX_CONFIG
     return buffer_;
+#else
+    return "";
+#endif  // _LIBCPP_SGX_CONFIG
   }
 
  private:
