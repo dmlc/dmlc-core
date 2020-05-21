@@ -205,8 +205,7 @@ class LogCheckError {
 
 #define CHECK_BINARY_OP(name, op, x, y)                               \
   if (dmlc::LogCheckError _check_err = dmlc::LogCheck##name(x, y))    \
-    std::unique_ptr<dmlc::LogMessageFatal>(                           \
-      new dmlc::LogMessageFatal(__FILE__, __LINE__))->stream()        \
+    dmlc::LogMessageFatal(__FILE__, __LINE__).stream()                \
       << "Check failed: " << #x " " #op " " #y << *(_check_err.str) << ": "
 
 #pragma GCC diagnostic push
@@ -220,10 +219,9 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #pragma GCC diagnostic pop
 
 // Always-on checking
-#define CHECK(x)                                                \
-  if (!(x))                                                     \
-    std::unique_ptr<dmlc::LogMessageFatal>(                     \
-      new dmlc::LogMessageFatal(__FILE__, __LINE__))->stream()  \
+#define CHECK(x)                                           \
+  if (!(x))                                                \
+    dmlc::LogMessageFatal(__FILE__, __LINE__).stream()     \
       << "Check failed: " #x << ": "
 #define CHECK_LT(x, y) CHECK_BINARY_OP(_LT, <, x, y)
 #define CHECK_GT(x, y) CHECK_BINARY_OP(_GT, >, x, y)
@@ -428,30 +426,42 @@ class LogMessageFatal : public LogMessage {
 #else
 class LogMessageFatal {
  public:
-  LogMessageFatal(const char* file, int line) {
-    log_stream_ << "[" << pretty_date_.HumanDate() << "] " << file << ":"
-                << line << ": ";
+  LogMessageFatal(const char *file, int line) {
+    Entry::ThreadLocal()->Init(file, line);
   }
-  std::ostringstream &stream() { return log_stream_; }
-  ~LogMessageFatal() DMLC_THROW_EXCEPTION {
+  std::ostringstream &stream() { return Entry::ThreadLocal()->log_stream; }
+  DMLC_NO_INLINE ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    log_stream_ << "\n" << StackTrace(1, LogStackTraceLevel()) << "\n";
+    Entry::ThreadLocal()->log_stream << "\n"
+                                     << StackTrace(1, LogStackTraceLevel())
+                                     << "\n";
 #endif
-
-    // throwing out of destructor is evil
-    // hopefully we can do it here
-    // also log the message before throw
-#if DMLC_LOG_BEFORE_THROW
-    LOG(ERROR) << log_stream_.str();
-#endif
-    throw Error(log_stream_.str());
+    throw Entry::ThreadLocal()->Finalize();
   }
 
  private:
-  std::ostringstream log_stream_;
-  DateLogger pretty_date_;
-  LogMessageFatal(const LogMessageFatal&);
-  void operator=(const LogMessageFatal&);
+  struct Entry {
+    std::ostringstream log_stream;
+    DMLC_NO_INLINE void Init(const char *file, int line) {
+      DateLogger date;
+      log_stream.str("");
+      log_stream.clear();
+      log_stream << "[" << date.HumanDate() << "] " << file << ":" << line
+                 << ": ";
+    }
+    dmlc::Error Finalize() {
+#if DMLC_LOG_BEFORE_THROW
+      LOG(ERROR) << log_stream.str();
+#endif
+      return dmlc::Error(log_stream.str());
+    }
+    DMLC_NO_INLINE static Entry *ThreadLocal() {
+      static thread_local Entry *result = new Entry();
+      return result;
+    }
+  };
+  LogMessageFatal(const LogMessageFatal &);
+  void operator=(const LogMessageFatal &);
 };
 #endif
 
