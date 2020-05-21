@@ -236,6 +236,12 @@ typedef unsigned __int64 uint64_t;
 #define noexcept(a) noexcept_##a
 #endif
 
+#if defined(_MSC_VER)
+#define DMLC_NO_INLINE __declspec(noinline)
+#else
+#define DMLC_NO_INLINE __attribute__((noinline))
+#endif
+
 #if DMLC_USE_CXX11
 #define DMLC_THROW_EXCEPTION noexcept(false)
 #define DMLC_NO_EXCEPTION  noexcept(true)
