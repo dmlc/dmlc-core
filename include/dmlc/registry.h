@@ -280,7 +280,7 @@ class FunctionRegEntryBase {
  *  Use of this is optional as it will create an error when a file tag do not exist.
  *  An alternative solution is always ask user to enable --whole-archieve during static link.
  *
- * \begincode
+ * \code
  * // in file objective_registry.cc
  * DMLC_REGISTRY_ENABLE(MyObjective);
  * DMLC_REGISTRY_LINK_TAG(regression_op);
