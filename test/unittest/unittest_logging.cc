@@ -1,5 +1,5 @@
 // Copyright by Contributors
-#define DMLC_LOG_FATAL_THROW 0
+#define DMLC_LOG_FATAL_THROW 1
 
 #include <dmlc/logging.h>
 #include <gtest/gtest.h>
@@ -15,5 +15,11 @@ TEST(Logging, basics) {
   int *z = &x;
   CHECK_EQ(*CHECK_NOTNULL(z), x);
 
-  ASSERT_DEATH(CHECK_NE(x, y), ".*");
+  EXPECT_THROW(CHECK_NE(x, y), dmlc::Error);
+}
+
+TEST(Logging, throw_fatal) {
+  EXPECT_THROW({
+    LOG(FATAL) << "message";
+  }, dmlc::Error);
 }
