@@ -205,8 +205,7 @@ class LogCheckError {
 
 #define CHECK_BINARY_OP(name, op, x, y)                               \
   if (dmlc::LogCheckError _check_err = dmlc::LogCheck##name(x, y))    \
-    std::unique_ptr<dmlc::LogMessageFatal>(                           \
-      new dmlc::LogMessageFatal(__FILE__, __LINE__))->stream()        \
+    dmlc::LogMessageFatal(__FILE__, __LINE__).stream()                \
       << "Check failed: " << #x " " #op " " #y << *(_check_err.str) << ": "
 
 #pragma GCC diagnostic push
@@ -220,10 +219,9 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #pragma GCC diagnostic pop
 
 // Always-on checking
-#define CHECK(x)                                                \
-  if (!(x))                                                     \
-    std::unique_ptr<dmlc::LogMessageFatal>(                     \
-      new dmlc::LogMessageFatal(__FILE__, __LINE__))->stream()  \
+#define CHECK(x)                                           \
+  if (!(x))                                                \
+    dmlc::LogMessageFatal(__FILE__, __LINE__).stream()     \
       << "Check failed: " #x << ": "
 #define CHECK_LT(x, y) CHECK_BINARY_OP(_LT, <, x, y)
 #define CHECK_GT(x, y) CHECK_BINARY_OP(_GT, >, x, y)
