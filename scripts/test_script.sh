@@ -23,8 +23,8 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
     cp make/config.mk .
     if [[ $(uname) != "Darwin" ]]; then
         echo "USE_S3=1" >> config.mk
-        echo "export CXX = g++-4.8" >> config.mk
-        export CXX=g++-4.8
+        echo "export CXX = g++-5" >> config.mk
+        export CXX=g++-5
     else
         echo "USE_S3=0" >> config.mk
         echo "USE_OPENMP=1" >> config.mk
