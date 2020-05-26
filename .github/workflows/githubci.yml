@@ -32,7 +32,7 @@ jobs:
           TASK=lint ./scripts/test_script.sh
       - name: googletest
         run: |
-          if [[ $(uname) != "Darwin" ]]; then
+          if [[ "${{ matrix.task }}" == "s390x_test" ]]; then
             docker run --rm --privileged multiarch/qemu-user-static:register --reset
           fi
           TASK=${{ matrix.task }} ./scripts/test_script.sh
