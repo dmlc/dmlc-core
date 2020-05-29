@@ -162,51 +162,19 @@ inline bool DebugLoggingEnabled() {
   return state == 1;
 }
 
-class LogCheckError {
- public:
-  LogCheckError() : str(nullptr) {}
-  explicit LogCheckError(const std::string& str_) : str(new std::string(str_)) {}
-  LogCheckError(const LogCheckError& other) = delete;
-  LogCheckError(LogCheckError&& other) : str(other.str) {
-    other.str = nullptr;
-  }
-  ~LogCheckError() { if (str != nullptr) delete str; }
-  operator bool() const { return str != nullptr; }
-  LogCheckError& operator=(const LogCheckError& other) = delete;
-  LogCheckError& operator=(LogCheckError&& other) = delete;
-  std::string* str;
-};
-
 #ifndef DMLC_GLOG_DEFINED
 
-#ifndef _LIBCPP_SGX_NO_IOSTREAMS
-#define DEFINE_CHECK_FUNC(name, op)                               \
-  template <typename X, typename Y>                               \
-  inline LogCheckError LogCheck##name(const X& x, const Y& y) {   \
-    if (x op y) return LogCheckError();                           \
-    std::ostringstream os;                                        \
-    os << " (" << x << " vs. " << y << ") ";  /* CHECK_XX(x, y) requires x and y can be serialized to string. Use CHECK(x OP y) otherwise. NOLINT(*) */ \
-    return LogCheckError(os.str());                               \
-  }                                                               \
-  inline LogCheckError LogCheck##name(int x, int y) {             \
-    return LogCheck##name<int, int>(x, y);                        \
+// This function allows us to ignore sign comparison in the right scope.
+// Once dmlc requires c++11, #pragma can be changed to _Pramga, and directives
+// can be moved to CHECK_BINARY_OP definition itself
+#define DEFINE_CHECK_FUNC(name, op)                                \
+  template <typename X, typename Y>                                \
+  DMLC_ALWAYS_INLINE bool LogCheck##name(const X& x, const Y& y) { \
+    return (x op y);                                               \
+  }                                                                \
+  DMLC_ALWAYS_INLINE bool LogCheck##name(int x, int y) {           \
+    return LogCheck##name<int, int>(x, y);                         \
   }
-#else
-#define DEFINE_CHECK_FUNC(name, op)                               \
-  template <typename X, typename Y>                               \
-  inline LogCheckError LogCheck##name(const X& x, const Y& y) {   \
-    if (x op y) return LogCheckError();                           \
-    return LogCheckError("Error.");                               \
-  }                                                               \
-  inline LogCheckError LogCheck##name(int x, int y) {             \
-    return LogCheck##name<int, int>(x, y);                        \
-  }
-#endif
-
-#define CHECK_BINARY_OP(name, op, x, y)                               \
-  if (dmlc::LogCheckError _check_err = dmlc::LogCheck##name(x, y))    \
-    dmlc::LogMessageFatal(__FILE__, __LINE__).stream()                \
-      << "Check failed: " << #x " " #op " " #y << *(_check_err.str) << ": "
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-compare"
@@ -217,6 +185,11 @@ DEFINE_CHECK_FUNC(_GE, >=)
 DEFINE_CHECK_FUNC(_EQ, ==)
 DEFINE_CHECK_FUNC(_NE, !=)
 #pragma GCC diagnostic pop
+
+#define CHECK_BINARY_OP(name, op, x, y)                  \
+  if (!(dmlc::LogCheck##name(x, y)))                     \
+      dmlc::LogMessageFatal(__FILE__, __LINE__).stream() \
+        << "Check failed: " << #x " " #op " " #y << " (" << x << " vs. " << y << ") " << ": " /* CHECK_XX(x, y) requires x and y can be serialized to string. Use CHECK(x OP y) otherwise. NOLINT(*) */
 
 // Always-on checking
 #define CHECK(x)                                           \

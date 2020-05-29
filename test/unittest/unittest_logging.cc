@@ -18,6 +18,14 @@ TEST(Logging, basics) {
   EXPECT_THROW(CHECK_NE(x, y), dmlc::Error);
 }
 
+TEST(Logging, signed_compare) {
+  int32_t x = 1;
+  uint32_t y = 2;
+  CHECK_GT(y, x);
+
+  EXPECT_THROW(CHECK_EQ(x, y), dmlc::Error);
+}
+
 TEST(Logging, throw_fatal) {
   EXPECT_THROW({
     LOG(FATAL) << "message";
