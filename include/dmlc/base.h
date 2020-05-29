@@ -242,6 +242,14 @@ typedef unsigned __int64 uint64_t;
 #define DMLC_NO_INLINE __attribute__((noinline))
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+#define DMLC_ALWAYS_INLINE inline __attribute__((__always_inline__))
+#elif defined(_MSC_VER)
+#define DMLC_ALWAYS_INLINE __forceinline
+#else
+#define DMLC_ALWAYS_INLINE inline
+#endif
+
 #if DMLC_USE_CXX11
 #define DMLC_THROW_EXCEPTION noexcept(false)
 #define DMLC_NO_EXCEPTION  noexcept(true)
