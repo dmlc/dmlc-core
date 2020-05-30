@@ -202,8 +202,8 @@ TEST(ThreadGroup, TimerThread) {
   thread_group->request_shutdown_all(true);
   // Wait for all of the queue threads to exit
   thread_group->join_all();
-  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
-  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 20 of them
+  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done 10
+  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 150 of them
 }
 
 /*!
@@ -235,6 +235,6 @@ TEST(ThreadGroup, TimerThreadSimple) {
   thread_group->request_shutdown_all();
   // Wait for all of the queue threads to exit
   thread_group->join_all();
-  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
-  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 20 of them
+  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done 10
+  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 150 of them
 }
