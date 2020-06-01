@@ -7,12 +7,12 @@
 #ifndef DMLC_IO_RECORDIO_SPLIT_H_
 #define DMLC_IO_RECORDIO_SPLIT_H_
 
+#include <vector>
+#include <string>
+#include <cstdio>
+#include <cstring>
 #include <dmlc/io.h>
 #include <dmlc/recordio.h>
-#include <vector>
-#include <cstdio>
-#include <string>
-#include <cstring>
 #include "./input_split_base.h"
 
 namespace dmlc {

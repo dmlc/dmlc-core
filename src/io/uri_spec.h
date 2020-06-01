@@ -9,12 +9,12 @@
 #ifndef DMLC_IO_URI_SPEC_H_
 #define DMLC_IO_URI_SPEC_H_
 
-#include <dmlc/common.h>
 #include <string>
 #include <sstream>
 #include <map>
 #include <vector>
 #include <utility>
+#include <dmlc/common.h>
 
 namespace dmlc {
 namespace io {

@@ -7,13 +7,13 @@
 #ifndef DMLC_IO_INPUT_SPLIT_BASE_H_
 #define DMLC_IO_INPUT_SPLIT_BASE_H_
 
-#include <dmlc/io.h>
-#include <dmlc/filesystem.h>
-#include <cstdio>
-#include <cstring>
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <dmlc/io.h>
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {

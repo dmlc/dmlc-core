@@ -7,13 +7,13 @@
 #ifndef DMLC_IO_SINGLE_FILE_SPLIT_H_
 #define DMLC_IO_SINGLE_FILE_SPLIT_H_
 
+#include <sys/stat.h>
+#include <string>
+#include <algorithm>
+#include <cstdio>
 #include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
-#include <sys/stat.h>
-#include <cstdio>
-#include <string>
-#include <algorithm>
 
 #ifdef _WIN32
 #define stat_struct __stat64

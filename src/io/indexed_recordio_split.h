@@ -6,14 +6,14 @@
 #ifndef DMLC_IO_INDEXED_RECORDIO_SPLIT_H_
 #define DMLC_IO_INDEXED_RECORDIO_SPLIT_H_
 
-#include <dmlc/io.h>
-#include <dmlc/recordio.h>
 #include <vector>
-#include <cstdio>
 #include <string>
-#include <cstring>
 #include <utility>
 #include <random>
+#include <cstdio>
+#include <cstring>
+#include <dmlc/io.h>
+#include <dmlc/recordio.h>
 #include "./input_split_base.h"
 
 namespace dmlc {

@@ -1,11 +1,11 @@
 // Copyright by Contributors
 
-#include <dmlc/base.h>
-#include <dmlc/logging.h>
-#include <errno.h>
 extern "C" {
+#include <errno.h>
 #include <sys/stat.h>
 }
+#include <dmlc/base.h>
+#include <dmlc/logging.h>
 #ifndef _WIN32
 extern "C" {
 #include <sys/types.h>

@@ -1,9 +1,9 @@
 // Copyright by Contributors
 
+#include <algorithm>
 #include <dmlc/base.h>
 #include <dmlc/recordio.h>
 #include <dmlc/logging.h>
-#include <algorithm>
 
 
 namespace dmlc {

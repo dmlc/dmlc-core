@@ -7,14 +7,14 @@
 #ifndef DMLC_DATA_TEXT_PARSER_H_
 #define DMLC_DATA_TEXT_PARSER_H_
 
-#include <dmlc/data.h>
-#include <dmlc/omp.h>
-#include <dmlc/common.h>
+#include <algorithm>
 #include <thread>
 #include <mutex>
 #include <vector>
 #include <cstring>
-#include <algorithm>
+#include <dmlc/data.h>
+#include <dmlc/omp.h>
+#include <dmlc/common.h>
 #include "./row_block.h"
 #include "./parser.h"
 
