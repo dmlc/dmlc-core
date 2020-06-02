@@ -191,8 +191,7 @@ TEST(ThreadGroup, TimerThread) {
       if ((count + 1) % 5 == 0) {
         // output slows it down a bit, so print fewer times
         std::cout << "[" << (count + 1) << "] TIME: "
-                  << GetDurationInMilliseconds(start_time)
-                  << std::endl << std::flush;
+                  << GetDurationInMilliseconds(start_time) << "\n";
       }
       ++count;
       return 0;  // return 0 means continue
@@ -224,8 +223,7 @@ TEST(ThreadGroup, TimerThreadSimple) {
                       if ((count + 1) % 5 == 0) {
                         // output slows it down a bit, so print fewer times
                         std::cout << "[" << (count + 1) << "] TIME: "
-                                  << GetDurationInMilliseconds(start_time)
-                                  << std::endl << std::flush;
+                                  << GetDurationInMilliseconds(start_time) << "\n";
                       }
                       ++count;
                       return 0;  // return 0 means continue
