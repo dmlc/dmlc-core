@@ -2,9 +2,9 @@
 #ifndef DMLC_IO_SINGLE_THREADED_INPUT_SPLIT_H_
 #define DMLC_IO_SINGLE_THREADED_INPUT_SPLIT_H_
 
+#include <algorithm>
 #include <dmlc/threadediter.h>
 #include <dmlc/base.h>
-#include <algorithm>
 #include "./input_split_base.h"
 
 namespace dmlc {

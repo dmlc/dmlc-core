@@ -1,7 +1,7 @@
 // Copyright by Contributors
 
-#include <dmlc/filesystem.h>
 #include <queue>
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {

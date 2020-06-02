@@ -1,9 +1,9 @@
 // Copyright by Contributors
+#include <algorithm>
+#include <fstream>
 #include <dmlc/recordio.h>
 #include <dmlc/logging.h>
 #include <dmlc/io.h>
-#include <algorithm>
-#include <fstream>
 #include "./indexed_recordio_split.h"
 
 namespace dmlc {
