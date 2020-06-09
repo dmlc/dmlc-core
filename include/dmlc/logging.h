@@ -7,17 +7,17 @@
  */
 #ifndef DMLC_LOGGING_H_
 #define DMLC_LOGGING_H_
-#include <sstream>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 #include <stdexcept>
 #include <memory>
-#include <cstdio>
-#include <cstdlib>
 #include "./base.h"
 
 #if DMLC_LOG_STACK_TRACE
 #include <cxxabi.h>
+#include <sstream>
 #include DMLC_EXECINFO_H
 #endif
 

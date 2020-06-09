@@ -8,13 +8,13 @@
 #ifndef DMLC_DATA_ROW_BLOCK_H_
 #define DMLC_DATA_ROW_BLOCK_H_
 
-#include <vector>
-#include <limits>
-#include <algorithm>
-#include <cstring>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <dmlc/data.h>
+#include <cstring>
+#include <vector>
+#include <limits>
+#include <algorithm>
 
 namespace dmlc {
 namespace data {

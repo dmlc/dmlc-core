@@ -6,13 +6,13 @@
  */
 #ifndef DMLC_IO_HDFS_FILESYS_H_
 #define DMLC_IO_HDFS_FILESYS_H_
-#include <vector>
-#include <string>
-
 extern "C" {
 #include <hdfs.h>
 }
 #include <dmlc/filesystem.h>
+
+#include <vector>
+#include <string>
 
 namespace dmlc {
 namespace io {

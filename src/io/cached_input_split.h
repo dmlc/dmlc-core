@@ -9,13 +9,13 @@
 #ifndef DMLC_IO_CACHED_INPUT_SPLIT_H_
 #define DMLC_IO_CACHED_INPUT_SPLIT_H_
 
-#include <string>
-#include <algorithm>
 #include <dmlc/base.h>
 // this code depends on c++11
 
 #if DMLC_ENABLE_STD_THREAD
 #include <dmlc/threadediter.h>
+#include <string>
+#include <algorithm>
 #include "./input_split_base.h"
 
 namespace dmlc {

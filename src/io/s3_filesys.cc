@@ -1,16 +1,6 @@
 // Copyright by Contributors
 extern "C" {
 #include <errno.h>
-}
-#include <string>
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-extern "C" {
 #include <curl/curl.h>
 #include <openssl/hmac.h>
 #include <openssl/buffer.h>
@@ -18,6 +8,14 @@ extern "C" {
 }
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <algorithm>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
 
 #include "./s3_filesys.h"
 

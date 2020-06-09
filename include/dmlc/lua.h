@@ -29,6 +29,12 @@
 #ifndef DMLC_LUA_H_
 #define DMLC_LUA_H_
 
+extern "C" {
+#include <lua.h>
+#include <luaT.h>
+#include <lualib.h>
+}
+
 #include <string>
 #include <stdexcept>
 #include <tuple>
@@ -39,12 +45,6 @@
 #include <algorithm>
 #include <unordered_map>
 #include <type_traits>
-
-extern "C" {
-#include <lua.h>
-#include <luaT.h>
-#include <lualib.h>
-}
 
 #include "./base.h"
 #include "./logging.h"
