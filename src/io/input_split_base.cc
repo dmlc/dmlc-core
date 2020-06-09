@@ -1,7 +1,7 @@
 // Copyright by Contributors
-#include <algorithm>
 #include <dmlc/logging.h>
 #include <dmlc/common.h>
+#include <algorithm>
 #include "./line_split.h"
 
 #if DMLC_USE_REGEX

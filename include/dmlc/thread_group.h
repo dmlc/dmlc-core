@@ -6,6 +6,9 @@
 #ifndef DMLC_THREAD_GROUP_H_
 #define DMLC_THREAD_GROUP_H_
 
+#include <dmlc/concurrentqueue.h>
+#include <dmlc/blockingconcurrentqueue.h>
+#include <dmlc/logging.h>
 #include <string>
 #include <mutex>
 #include <utility>
@@ -14,9 +17,6 @@
 #include <thread>
 #include <unordered_set>
 #include <unordered_map>
-#include <dmlc/concurrentqueue.h>
-#include <dmlc/blockingconcurrentqueue.h>
-#include <dmlc/logging.h>
 #if defined(DMLC_USE_CXX14) || __cplusplus > 201103L  /* C++14 */
 #include <shared_mutex>
 #endif

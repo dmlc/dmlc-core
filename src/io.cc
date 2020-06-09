@@ -1,9 +1,9 @@
 // Copyright by Contributors
 
-#include <cstring>
 #include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+#include <cstring>
 #include "io/uri_spec.h"
 #include "io/line_split.h"
 #include "io/recordio_split.h"

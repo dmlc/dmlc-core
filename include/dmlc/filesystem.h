@@ -7,12 +7,12 @@
 #ifndef DMLC_FILESYSTEM_H_
 #define DMLC_FILESYSTEM_H_
 
+#include <dmlc/logging.h>
+#include <dmlc/io.h>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <random>
-#include <dmlc/logging.h>
-#include <dmlc/io.h>
 
 /* platform specific headers */
 #ifdef _WIN32

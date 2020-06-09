@@ -7,10 +7,10 @@
 #ifndef DMLC_DATA_PARSER_H_
 #define DMLC_DATA_PARSER_H_
 
-#include <vector>
 #include <dmlc/base.h>
 #include <dmlc/logging.h>
 #include <dmlc/threadediter.h>
+#include <vector>
 #include "./row_block.h"
 
 namespace dmlc {

@@ -7,14 +7,14 @@
 #ifndef DMLC_DATA_LIBSVM_PARSER_H_
 #define DMLC_DATA_LIBSVM_PARSER_H_
 
+#include <dmlc/data.h>
+#include <dmlc/strtonum.h>
+#include <dmlc/parameter.h>
 #include <map>
 #include <string>
 #include <limits>
 #include <algorithm>
 #include <cstring>
-#include <dmlc/data.h>
-#include <dmlc/strtonum.h>
-#include <dmlc/parameter.h>
 #include "./row_block.h"
 #include "./text_parser.h"
 

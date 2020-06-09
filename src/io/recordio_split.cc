@@ -1,7 +1,7 @@
 // Copyright by Contributors
-#include <algorithm>
 #include <dmlc/recordio.h>
 #include <dmlc/logging.h>
+#include <algorithm>
 #include "./recordio_split.h"
 
 namespace dmlc {
