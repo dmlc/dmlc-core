@@ -165,21 +165,22 @@ inline bool DebugLoggingEnabled() {
 #ifndef DMLC_GLOG_DEFINED
 
 template <typename X, typename Y>
-std::string* LogCheckFormat(const X& x, const Y& y) {
+std::unique_ptr<std::string> LogCheckFormat(const X& x, const Y& y) {
   std::ostringstream os;
   os << " (" << x << " vs. " << y << ") "; /* CHECK_XX(x, y) requires x and y can be serialized to string. Use CHECK(x OP y) otherwise. NOLINT(*) */
-  return new std::string(os.str());
+  // no std::make_unique until c++14
+  return std::unique_ptr<std::string>(new std::string(os.str()));
 }
 
 // This function allows us to ignore sign comparison in the right scope.
-#define DEFINE_CHECK_FUNC(name, op)                                        \
-  template <typename X, typename Y>                                        \
-  DMLC_ALWAYS_INLINE std::string* LogCheck##name(const X& x, const Y& y) { \
-    if (x op y) return nullptr;                                            \
-    return LogCheckFormat(x, y);                                           \
-  }                                                                        \
-  DMLC_ALWAYS_INLINE std::string* LogCheck##name(int x, int y) {           \
-    return LogCheck##name<int, int>(x, y);                                 \
+#define DEFINE_CHECK_FUNC(name, op)                                                        \
+  template <typename X, typename Y>                                                        \
+  DMLC_ALWAYS_INLINE std::unique_ptr<std::string> LogCheck##name(const X& x, const Y& y) { \
+    if (x op y) return nullptr;                                                            \
+    return LogCheckFormat(x, y);                                                           \
+  }                                                                                        \
+  DMLC_ALWAYS_INLINE std::unique_ptr<std::string> LogCheck##name(int x, int y) {           \
+    return LogCheck##name<int, int>(x, y);                                                 \
   }
 
 #pragma GCC diagnostic push
@@ -193,7 +194,7 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #pragma GCC diagnostic pop
 
 #define CHECK_BINARY_OP(name, op, x, y)                  \
-  if (std::string* err = dmlc::LogCheck##name(x, y))     \
+  if (auto err = dmlc::LogCheck##name(x, y))             \
       dmlc::LogMessageFatal(__FILE__, __LINE__).stream() \
         << "Check failed: " << #x " " #op " " #y << *err << ": "
 
