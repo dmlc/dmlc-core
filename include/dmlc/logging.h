@@ -194,9 +194,9 @@ DEFINE_CHECK_FUNC(_NE, !=)
 #pragma GCC diagnostic pop
 
 #define CHECK_BINARY_OP(name, op, x, y)                  \
-  if (auto err = dmlc::LogCheck##name(x, y))             \
+  if (auto __dmlc__log__err = dmlc::LogCheck##name(x, y))  \
       dmlc::LogMessageFatal(__FILE__, __LINE__).stream() \
-        << "Check failed: " << #x " " #op " " #y << *err << ": "
+        << "Check failed: " << #x " " #op " " #y << *__dmlc__log__err << ": "
 
 // Always-on checking
 #define CHECK(x)                                           \
