@@ -13,10 +13,25 @@
 #include "data/libsvm_parser.h"
 #include "data/libfm_parser.h"
 #include "data/csv_parser.h"
+#include "data/rmf_parser.h"
 
 namespace dmlc {
 /*! \brief namespace for useful input data structure */
 namespace data {
+template<typename IndexType, typename DType = real_t>
+Parser<IndexType, DType> *
+CreateRMFParser(const std::string& path,
+                   const std::map<std::string, std::string>& args,
+                   unsigned part_index,
+                   unsigned num_parts) {
+  InputSplit* source = InputSplit::Create(
+      path.c_str(), part_index, num_parts, "text");
+  ParserImpl<IndexType, DType> *parser = new RMFParser<IndexType, DType>(source, args, 2);
+#if DMLC_ENABLE_STD_THREAD
+  parser = new ThreadedParser<IndexType>(parser);
+#endif
+  return parser;
+}
 
 template<typename IndexType, typename DType = real_t>
 Parser<IndexType> *
@@ -109,6 +124,7 @@ CreateIter_(const char *uri_,
 DMLC_REGISTER_PARAMETER(LibSVMParserParam);
 DMLC_REGISTER_PARAMETER(LibFMParserParam);
 DMLC_REGISTER_PARAMETER(CSVParserParam);
+DMLC_REGISTER_PARAMETER(RMFParserParam);
 }  // namespace data
 
 // template specialization
@@ -254,5 +270,9 @@ DMLC_REGISTER_DATA_PARSER(
   uint32_t, int64_t, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA int64_t>);
 DMLC_REGISTER_DATA_PARSER(
   uint64_t, int64_t, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA int64_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint32_t, real_t, rmf, data::CreateRMFParser<uint32_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint64_t, real_t, rmf, data::CreateRMFParser<uint64_t __DMLC_COMMA real_t>);
 
 }  // namespace dmlc

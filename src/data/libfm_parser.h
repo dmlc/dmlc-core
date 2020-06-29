@@ -70,6 +70,7 @@ ParseBlock(const char *begin,
            const char *end,
            RowBlockContainer<IndexType, DType> *out) {
   out->Clear();
+  out->label_width = 1;
   const char * lbegin = begin;
   const char * lend = lbegin;
   IndexType min_field_id = std::numeric_limits<IndexType>::max();

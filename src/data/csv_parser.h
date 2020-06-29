@@ -24,6 +24,7 @@ namespace data {
 struct CSVParserParam : public Parameter<CSVParserParam> {
   std::string format;
   int label_column;
+  size_t label_width;
   std::string delimiter;
   int weight_column;
   // declare parameters
@@ -36,6 +37,8 @@ struct CSVParserParam : public Parameter<CSVParserParam> {
       .describe("Delimiter used in the csv file.");
     DMLC_DECLARE_FIELD(weight_column).set_default(-1)
         .describe("Column index that will put into instance weights.");
+    DMLC_DECLARE_FIELD(label_width).set_default(1)
+        .describe("The width of label.");
   }
 };
 
@@ -77,6 +80,7 @@ ParseBlock(const char *begin,
            const char *end,
            RowBlockContainer<IndexType, DType> *out) {
   out->Clear();
+  out->label_width = param_.label_width;
   const char * lbegin = begin;
   const char * lend = lbegin;
   // advance lbegin if it points to newlines
