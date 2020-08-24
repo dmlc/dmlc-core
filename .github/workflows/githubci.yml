@@ -21,6 +21,7 @@ jobs:
       - name: Install Dependencies
         run: |
           if [[ $(uname) != "Darwin" ]]; then
+            sudo apt update
             sudo apt install doxygen libcurl4-openssl-dev gcc-5 g++-5
           else
             brew install libomp doxygen
