@@ -116,10 +116,12 @@
 #define DMLC_USE_FOPEN64 1
 #endif
 
-/// check if g++ is before 5.0
+/// check if g++ is before 4.8.5 (the compiler from CentOS 7)
 #if DMLC_USE_CXX11 && defined(__GNUC__) && !defined(__clang_version__)
-#if __GNUC__ < 5
-#pragma message("Will need g++-5.0 or higher to compile all"           \
+#if __GNUC__ < 4 || \
+    (__GNUC__ == 4 && __GNUC_MINOR__ < 8) || \
+    (__GNUC__ == 4 && __GNUC_MINOR__ == 8 && __GNUC_PATCHLEVEL__ < 5)
+#pragma message("Will need g++-4.8.5 or higher to compile all"          \
                 "the features in dmlc-core, "                           \
                 "compile without c++11, some features may be disabled")
 #undef DMLC_USE_CXX11
