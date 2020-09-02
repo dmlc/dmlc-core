@@ -31,8 +31,8 @@ class HDFSStream : public SeekStream {
   virtual size_t Read(void *ptr, size_t size) {
     char *buf = static_cast<char*>(ptr);
     size_t nleft = size;
+    size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max());
     while (nleft != 0) {
-      size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max());
       tSize ret = hdfsRead(fs_, fp_, buf, std::min(nleft, nmax));
       if (ret > 0) {
         size_t n = static_cast<size_t>(ret);
@@ -50,14 +50,19 @@ class HDFSStream : public SeekStream {
 
   virtual void Write(const void *ptr, size_t size) {
     const char *buf = reinterpret_cast<const char*>(ptr);
-    while (size != 0) {
-      tSize nwrite = hdfsWrite(fs_, fp_, buf, size);
-      if (nwrite == -1) {
+    size_t nleft = size;
+    size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max());
+    while (nleft != 0) {
+      tSize ret = hdfsWrite(fs_, fp_, buf, std::min(nleft, nmax));
+      if (ret > 0) {
+        size_t n = static_cast<size_t>(ret);
+        nleft -= n; buf += n;
+      } else if (ret == 0) {
+        break;
+      } else {
         int errsv = errno;
         LOG(FATAL) << "HDFSStream.hdfsWrite Error:" << strerror(errsv);
       }
-      size_t sz = static_cast<size_t>(nwrite);
-      buf += sz; size -= sz;
     }
   }
   virtual void Seek(size_t pos) {
