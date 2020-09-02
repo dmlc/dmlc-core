@@ -51,7 +51,13 @@ class HDFSStream : public SeekStream {
   virtual void Write(const void *ptr, size_t size) {
     const char *buf = reinterpret_cast<const char*>(ptr);
     size_t nleft = size;
-    size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max());
+    // When using builtin-java classes to write, the maximum write size
+    // would be limited by the the max array size, which is uncertain
+    // Here I used half of the max limit of tSize(int32_t) as nmax, to avoid
+    // upper bound overflow.
+    // More about max array size:
+    // https://stackoverflow.com/questions/31382531/why-i-cant-create-an-array-with-large-size
+    size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max()) / 2;
     while (nleft != 0) {
       tSize ret = hdfsWrite(fs_, fp_, buf, std::min(nleft, nmax));
       if (ret > 0) {
