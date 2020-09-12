@@ -57,7 +57,7 @@ class HDFSStream : public SeekStream {
     // upper bound overflow.
     // More about max array size:
     // https://stackoverflow.com/questions/31382531/why-i-cant-create-an-array-with-large-size
-    size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max()) / 2;
+    const size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max()) / 2;
     while (nleft != 0) {
       tSize ret = hdfsWrite(fs_, fp_, buf, std::min(nleft, nmax));
       if (ret > 0) {
