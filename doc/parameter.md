@@ -107,7 +107,7 @@ However, this is not very compact, and recommended only used to serialize the ge
 Direct serialization and loading of JSON format is also support.
 
 ### Play with an Example
-We provide an example program [parameter.cc](https://github.com/dmlc/dmlc-core/blob/master/example/parameter.cc), to 
+We provide an example program [parameter.cc](https://github.com/dmlc/dmlc-core/blob/main/example/parameter.cc), to 
 demonstrate the usage mentioned above, and allow you to play with it and get sense of what is going on.
 
 How does it work
@@ -193,6 +193,6 @@ To figure out how to access each of the field, we can
 - The relative position of the field against the head of the structure is recorded into a global singleton.
 - When we call ```Init```, we can get the ```offset``` from the singleton, and access the address of the field via ```(ValueType*)((char*)this + offset)```.
 
-You are welcomed to check out the real details in [dmlc/parameter.h](https://github.com/dmlc/dmlc-core/blob/master/include/dmlc/parameter.h).
+You are welcomed to check out the real details in [dmlc/parameter.h](https://github.com/dmlc/dmlc-core/blob/main/include/dmlc/parameter.h).
 By using the generic template programming in C++, we have created a simple and useful parameter module for machine learning libraries.
 This module is used extensively by DMLC projects. Hope you will find it useful as well :).
