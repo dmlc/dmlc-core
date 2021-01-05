@@ -438,7 +438,7 @@ class LogMessageFatal {
     // Due to a bug in 32-bit MinGW, objects with non-trivial destructor cannot be thread-local.
     // See https://sourceforge.net/p/mingw-w64/bugs/527/
     // Hence, don't use thread-local for the log stream if the compiler is 32-bit MinGW.
-#if !(defined(__MINGW32__) || !defined(__MINGW64__))
+#if !(defined(__MINGW32__) && !defined(__MINGW64__))
     DMLC_NO_INLINE static Entry& ThreadLocal() {
       static thread_local Entry result;
       return result;
