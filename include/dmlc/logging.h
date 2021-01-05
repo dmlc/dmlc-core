@@ -407,16 +407,16 @@ class LogMessageFatal : public LogMessage {
 class LogMessageFatal {
  public:
   LogMessageFatal(const char *file, int line) {
-    Entry::ThreadLocal()->Init(file, line);
+    GetEntry().Init(file, line);
   }
-  std::ostringstream &stream() { return Entry::ThreadLocal()->log_stream; }
+  std::ostringstream &stream() { return GetEntry().log_stream; }
   DMLC_NO_INLINE ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    Entry::ThreadLocal()->log_stream << "\n"
-                                     << StackTrace(1, LogStackTraceLevel())
-                                     << "\n";
+    GetEntry().log_stream << "\n"
+                          << StackTrace(1, LogStackTraceLevel())
+                          << "\n";
 #endif
-    throw Entry::ThreadLocal()->Finalize();
+    throw GetEntry().Finalize();
   }
 
  private:
@@ -435,13 +435,30 @@ class LogMessageFatal {
 #endif
       return dmlc::Error(log_stream.str());
     }
-    DMLC_NO_INLINE static Entry *ThreadLocal() {
-      static thread_local Entry *result = new Entry();
+    // Due to a bug in MinGW, objects with non-trivial destructor cannot be thread-local.
+    // See https://sourceforge.net/p/mingw-w64/bugs/527/
+    // Hence, don't use thread-local for the log stream if the compiler is MinGW.
+#if !(defined(__MINGW32__) || defined(__MINGW64__))
+    DMLC_NO_INLINE static Entry& ThreadLocal() {
+      static thread_local Entry result;
       return result;
     }
+#endif
   };
   LogMessageFatal(const LogMessageFatal &);
   void operator=(const LogMessageFatal &);
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+  DMLC_NO_INLINE Entry& GetEntry() {
+    return entry_;
+  }
+
+  Entry entry_;
+#else
+  DMLC_NO_INLINE Entry& GetEntry() {
+    return Entry::ThreadLocal();
+  }
+#endif
 };
 #endif
 
