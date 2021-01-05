@@ -457,7 +457,6 @@ class LogMessageFatal {
 #if defined(__MINGW32__) && !defined(__MINGW64__)
   Entry entry_;
 #endif
-
 };
 #endif
 
