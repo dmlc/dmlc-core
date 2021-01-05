@@ -407,16 +407,16 @@ class LogMessageFatal : public LogMessage {
 class LogMessageFatal {
  public:
   LogMessageFatal(const char *file, int line) {
-    Entry::ThreadLocal()->Init(file, line);
+    Entry::ThreadLocal().Init(file, line);
   }
-  std::ostringstream &stream() { return Entry::ThreadLocal()->log_stream; }
+  std::ostringstream &stream() { return Entry::ThreadLocal().log_stream; }
   DMLC_NO_INLINE ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    Entry::ThreadLocal()->log_stream << "\n"
-                                     << StackTrace(1, LogStackTraceLevel())
-                                     << "\n";
+    Entry::ThreadLocal().log_stream << "\n"
+                                    << StackTrace(1, LogStackTraceLevel())
+                                    << "\n";
 #endif
-    throw Entry::ThreadLocal()->Finalize();
+    throw Entry::ThreadLocal().Finalize();
   }
 
  private:
@@ -435,12 +435,9 @@ class LogMessageFatal {
 #endif
       return dmlc::Error(log_stream.str());
     }
-    DMLC_NO_INLINE static Entry* ThreadLocal() {
-      static thread_local std::unique_ptr<Entry> singleton_;
-      if (!singleton_) {
-        singleton_.reset(new Entry());
-      }
-      return singleton_.get();
+    DMLC_NO_INLINE static Entry& ThreadLocal() {
+      static thread_local Entry result;
+      return result;
     }
   };
   LogMessageFatal(const LogMessageFatal &);
