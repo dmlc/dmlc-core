@@ -44,7 +44,7 @@ environment:
           configuration: Release
 
 matrix:
-    fast_finish: false
+    fast_finish: true
 
 platform:
     - x64
