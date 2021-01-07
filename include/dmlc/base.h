@@ -12,6 +12,12 @@
 #endif
 
 /*!
+ * \def DMLC_USE_LOGGING_LIBRARY
+ * Whether to use user-defined logging library. Change this to an
+ * include path like <my/lib/logging.h> to replace DMLC's builtin logging.
+ */
+
+/*!
  * \brief whether throw dmlc::Error instead of
  *  directly calling abort when FATAL error occured
  *  NOTE: this may still not be perfect.
