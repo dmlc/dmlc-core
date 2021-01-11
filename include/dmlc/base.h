@@ -13,8 +13,15 @@
 
 /*!
  * \def DMLC_USE_LOGGING_LIBRARY
- * Whether to use user-defined logging library. Change this to an
- * include path like <my/lib/logging.h> to replace DMLC's builtin logging.
+ * Whether to use user-defined logging library. If defined, dmlc will not define
+ * the macros CHECK() and LOG() and instead locate CHECK() and LOG()
+ * from the value of DMLC_USE_LOGGING_LIBRARY. The
+ * DMLC_USE_LOGGING_LIBRARY macro shall be of form <my_logging.h>:
+ *
+ * #define DMLC_USE_LOGGING_LIBRARY <my_logging.h>
+ *
+ * Make sure to define CHECK() and LOG() macros in the provided header;
+ * otherwise the build will fail.
  */
 
 /*!
