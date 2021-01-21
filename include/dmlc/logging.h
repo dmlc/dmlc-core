@@ -127,6 +127,15 @@ inline void InitLogging(const char* argv0) {
 }
 }  // namespace dmlc
 
+#elif defined DMLC_USE_LOGGING_LIBRARY
+
+#include DMLC_USE_LOGGING_LIBRARY
+namespace dmlc {
+inline void InitLogging(const char*) {
+  // DO NOTHING
+}
+}
+
 #else
 // use a light version of glog
 #include <assert.h>
