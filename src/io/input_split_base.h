@@ -97,7 +97,7 @@ class InputSplitBase : public InputSplit {
    * \return true if this object represents a text parser; false if it represents
    *         a binary parser
    */
-  virtual bool IsTextParser(void) = 0;
+  virtual bool IsTextParser() = 0;
   /*!
    * \brief fill the given
    *  chunk with new data without using internal
@@ -112,7 +112,7 @@ class InputSplitBase : public InputSplit {
    *  chunk with new batch of data without using internal
    *  temporary chunk
    */
-  virtual bool NextBatchEx(Chunk *chunk, size_t n_records) {
+  virtual bool NextBatchEx(Chunk *chunk, size_t /* n_records*/) {
     return NextChunkEx(chunk);
   }
 

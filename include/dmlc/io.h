@@ -169,7 +169,7 @@ class InputSplit {
    *  size to the hinted value
    * \param chunk_size the chunk size
    */
-  virtual void HintChunkSize(size_t chunk_size) {}
+  virtual void HintChunkSize(size_t /*chunk_size*/) {}
   /*! \brief get the total size of the InputSplit */
   virtual size_t GetTotalSize(void) = 0;
   /*! \brief reset the position of InputSplit to beginning */
@@ -227,7 +227,7 @@ class InputSplit {
    * \sa InputSplit::Create for definition of record
    * \sa RecordIOChunkReader to parse recordio content from out_chunk
    */
-  virtual bool NextBatch(Blob *out_chunk, size_t n_records) {
+  virtual bool NextBatch(Blob *out_chunk, size_t /*n_records*/) {
     return NextChunk(out_chunk);
   }
   /*! \brief destructor*/

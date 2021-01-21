@@ -348,7 +348,7 @@ class FieldAccessEntry {
    */
   virtual void Set(void *head, const std::string &value) const = 0;
   // check if value is OK
-  virtual void Check(void *head) const {}
+  virtual void Check(void */*head*/) const {}
   /*!
    * \brief get the string representation of value.
    * \param head the pointer to the head of the struct

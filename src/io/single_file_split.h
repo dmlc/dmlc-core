@@ -70,7 +70,7 @@ class SingleFileSplit : public InputSplit {
     CHECK(part_index == 0 && num_parts == 1);
     this->BeforeFirst();
   }
-  virtual void Write(const void *ptr, size_t size) {
+  virtual void Write(const void */*ptr*/, size_t /*size*/) {
     LOG(FATAL) << "InputSplit do not support write";
   }
   virtual bool NextRecord(Blob *out_rec) {

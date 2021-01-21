@@ -551,8 +551,8 @@ class Str2T<int32_t> {
    * \param end End of the string to convert
    * \return Converted value, as signed 32-bit integer
    */
-  static inline int32_t get(const char * begin, const char * end) {
-    return ParseSignedInt<int32_t>(begin, NULL, 10);
+  static inline int32_t get(const char * begin, const char* /*end*/) {
+    return ParseSignedInt<int32_t>(begin, nullptr, 10);
   }
 };
 
@@ -568,8 +568,8 @@ class Str2T<uint32_t> {
    * \param end End of the string to convert
    * \return Converted value, as unsigned 32-bit integer
    */
-  static inline uint32_t get(const char* begin, const char* end) {
-    return ParseUnsignedInt<uint32_t>(begin, NULL, 10);
+  static inline uint32_t get(const char* begin, const char* /*end*/) {
+    return ParseUnsignedInt<uint32_t>(begin, nullptr, 10);
   }
 };
 
@@ -585,8 +585,8 @@ class Str2T<int64_t> {
    * \param end End of the string to convert
    * \return Converted value, as signed 64-bit integer
    */
-  static inline int64_t get(const char * begin, const char * end) {
-    return ParseSignedInt<int64_t>(begin, NULL, 10);
+  static inline int64_t get(const char * begin, const char * /*end*/) {
+    return ParseSignedInt<int64_t>(begin, nullptr, 10);
   }
 };
 
@@ -602,8 +602,8 @@ class Str2T<uint64_t> {
    * \param end End of the string to convert
    * \return Converted value, as unsigned 64-bit integer
    */
-  static inline uint64_t get(const char * begin, const char * end) {
-    return ParseUnsignedInt<uint64_t>(begin, NULL, 10);
+  static inline uint64_t get(const char * begin, const char * /*end*/) {
+    return ParseUnsignedInt<uint64_t>(begin, nullptr, 10);
   }
 };
 
@@ -619,7 +619,7 @@ class Str2T<float> {
    * \param end End of the string to convert
    * \return Converted value, in float type
    */
-  static inline float get(const char * begin, const char * end) {
+  static inline float get(const char * begin, const char * /*end*/) {
     return atof(begin);
   }
 };
@@ -636,8 +636,8 @@ class Str2T<double> {
    * \param end End of the string to convert
    * \return Converted value, in double type
    */
-  static inline double get(const char * begin, const char * end) {
-    return strtod(begin, 0);
+  static inline double get(const char * begin, const char * /*end*/) {
+    return strtod(begin, nullptr);
   }
 };
 
