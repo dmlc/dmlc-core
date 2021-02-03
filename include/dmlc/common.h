@@ -48,7 +48,7 @@ inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
 }
 
 /*!
- * \brief OMP Exception class catches, saves and rethrows exception from OMP blocks
+ * \brief OMP Exception class captures and rethrows exception from OMP blocks
  */
 class OMPException {
  private:
@@ -59,22 +59,12 @@ class OMPException {
 
  public:
   /*!
-   * \brief Parallel OMP blocks should be placed within Run to save exception
+   * \brief should be called in a catch clause to capture the exception
    */
-  template <typename Function, typename... Parameters>
-  void Run(Function f, Parameters... params) {
-    try {
-      f(params...);
-    } catch (dmlc::Error &ex) {
-      std::lock_guard<std::mutex> lock(mutex_);
-      if (!omp_exception_) {
-        omp_exception_ = std::current_exception();
-      }
-    } catch (std::exception &ex) {
-      std::lock_guard<std::mutex> lock(mutex_);
-      if (!omp_exception_) {
-        omp_exception_ = std::current_exception();
-      }
+  void CaptureException() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!omp_exception_) {
+      omp_exception_ = std::current_exception();
     }
   }
 
@@ -85,6 +75,23 @@ class OMPException {
     if (this->omp_exception_) std::rethrow_exception(this->omp_exception_);
   }
 };
+
+#if defined(_OPENMP)
+#define OMP_INIT() dmlc::OMPException omp_exc;
+#define OMP_BEGIN() try {
+#define OMP_END()                \
+  } catch (dmlc::Error &ex) {    \
+    omp_exc.CaptureException();  \
+  } catch (std::exception &ex) { \
+    omp_exc.CaptureException();  \
+  }
+#define OMP_THROW() omp_exc.Rethrow();
+#else
+#define OMP_INIT()
+#define OMP_BEGIN()
+#define OMP_END()
+#define OMP_THROW()
+#endif  // _OPENMP
 
 }  // namespace dmlc
 

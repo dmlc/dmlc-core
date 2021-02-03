@@ -101,8 +101,6 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   size_t bytes_read_;
   // source split that provides the data
   InputSplit *source_;
-  // OMPException object to catch and rethrow exceptions in omp blocks
-  dmlc::OMPException omp_exc_;
 };
 
 // implementation
@@ -119,27 +117,28 @@ inline bool TextParserBase<IndexType, DType>::FillData(
   const char *head = reinterpret_cast<char *>(chunk.dptr);
 
   std::vector<std::thread> threads;
+  OMP_INIT();
   for (int tid = 0; tid < nthread; ++tid) {
-    threads.push_back(std::thread([&chunk, head, data, nthread, tid, this] {
-      this->omp_exc_.Run([&] {
-        size_t nstep = (chunk.size + nthread - 1) / nthread;
-        size_t sbegin = std::min(tid * nstep, chunk.size);
-        size_t send = std::min((tid + 1) * nstep, chunk.size);
-        const char *pbegin = BackFindEndLine(head + sbegin, head);
-        const char *pend;
-        if (tid + 1 == nthread) {
-          pend = head + send;
-        } else {
-          pend = BackFindEndLine(head + send, head);
-        }
-        ParseBlock(pbegin, pend, &(*data)[tid]);
-      });
+    threads.push_back(std::thread([&, head, data, nthread, tid, this] {
+      OMP_BEGIN();
+      size_t nstep = (chunk.size + nthread - 1) / nthread;
+      size_t sbegin = std::min(tid * nstep, chunk.size);
+      size_t send = std::min((tid + 1) * nstep, chunk.size);
+      const char *pbegin = BackFindEndLine(head + sbegin, head);
+      const char *pend;
+      if (tid + 1 == nthread) {
+        pend = head + send;
+      } else {
+        pend = BackFindEndLine(head + send, head);
+      }
+      ParseBlock(pbegin, pend, &(*data)[tid]);
+      OMP_END();
     }));
   }
   for (int i = 0; i < nthread; ++i) {
     threads[i].join();
   }
-  omp_exc_.Rethrow();
+  OMP_THROW();
 
   this->data_ptr_ = 0;
   return true;
