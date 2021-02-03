@@ -64,6 +64,21 @@ class DataIter {
   /*! \brief get current data */
   virtual const DType &Value(void) const = 0;
 };
+template<typename IndexType, typename DType = real_t>
+class UnitData {
+ public:
+  /*! \brief length of the sparse vector */
+  size_t length;
+  /*!
+   * \brief index of each instance
+   */
+  const IndexType *index;
+  /*!
+   * \brief array value of each instance, this can be NULL
+   *  indicating every value is set to be 1
+   */
+  const DType *value;
+};
 
 /*!
  * \brief one row of training instance
@@ -81,6 +96,8 @@ class Row {
   const uint64_t *qid;
   /*! \brief length of the sparse vector */
   size_t length;
+  /*! \brief length of the label vector */
+  size_t label_width = 1;
   /*!
    * \brief field of each instance
    */
@@ -94,6 +111,11 @@ class Row {
    *  indicating every value is set to be 1
    */
   const DType *value;
+  /*!
+   * \brief extra data
+   */
+  std::vector<UnitData<IndexType> > extra;
+
   /*!
    * \param i the input index
    * \return field for i-th feature
@@ -119,8 +141,8 @@ class Row {
   /*!
    * \return the label of the instance
    */
-  inline DType get_label() const {
-    return *label;
+  inline const DType* get_label() const {
+    return label;
   }
   /*!
    * \return the weight of the instance, this function is always
@@ -161,6 +183,58 @@ class Row {
   }
 };
 
+template<typename IndexType, typename DType = real_t>
+struct UnitBlock {
+  /*! \brief batch size */
+  size_t size;
+  /*! \brief array[size+1], row pointer to beginning of each rows */
+  const size_t *offset;
+  /*! \brief feature index */
+  const IndexType *index;
+  /*! \brief feature value, can be NULL, indicating all values are 1 */
+  const DType *value;
+  inline UnitData<IndexType, DType> operator[](size_t rowid) const;
+  /*! \return memory cost of the block in bytes */
+  inline size_t MemCostBytes(void) const {
+    size_t cost = size * (sizeof(size_t) + sizeof(DType));
+    size_t ndata = offset[size] - offset[0];
+    if (index != NULL) cost += ndata * sizeof(IndexType);
+    if (value != NULL) cost += ndata * sizeof(DType);
+    return cost;
+  }
+  /*!
+   * \brief slice a UnitBlock to get rows in [begin, end)
+   * \param begin the begin row index
+   * \param end the end row index
+   * \return the sliced UnitBlock
+   */
+  inline UnitBlock Slice(size_t begin, size_t end) const {
+    CHECK(begin <= end && end <= size);
+    UnitBlock ret;
+    ret.size = end - begin;
+    ret.offset = offset + begin;
+    ret.index = index;
+    ret.value = value;
+    return ret;
+  }
+};
+
+// implementation of operator[]
+template<typename IndexType, typename DType>
+inline UnitData<IndexType, DType>
+UnitBlock<IndexType, DType>::operator[](size_t rowid) const {
+  CHECK(rowid < size);
+  UnitData<IndexType, DType> inst;
+  inst.length = offset[rowid + 1] - offset[rowid];
+  inst.index = index + offset[rowid];
+  if (value == NULL) {
+    inst.value = NULL;
+  } else {
+    inst.value = value + offset[rowid];
+  }
+  return inst;
+}
+
 /*!
  * \brief a block of data, containing several rows in sparse matrix
  *  This is useful for (streaming-sxtyle) algorithms that scans through rows of data
@@ -177,6 +251,10 @@ struct RowBlock {
   size_t size;
   /*! \brief array[size+1], row pointer to beginning of each rows */
   const size_t *offset;
+  /*! add multi label */
+  /*! label_width */
+  /*! [i * label_width, (i + 1) * label_width) */
+  size_t label_width = 1;
   /*! \brief array[size] label of each instance */
   const DType *label;
   /*! \brief With weight: array[size] label of each instance, otherwise nullptr */
@@ -189,6 +267,8 @@ struct RowBlock {
   const IndexType *index;
   /*! \brief feature value, can be NULL, indicating all values are 1 */
   const DType *value;
+  // extra format
+  std::vector<UnitBlock<IndexType> > extra;
   /*!
    * \brief get specific rows in the batch
    * \param rowid the rowid in that row
@@ -216,7 +296,7 @@ struct RowBlock {
     CHECK(begin <= end && end <= size);
     RowBlock ret;
     ret.size = end - begin;
-    ret.label = label + begin;
+    ret.label = label + (begin * label_width);
     if (weight != NULL) {
       ret.weight = weight + begin;
     } else {
@@ -231,6 +311,9 @@ struct RowBlock {
     ret.field = field;
     ret.index = index;
     ret.value = value;
+    ret.extra.resize(extra.size());
+    for (size_t i = 0; i < extra.size(); ++i)
+      ret.extra[i] = extra[i].slice(begin, end);
     return ret;
   }
 };
@@ -337,7 +420,7 @@ struct ParserFactoryReg
  * \param TypeName The typename of of the data.
  * \param FactoryFunction The factory function that creates the parser.
  *
- * \code
+ * \begincode
  *
  *  // define the factory function
  *  template<typename IndexType, typename DType = real_t>
@@ -367,7 +450,7 @@ inline Row<IndexType, DType>
 RowBlock<IndexType, DType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType, DType> inst;
-  inst.label = label + rowid;
+  inst.label = label + (rowid * label_width);
   if (weight != NULL) {
     inst.weight = weight + rowid;
   } else {
@@ -390,6 +473,9 @@ RowBlock<IndexType, DType>::operator[](size_t rowid) const {
   } else {
     inst.value = value + offset[rowid];
   }
+  inst.extra.resize(extra.size());
+  for (size_t i = 0; i < extra.size(); ++i)
+    inst.extra[i] = extra[i][rowid];
   return inst;
 }
 
