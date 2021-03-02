@@ -168,7 +168,7 @@ configure_file("cmake/build_config.h.in" "include/dmlc/build_config.h")
 target_include_directories(dmlc PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+  $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
 target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
   -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE)
 # Older stdc++ enable c++11 items
