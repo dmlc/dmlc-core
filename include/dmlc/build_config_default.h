@@ -22,6 +22,7 @@
      && !(defined __MINGW64__) && !(defined __ANDROID__))\
      && !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)\
      && !defined(__RISCV__) && !defined(__hexagon__)
+#if DMLC_CXXABI_H_PRESENT && DMLC_EXECINFO_H_PRESENT
   #ifndef DMLC_LOG_STACK_TRACE
   #define DMLC_LOG_STACK_TRACE 1
   #endif
@@ -29,6 +30,7 @@
   #define DMLC_LOG_STACK_TRACE_SIZE 10
   #endif
   #define DMLC_EXECINFO_H <execinfo.h>
+#endif
 #endif
 
 /* default logic for detecting existence of nanosleep() */
