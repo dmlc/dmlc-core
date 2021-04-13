@@ -127,6 +127,12 @@ if(WIN32 AND (NOT MSVC))  # On Windows, link Shlwapi.lib for non-MSVC compilers
   target_link_libraries(dmlc PRIVATE Shlwapi)
 endif()
 
+if(MSVC)
+  # Enable updated __cplusplus macro in MSVC
+  # https://docs.microsoft.com/en-us/cpp/build/reference/zc-cplusplus
+  target_compile_options(dmlc PUBLIC "/Zc:__cplusplus")
+endif()
+
 # Check location of clock_gettime; if it's in librt, link it
 include(CheckLibraryExists)
 CHECK_LIBRARY_EXISTS(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME_IN_LIBRT)
