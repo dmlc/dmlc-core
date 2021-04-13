@@ -131,7 +131,7 @@
 
 /// check for C++11 support
 #if DMLC_USE_CXX11
-#if (__cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
+#if (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
 // MSVC doesn't support __cplusplus macro properly until MSVC 2017
 // We want to also support MSVC 2015, so manually check _MSC_VER
 
@@ -139,7 +139,7 @@
 #undef DMLC_USE_CXX11
 #define DMLC_USE_CXX11 0
 
-#endif  // (__cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
+#endif  // (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
 #endif  // DMLC_USE_CXX11
 
 /*!
