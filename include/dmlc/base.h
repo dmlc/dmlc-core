@@ -129,16 +129,18 @@
 #define DMLC_USE_FOPEN64 1
 #endif
 
-/// check if g++ is before 5.0
-#if DMLC_USE_CXX11 && defined(__GNUC__) && !defined(__clang_version__)
-#if __GNUC__ < 5
-#pragma message("Will need g++-5.0 or higher to compile all"           \
-                "the features in dmlc-core, "                           \
-                "compile without c++11, some features may be disabled")
+/// check for C++11 support
+#if DMLC_USE_CXX11
+#if (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
+// MSVC doesn't support __cplusplus macro properly until MSVC 2017
+// We want to also support MSVC 2015, so manually check _MSC_VER
+
+#pragma message("Compiling without c++11, some features may be disabled")
 #undef DMLC_USE_CXX11
 #define DMLC_USE_CXX11 0
-#endif
-#endif
+
+#endif  // (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
+#endif  // DMLC_USE_CXX11
 
 /*!
  * \brief Use little endian for binary serialization
