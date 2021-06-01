@@ -71,6 +71,9 @@ class LintHelper(object):
         cpplint._SetCountingStyle('toplevel')
         cpplint._line_length = 100
 
+    def set_cpplint_quiet(self, quiet):
+        cpplint._SetQuiet(quiet)
+
     def process_cpp(self, path, suffix):
         """Process a cpp file."""
         _cpplint_state.ResetErrorCounts()
@@ -171,11 +174,14 @@ def main():
                         help='exclude this path, and all subfolders if path is a folder')
     parser.add_argument('--pylint-rc', default=None,
                         help='pylint rc file')
+    parser.add_argument('--quiet', default=False, action='store_true',
+                        help='Reduce the amount printed by cpplint')
     args = parser.parse_args()
 
     _HELPER.project_name = args.project
     if args.pylint_rc is not None:
         _HELPER.pylint_opts = ['--rcfile='+args.pylint_rc,]
+    _HELPER.set_cpplint_quiet(args.quiet)
     file_type = args.filetype
     allow_type = []
     if file_type in ('python', 'all'):
