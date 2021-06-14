@@ -28,6 +28,7 @@ struct ParquetParserParam : public Parameter<ParquetParserParam> {
   std::string format;
   int label_column;
   int weight_column;
+  int nthreads;
 
   DMLC_DECLARE_PARAMETER(ParquetParserParam) {
     DMLC_DECLARE_FIELD(format).set_default("parquet")
@@ -35,6 +36,8 @@ struct ParquetParserParam : public Parameter<ParquetParserParam> {
     DMLC_DECLARE_FIELD(label_column).set_default(0)
       .describe("Column index (0-based) that will put into label.");
     DMLC_DECLARE_FIELD(weight_column).set_default(-1)
+      .describe("Column index that will put into instance weights.");
+    DMLC_DECLARE_FIELD(nthreads).set_default(16)
       .describe("Column index that will put into instance weights.");
   }
 };
@@ -46,8 +49,8 @@ public:
   ParquetParser(std::string filename,
                 const std::map<std::string, std::string>& args,
                 int nthread) : row_groups_read_(0), nthread_(nthread) {
-    nthread_ = 16;
     param_.Init(args);
+    nthread_ = param_.nthreads;
     CHECK_EQ(param_.format, "parquet");
 
     parquet_reader_ = parquet::ParquetFileReader::OpenFile(filename, false);
