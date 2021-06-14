@@ -32,7 +32,7 @@ struct ParquetParserParam : public Parameter<ParquetParserParam> {
   DMLC_DECLARE_PARAMETER(ParquetParserParam) {
     DMLC_DECLARE_FIELD(format).set_default("parquet")
       .describe("File format.");
-    DMLC_DECLARE_FIELD(label_column).set_default(0)
+    DMLC_DECLARE_FIELD(label_column).set_default(-1)
       .describe("Column index (0-based) that will put into label.");
     DMLC_DECLARE_FIELD(weight_column).set_default(-1)
       .describe("Column index that will put into instance weights.");
@@ -130,7 +130,6 @@ void ParquetParser<IndexType, DType>::
 ParseRowGroup(int row_group_id,
               RowBlockContainer<IndexType, DType> *out) {
   out->Clear();
-  DType v;
 
   std::shared_ptr<parquet::RowGroupReader> row_group_reader = parquet_reader_->RowGroup(row_group_id);
   std::vector<std::shared_ptr<parquet::ColumnReader>> all_column_readers;
@@ -143,8 +142,19 @@ ParseRowGroup(int row_group_id,
   }
 
   int num_rows_this_group = metadata_->RowGroup(row_group_id)->num_rows();
-  constexpr int chunk_size = 1;
+  int64_t rows_read;
+  (void)rows_read;  // suppress compile warning
   int64_t values_read;
+  DType v;
+
+  DType** value = new DType*[num_cols_];
+  for (int i_col = 0; i_col < num_cols_; ++i_col) {
+    value[i_col] = new DType[num_rows_this_group];
+    rows_read = all_float_readers[i_col]->ReadBatch(num_rows_this_group, nullptr, nullptr, value[i_col], &values_read);
+    assert(num_rows_this_group == values_read);
+    assert(values_read == rows_read);
+    assert(!all_float_readers[i_col]->HasNext());
+  }
 
   for (int i_row = 0; i_row < num_rows_this_group; i_row++) {
     IndexType idx = 0;
@@ -152,12 +162,11 @@ ParseRowGroup(int row_group_id,
     real_t weight = std::numeric_limits<real_t>::quiet_NaN();
 
     for (int i_col = 0; i_col < num_cols_; i_col++) {
-      all_float_readers[i_col]->ReadBatch(chunk_size, nullptr, nullptr, &v, &values_read);
-      assert(values_read == chunk_size);
+      v = value[i_col][i_row];
+      
       if (i_col == param_.label_column) {
         label = v;
-      } else if (std::is_same<DType, real_t>::value
-                 && i_col == param_.weight_column) {
+      } else if (i_col == param_.weight_column) {
         weight = v;
       } else {
         out->value.push_back(v);
@@ -173,6 +182,12 @@ ParseRowGroup(int row_group_id,
   }
   CHECK(out->label.size() + 1 == out->offset.size());
   CHECK(out->weight.size() == 0 || out->weight.size() + 1 == out->offset.size());
+
+  for (int i_col = 0; i_col < num_cols_; ++i_col) {
+    delete[] value[i_col];
+  }
+  delete[] value;
+
 }
 
 }  // namespace data
