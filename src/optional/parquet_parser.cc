@@ -1,6 +1,6 @@
 #include <dmlc/data.h>
 #include <dmlc/registry.h>
-#include "data/parquet_parser.h"
+#include "parquet_parser.h"
 
 namespace dmlc {
 namespace data {

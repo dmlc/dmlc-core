@@ -15,8 +15,8 @@
 #include <map>
 #include <string>
 #include <limits>
-#include "./row_block.h"
-#include "./parser.h"
+#include "../data/row_block.h"
+#include "../data/parser.h"
 #include "arrow/io/api.h"
 #include "parquet/api/reader.h"
 
