@@ -46,7 +46,7 @@ template <typename IndexType, typename DType = real_t>
 class ParquetParser : public ParserImpl<IndexType, DType> {
 
 public:
-  ParquetParser(std::string filename,
+  ParquetParser(const std::string& filename,
                 const std::map<std::string, std::string>& args,
                 int nthread) : row_groups_read_(0), nthread_(nthread) {
     param_.Init(args);
