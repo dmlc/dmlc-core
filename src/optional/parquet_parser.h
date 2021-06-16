@@ -71,7 +71,7 @@ public:
   virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data);
 
   virtual void ParseRowGroup(int row_group_id,
-                            RowBlockContainer<IndexType, DType> *out);
+                             RowBlockContainer<IndexType, DType> *out);
                     
   virtual size_t BytesRead(void) const {
     return -1;
@@ -109,6 +109,7 @@ ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
   int next_row_groups = std::min(nthread_, num_row_groups_ - row_groups_read_);
   data->resize(next_row_groups);
 
+  // parallel on row groups
   for (int tid = 0; tid < next_row_groups; ++tid) {
     int row_group_id = row_groups_read_ + tid;
     threads.push_back(std::thread([this, row_group_id, data, tid] {
@@ -133,7 +134,6 @@ void ParquetParser<IndexType, DType>::
 ParseRowGroup(int row_group_id,
               RowBlockContainer<IndexType, DType> *out) {
   out->Clear();
-  DType v;
 
   std::shared_ptr<parquet::RowGroupReader> row_group_reader = parquet_reader_->RowGroup(row_group_id);
   std::vector<std::shared_ptr<parquet::ColumnReader>> all_column_readers;
@@ -149,18 +149,19 @@ ParseRowGroup(int row_group_id,
   constexpr int chunk_size = 1;
   int64_t values_read;
 
+  // iterate each column row-wise
   for (int i_row = 0; i_row < num_rows_this_group; i_row++) {
     IndexType idx = 0;
     DType label = DType(0.0f);
     real_t weight = std::numeric_limits<real_t>::quiet_NaN();
+    DType v;
 
     for (int i_col = 0; i_col < num_cols_; i_col++) {
       all_float_readers[i_col]->ReadBatch(chunk_size, nullptr, nullptr, &v, &values_read);
       assert(values_read == chunk_size);
       if (i_col == param_.label_column) {
         label = v;
-      } else if (std::is_same<DType, real_t>::value
-                 && i_col == param_.weight_column) {
+      } else if (i_col == param_.weight_column) {
         weight = v;
       } else {
         out->value.push_back(v);
