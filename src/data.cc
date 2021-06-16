@@ -257,6 +257,7 @@ DMLC_REGISTER_DATA_PARSER(
 
 }  // namespace dmlc
 
+// parquet integration
 #include "optional/parquet_parser.h"
 
 namespace dmlc {

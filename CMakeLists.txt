@@ -69,13 +69,10 @@ if (DMLC_USE_SANITIZER)
 endif (DMLC_USE_SANITIZER)
 
 if(USE_PARQUET)
-  find_package(Arrow REQUIRED PATHS /sqpc/scratch/data_science/guchengy/software/apache-arrow-4.0.1/cpp/debug/usr/local/lib64/cmake/arrow)
-  find_package(Parquet REQUIRED PATHS /sqpc/scratch/data_science/guchengy/software/apache-arrow-4.0.1/cpp/debug/usr/local/lib64/cmake/arrow)
-  if(${Arrow_FOUND} AND ${Parquet_FOUND})
-    MESSAGE("Found Arrow and Parquet")
-    target_link_libraries(dmlc PRIVATE arrow_shared)
-    target_link_libraries(dmlc PRIVATE parquet_shared)  
-  endif()
+  find_package(Arrow REQUIRED)
+  find_package(Parquet REQUIRED)
+  target_link_libraries(dmlc PRIVATE arrow_shared)
+  target_link_libraries(dmlc PRIVATE parquet_shared)  
 endif()
 
 # HDFS configurations
