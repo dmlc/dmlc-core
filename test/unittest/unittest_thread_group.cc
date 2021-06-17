@@ -213,18 +213,12 @@ TEST(ThreadGroup, TimerThreadSimple) {
   std::shared_ptr<dmlc::ThreadGroup> thread_group = std::make_shared<dmlc::ThreadGroup>();
 
   using Duration = std::chrono::milliseconds;
-  Tick start_time = Now();
   size_t count = 0;
   // Launch the queue thread, passing queue item handler as lambda
   dmlc::CreateTimer("TimerThreadSimple",
                     Duration(TIMER_PERIOD),
                     thread_group.get(),
-                    [start_time, &count]() -> int {
-                      if ((count + 1) % 5 == 0) {
-                        // output slows it down a bit, so print fewer times
-                        std::cout << "[" << (count + 1) << "] TIME: "
-                                  << GetDurationInMilliseconds(start_time) << "\n";
-                      }
+                    [&count]() -> int {
                       ++count;
                       return 0;  // return 0 means continue
                     });
