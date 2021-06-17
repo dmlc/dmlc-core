@@ -37,7 +37,7 @@ struct ParquetParserParam : public Parameter<ParquetParserParam> {
       .describe("Column index (0-based) that will put into label.");
     DMLC_DECLARE_FIELD(weight_column).set_default(-1)
       .describe("Column index that will put into instance weights.");
-    DMLC_DECLARE_FIELD(nthreads).set_default(16)
+    DMLC_DECLARE_FIELD(nthreads).set_default(2)
       .describe("Column index that will put into instance weights.");
   }
 };
