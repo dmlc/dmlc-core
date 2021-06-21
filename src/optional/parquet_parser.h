@@ -62,7 +62,6 @@ public:
     have_next_ = (num_rows_ != 0);
   }
 
-  protected:
   /*!
    * \brief read in next several blocks of data
    * \param data vector of data to be returned
@@ -70,6 +69,7 @@ public:
    */
   virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data);
 
+  protected:
   virtual void ParseRowGroup(int row_group_id,
                             RowBlockContainer<IndexType, DType> *out);
                     
