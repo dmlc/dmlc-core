@@ -1,3 +1,10 @@
+/*!
+ *  Copyright (c) 2021 by Contributors
+ * \file parquet_parser_test.cc
+ * \brief test parquet parser loads the same data as csv parser; first generate some data,
+ * write into a csv and a parquet file, then load from them and check the entries are the same
+ * \author Chengyang Gu
+ */
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
