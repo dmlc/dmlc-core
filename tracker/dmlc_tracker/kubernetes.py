@@ -11,9 +11,11 @@ from os import path
 import sys
 import uuid
 import logging
-from kubernetes import client, config
+if "kubernetes" in sys.modules:
+	from kubernetes import client, config
 from . import tracker
-import yaml
+if "yaml" in sys.modules:
+	import yaml
 
 template_volume = {
         "name":""
