@@ -34,6 +34,7 @@ def yarn_submit(args, nworker, nserver, pass_env):
     YARN_JAR_PATH = os.path.join(args.yarn_app_dir, 'dmlc-yarn.jar')
     curr_path = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
     YARN_BOOT_PY = os.path.join(curr_path, 'launcher.py')
+    YARN_UTIL_PY = os.path.join(curr_path, 'util.py')
 
     if not os.path.exists(YARN_JAR_PATH):
         warnings.warn("cannot find \"%s\", I will try to run build" % YARN_JAR_PATH)
@@ -60,6 +61,7 @@ def yarn_submit(args, nworker, nserver, pass_env):
     fset, new_command = opts.get_cache_file_set(args)
     fset.add(YARN_JAR_PATH)
     fset.add(YARN_BOOT_PY)
+    fset.add(YARN_UTIL_PY)
     ar_list = []
 
     for fname in args.archives:
@@ -112,7 +114,7 @@ def yarn_submit(args, nworker, nserver, pass_env):
     def run():
         """internal running function."""
         logging.debug(cmd)
-        subprocess.check_call(cmd, shell=True, env=env)
+        subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, env=env).communicate()
 
     thread = Thread(target=run, args=())
     thread.setDaemon(True)
