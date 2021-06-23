@@ -11,6 +11,19 @@
 #define DMLC_USE_GLOG 0
 #endif
 
+/*
+ * The preprocessor definition DMLC_USE_LOGGING_LIBRARY determines whether to
+ * use a user-defined logging library. If defined, dmlc will not define the
+ * macros CHECK() and LOG() and instead locate CHECK() and LOG() from the value
+ * of DMLC_USE_LOGGING_LIBRARY. The DMLC_USE_LOGGING_LIBRARY macro shall be of
+ * form <my_logging.h>:
+ *
+ * #define DMLC_USE_LOGGING_LIBRARY <my_logging.h>
+ *
+ * Make sure to define CHECK() and LOG() macros in the provided header;
+ * otherwise the build will fail.
+ */
+
 /*!
  * \brief whether throw dmlc::Error instead of
  *  directly calling abort when FATAL error occured
@@ -46,6 +59,13 @@
 #else
 #define DMLC_LOG_DEBUG 1
 #endif
+#endif
+
+/*!
+ * \brief Whether to disable date message on the log.
+ */
+#ifndef DMLC_LOG_NODATE
+#define DMLC_LOG_NODATE 0
 #endif
 
 /*! \brief whether compile with hdfs support */
@@ -109,16 +129,18 @@
 #define DMLC_USE_FOPEN64 1
 #endif
 
-/// check if g++ is before 4.6
-#if DMLC_USE_CXX11 && defined(__GNUC__) && !defined(__clang_version__)
-#if __GNUC__ == 4 && __GNUC_MINOR__ < 6
-#pragma message("Will need g++-4.6 or higher to compile all"           \
-                "the features in dmlc-core, "                           \
-                "compile without c++0x, some features may be disabled")
+/// check for C++11 support
+#if DMLC_USE_CXX11
+#if (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
+// MSVC doesn't support __cplusplus macro properly until MSVC 2017
+// We want to also support MSVC 2015, so manually check _MSC_VER
+
+#pragma message("Compiling without c++11, some features may be disabled")
 #undef DMLC_USE_CXX11
 #define DMLC_USE_CXX11 0
-#endif
-#endif
+
+#endif  // (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1900)
+#endif  // DMLC_USE_CXX11
 
 /*!
  * \brief Use little endian for binary serialization
@@ -227,6 +249,20 @@ typedef unsigned __int64 uint64_t;
 #define noexcept_true throw ()
 #define noexcept_false
 #define noexcept(a) noexcept_##a
+#endif
+
+#if defined(_MSC_VER)
+#define DMLC_NO_INLINE __declspec(noinline)
+#else
+#define DMLC_NO_INLINE __attribute__((noinline))
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define DMLC_ALWAYS_INLINE inline __attribute__((__always_inline__))
+#elif defined(_MSC_VER)
+#define DMLC_ALWAYS_INLINE __forceinline
+#else
+#define DMLC_ALWAYS_INLINE inline
 #endif
 
 #if DMLC_USE_CXX11

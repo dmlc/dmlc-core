@@ -14,11 +14,7 @@ NOLINT_FILES = --exclude_path include/dmlc/concurrentqueue.h include/dmlc/blocki
 # this is the common build script for dmlc lib
 export LDFLAGS= -pthread -lm
 export CFLAGS = -O3 -Wall -Wno-unknown-pragmas -Iinclude
-ifeq ($(USE_GNU11), 1)
-	CFLAGS += -std=gnu++11
-else
-	CFLAGS += -std=c++0x
-endif
+CFLAGS+=-std=c++11
 LDFLAGS+= $(DMLC_LDFLAGS) $(ADD_LDFLAGS)
 CFLAGS+= $(DMLC_CFLAGS) $(ADD_CFLAGS)
 

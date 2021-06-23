@@ -127,6 +127,15 @@ inline void InitLogging(const char* argv0) {
 }
 }  // namespace dmlc
 
+#elif defined DMLC_USE_LOGGING_LIBRARY
+
+#include DMLC_USE_LOGGING_LIBRARY
+namespace dmlc {
+inline void InitLogging(const char*) {
+  // DO NOTHING
+}
+}
+
 #else
 // use a light version of glog
 #include <assert.h>
@@ -162,51 +171,26 @@ inline bool DebugLoggingEnabled() {
   return state == 1;
 }
 
-class LogCheckError {
- public:
-  LogCheckError() : str(nullptr) {}
-  explicit LogCheckError(const std::string& str_) : str(new std::string(str_)) {}
-  LogCheckError(const LogCheckError& other) = delete;
-  LogCheckError(LogCheckError&& other) : str(other.str) {
-    other.str = nullptr;
-  }
-  ~LogCheckError() { if (str != nullptr) delete str; }
-  operator bool() const { return str != nullptr; }
-  LogCheckError& operator=(const LogCheckError& other) = delete;
-  LogCheckError& operator=(LogCheckError&& other) = delete;
-  std::string* str;
-};
-
 #ifndef DMLC_GLOG_DEFINED
 
-#ifndef _LIBCPP_SGX_NO_IOSTREAMS
-#define DEFINE_CHECK_FUNC(name, op)                               \
-  template <typename X, typename Y>                               \
-  inline LogCheckError LogCheck##name(const X& x, const Y& y) {   \
-    if (x op y) return LogCheckError();                           \
-    std::ostringstream os;                                        \
-    os << " (" << x << " vs. " << y << ") ";  /* CHECK_XX(x, y) requires x and y can be serialized to string. Use CHECK(x OP y) otherwise. NOLINT(*) */ \
-    return LogCheckError(os.str());                               \
-  }                                                               \
-  inline LogCheckError LogCheck##name(int x, int y) {             \
-    return LogCheck##name<int, int>(x, y);                        \
-  }
-#else
-#define DEFINE_CHECK_FUNC(name, op)                               \
-  template <typename X, typename Y>                               \
-  inline LogCheckError LogCheck##name(const X& x, const Y& y) {   \
-    if (x op y) return LogCheckError();                           \
-    return LogCheckError("Error.");                               \
-  }                                                               \
-  inline LogCheckError LogCheck##name(int x, int y) {             \
-    return LogCheck##name<int, int>(x, y);                        \
-  }
-#endif
+template <typename X, typename Y>
+std::unique_ptr<std::string> LogCheckFormat(const X& x, const Y& y) {
+  std::ostringstream os;
+  os << " (" << x << " vs. " << y << ") "; /* CHECK_XX(x, y) requires x and y can be serialized to string. Use CHECK(x OP y) otherwise. NOLINT(*) */
+  // no std::make_unique until c++14
+  return std::unique_ptr<std::string>(new std::string(os.str()));
+}
 
-#define CHECK_BINARY_OP(name, op, x, y)                               \
-  if (dmlc::LogCheckError _check_err = dmlc::LogCheck##name(x, y))    \
-    dmlc::LogMessageFatal(__FILE__, __LINE__).stream()                \
-      << "Check failed: " << #x " " #op " " #y << *(_check_err.str) << ": "
+// This function allows us to ignore sign comparison in the right scope.
+#define DEFINE_CHECK_FUNC(name, op)                                                        \
+  template <typename X, typename Y>                                                        \
+  DMLC_ALWAYS_INLINE std::unique_ptr<std::string> LogCheck##name(const X& x, const Y& y) { \
+    if (x op y) return nullptr;                                                            \
+    return LogCheckFormat(x, y);                                                           \
+  }                                                                                        \
+  DMLC_ALWAYS_INLINE std::unique_ptr<std::string> LogCheck##name(int x, int y) {           \
+    return LogCheck##name<int, int>(x, y);                                                 \
+  }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-compare"
@@ -217,6 +201,11 @@ DEFINE_CHECK_FUNC(_GE, >=)
 DEFINE_CHECK_FUNC(_EQ, ==)
 DEFINE_CHECK_FUNC(_NE, !=)
 #pragma GCC diagnostic pop
+
+#define CHECK_BINARY_OP(name, op, x, y)                  \
+  if (auto __dmlc__log__err = dmlc::LogCheck##name(x, y))  \
+      dmlc::LogMessageFatal(__FILE__, __LINE__).stream() \
+        << "Check failed: " << #x " " #op " " #y << *__dmlc__log__err << ": "
 
 // Always-on checking
 #define CHECK(x)                                           \
@@ -305,7 +294,7 @@ class DateLogger {
 #endif
   }
   const char* HumanDate() {
-#ifndef _LIBCPP_SGX_CONFIG
+#if !defined(_LIBCPP_SGX_CONFIG) && DMLC_LOG_NODATE == 0
 #if defined(_MSC_VER)
     _strtime_s(buffer_, sizeof(buffer_));
 #else
@@ -320,8 +309,10 @@ class DateLogger {
     snprintf(buffer_, sizeof(buffer_), "%02d:%02d:%02d",
              pnow->tm_hour, pnow->tm_min, pnow->tm_sec);
 #endif
-#endif  // _LIBCPP_SGX_CONFIG
     return buffer_;
+#else
+    return "";
+#endif  // _LIBCPP_SGX_CONFIG
   }
 
  private:
@@ -424,30 +415,59 @@ class LogMessageFatal : public LogMessage {
 #else
 class LogMessageFatal {
  public:
-  LogMessageFatal(const char* file, int line) {
-    log_stream_ << "[" << pretty_date_.HumanDate() << "] " << file << ":"
-                << line << ": ";
+  LogMessageFatal(const char *file, int line) {
+    GetEntry().Init(file, line);
   }
-  std::ostringstream &stream() { return log_stream_; }
-  ~LogMessageFatal() DMLC_THROW_EXCEPTION {
+  std::ostringstream &stream() { return GetEntry().log_stream; }
+  DMLC_NO_INLINE ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    log_stream_ << "\n" << StackTrace(1, LogStackTraceLevel()) << "\n";
+    GetEntry().log_stream << "\n"
+                          << StackTrace(1, LogStackTraceLevel())
+                          << "\n";
 #endif
-
-    // throwing out of destructor is evil
-    // hopefully we can do it here
-    // also log the message before throw
-#if DMLC_LOG_BEFORE_THROW
-    LOG(ERROR) << log_stream_.str();
-#endif
-    throw Error(log_stream_.str());
+    throw GetEntry().Finalize();
   }
 
  private:
-  std::ostringstream log_stream_;
-  DateLogger pretty_date_;
-  LogMessageFatal(const LogMessageFatal&);
-  void operator=(const LogMessageFatal&);
+  struct Entry {
+    std::ostringstream log_stream;
+    DMLC_NO_INLINE void Init(const char *file, int line) {
+      DateLogger date;
+      log_stream.str("");
+      log_stream.clear();
+      log_stream << "[" << date.HumanDate() << "] " << file << ":" << line
+                 << ": ";
+    }
+    dmlc::Error Finalize() {
+#if DMLC_LOG_BEFORE_THROW
+      LOG(ERROR) << log_stream.str();
+#endif
+      return dmlc::Error(log_stream.str());
+    }
+    // Due to a bug in MinGW, objects with non-trivial destructor cannot be thread-local.
+    // See https://sourceforge.net/p/mingw-w64/bugs/527/
+    // Hence, don't use thread-local for the log stream if the compiler is MinGW.
+#if !(defined(__MINGW32__) || defined(__MINGW64__))
+    DMLC_NO_INLINE static Entry& ThreadLocal() {
+      static thread_local Entry result;
+      return result;
+    }
+#endif
+  };
+  LogMessageFatal(const LogMessageFatal &);
+  void operator=(const LogMessageFatal &);
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+  DMLC_NO_INLINE Entry& GetEntry() {
+    return entry_;
+  }
+
+  Entry entry_;
+#else
+  DMLC_NO_INLINE Entry& GetEntry() {
+    return Entry::ThreadLocal();
+  }
+#endif
 };
 #endif
 

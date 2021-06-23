@@ -337,7 +337,7 @@ struct ParserFactoryReg
  * \param TypeName The typename of of the data.
  * \param FactoryFunction The factory function that creates the parser.
  *
- * \begincode
+ * \code
  *
  *  // define the factory function
  *  template<typename IndexType, typename DType = real_t>

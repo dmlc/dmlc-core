@@ -14,6 +14,7 @@ include(cmake/Utils.cmake)
 
 # Options
 dmlccore_option(USE_HDFS "Build with HDFS support" OFF)
+dmlccore_option(DMLC_HDFS_SHARED "Build with dynamic HDFS library" OFF)
 dmlccore_option(USE_AZURE "Build with AZURE support" OFF)
 dmlccore_option(USE_S3 "Build with S3 support" OFF)
 dmlccore_option(USE_PARQUET "Build with Arrow Parquet" OFF)
@@ -79,7 +80,11 @@ if(USE_HDFS)
   find_package(HDFS REQUIRED)
   find_package(JNI REQUIRED)
   target_include_directories(dmlc PRIVATE ${HDFS_INCLUDE_DIR})
-  target_link_libraries(dmlc PRIVATE ${HDFS_STATIC_LIB} ${JAVA_JVM_LIBRARY})
+  if (DMLC_HDFS_SHARED)
+    target_link_libraries(dmlc PRIVATE ${HDFS_LIBRARIES} ${JAVA_JVM_LIBRARY})
+  else()
+    target_link_libraries(dmlc PRIVATE ${HDFS_STATIC_LIB} ${JAVA_JVM_LIBRARY})
+  endif()
   target_compile_definitions(dmlc PRIVATE -DDMLC_USE_HDFS=1)
 else()
   target_compile_definitions(dmlc PRIVATE -DDMLC_USE_HDFS=0)
@@ -171,7 +176,7 @@ configure_file("cmake/build_config.h.in" "include/dmlc/build_config.h")
 target_include_directories(dmlc PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+  $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
 target_compile_definitions(dmlc PRIVATE -D_XOPEN_SOURCE=700
   -D_POSIX_SOURCE -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE)
 # Older stdc++ enable c++11 items

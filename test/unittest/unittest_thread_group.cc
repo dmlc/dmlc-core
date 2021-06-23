@@ -191,8 +191,7 @@ TEST(ThreadGroup, TimerThread) {
       if ((count + 1) % 5 == 0) {
         // output slows it down a bit, so print fewer times
         std::cout << "[" << (count + 1) << "] TIME: "
-                  << GetDurationInMilliseconds(start_time)
-                  << std::endl << std::flush;
+                  << GetDurationInMilliseconds(start_time) << "\n";
       }
       ++count;
       return 0;  // return 0 means continue
@@ -202,8 +201,8 @@ TEST(ThreadGroup, TimerThread) {
   thread_group->request_shutdown_all(true);
   // Wait for all of the queue threads to exit
   thread_group->join_all();
-  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
-  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 20 of them
+  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done 10
+  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 150 of them
 }
 
 /*!
@@ -224,8 +223,7 @@ TEST(ThreadGroup, TimerThreadSimple) {
                       if ((count + 1) % 5 == 0) {
                         // output slows it down a bit, so print fewer times
                         std::cout << "[" << (count + 1) << "] TIME: "
-                                  << GetDurationInMilliseconds(start_time)
-                                  << std::endl << std::flush;
+                                  << GetDurationInMilliseconds(start_time) << "\n";
                       }
                       ++count;
                       return 0;  // return 0 means continue
@@ -235,6 +233,6 @@ TEST(ThreadGroup, TimerThreadSimple) {
   thread_group->request_shutdown_all();
   // Wait for all of the queue threads to exit
   thread_group->join_all();
-  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done three
-  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 20 of them
+  GTEST_ASSERT_GE(count, MIN_COUNT_WHILE_SLEEPING);  // Should have at least done 10
+  GTEST_ASSERT_LE(count, MAX_COUNT_WHILE_SLEEPING); // Should not have had time to do 150 of them
 }

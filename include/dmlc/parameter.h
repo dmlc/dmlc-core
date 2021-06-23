@@ -171,20 +171,17 @@ struct Parameter {
    * \tparam Container container type
    *
    * \param kwargs map of keyword arguments, or vector of pairs
-   * \param out_changed (optional) Output whether any parameter is changed during update.
    *
    * \throw ParamError when something go wrong.
    * \return vector of pairs of unknown arguments.
    */
   template <typename Container>
   std::vector<std::pair<std::string, std::string> >
-  UpdateAllowUnknown(Container const& kwargs, bool* out_changed = nullptr) {
+  UpdateAllowUnknown(Container const& kwargs) {
     std::vector<std::pair<std::string, std::string> > unknown;
-    bool changed {false};
-    changed = PType::__MANAGER__()->RunUpdate(static_cast<PType*>(this),
-                                              kwargs.begin(), kwargs.end(),
-                                              parameter::kAllowUnknown, &unknown, nullptr);
-    if (out_changed) { *out_changed = changed; }
+    PType::__MANAGER__()->RunUpdate(static_cast<PType *>(this), kwargs.begin(),
+                                    kwargs.end(), parameter::kAllowUnknown,
+                                    &unknown, nullptr);
     return unknown;
   }
 
@@ -350,12 +347,6 @@ class FieldAccessEntry {
    * \param value the value to be set
    */
   virtual void Set(void *head, const std::string &value) const = 0;
-  /*!
-   * \brief See if new and old values are the same
-   * \param head the pointer to the head of the struct
-   * \param value the value to be set
-   */
-  virtual bool Same(void* head, const std::string& value) const = 0;
   // check if value is OK
   virtual void Check(void *head) const {}
   /*!
@@ -461,18 +452,14 @@ class ParamManager {
    * \throw ParamError when there is unknown argument and unknown_args == NULL, or required argument is missing.
    */
   template <typename RandomAccessIterator>
-  bool RunUpdate(void *head,
+  void RunUpdate(void *head,
                  RandomAccessIterator begin,
                  RandomAccessIterator end,
                  parameter::ParamInitOption option,
                  std::vector<std::pair<std::string, std::string> > *unknown_args,
                  std::set<FieldAccessEntry*>* selected_args = nullptr) const {
-    bool changed {false};
     for (RandomAccessIterator it = begin; it != end; ++it) {
       if (FieldAccessEntry *e = Find(it->first)) {
-        if (!e->Same(head, it->second)) {
-          changed = true;
-        }
         e->Set(head, it->second);
         e->Check(head);
         if (selected_args) {
@@ -498,7 +485,6 @@ class ParamManager {
         }
       }
     }
-    return changed;
   }
   /*!
    * \brief internal function to add entry to manager,
@@ -643,20 +629,6 @@ class FieldEntryBase : public FieldAccessEntry {
     }
   }
 
-  // Don't check this function for Undefined Behavior (UB), as the function
-  // reads from a possibly uninitialized field
-  DMLC_SUPPRESS_UBSAN
-  bool Same(void* head, std::string const& value) const override {
-    DType old = this->Get(head);
-    DType now;
-    std::istringstream is(value);
-    is >> now;
-    // don't require = operator
-    bool is_same = std::equal(
-        reinterpret_cast<char*>(&now), reinterpret_cast<char*>(&now) + sizeof(now),
-        reinterpret_cast<char*>(&old));
-    return is_same;
-  }
   std::string GetStringValue(void *head) const override {
     std::ostringstream os;
     PrintValue(os, this->Get(head));

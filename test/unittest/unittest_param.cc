@@ -162,28 +162,21 @@ TEST(Parameter, parsing_float) {
 
 TEST(Parameter, Update) {
   LearningParam param;
-  bool changed = false;
   using Args = std::vector<std::pair<std::string, std::string> >;
   auto unknown =
       param.UpdateAllowUnknown(Args{{"float_param", "0.02"},
-                                    {"foo", "bar"}}, &changed);
+                                    {"foo", "bar"}});
   ASSERT_EQ(unknown.size(), 1);
   ASSERT_EQ(unknown[0].first, "foo");
   ASSERT_EQ(unknown[0].second, "bar");
   ASSERT_NEAR(param.float_param, 0.02f, 1e-6);
-  ASSERT_TRUE(changed);
 
   param.float_param = 0.02;
   param.UpdateAllowUnknown(Args{{"float_param", "0.02"},
-                                {"foo", "bar"}}, &changed);
-  ASSERT_FALSE(changed);
-
-  param.UpdateAllowUnknown(Args{{"foo", "bar"}}, &changed);
-  ASSERT_FALSE(changed);
-
+                                {"foo", "bar"}});
+  param.UpdateAllowUnknown(Args{{"foo", "bar"}});
   param.UpdateAllowUnknown(Args{{"double_param", "0.13"},
-                                {"foo", "bar"}}, &changed);
-  ASSERT_TRUE(changed);
+                                {"foo", "bar"}});
   ASSERT_NEAR(param.float_param, 0.02f, 1e-6);  // stays the same
   ASSERT_NEAR(param.double_param, 0.13, 1e-6);
 }
