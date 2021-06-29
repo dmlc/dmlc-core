@@ -20,6 +20,7 @@ test/strtonum_test: test/strtonum_test.cc
 test/logging_test: test/logging_test.cc
 test/parameter_test: test/parameter_test.cc
 test/registry_test: test/registry_test.cc
+test/parquet_parser_test: test/parquet_parser_test.cc src/optional/parquet_parser.h libdmlc.a
 
 $(TEST) :
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
