@@ -38,7 +38,7 @@ class LintHelper(object):
         """Print summary of certain result map."""
         if len(result_map) == 0:
             return 0
-        npass = len([x for k, x in result_map.items() if len(x) == 0])
+        npass = len(x for x in result_map.values() if len(x) == 0)
         strm.write('=====%d/%d %s files passed check=====\n' % (npass, len(result_map), ftype))
         for fname, emap in result_map.items():
             if len(emap) == 0:
