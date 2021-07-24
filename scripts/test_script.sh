@@ -28,8 +28,6 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
     else
         echo "USE_S3=0" >> config.mk
         echo "USE_OPENMP=1" >> config.mk
-        echo "export CXX=g++-8" >> config.mk
-        export CXX=g++-8
     fi
     make -f scripts/packages.mk gtest
     echo "GTEST_PATH="/tmp/gtest >> config.mk
