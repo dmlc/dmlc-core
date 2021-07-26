@@ -18,6 +18,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Install Miniconda
+        if: ${{ matrix.task == "cmake_test" }}
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-10.15" ]]; then
+            wget --no-verbose -O conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+          else
+            wget --no-verbose -O conda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+          fi
+          bash conda.sh -b -p $HOME/miniconda
+          source $HOME/miniconda/bin/activate
       - name: Install Dependencies
         run: |
           if [[ $(uname) != "Darwin" ]]; then

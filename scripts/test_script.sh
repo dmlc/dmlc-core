@@ -39,10 +39,13 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
 fi
 
 if [[ ${TASK} == "cmake_test" ]]; then
+    # Install Arrow and Parquet using Conda
+    conda create -n python3 -c conda-forge python=3.8 arrow-cpp parquet-cpp
+    conda activate python3
     # Build dmlc-core with CMake, including unit tests
     rm -rf build
     mkdir build && cd build
-    cmake .. -DGOOGLE_TEST=ON
+    cmake .. -DGOOGLE_TEST=ON -DUSE_PARQUET=ON -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow
     make
     cd ..
     ./build/test/unittest/dmlc_unit_tests
