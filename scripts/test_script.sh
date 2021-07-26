@@ -51,14 +51,14 @@ if [[ ${TASK} == "sanitizer_test" ]]; then
     rm -rf build
     mkdir build && cd build
     cmake .. -GNinja -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON -DDUSE_PARQUET=ON \
-             -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow
+             -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow \
              -DDMLC_ENABLED_SANITIZERS="thread" -DCMAKE_BUILD_TYPE=Debug ..
     ninja
     cd ..
     ./test/unittest/dmlc_unit_tests || true   # For now just display sanitizer errors
     rm -rf *
     cmake .. -GNinja -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON -DDUSE_PARQUET=ON \
-             -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow
+             -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow \
              -DDMLC_ENABLED_SANITIZERS="leak;address" -DCMAKE_BUILD_TYPE=Debug ..
     ninja
     cd ..
