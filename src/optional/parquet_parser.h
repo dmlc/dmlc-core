@@ -15,6 +15,7 @@
 #include <map>
 #include <string>
 #include <limits>
+#include <future>
 #include "../data/row_block.h"
 #include "../data/parser.h"
 #include "arrow/io/api.h"
@@ -104,22 +105,23 @@ ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
     parquet_reader_->Close();
     return false;
   }
-  std::vector<std::thread> threads;
+  std::vector<std::future<void>> futures;
 
   int next_row_groups = std::min(nthread_, num_row_groups_ - row_groups_read_);
   data->resize(next_row_groups);
+  futures.resize(next_row_groups);
 
   for (int tid = 0; tid < next_row_groups; ++tid) {
     int row_group_id = row_groups_read_ + tid;
-    threads.push_back(std::thread([this, row_group_id, data, tid] {
+    futures[tid] = std::async(std::launch::async, [this, row_group_id, data, tid] {
       this->omp_exc_.Run([&] {
         ParseRowGroup(row_group_id, &(*data)[tid]);
       });
-    }));
+    });
   }
 
   for (int i = 0; i < next_row_groups; ++i) {
-    threads[i].join();
+    futures[i].wait();
   }
   omp_exc_.Rethrow();
 
@@ -156,7 +158,7 @@ ParseRowGroup(int row_group_id,
 
     for (int i_col = 0; i_col < num_cols_; i_col++) {
       all_float_readers[i_col]->ReadBatch(chunk_size, nullptr, nullptr, &v, &values_read);
-      assert(values_read == chunk_size);
+      CHECK_EQ(values_read, chunk_size);
       if (i_col == param_.label_column) {
         label = v;
       } else if (std::is_same<DType, real_t>::value
