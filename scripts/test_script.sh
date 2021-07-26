@@ -41,7 +41,7 @@ fi
 if [[ ${TASK} == "cmake_test" ]]; then
     # Install Arrow and Parquet using Conda
     conda create -n python3 -c conda-forge python=3.8 arrow-cpp parquet-cpp ninja
-    source $HOME/miniconda/bin/activate python3
+    source activate python3
     # Build dmlc-core with CMake, including unit tests
     rm -rf build
     mkdir build && cd build
@@ -53,7 +53,7 @@ fi
 if [[ ${TASK} == "sanitizer_test" ]]; then
     # Install Arrow and Parquet using Conda
     conda create -n python3 -c conda-forge python=3.8 arrow-cpp parquet-cpp ninja
-    source $HOME/miniconda/bin/activate python3
+    source activate python3
     rm -rf build
     mkdir build && cd build
     cmake .. -GNinja -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON -DDUSE_PARQUET=ON \
