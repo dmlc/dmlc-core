@@ -18,16 +18,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Install Miniconda
-        if: ${{ matrix.task == 'cmake_test' || matrix.task == 'sanitizer_test' }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          activate-environment: test
+          environment-file: scripts/conda_env.yml
+      - name: Set up Codna env
         shell: bash -l {0}
         run: |
-          if [[ "${{ matrix.os }}" == "macos-10.15" ]]; then
-            wget --no-verbose -O conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
-          else
-            wget --no-verbose -O conda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-          fi
-          bash conda.sh -b -p $HOME/miniconda
+          conda info
+          conda list
       - name: Install Dependencies
         run: |
           if [[ $(uname) != "Darwin" ]]; then
@@ -36,8 +37,6 @@ jobs:
           else
             brew install libomp doxygen gcc@11
           fi
-          python3 -m pip install --user --upgrade pip setuptools
-          python3 -m pip install --user flake8 pylint cpplint
       - name: Lint
         run: |
           TASK=lint ./scripts/test_script.sh
