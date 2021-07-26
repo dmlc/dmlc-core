@@ -118,8 +118,4 @@ TEST(ParquetParser, test_end_to_end) {
   }
 }
 
-#else  // DMLC_USE_PARQUET
-
-#error "fuck"
-
 #endif  // DMLC_USE_PARQUET
