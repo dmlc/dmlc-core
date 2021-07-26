@@ -72,7 +72,8 @@ if(USE_PARQUET)
   find_package(Arrow REQUIRED)
   find_package(Parquet REQUIRED)
   target_link_libraries(dmlc PRIVATE arrow_shared)
-  target_link_libraries(dmlc PRIVATE parquet_shared)  
+  target_link_libraries(dmlc PRIVATE parquet_shared)
+  set(DMLC_USE_PARQUET 1)
 endif()
 
 # HDFS configurations

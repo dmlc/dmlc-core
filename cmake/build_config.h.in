@@ -26,4 +26,4 @@
 
 #endif  // DMLC_BUILD_CONFIG_H_
 
-#cmakedefine USE_PARQUET
+#cmakedefine DMLC_USE_PARQUET
