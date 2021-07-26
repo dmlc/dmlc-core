@@ -135,7 +135,7 @@ class JSONReader {
 
     // string getline
     size_t end_pos = is_->find('\n');
-    end_pos = std::min((size_t)64,
+    end_pos = std::min(static_cast<size_t>(64),
         end_pos == std::string::npos ? is_->size() : end_pos);
     std::string line = is_->substr(0, end_pos);
     is_->erase(0, line.size() + 1);  // +1 for \n
