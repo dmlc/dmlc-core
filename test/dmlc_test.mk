@@ -3,7 +3,7 @@ TEST=test/filesys_test test/dataiter_test\
 	test/stream_read_test test/split_test test/libsvm_parser_test\
 	test/libfm_parser_test test/split_repeat_read_test test/strtonum_test\
 	test/logging_test test/parameter_test test/registry_test\
-	test/csv_parser_test test/parquet_parser_test
+	test/csv_parser_test
 
 test/filesys_test: test/filesys_test.cc src/io/*.h libdmlc.a
 test/dataiter_test: test/dataiter_test.cc  libdmlc.a
@@ -20,7 +20,6 @@ test/strtonum_test: test/strtonum_test.cc
 test/logging_test: test/logging_test.cc
 test/parameter_test: test/parameter_test.cc
 test/registry_test: test/registry_test.cc
-test/parquet_parser_test: test/parquet_parser_test.cc src/data/parquet_parser.h libdmlc.a
 
 $(TEST) :
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
