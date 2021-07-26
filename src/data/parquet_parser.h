@@ -16,6 +16,9 @@
 #include <string>
 #include <limits>
 #include <future>
+#include <algorithm>
+#include <memory>
+#include <vector>
 #include "../data/row_block.h"
 #include "../data/parser.h"
 #include "arrow/io/api.h"
@@ -45,8 +48,7 @@ struct ParquetParserParam : public Parameter<ParquetParserParam> {
 
 template <typename IndexType, typename DType = real_t>
 class ParquetParser : public ParserImpl<IndexType, DType> {
-
-public:
+ public:
   ParquetParser(const std::string& filename,
                 const std::map<std::string, std::string>& args,
                 int nthread) : row_groups_read_(0), nthread_(nthread) {
@@ -59,7 +61,7 @@ public:
     num_rows_ = metadata_->num_rows();
     num_cols_ = metadata_->num_columns();
     num_row_groups_ = metadata_->num_row_groups();
-    
+
     have_next_ = (num_rows_ != 0);
   }
 
@@ -70,32 +72,32 @@ public:
    */
   virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data);
 
-  protected:
+ protected:
   virtual void ParseRowGroup(int row_group_id,
                             RowBlockContainer<IndexType, DType> *out);
-                    
+
   virtual size_t BytesRead(void) const {
     return -1;
   }
 
   virtual void BeforeFirst(void) {}
 
-  private:
-    ParquetParserParam param_;
-    // handle for reading parquet files
-    std::unique_ptr<parquet::ParquetFileReader> parquet_reader_;
-    std::shared_ptr<parquet::FileMetaData> metadata_;
-    // number of rows having read
-    int num_rows_;
-    int num_cols_;
-    int num_row_groups_;
-    int row_groups_read_;
-    // whether we have reached end of parquet file
-    bool have_next_;
-    // number of threads; hardcoded 4 for now
-    int nthread_;
-    // OMPException object to catch and rethrow exceptions in omp blocks
-    dmlc::OMPException omp_exc_;
+ private:
+  ParquetParserParam param_;
+  // handle for reading parquet files
+  std::unique_ptr<parquet::ParquetFileReader> parquet_reader_;
+  std::shared_ptr<parquet::FileMetaData> metadata_;
+  // number of rows having read
+  int num_rows_;
+  int num_cols_;
+  int num_row_groups_;
+  int row_groups_read_;
+  // whether we have reached end of parquet file
+  bool have_next_;
+  // number of threads; hardcoded 4 for now
+  int nthread_;
+  // OMPException object to catch and rethrow exceptions in omp blocks
+  dmlc::OMPException omp_exc_;
 };
 
 template <typename IndexType, typename DType>
@@ -137,14 +139,16 @@ ParseRowGroup(int row_group_id,
   out->Clear();
   DType v;
 
-  std::shared_ptr<parquet::RowGroupReader> row_group_reader = parquet_reader_->RowGroup(row_group_id);
+  std::shared_ptr<parquet::RowGroupReader> row_group_reader
+      = parquet_reader_->RowGroup(row_group_id);
   std::vector<std::shared_ptr<parquet::ColumnReader>> all_column_readers;
   std::vector<parquet::FloatReader*> all_float_readers;
 
   // get all the column readers; will iterate each column row-wise later
   for (int i_col = 0; i_col < num_cols_; ++i_col) {
     all_column_readers.push_back(row_group_reader->Column(i_col));
-    all_float_readers.push_back(static_cast<parquet::FloatReader*>(all_column_readers[i_col].get()));
+    all_float_readers.push_back(
+        static_cast<parquet::FloatReader*>(all_column_readers[i_col].get()));
   }
 
   int num_rows_this_group = metadata_->RowGroup(row_group_id)->num_rows();
