@@ -16,7 +16,7 @@
 #include <../src/data/parser.h>
 #include <../src/data/row_block.h>
 #include <../src/data/csv_parser.h>
-#include <../src/optional/parquet_parser.h>
+#include <../src/data/parquet_parser.h>
 #include <arrow/api.h>
 #include <arrow/io/api.h>
 #include <parquet/arrow/reader.h>

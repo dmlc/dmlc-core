@@ -15,7 +15,7 @@
 #include "data/csv_parser.h"
 
 #ifdef DMLC_USE_PARQUET
-#include "optional/parquet_parser.h"
+#include "data/parquet_parser.h"
 #endif
 
 namespace dmlc {
