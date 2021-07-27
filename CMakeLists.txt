@@ -74,7 +74,11 @@ if(USE_PARQUET)
   if(BUILD_SHARED_LIBS)
     target_link_libraries(dmlc PRIVATE arrow_shared parquet_shared)
   else()
-    target_link_libraries(dmlc PUBLIC arrow_static parquet_static)
+    # No need to use arrow_static / parquet_static here, since
+    # we don't have a compelling need to include Arrow and Parquet
+    # in the generaed static lib libdmlc.a. This is similar to
+    # how we don't statically link with OpenSSL and cURL.
+    target_link_libraries(dmlc PUBLIC arrow_shared parquet_shared)
   endif()
   set(DMLC_USE_PARQUET 1)
 endif()
