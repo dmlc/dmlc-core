@@ -14,6 +14,10 @@
 #include "data/libfm_parser.h"
 #include "data/csv_parser.h"
 
+#ifdef DMLC_USE_PARQUET
+#include "data/parquet_parser.h"
+#endif
+
 namespace dmlc {
 /*! \brief namespace for useful input data structure */
 namespace data {
@@ -58,6 +62,18 @@ CreateCSVParser(const std::string& path,
       path.c_str(), part_index, num_parts, "text");
   return new CSVParser<IndexType, DType>(source, args, 2);
 }
+
+#ifdef DMLC_USE_PARQUET
+template<typename IndexType, typename DType = real_t>
+Parser<IndexType> *
+CreateParquetParser(const std::string& path,
+                    const std::map<std::string, std::string>& args,
+                    unsigned part_index,
+                    unsigned num_parts) {
+  ParserImpl<IndexType> *parser = new ParquetParser<IndexType>(path, args);
+  return parser;
+}
+#endif
 
 template<typename IndexType, typename DType = real_t>
 inline Parser<IndexType, DType> *
@@ -109,6 +125,9 @@ CreateIter_(const char *uri_,
 DMLC_REGISTER_PARAMETER(LibSVMParserParam);
 DMLC_REGISTER_PARAMETER(LibFMParserParam);
 DMLC_REGISTER_PARAMETER(CSVParserParam);
+#ifdef DMLC_USE_PARQUET
+DMLC_REGISTER_PARAMETER(ParquetParserParam);
+#endif
 }  // namespace data
 
 // template specialization
@@ -254,5 +273,11 @@ DMLC_REGISTER_DATA_PARSER(
   uint32_t, int64_t, csv, data::CreateCSVParser<uint32_t __DMLC_COMMA int64_t>);
 DMLC_REGISTER_DATA_PARSER(
   uint64_t, int64_t, csv, data::CreateCSVParser<uint64_t __DMLC_COMMA int64_t>);
+#ifdef DMLC_USE_PARQUET
+DMLC_REGISTER_DATA_PARSER(
+  uint32_t, real_t, parquet, data::CreateParquetParser<uint32_t __DMLC_COMMA real_t>);
+DMLC_REGISTER_DATA_PARSER(
+  uint64_t, real_t, parquet, data::CreateParquetParser<uint64_t __DMLC_COMMA real_t>);
+#endif
 
 }  // namespace dmlc

@@ -35,27 +35,31 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
     echo "GTEST_PATH="/tmp/gtest >> config.mk
     echo "BUILD_TEST=1" >> config.mk
     make all
-    test/unittest/dmlc_unittest
 fi
 
 if [[ ${TASK} == "cmake_test" ]]; then
     # Build dmlc-core with CMake, including unit tests
     rm -rf build
     mkdir build && cd build
-    cmake .. -DGOOGLE_TEST=ON
-    make
-    cd ..
-    ./build/test/unittest/dmlc_unit_tests
+    cmake .. -GNinja -DGOOGLE_TEST=ON -DUSE_PARQUET=ON -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow
+    ninja
+    ./test/unittest/dmlc_unit_tests
 fi
 
 if [[ ${TASK} == "sanitizer_test" ]]; then
     rm -rf build
     mkdir build && cd build
-    cmake .. -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON \
+    cmake .. -GNinja -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON -DUSE_PARQUET=ON \
+             -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow \
              -DDMLC_ENABLED_SANITIZERS="thread" -DCMAKE_BUILD_TYPE=Debug ..
-    make -j2
-    cd ..
-    ./build/test/unittest/dmlc_unit_tests || true   # For now just display sanitizer errors
+    ninja
+    ./test/unittest/dmlc_unit_tests || true   # For now just display sanitizer errors
+    rm -rf *
+    cmake .. -GNinja -DGOOGLE_TEST=ON -DDMLC_USE_SANITIZER=ON -DUSE_PARQUET=ON \
+             -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow \
+             -DDMLC_ENABLED_SANITIZERS="leak;address" -DCMAKE_BUILD_TYPE=Debug ..
+    ninja
+    ./test/unittest/dmlc_unit_tests || true   # For now just display sanitizer errors
 fi
 
 if [[ ${TASK} == "s390x_test" ]]; then
