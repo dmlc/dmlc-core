@@ -35,7 +35,6 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
     echo "GTEST_PATH="/tmp/gtest >> config.mk
     echo "BUILD_TEST=1" >> config.mk
     make all
-    test/unittest/dmlc_unittest
 fi
 
 if [[ ${TASK} == "cmake_test" ]]; then
