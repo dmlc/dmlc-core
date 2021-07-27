@@ -71,7 +71,9 @@ class LintHelper(object):
         cpplint._SetCountingStyle('toplevel')
         cpplint._line_length = 100
 
-    def set_cpplint_quiet(self, quiet):
+    @staticmethod
+    def set_cpplint_quiet(quiet):
+        """Set the quiet setting for cpplint."""
         cpplint._SetQuiet(quiet)
 
     def process_cpp(self, path, suffix):
