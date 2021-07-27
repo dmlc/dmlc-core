@@ -95,8 +95,6 @@ class ParquetParser : public ParserImpl<IndexType, DType> {
   bool have_next_;
   // number of threads; hardcoded 4 for now
   int nthread_;
-  // OMPException object to catch and rethrow exceptions in omp blocks
-  dmlc::OMPException omp_exc_;
 };
 
 template <typename IndexType, typename DType>
@@ -114,17 +112,14 @@ ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
 
   for (int tid = 0; tid < next_row_groups; ++tid) {
     int row_group_id = row_groups_read_ + tid;
-    futures[tid] = std::async(std::launch::async, [this, row_group_id, data, tid] {
-      this->omp_exc_.Run([&] {
-        ParseRowGroup(row_group_id, &(*data)[tid]);
-      });
+    futures[tid] = std::async(std::launch::async, [&, row_group_id, data, tid] {
+      ParseRowGroup(row_group_id, &(*data)[tid]);
     });
   }
 
   for (int i = 0; i < next_row_groups; ++i) {
     futures[i].wait();
   }
-  omp_exc_.Rethrow();
 
   row_groups_read_ += next_row_groups;
   have_next_ = (row_groups_read_ < num_row_groups_);
