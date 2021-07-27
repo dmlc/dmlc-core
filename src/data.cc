@@ -70,7 +70,7 @@ CreateParquetParser(const std::string& path,
                     const std::map<std::string, std::string>& args,
                     unsigned part_index,
                     unsigned num_parts) {
-  ParserImpl<IndexType> *parser = new ParquetParser<IndexType>(path, args, -1);
+  ParserImpl<IndexType> *parser = new ParquetParser<IndexType>(path, args);
   return parser;
 }
 #endif
