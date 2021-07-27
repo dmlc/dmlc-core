@@ -101,8 +101,7 @@ TEST(ParquetParser, test_end_to_end) {
 
   dmlc::data::ParquetParser<unsigned> parquet_parser(
       parquet_filename,
-      {{"nthreads", "1"}, {"label_column", "-1"}},
-      1
+      {{"nthreads", "1"}, {"label_column", "-1"}}
   );
 
   std::vector<dmlc::data::RowBlockContainer<unsigned>> csv_data(1), parquet_data(1);
