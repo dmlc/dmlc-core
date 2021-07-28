@@ -569,7 +569,8 @@ class Str2T<uint32_t> {
    * \param end End of the string to convert
    * \return Converted value, as unsigned 32-bit integer
    */
-  static inline uint32_t get(const char* begin, const char* /*end*/) {
+  static inline uint32_t get(const char* begin, const char* end) {
+    (void)end;
     return ParseUnsignedInt<uint32_t>(begin, nullptr, 10);
   }
 };
@@ -604,7 +605,8 @@ class Str2T<uint64_t> {
    * \param end End of the string to convert
    * \return Converted value, as unsigned 64-bit integer
    */
-  static inline uint64_t get(const char * begin, const char * /*end*/) {
+  static inline uint64_t get(const char * begin, const char * end) {
+    (void)end;
     return ParseUnsignedInt<uint64_t>(begin, nullptr, 10);
   }
 };
