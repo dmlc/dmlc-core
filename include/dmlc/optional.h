@@ -46,7 +46,7 @@ class optional {
   /*! \brief construct an optional object that contains no value */
   optional() : is_none(true) {}
   /*! \brief construct an optional object with value */
-  optional(const T& value) {
+  explicit optional(const T& value) {
 #pragma GCC diagnostic push
 #if __GNUC__ >= 6
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
