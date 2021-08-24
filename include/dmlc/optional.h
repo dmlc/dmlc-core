@@ -42,10 +42,11 @@ constexpr const nullopt_t nullopt = nullopt_t(0);
 template<typename T>
 class optional {
  public:
+   using value_type = T;
   /*! \brief construct an optional object that contains no value */
   optional() : is_none(true) {}
   /*! \brief construct an optional object with value */
-  explicit optional(const T& value) {
+  optional(const T& value) {
 #pragma GCC diagnostic push
 #if __GNUC__ >= 6
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -65,6 +66,25 @@ class optional {
       new (&val) T(other.value());
     }
 #pragma GCC diagnostic pop
+  }
+  /*! \brief move constructor: If other contains a value */
+  optional(optional&& other) noexcept(
+      std::is_nothrow_move_constructible<T>::value&& std::is_nothrow_move_assignable<T>::value) {
+    if (!other.is_none) {
+      reset();
+    } else if (is_none) {
+      **this = std::move(*other);
+    } else {
+      new (&val) T(std::move(*other));
+      is_none = true;
+    }
+  }
+  /*! \brief reset */
+  void reset() noexcept {
+    if (!is_none)
+      return;
+    (**this).T::~T();
+    is_none = false;
   }
   /*! \brief deconstructor */
   ~optional() {
