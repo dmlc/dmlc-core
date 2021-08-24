@@ -42,7 +42,6 @@ constexpr const nullopt_t nullopt = nullopt_t(0);
 template<typename T>
 class optional {
  public:
-   using value_type = T;
   /*! \brief construct an optional object that contains no value */
   optional() : is_none(true) {}
   /*! \brief construct an optional object with value */
