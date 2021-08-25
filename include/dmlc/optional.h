@@ -31,7 +31,9 @@ struct nullopt_t {
 
 /*! Assign null to optional: optional<T> x = nullopt; */
 constexpr const nullopt_t nullopt = nullopt_t(0);
-
+/*! C++14 aliases */
+template <typename T> using decay_t = typename std::decay<T>::type;
+template <bool B, typename T = void> using enable_if_t = typename std::enable_if<B, T>::type;
 /*!
  * \brief c++17 compatible optional class.
  *
@@ -77,6 +79,12 @@ class optional {
       new (&val) T(std::move(*other));
       is_none = true;
     }
+  }
+  /* \brief Converting move constructor: to construct an optional object of type T that contain a value */
+  template <class U = T, enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr>
+  optional(U && value) {
+      new (&val) T(std::forward<U>(value));
+      is_none = true;
   }
   /*! \brief reset */
   void reset() noexcept {
