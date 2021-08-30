@@ -54,10 +54,10 @@ using enable_constructor_from_other =
     enable_if_t<std::is_constructible<T, Other>::value &&
                 !std::is_constructible<T, optional<U> &>::value &&
                 !std::is_constructible<T, optional<U> &&>::value &&
-                !std::is_constructible<T, const optional<U> &>::value &&
-                !std::is_constructible<T, const optional<U> &&>::value &&
                 !std::is_convertible<optional<U> &, T>::value &&
                 !std::is_convertible<optional<U> &&, T>::value &&
+                !std::is_constructible<T, const optional<U> &>::value &&
+                !std::is_constructible<T, const optional<U> &&>::value &&
                 !std::is_convertible<const optional<U> &, T>::value &&
                 !std::is_convertible<const optional<U> &&, T>::value>;
 /*!
@@ -235,11 +235,29 @@ public:
   /*! \brief return the holded value.
    *         throws std::logic_error if holding no value
    */
-  const T& value() const {
+  T &value() & {
     if (is_none) {
       throw std::logic_error("bad optional access");
     }
-    return *reinterpret_cast<const T*>(&val);
+    return *reinterpret_cast<T *>(&val);
+  }
+  const T &value() const & {
+    if (has_value()) {
+      throw std::logic_error("bad optional access");
+    }
+    return *reinterpret_cast<const T *>(&val);
+  }
+  T &&value() && {
+    if (has_value()) {
+      throw std::logic_error("bad optional access");
+    }
+    return std::move(*val);
+  }
+  const T &&value() const && {
+    if (has_value()) {
+      throw std::logic_error("bad optional access");
+    }
+    return std::move(*val);
   }
   /*! \brief whether this object is holding a value */
   explicit operator bool() const { return !is_none; }
