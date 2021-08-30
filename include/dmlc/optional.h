@@ -74,16 +74,7 @@ public:
   optional() : is_none(true) {}
   /*! \brief copy constructor, if other contains a value, then stored value is
    * direct-intialized with it. */
-  optional(const optional &other) {
-    if (!other.has_value()) {
-      reset();
-    } else if (has_value()) {
-      **this = *other;
-    } else {
-      new (&val) T(*other);
-      is_none = false;
-    }
-  };
+  optional(const optional &other) = default;
   /*! \brief constructs an optional object that contains a value, initialized as
    * if direct-initializing */
   template <typename... Args>
