@@ -233,22 +233,22 @@ public:
     return *reinterpret_cast<T *>(&val);
   }
   const T &value() const & {
-    if (has_value()) {
+    if (is_none) {
       throw std::logic_error("bad optional access");
     }
     return *reinterpret_cast<const T *>(&val);
   }
   T &&value() && {
-    if (has_value()) {
+    if (is_none) {
       throw std::logic_error("bad optional access");
     }
-    return std::move(*val);
+    return std::move(value());
   }
   const T &&value() const && {
-    if (has_value()) {
+    if (is_none) {
       throw std::logic_error("bad optional access");
     }
-    return std::move(*val);
+    return std::move(value());
   }
   /*! \brief whether this object is holding a value */
   explicit operator bool() const { return !is_none; }
