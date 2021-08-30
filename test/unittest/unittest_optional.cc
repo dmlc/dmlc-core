@@ -6,6 +6,37 @@
 #include <dmlc/parameter.h>
 #include <gtest/gtest.h>
 
+#include <vector>
+
+TEST(Constructors, constructors) {
+  dmlc::optional<int> o1;
+  CHECK(!o1);
+
+  dmlc::optional<int> o2 = dmlc::nullopt;
+  CHECK(!o2);
+
+  dmlc::optional<int> o3 = 42;
+  CHECK_EQ(*o3, 42);
+
+  dmlc::optional<int> o4 = o3;
+  CHECK_EQ(*o4, 42);
+
+  dmlc::optional<int> o5 = o1;
+  CHECK(!o5);
+
+  dmlc::optional<int> o6 = std::move(o3);
+  CHECK_EQ(*o6, 42);
+
+  dmlc::optional<int> o7 = 42;
+  CHECK_EQ(*o7, 42);
+
+  dmlc::optional<int> o8 = o7;
+  CHECK_EQ(*o8, 42);
+
+  dmlc::optional<int> o9 = std::move(o7);
+  CHECK_EQ(*o9, 42);
+
+}
 
 TEST(Optional, basics_int) {
   dmlc::optional<int> x;

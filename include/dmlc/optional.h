@@ -29,11 +29,37 @@ struct nullopt_t {
 #endif
 };
 
-/*! Assign null to optional: optional<T> x = nullopt; */
+/*! \brief Assign null to optional: optional<T> x = nullopt; */
 constexpr const nullopt_t nullopt = nullopt_t(0);
-/*! C++14 aliases */
+/*! \brief C++14 aliases */
 template <typename T> using decay_t = typename std::decay<T>::type;
-template <bool B, typename T = void> using enable_if_t = typename std::enable_if<B, T>::type;
+template <bool B, typename T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
+
+/*! \brief disambiguation tags that can be passed to the constructors of
+ * std::optional. A tag type to tell constructor to construct its value in-place
+ */
+struct in_place_t {
+  explicit in_place_t() = default;
+};
+/*! \brief A tag to tell constructor to construct its value in-place */
+static constexpr in_place_t in_place{};
+
+/*! \brief  Is not constructible or convertible from any expression of type
+(possibly const) std::optional<U>, i.e., the following 8 type traits are all
+false: Link: https://en.cppreference.com/w/cpp/utility/optional/optional */
+template <typename T> class optional;
+template <typename T, typename U, typename Other>
+using enable_constructor_from_other =
+    enable_if_t<std::is_constructible<T, Other>::value &&
+                !std::is_constructible<T, optional<U> &>::value &&
+                !std::is_constructible<T, optional<U> &&>::value &&
+                !std::is_constructible<T, const optional<U> &>::value &&
+                !std::is_constructible<T, const optional<U> &&>::value &&
+                !std::is_convertible<optional<U> &, T>::value &&
+                !std::is_convertible<optional<U> &&, T>::value &&
+                !std::is_convertible<const optional<U> &, T>::value &&
+                !std::is_convertible<const optional<U> &&, T>::value>;
 /*!
  * \brief c++17 compatible optional class.
  *
@@ -43,55 +69,121 @@ template <bool B, typename T = void> using enable_if_t = typename std::enable_if
  */
 template<typename T>
 class optional {
- public:
-  /*! \brief construct an optional object that contains no value */
+public:
+  /*! \brief constructs an object that does not contain a value. */
   optional() : is_none(true) {}
-  /*! \brief construct an optional object with value */
-  explicit optional(const T& value) {
-#pragma GCC diagnostic push
-#if __GNUC__ >= 6
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-    is_none = false;
-    new (&val) T(value);
-#pragma GCC diagnostic pop
-  }
-  /*! \brief construct an optional object with another optional object */
-  optional(const optional<T>& other) {
-#pragma GCC diagnostic push
-#if __GNUC__ >= 6
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-    is_none = other.is_none;
-    if (!is_none) {
-      new (&val) T(other.value());
-    }
-#pragma GCC diagnostic pop
-  }
-  /*! \brief move constructor: If other contains a value */
-  optional(optional&& other) noexcept(
-      std::is_nothrow_move_constructible<T>::value&& std::is_nothrow_move_assignable<T>::value) {
-    if (!other.is_none) {
+  /*! \brief construct an optional object with nullopt. */
+  optional(nullopt_t) noexcept {}
+  /*! \brief copy constructor, if other contains a value, then stored value is
+   * direct-intialized with it. */
+  optional(const optional &other) {
+    if (!other.has_value()) {
       reset();
-    } else if (is_none) {
+    } else if (has_value()) {
+      **this = *other;
+    } else {
+      new (&val) T(*other);
+      is_none = false;
+    }
+  };
+  /*! \brief constructs an optional object that contains a value, initialized as
+   * if direct-initializing */
+  template <typename... Args>
+  explicit optional(
+      enable_if_t<std::is_constructible<T, Args...>::value, in_place_t>,
+      Args &&...args) {
+    new (&val) T(std::forward<Args>(args)...);
+    is_none = false;
+  }
+  /*! \brief Constructs an optional object that contains a value, initialized as
+   * if direct-initializing */
+  template <typename U, typename... Args>
+  explicit optional(
+      enable_if_t<std::is_constructible<T, std::initializer_list<U> &,
+                                        Args &&...>::value,
+                  in_place_t>,
+      std::initializer_list<U> ilist, Args &&...args) {
+    construct(ilist, std::forward<Args>(args)...);
+  }
+  /*! \brief move constructor: If other contains a value, then stored value is
+   * direct-intialized with it. */
+  optional(optional &&other) noexcept(
+      std::is_nothrow_move_constructible<T>::value
+          &&std::is_nothrow_move_assignable<T>::value) {
+    if (!other.has_value()) {
+      reset();
+    } else if (has_value()) {
       **this = std::move(*other);
     } else {
       new (&val) T(std::move(*other));
-      is_none = true;
+      is_none = false;
     }
   }
-  /* \brief Converting move constructor: to construct an optional object of type T that contain a value */
-  template <class U = T, enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr>
-  optional(U && value) {
-      new (&val) T(std::forward<U>(value));
-      is_none = true;
+  /*! \brief constructs the stored value with value with `other` parameter.*/
+  template <
+      typename U = T,
+      enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr,
+      enable_if_t<std::is_convertible<T, U &&>::value &&
+                  !std::is_same<decay_t<U>, in_place_t>::value &&
+                  !std::is_same<optional<T>, decay_t<U>>::value> * = nullptr>
+  optional(U &&other) noexcept {
+    new (&val) T(std::forward<U>(other));
+    is_none = false;
+  }
+  /*! \brief explicit constructor: constructs the stored value with `other`
+   * parameter. */
+  template <
+      typename U = T,
+      enable_if_t<!std::is_convertible<U &&, T>::value> * = nullptr,
+      enable_if_t<std::is_convertible<T, U &&>::value &&
+                  !std::is_same<decay_t<U>, in_place_t>::value &&
+                  !std::is_same<optional<T>, decay_t<U>>::value> * = nullptr>
+  explicit optional(U &&other) noexcept {
+    new (&val) T(std::forward<U>(other));
+    is_none = false;
+  }
+  /*! \brief converting copy constructor */
+  template <typename U,
+            enable_constructor_from_other<T, U, const U &> * = nullptr,
+            enable_if_t<std::is_convertible<const U &, T>::value> * = nullptr>
+  optional(const optional<U> &other) {
+    if (other.has_value()) {
+      new (&val) T(std::forward<U>(other));
+      is_none = false;
+    }
+  }
+  /*! \brief explicit converting copy constructor */
+  template <typename U,
+            enable_constructor_from_other<T, U, const U &> * = nullptr,
+            enable_if_t<!std::is_convertible<const U &, T>::value> * = nullptr>
+  explicit optional(const optional<U> &other) {
+    if (other.has_value()) {
+      new (&val) T(std::forward<U>(other));
+      is_none = false;
+    }
+  }
+  /*! \brief converting move constructor */
+  template <typename U, enable_constructor_from_other<T, U, U &&> * = nullptr,
+            enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr>
+  optional(optional<U> &&other) {
+    if (other.has_value()) {
+      construct(std::move(*other));
+    }
+  }
+  /*! \brief explicit converting move constructor */
+  template <typename U, enable_constructor_from_other<T, U, U &&> * = nullptr,
+            enable_if_t<!std::is_convertible<U &&, T>::value> * = nullptr>
+  explicit optional(optional<U> &&other) {
+    if (other.has_value()) {
+      construct(std::move(*other));
+    }
   }
   /*! \brief reset */
   void reset() noexcept {
-    if (!is_none)
+    if (!has_value())
       return;
     (**this).T::~T();
-    is_none = false;
+    is_none = true;
   }
   /*! \brief deconstructor */
   ~optional() {
@@ -159,6 +251,11 @@ class optional {
   bool is_none;
   // on stack storage of value
   typename std::aligned_storage<sizeof(T), alignof(T)>::type val;
+
+  template <typename... Args> void construct(Args &&...args) noexcept {
+    new (std::addressof(val)) T(std::forward<Args>(args)...);
+    is_none = false;
+  }
 };
 
 /*! \brief serialize an optional object to string.
