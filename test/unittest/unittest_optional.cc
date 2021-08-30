@@ -8,7 +8,7 @@
 
 #include <vector>
 
-TEST(Constructors, constructors) {
+TEST(Optional, constructors) {
   dmlc::optional<int> o1;
   CHECK(!o1);
 
@@ -44,6 +44,19 @@ TEST(Constructors, constructors) {
 
   dmlc::optional<std::string> o14(dmlc::in_place, 3, 'A');
   CHECK_EQ(*o14, "AAA");
+}
+
+TEST(Optional, in_place) {
+  dmlc::optional<int> o1{dmlc::in_place};
+  CHECK(*o1 == 0);
+
+  dmlc::optional<std::vector<int>> o2(dmlc::in_place, {0, 1});
+  CHECK((*o2)[0] == 0);
+  CHECK((*o2)[1] == 1);
+
+  dmlc::optional<std::tuple<int, int>> o3(dmlc::in_place, 0, 1);
+  CHECK(std::get<0>(*o3) == 0);
+  CHECK(std::get<1>(*o3) == 1);
 }
 
 TEST(Optional, basics_int) {
