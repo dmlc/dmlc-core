@@ -11,10 +11,6 @@
 TEST(Constructors, constructors) {
   dmlc::optional<int> o1;
   CHECK(!o1);
-
-  dmlc::optional<int> o2 = dmlc::nullopt;
-  CHECK(!o2);
-
   dmlc::optional<int> o3 = 42;
   CHECK_EQ(*o3, 42);
 

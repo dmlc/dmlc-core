@@ -72,8 +72,6 @@ class optional {
 public:
   /*! \brief constructs an object that does not contain a value. */
   optional() : is_none(true) {}
-  /*! \brief construct an optional object with nullopt. */
-  optional(nullopt_t) : is_none(true) {}
   /*! \brief copy constructor, if other contains a value, then stored value is
    * direct-intialized with it. */
   optional(const optional &other) {
