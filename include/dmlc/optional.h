@@ -60,6 +60,11 @@ using enable_constructor_from_other =
                 !std::is_constructible<T, const optional<U> &&>::value &&
                 !std::is_convertible<const optional<U> &, T>::value &&
                 !std::is_convertible<const optional<U> &&, T>::value>;
+template <typename T, typename U>
+using enable_constructor_from_value =
+    enable_if_t<std::is_constructible<T, U &&>::value &&
+                !std::is_same<decay_t<U>, in_place_t>::value &&
+                !std::is_same<optional<T>, decay_t<U>>::value>;
 /*!
  * \brief c++17 compatible optional class.
  *
@@ -67,7 +72,7 @@ using enable_constructor_from_other =
  * hold no value (string representation "None")
  * or hold a value of type T.
  */
-template<typename T>
+template <typename T>
 class optional {
 public:
   /*! \brief constructs an object that does not contain a value. */
@@ -111,24 +116,18 @@ public:
     }
   }
   /*! \brief constructs the stored value with value with `other` parameter.*/
-  template <
-      typename U = T,
-      enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr,
-      enable_if_t<std::is_convertible<T, U &&>::value &&
-                  !std::is_same<decay_t<U>, in_place_t>::value &&
-                  !std::is_same<optional<T>, decay_t<U>>::value> * = nullptr>
+  template <typename U = T,
+            enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr,
+            enable_constructor_from_value<T, U> * = nullptr>
   optional(U &&other) noexcept {
     new (&val) T(std::forward<U>(other));
     is_none = false;
   }
   /*! \brief explicit constructor: constructs the stored value with `other`
    * parameter. */
-  template <
-      typename U = T,
-      enable_if_t<!std::is_convertible<U &&, T>::value> * = nullptr,
-      enable_if_t<std::is_convertible<T, U &&>::value &&
-                  !std::is_same<decay_t<U>, in_place_t>::value &&
-                  !std::is_same<optional<T>, decay_t<U>>::value> * = nullptr>
+  template <typename U = T,
+            enable_if_t<!std::is_convertible<U &&, T>::value> * = nullptr,
+            enable_constructor_from_value<T, U> * = nullptr>
   explicit optional(U &&other) noexcept {
     new (&val) T(std::forward<U>(other));
     is_none = false;
