@@ -11,6 +11,10 @@
 TEST(Constructors, constructors) {
   dmlc::optional<int> o1;
   CHECK(!o1);
+
+  dmlc::optional<int> o2 = dmlc::nullopt;
+  CHECK(!o2);
+
   dmlc::optional<int> o3 = 42;
   CHECK_EQ(*o3, 42);
 
@@ -32,6 +36,14 @@ TEST(Constructors, constructors) {
   dmlc::optional<int> o9 = std::move(o7);
   CHECK_EQ(*o9, 42);
 
+  dmlc::optional<int> o10, o11 = 1, o12 = o11;
+  dmlc::optional<std::string> o13(dmlc::in_place, {'a', 'b', 'c'});
+  CHECK_EQ(*o11, 1);
+  CHECK_EQ(*o12, 1);
+  CHECK_EQ(*o13, "abc");
+
+  dmlc::optional<std::string> o14(dmlc::in_place, 3, 'A');
+  CHECK_EQ(*o14, "AAA");
 }
 
 TEST(Optional, basics_int) {
