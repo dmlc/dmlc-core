@@ -37,7 +37,7 @@ template <bool B, typename T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 /*! \brief disambiguation tags that can be passed to the constructors of
- * std::optional. A tag type to tell constructor to construct its value in-place
+ * dmlc::optional. A tag type to tell constructor to construct its value in-place
  */
 struct in_place_t {
   explicit in_place_t() = default;
@@ -46,7 +46,7 @@ struct in_place_t {
 static constexpr in_place_t in_place{};
 
 /*! \brief  Is not constructible or convertible from any expression of type
-(possibly const) std::optional<U>, i.e., the following 8 type traits are all
+(possibly const) dmlc::optional<U>, i.e., the following 8 type traits are all
 false: Link: https://en.cppreference.com/w/cpp/utility/optional/optional */
 template <typename T> class optional;
 template <typename T, typename U, typename Other>
@@ -75,6 +75,7 @@ using enable_constructor_from_value =
 template <typename T>
 class optional {
 public:
+  using value_type = T;
   /*! \brief constructs an object that does not contain a value. */
   optional() : is_none(true) {}
    /*! \brief constructs an object that does contain a nullopt value. */
@@ -82,6 +83,20 @@ public:
   /*! \brief copy constructor, if other contains a value, then stored value is
    * direct-intialized with it. */
   optional(const optional &other) = default;
+  /*! \brief move constructor: If other contains a value, then stored value is
+   * direct-intialized with it. */
+  optional(optional &&other) noexcept(
+      std::is_nothrow_move_constructible<T>::value
+          &&std::is_nothrow_move_assignable<T>::value) {
+    if (!other.has_value()) {
+      reset();
+    } else if (has_value()) {
+      **this = std::move(*other);
+    } else {
+      new (&val) T(std::move(*other));
+      is_none = false;
+    }
+  }
   /*! \brief constructs an optional object that contains a value, initialized as
    * if direct-initializing */
   template <typename... Args>
@@ -101,22 +116,8 @@ public:
       std::initializer_list<U> ilist, Args &&...args) {
     construct(ilist, std::forward<Args>(args)...);
   }
-  /*! \brief move constructor: If other contains a value, then stored value is
-   * direct-intialized with it. */
-  optional(optional &&other) noexcept(
-      std::is_nothrow_move_constructible<T>::value
-          &&std::is_nothrow_move_assignable<T>::value) {
-    if (!other.has_value()) {
-      reset();
-    } else if (has_value()) {
-      **this = std::move(*other);
-    } else {
-      new (&val) T(std::move(*other));
-      is_none = false;
-    }
-  }
   /*! \brief constructs the stored value with value with `other` parameter.*/
-  template <typename U = T,
+  template <typename U = value_type,
             enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr,
             enable_constructor_from_value<T, U> * = nullptr>
   optional(U &&other) noexcept {
@@ -125,7 +126,7 @@ public:
   }
   /*! \brief explicit constructor: constructs the stored value with `other`
    * parameter. */
-  template <typename U = T,
+  template <typename U = value_type,
             enable_if_t<!std::is_convertible<U &&, T>::value> * = nullptr,
             enable_constructor_from_value<T, U> * = nullptr>
   explicit optional(U &&other) noexcept {
@@ -138,8 +139,7 @@ public:
             enable_if_t<std::is_convertible<const U &, T>::value> * = nullptr>
   optional(const optional<U> &other) {
     if (other.has_value()) {
-      new (&val) T(std::forward<U>(other));
-      is_none = false;
+      construct(*other);
     }
   }
   /*! \brief explicit converting copy constructor */
@@ -148,8 +148,7 @@ public:
             enable_if_t<!std::is_convertible<const U &, T>::value> * = nullptr>
   explicit optional(const optional<U> &other) {
     if (other.has_value()) {
-      new (&val) T(std::forward<U>(other));
-      is_none = false;
+      construct(*other);
     }
   }
   /*! \brief converting move constructor */
@@ -256,7 +255,7 @@ public:
 
  private:
   // whether this is none
-  bool is_none;
+  bool is_none = true;
   // on stack storage of value
   typename std::aligned_storage<sizeof(T), alignof(T)>::type val;
 
