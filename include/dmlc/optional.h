@@ -198,8 +198,13 @@ public:
    *  \return return self to support chain assignment
    */
   optional<T>& operator=(const optional<T> &other) {
+#pragma GCC diagnostic push
+#if __GNUC__ >= 6
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif   
     (optional<T>(other)).swap(*this);
     return *this;
+#pragma GCC diagnostic pop
   }
   /*! \brief clear the value this object is holding.
    *         optional<T> x = nullopt;
