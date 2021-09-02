@@ -40,7 +40,7 @@ using enable_if_t = typename std::enable_if<B, T>::type;
  * dmlc::optional. A tag type to tell constructor to construct its value in-place
  */
 struct in_place_t {
-  in_place_t() = default;
+  explicit in_place_t() = default;  // NOLINT(*)
 };
 /*! \brief A tag to tell constructor to construct its value in-place */
 static constexpr in_place_t in_place{};
@@ -79,7 +79,7 @@ class optional {
   /*! \brief constructs an object that does not contain a value. */
   optional() : is_none(true) {}
   /*! \brief constructs an object that does contain a nullopt value. */
-  explicit optional(dmlc::nullopt_t) noexcept : is_none(true) {}
+  optional(dmlc::nullopt_t) noexcept : is_none(true) {} // NOLINT(*)
   /*! \brief copy constructor, if other contains a value, then stored value is
    * direct-intialized with it. */
   optional(const optional &other) = default;
