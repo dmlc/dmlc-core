@@ -40,7 +40,7 @@ using enable_if_t = typename std::enable_if<B, T>::type;
  * dmlc::optional. A tag type to tell constructor to construct its value in-place
  */
 struct in_place_t {
-  explicit in_place_t() = default;
+  in_place_t() = default;
 };
 /*! \brief A tag to tell constructor to construct its value in-place */
 static constexpr in_place_t in_place{};
@@ -74,12 +74,12 @@ using enable_constructor_from_value =
  */
 template <typename T>
 class optional {
-public:
+ public:
   using value_type = T;
   /*! \brief constructs an object that does not contain a value. */
   optional() : is_none(true) {}
-   /*! \brief constructs an object that does contain a nullopt value. */
-  optional(dmlc::nullopt_t) noexcept : is_none(true) {}
+  /*! \brief constructs an object that does contain a nullopt value. */
+  explicit optional(dmlc::nullopt_t) noexcept : is_none(true) {}
   /*! \brief copy constructor, if other contains a value, then stored value is
    * direct-intialized with it. */
   optional(const optional &other) = default;
@@ -120,7 +120,7 @@ public:
   template <typename U = value_type,
             enable_if_t<std::is_convertible<U &&, T>::value> * = nullptr,
             enable_constructor_from_value<T, U> * = nullptr>
-  optional(U &&other) noexcept {
+  optional(U &&other) noexcept {  // NOLINT(*)
     new (&val) T(std::forward<U>(other));
     is_none = false;
   }
@@ -201,7 +201,7 @@ public:
 #pragma GCC diagnostic push
 #if __GNUC__ >= 6
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif   
+#endif
     (optional<T>(other)).swap(*this);
     return *this;
 #pragma GCC diagnostic pop
