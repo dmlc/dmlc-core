@@ -29,7 +29,7 @@ struct nullopt_t {
 #endif
 };
 
-/*! \brief Assign null to optional: optional<T> x = nullopt; */
+/*! Assign null to optional: optional<T> x = nullopt; */
 constexpr const nullopt_t nullopt = nullopt_t(0);
 /*! \brief C++14 aliases */
 template <typename T> using decay_t = typename std::decay<T>::type;
