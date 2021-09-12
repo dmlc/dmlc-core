@@ -24,7 +24,5 @@ test/registry_test: test/registry_test.cc
 $(TEST) :
 	$(CXX) $(CFLAGS) -o $@ $(filter %.cpp %.o %.c %.cc %.a,  $^) $(LDFLAGS)
 
-include test/unittest/dmlc_unittest.mk
-
 ALL_TEST=$(TEST) $(UNITTEST)
 ALL_TEST_OBJ=$(UNITTEST_OBJ)

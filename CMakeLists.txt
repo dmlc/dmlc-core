@@ -17,6 +17,7 @@ dmlccore_option(USE_HDFS "Build with HDFS support" OFF)
 dmlccore_option(DMLC_HDFS_SHARED "Build with dynamic HDFS library" OFF)
 dmlccore_option(USE_AZURE "Build with AZURE support" OFF)
 dmlccore_option(USE_S3 "Build with S3 support" OFF)
+dmlccore_option(USE_PARQUET "Build with Arrow Parquet" OFF)
 dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler supports it" OFF)
 dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
@@ -66,6 +67,21 @@ if (DMLC_USE_SANITIZER)
   include(cmake/Sanitizer.cmake)
   enable_sanitizers("${DMLC_ENABLED_SANITIZERS}")
 endif (DMLC_USE_SANITIZER)
+
+if(USE_PARQUET)
+  find_package(Arrow REQUIRED)
+  find_package(Parquet REQUIRED)
+  if(BUILD_SHARED_LIBS)
+    target_link_libraries(dmlc PRIVATE arrow_shared parquet_shared)
+  else()
+    # No need to use arrow_static / parquet_static here, since
+    # we don't have a compelling need to include Arrow and Parquet
+    # in the generaed static lib libdmlc.a. This is similar to
+    # how we don't statically link with OpenSSL and cURL.
+    target_link_libraries(dmlc PUBLIC arrow_shared parquet_shared)
+  endif()
+  set(DMLC_USE_PARQUET 1)
+endif()
 
 # HDFS configurations
 if(USE_HDFS)
