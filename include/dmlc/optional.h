@@ -42,7 +42,7 @@ constexpr const nullopt_t nullopt = nullopt_t(0);
 template<typename T>
 class optional {
  public:
- /*! \brief constructs an object that does not contain a value. */
+  /*! \brief constructs an object that does not contain a value. */
   optional() : is_none(true) {}
   /*! \brief constructs an object that does contain a nullopt value. */
   optional(dmlc::nullopt_t) noexcept : is_none(true) {} // NOLINT(*)
