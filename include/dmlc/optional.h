@@ -42,8 +42,13 @@ constexpr const nullopt_t nullopt = nullopt_t(0);
 template<typename T>
 class optional {
  public:
-  /*! \brief construct an optional object that contains no value */
+ /*! \brief constructs an object that does not contain a value. */
   optional() : is_none(true) {}
+  /*! \brief constructs an object that does contain a nullopt value. */
+  optional(dmlc::nullopt_t) noexcept : is_none(true) {} // NOLINT(*)
+  /*! \brief copy constructor, if other contains a value, then stored value is
+   * direct-intialized with it. */
+  optional(const optional &other) = default;
   /*! \brief construct an optional object with value */
   explicit optional(const T& value) {
 #pragma GCC diagnostic push
@@ -52,18 +57,6 @@ class optional {
 #endif
     is_none = false;
     new (&val) T(value);
-#pragma GCC diagnostic pop
-  }
-  /*! \brief construct an optional object with another optional object */
-  optional(const optional<T>& other) {
-#pragma GCC diagnostic push
-#if __GNUC__ >= 6
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-    is_none = other.is_none;
-    if (!is_none) {
-      new (&val) T(other.value());
-    }
 #pragma GCC diagnostic pop
   }
   /*! \brief deconstructor */
