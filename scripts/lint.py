@@ -43,7 +43,8 @@ class LintHelper(object):
         for fname, emap in result_map.items():
             if len(emap) == 0:
                 continue
-            strm.write(f'{fname}: {sum(emap.values())} Errors of {len(emap)} Categories map={str(emap)}\n')
+            strm.write(
+                f'{fname}: {sum(emap.values())} Errors of {len(emap)} Categories map={str(emap)}\n')
         return len(result_map) - npass
 
     def __init__(self):
