@@ -39,12 +39,12 @@ class LintHelper(object):
         if len(result_map) == 0:
             return 0
         npass = len(x for x in result_map.values() if len(x) == 0)
-        strm.write('=====%d/%d %s files passed check=====\n' % (npass, len(result_map), ftype))
+        strm.write(f'====={npass}/{len(result_map)} {ftype} files passed check=====\n')
         for fname, emap in result_map.items():
             if len(emap) == 0:
                 continue
-            strm.write('%s: %d Errors of %d Categories map=%s\n' % (
-                fname, sum(emap.values()), len(emap), str(emap)))
+            strm.write(
+                f'{fname}: {sum(emap.values())} Errors of {len(emap)} Categories map={str(emap)}\n')
         return len(result_map) - npass
 
     def __init__(self):
@@ -111,7 +111,7 @@ class LintHelper(object):
         if nerr == 0:
             strm.write('All passed!\n')
         else:
-            strm.write('%d files failed lint\n' % nerr)
+            strm.write(f'{nerr} files failed lint\n')
         return nerr
 
 # singleton helper for lint check
