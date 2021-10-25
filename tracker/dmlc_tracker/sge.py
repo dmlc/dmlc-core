@@ -29,7 +29,7 @@ def submit(args):
 
     def sge_submit(nworker, nserver, pass_envs):
         """Internal submission function."""
-        env_arg = ','.join(['%s=\"%s\"' % (k, str(v)) for k, v in pass_envs.items()])
+        env_arg = ','.join('%s=\"%s\"' % (k, str(v)) for k, v in pass_envs.items())
         cmd = 'qsub -cwd -t 1-%d -S /bin/bash' % (nworker + nserver)
         if args.queue != 'default':
             cmd += '-q %s' % args.queue
