@@ -4,6 +4,8 @@
 #include <dmlc/threadediter.h>
 #include <gtest/gtest.h>
 
+#include "unittest_threaditer.h"
+
 enum ExcType {
   kDMLCException,
   kStdException,
@@ -11,15 +13,6 @@ enum ExcType {
 
 using namespace dmlc;
 namespace producer_test {
-inline void delay(int sleep) {
-  if (sleep < 0) {
-    int d = rand() % (-sleep);
-    std::this_thread::sleep_for(std::chrono::milliseconds(d));
-  } else {
-    std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
-  }
-}
-
 // int was only used as example, in real life
 // use big data blob
 struct IntProducerNextExc : public ThreadedIter<int>::Producer {
