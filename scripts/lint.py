@@ -61,7 +61,7 @@ class LintHelper(object):
 
         self.pylint_cats = set(['error', 'warning', 'convention', 'refactor'])
         # setup cpp lint
-        cpplint_args = ['.', '--extensions=' + (','.join(CXX_SUFFIX))]
+        cpplint_args = ['--quiet', '--extensions=' + (','.join(CXX_SUFFIX)), '.']
         _ = cpplint.ParseArguments(cpplint_args)
         cpplint._SetFilters(','.join(['-build/c++11',
                                       '-build/namespaces',
@@ -169,6 +169,7 @@ def main():
     parser.add_argument('path', nargs='+', help='path to traverse')
     parser.add_argument('--exclude_path', nargs='+', default=[],
                         help='exclude this path, and all subfolders if path is a folder')
+    parser.add_argument('--quiet', action='store_true', help='run cpplint in quiet mode')
     parser.add_argument('--pylint-rc', default=None,
                         help='pylint rc file')
     args = parser.parse_args()
