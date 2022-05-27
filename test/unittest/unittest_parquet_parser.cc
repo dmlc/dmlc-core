@@ -21,6 +21,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <condition_variable>
 #include "../src/data/csv_parser.h"
 #include "../src/data/parquet_parser.h"
 
