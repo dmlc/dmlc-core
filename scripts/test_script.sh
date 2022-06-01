@@ -41,7 +41,7 @@ if [[ ${TASK} == "cmake_test" ]]; then
     # Build dmlc-core with CMake, including unit tests
     rm -rf build
     mkdir build && cd build
-    cmake .. -GNinja -DGOOGLE_TEST=ON -DUSE_PARQUET=ON -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow
+    CC=gcc-11 CXX=g++-11 cmake .. -GNinja -DGOOGLE_TEST=ON -DUSE_PARQUET=ON -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow
     ninja -v
     ./test/unittest/dmlc_unit_tests
 fi
