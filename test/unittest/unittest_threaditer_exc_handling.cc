@@ -59,7 +59,7 @@ struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
       throw std::exception();
     }
   }
-  virtual bool Next(int **inout_dptr) { return true; }
+  bool Next(int ** /*inout_dptr*/) override { return true; }
 };
 }
 

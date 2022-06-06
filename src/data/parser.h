@@ -112,8 +112,9 @@ class ThreadedParser : public ParserImpl<IndexType, DType> {
   }
 
  protected:
-  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
-    LOG(FATAL) << "cannot call ParseNext"; return false;
+  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType>> * /*data*/) {
+    LOG(FATAL) << "cannot call ParseNext";
+    return false;
   }
 
  private:

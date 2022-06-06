@@ -241,7 +241,7 @@ Config::ConfigIterator& Config::ConfigIterator::operator++() {
   return *this;
 }
 
-Config::ConfigIterator Config::ConfigIterator::operator++(int any) {
+Config::ConfigIterator Config::ConfigIterator::operator++(int) {
   ConfigIterator tmp(*this);
   operator++();
   return tmp;
