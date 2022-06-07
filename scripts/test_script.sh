@@ -23,8 +23,8 @@ if [[ ${TASK} == "unittest_gtest" ]]; then
     cp make/config.mk .
     if [[ $(uname) != "Darwin" ]]; then
         echo "USE_S3=1" >> config.mk
-        echo "export CXX = g++-5" >> config.mk
-        export CXX=g++-5
+        echo "export CXX = g++" >> config.mk
+        export CXX=g++
     else
         echo "USE_S3=0" >> config.mk
         echo "USE_OPENMP=1" >> config.mk
@@ -42,7 +42,7 @@ if [[ ${TASK} == "cmake_test" ]]; then
     rm -rf build
     mkdir build && cd build
     cmake .. -GNinja -DGOOGLE_TEST=ON -DUSE_PARQUET=ON -DParquet_DIR=$CONDA_PREFIX/lib/cmake/arrow
-    ninja
+    ninja -v
     ./test/unittest/dmlc_unit_tests
 fi
 
