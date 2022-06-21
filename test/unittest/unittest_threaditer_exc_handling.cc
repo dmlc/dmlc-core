@@ -52,7 +52,7 @@ struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
   IntProducerBeforeFirst(ExcType exc_type = ExcType::kDMLCException)
       : exc_type(exc_type) {}
   virtual ~IntProducerBeforeFirst() = default;
-  virtual void BeforeFirst(void) {
+  void BeforeFirst() override {
     if (exc_type == ExcType::kDMLCException) {
       LOG(FATAL) << "Throw exception in before first";
     } else {
