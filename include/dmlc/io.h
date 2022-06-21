@@ -167,7 +167,6 @@ class InputSplit {
    *  this is a hint so may not be enforced,
    *  but InputSplit will try adjust its internal buffer
    *  size to the hinted value
-   * \param chunk_size the chunk size
    */
   virtual void HintChunkSize(size_t /*chunk_size*/) {}
   /*! \brief get the total size of the InputSplit */
@@ -221,7 +220,6 @@ class InputSplit {
    *
    *
    * \param out_chunk used to store the result
-   * \param n_records used as a hint for how many records should be returned, may be ignored
    * \return true if we can successfully get next record
    *     false if we reached end of split
    * \sa InputSplit::Create for definition of record
