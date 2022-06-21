@@ -107,7 +107,7 @@ class ThreadedParser : public ParserImpl<IndexType, DType> {
     }
     return false;
   }
-  virtual size_t BytesRead(void) const {
+  virtual size_t BytesRead() const {
     return base_->BytesRead();
   }
 
