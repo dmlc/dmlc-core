@@ -7,12 +7,14 @@
 #ifndef DMLC_INPUT_SPLIT_SHUFFLE_H_
 #define DMLC_INPUT_SPLIT_SHUFFLE_H_
 
+#include <dmlc/io.h>
+
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
-#include <vector>
-#include <string>
-#include <algorithm>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace dmlc {
 /*! \brief class to construct input split with global shuffling */

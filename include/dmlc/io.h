@@ -167,9 +167,8 @@ class InputSplit {
    *  this is a hint so may not be enforced,
    *  but InputSplit will try adjust its internal buffer
    *  size to the hinted value
-   * \param chunk_size the chunk size
    */
-  virtual void HintChunkSize(size_t chunk_size) {}
+  virtual void HintChunkSize(size_t /*chunk_size*/) {}
   /*! \brief get the total size of the InputSplit */
   virtual size_t GetTotalSize(void) = 0;
   /*! \brief reset the position of InputSplit to beginning */
@@ -221,15 +220,12 @@ class InputSplit {
    *
    *
    * \param out_chunk used to store the result
-   * \param n_records used as a hint for how many records should be returned, may be ignored
    * \return true if we can successfully get next record
    *     false if we reached end of split
    * \sa InputSplit::Create for definition of record
    * \sa RecordIOChunkReader to parse recordio content from out_chunk
    */
-  virtual bool NextBatch(Blob *out_chunk, size_t n_records) {
-    return NextChunk(out_chunk);
-  }
+  virtual bool NextBatch(Blob *out_chunk, size_t /*n_records*/) { return NextChunk(out_chunk); }
   /*! \brief destructor*/
   virtual ~InputSplit(void) DMLC_THROW_EXCEPTION {}
   /*!

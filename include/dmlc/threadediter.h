@@ -87,7 +87,7 @@ class ThreadedIter : public DataIter<DType> {
     // virtual destructor
     virtual ~Producer() = default;
     /*! \brief reset the producer to beginning */
-    virtual void BeforeFirst(void) {
+    virtual void BeforeFirst() {
       NotImplemented();
     }
     /*!

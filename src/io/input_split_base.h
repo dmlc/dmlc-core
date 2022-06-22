@@ -112,7 +112,7 @@ class InputSplitBase : public InputSplit {
    *  chunk with new batch of data without using internal
    *  temporary chunk
    */
-  virtual bool NextBatchEx(Chunk *chunk, size_t n_records) {
+  virtual bool NextBatchEx(Chunk *chunk, size_t /*n_records*/) {
     return NextChunkEx(chunk);
   }
 

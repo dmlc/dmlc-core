@@ -68,8 +68,8 @@ template<typename IndexType, typename DType = real_t>
 Parser<IndexType> *
 CreateParquetParser(const std::string& path,
                     const std::map<std::string, std::string>& args,
-                    unsigned part_index,
-                    unsigned num_parts) {
+                    unsigned /*part_index*/,
+                    unsigned /*num_parts*/) {
   ParserImpl<IndexType> *parser = new ParquetParser<IndexType>(path, args);
   return parser;
 }

@@ -67,7 +67,7 @@ void write_to_parquet(const std::vector<std::vector<float>>& entries, const std:
       parquet::arrow::WriteTable(*table.get(), arrow::default_memory_pool(), outfile,
         n_obs * n_feature));
 
-  outfile->Close();
+  CHECK(outfile->Close().ok());
 }
 
 }  // anonymous namespace
