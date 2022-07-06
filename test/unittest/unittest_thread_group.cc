@@ -44,9 +44,9 @@ static inline int dmlc_usleep(useconds_t useconds) {
 
 static std::atomic<int> thread_count(0);
 
-static int this_is_thread_func(std::string label, const bool with_delay) {
+static int this_is_thread_func(std::string, const bool with_delay) {
   ++thread_count;
-  if(with_delay) {
+  if (with_delay) {
     dmlc_usleep(1e4);
   }
   --thread_count;

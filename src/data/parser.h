@@ -107,13 +107,14 @@ class ThreadedParser : public ParserImpl<IndexType, DType> {
     }
     return false;
   }
-  virtual size_t BytesRead(void) const {
+  virtual size_t BytesRead() const {
     return base_->BytesRead();
   }
 
  protected:
-  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
-    LOG(FATAL) << "cannot call ParseNext"; return false;
+  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType>> * /*data*/) {
+    LOG(FATAL) << "cannot call ParseNext";
+    return false;
   }
 
  private:

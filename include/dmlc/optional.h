@@ -25,7 +25,7 @@ struct nullopt_t {
   explicit nullopt_t(int a) {}
 #else
   /*! \brief dummy constructor */
-  constexpr explicit nullopt_t(int a) {}
+  constexpr explicit nullopt_t(int) {}
 #endif
 };
 
@@ -80,9 +80,18 @@ class optional {
   optional() : is_none(true) {}
   /*! \brief constructs an object that does contain a nullopt value. */
   optional(dmlc::nullopt_t) noexcept : is_none(true) {} // NOLINT(*)
-  /*! \brief copy constructor, if other contains a value, then stored value is
-   * direct-intialized with it. */
-  optional(const optional &other) = default;
+  /*! \brief construct an optional object with another optional object */
+  optional(const optional<T>& other) {
+#pragma GCC diagnostic push
+#if __GNUC__ >= 6
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+    is_none = other.is_none;
+    if (!is_none) {
+      new (&val) T(other.value());
+    }
+#pragma GCC diagnostic pop
+  }
   /*! \brief move constructor: If other contains a value, then stored value is
    * direct-intialized with it. */
   optional(optional &&other) noexcept(

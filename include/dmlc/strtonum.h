@@ -521,22 +521,20 @@ class Str2T {
   /*!
    * \brief Convert a string into type T
    * \param begin Beginning of the string to convert
-   * \param end End of the string to convert
    * \return Converted value, in type T
    */
-  static inline T get(const char * begin, const char * end);
+  static inline T get(const char * begin);
 };
 
 /*!
  * \brief Convenience function for converting string into type T
  * \param begin Beginning of the string to convert
- * \param end End of the string to convert
  * \return Converted value, in type T
  * \tparam Type of converted value
  */
 template<typename T>
-inline T Str2Type(const char * begin, const char * end) {
-  return Str2T<T>::get(begin, end);
+inline T Str2Type(const char * begin) {
+  return Str2T<T>::get(begin);
 }
 
 /*!
@@ -548,10 +546,9 @@ class Str2T<int32_t> {
   /*!
    * \brief Convert a string into signed 32-bit integer
    * \param begin Beginning of the string to convert
-   * \param end End of the string to convert
    * \return Converted value, as signed 32-bit integer
    */
-  static inline int32_t get(const char * begin, const char * end) {
+  static inline int32_t get(const char * begin) {
     return ParseSignedInt<int32_t>(begin, NULL, 10);
   }
 };
@@ -565,10 +562,9 @@ class Str2T<uint32_t> {
   /*!
    * \brief Convert a string into unsigned 32-bit integer
    * \param begin Beginning of the string to convert
-   * \param end End of the string to convert
    * \return Converted value, as unsigned 32-bit integer
    */
-  static inline uint32_t get(const char* begin, const char* end) {
+  static inline uint32_t get(const char* begin) {
     return ParseUnsignedInt<uint32_t>(begin, NULL, 10);
   }
 };
@@ -582,10 +578,9 @@ class Str2T<int64_t> {
   /*!
    * \brief Convert a string into signed 64-bit integer
    * \param begin Beginning of the string to convert
-   * \param end End of the string to convert
    * \return Converted value, as signed 64-bit integer
    */
-  static inline int64_t get(const char * begin, const char * end) {
+  static inline int64_t get(const char * begin) {
     return ParseSignedInt<int64_t>(begin, NULL, 10);
   }
 };
@@ -599,10 +594,9 @@ class Str2T<uint64_t> {
   /*!
    * \brief Convert a string into unsigned 64-bit integer
    * \param begin Beginning of the string to convert
-   * \param end End of the string to convert
    * \return Converted value, as unsigned 64-bit integer
    */
-  static inline uint64_t get(const char * begin, const char * end) {
+  static inline uint64_t get(const char * begin) {
     return ParseUnsignedInt<uint64_t>(begin, NULL, 10);
   }
 };
@@ -616,10 +610,9 @@ class Str2T<float> {
   /*!
    * \brief Convert a string into float
    * \param begin Beginning of the string to convert
-   * \param end End of the string to convert
    * \return Converted value, in float type
    */
-  static inline float get(const char * begin, const char * end) {
+  static inline float get(const char * begin) {
     return atof(begin);
   }
 };
@@ -633,10 +626,9 @@ class Str2T<double> {
   /*!
    * \brief Convert a string into double
    * \param begin Beginning of the string to convert
-   * \param end End of the string to convert
    * \return Converted value, in double type
    */
-  static inline double get(const char * begin, const char * end) {
+  static inline double get(const char * begin) {
     return strtod(begin, 0);
   }
 };
@@ -663,7 +655,7 @@ inline int ParsePair(const char * begin, const char * end,
   }
   const char * q = p;
   while (q != end && isdigitchars(*q)) ++q;
-  v1 = Str2Type<T1>(p, q);
+  v1 = Str2Type<T1>(p);
   p = q;
   while (p != end && isblank(*p)) ++p;
   if (p == end || *p != ':') {
@@ -676,7 +668,7 @@ inline int ParsePair(const char * begin, const char * end,
   q = p;
   while (q != end && isdigitchars(*q)) ++q;
   *endptr = q;
-  v2 = Str2Type<T2>(p, q);
+  v2 = Str2Type<T2>(p);
   return 2;
 }
 
@@ -704,7 +696,7 @@ inline int ParseTriple(const char * begin, const char * end,
   }
   const char * q = p;
   while (q != end && isdigitchars(*q)) ++q;
-  v1 = Str2Type<T1>(p, q);
+  v1 = Str2Type<T1>(p);
   p = q;
   while (p != end && isblank(*p)) ++p;
   if (p == end || *p != ':') {
@@ -716,7 +708,7 @@ inline int ParseTriple(const char * begin, const char * end,
   while (p != end && !isdigitchars(*p)) ++p;
   q = p;
   while (q != end && isdigitchars(*q)) ++q;
-  v2 = Str2Type<T2>(p, q);
+  v2 = Str2Type<T2>(p);
   p = q;
   while (p != end && isblank(*p)) ++p;
   if (p == end || *p != ':') {
@@ -729,7 +721,7 @@ inline int ParseTriple(const char * begin, const char * end,
   q = p;
   while (q != end && isdigitchars(*q)) ++q;
   *endptr = q;
-  v3 = Str2Type<T3>(p, q);
+  v3 = Str2Type<T3>(p);
   return 3;
 }
 }  // namespace dmlc
