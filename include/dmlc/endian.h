@@ -21,6 +21,9 @@
   #elif defined(__FreeBSD__) || defined(__OpenBSD__)
     #include <sys/endian.h>
     #define DMLC_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
+  #elif defined(__QNX__)
+    #include <sys/param.h>
+    #define DMLC_LITTLE_ENDIAN (BYTE_ORDER == LITTLE_ENDIAN)
   #elif defined(__EMSCRIPTEN__) || defined(__hexagon__)
     #define DMLC_LITTLE_ENDIAN 1
   #elif defined(__sun) || defined(sun)
