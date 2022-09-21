@@ -14,7 +14,7 @@
 #endif
 
 #include <time.h>
-#ifdef __MACH__
+#if defined(__MACH__) && defined(__APPLE__)
 #include <mach/clock.h>
 #include <mach/mach.h>
 #endif
@@ -28,7 +28,7 @@ inline double GetTime(void) {
   #if DMLC_USE_CXX11
   return std::chrono::duration<double>(
       std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-  #elif defined __MACH__
+  #elif defined(__MACH__) && defined(__APPLE__)
   clock_serv_t cclock;
   mach_timespec_t mts;
   host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
