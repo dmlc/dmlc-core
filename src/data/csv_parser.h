@@ -89,7 +89,6 @@ ParseBlock(const char *begin,
     const char* p = lbegin;
     int column_index = 0;
     IndexType idx = 0;
-    DType label = DType(std::numeric_limits<real_t>::quiet_NaN());
     real_t weight = std::numeric_limits<real_t>::quiet_NaN();
 
     while (p != lend) {
@@ -110,7 +109,7 @@ ParseBlock(const char *begin,
       }
 
       if (column_index == param_.label_column) {
-        label = v;
+        out->label.push_back(v);
       } else if (std::is_same<DType, real_t>::value
                  && column_index == param_.weight_column) {
         weight = v;
@@ -135,9 +134,6 @@ ParseBlock(const char *begin,
     // skip empty line
     while ((*lend == '\n' || *lend == '\r') && lend != end) ++lend;
     lbegin = lend;
-    if (!std::isnan(label)) {
-      out->label.push_back(label);
-    }
     if (!std::isnan(weight)) {
       out->weight.push_back(weight);
     }
