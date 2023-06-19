@@ -59,6 +59,9 @@ if(USE_AZURE)
 endif()
 
 add_library(dmlc ${SOURCE})
+set_target_properties(dmlc PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION ${PROJECT_VERSION_MAJOR})
 
 # Sanitizer
 if (DMLC_USE_SANITIZER)
