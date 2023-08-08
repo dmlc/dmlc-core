@@ -18,8 +18,8 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
-#include <Shlwapi.h>
-#pragma comment(lib, "Shlwapi.lib")
+#include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
 #else  // _WIN32
 #include <unistd.h>
 #include <sys/stat.h>

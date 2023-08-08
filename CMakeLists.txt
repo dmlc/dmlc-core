@@ -140,7 +140,7 @@ if(USE_OPENMP)
 endif()
 
 if(WIN32 AND (NOT MSVC))  # On Windows, link Shlwapi.lib for non-MSVC compilers
-  target_link_libraries(dmlc PRIVATE Shlwapi)
+  target_link_libraries(dmlc PRIVATE shlwapi)
 endif()
 
 # Check location of clock_gettime; if it's in librt, link it
