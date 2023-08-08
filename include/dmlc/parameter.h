@@ -60,6 +60,12 @@ template<typename ValueType>
 inline void SetEnv(const char *key,
                    ValueType value);
 
+/*!
+ * \brief Unset environment variable.
+ * \param key the name of environment variable.
+ */
+inline void UnsetEnv(const char *key);
+
 /*! \brief internal namespace for parameter manangement */
 namespace parameter {
 // forward declare ParamManager
@@ -1147,6 +1153,15 @@ inline void SetEnv(const char *key,
   _putenv_s(key, e.GetStringValue(&value).c_str());
 #else
   setenv(key, e.GetStringValue(&value).c_str(), 1);
+#endif  // _WIN32
+}
+
+// implement UnsetEnv
+inline void UnsetEnv(const char *key) {
+#ifdef _WIN32
+  _putenv_s(key, "");
+#else
+  unsetenv(key);
 #endif  // _WIN32
 }
 }  // namespace dmlc
