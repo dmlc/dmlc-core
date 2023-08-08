@@ -62,6 +62,7 @@ add_library(dmlc ${SOURCE})
 set_target_properties(dmlc PROPERTIES
   VERSION ${PROJECT_VERSION}
   SOVERSION ${PROJECT_VERSION_MAJOR})
+target_compile_features(dmlc PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
 
 # Sanitizer
 if (DMLC_USE_SANITIZER)
@@ -143,7 +144,7 @@ if(USE_OPENMP)
 endif()
 
 if(WIN32 AND (NOT MSVC))  # On Windows, link Shlwapi.lib for non-MSVC compilers
-  target_link_libraries(dmlc PRIVATE Shlwapi)
+  target_link_libraries(dmlc PRIVATE shlwapi)
 endif()
 
 # Check location of clock_gettime; if it's in librt, link it

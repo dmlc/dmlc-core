@@ -13,7 +13,7 @@ extern "C" {
 }
 #define stat_struct stat
 #else  // _WIN32
-#include <Windows.h>
+#include <windows.h>
 #define stat _stat64
 #define stat_struct __stat64
 #endif  // _WIN32
