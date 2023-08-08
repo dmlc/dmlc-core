@@ -117,9 +117,14 @@ class Config {
   /*!
    * \brief iterator class
    */
-  class ConfigIterator : public std::iterator< std::input_iterator_tag, ConfigEntry > {
+  class ConfigIterator {
     friend class Config;
    public:
+    using iterator_category = std::input_iterator_tag;
+    using value_type = ConfigEntry;
+    using difference_type = std::ptrdiff_t;
+    using pointer = ConfigEntry*;
+    using reference = ConfigEntry&;
     /*!
      * \brief copy constructor
      */
