@@ -59,6 +59,7 @@ if(USE_AZURE)
 endif()
 
 add_library(dmlc ${SOURCE})
+target_compile_features(dmlc PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
 
 # Sanitizer
 if (DMLC_USE_SANITIZER)
