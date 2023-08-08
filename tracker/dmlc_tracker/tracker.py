@@ -4,7 +4,6 @@ Implements the tracker control protocol
  - start dmlc jobs
  - start ps scheduler and rabit tracker
  - help nodes to establish links with each other
-
 Tianqi Chen
 """
 # pylint: disable=invalid-name, missing-docstring, too-many-arguments, too-many-locals
@@ -61,7 +60,11 @@ class SlaveEntry(object):
         self.sock = slave
         self.host = get_some_ip(s_addr[0])
         magic = slave.recvint()
-        assert magic == kMagic, 'invalid magic number=%d from %s' % (magic, self.host)
+        if magic != kMagic:
+          logging.warning(
+            'invalid magic number=%d from %s, There are several possible situations: \n 1. The tracker process is killed \n 2. Another service is sending a request to the port process corresponding to the tracker' % (
+              magic, self.host))
+          logging.warning('you can run "python tracker.py --num-workers=1"')
         slave.sendint(kMagic)
         self.rank = slave.recvint()
         self.world_size = slave.recvint()
@@ -434,7 +437,6 @@ def submit(nworker, nserver, fun_submit, hostIP='auto', pscmd=None):
 
 def start_rabit_tracker(args):
     """Standalone function to start rabit tracker.
-
     Parameters
     ----------
     args: arguments to start the rabit tracker.
@@ -476,7 +478,7 @@ def main():
     else:
         raise RuntimeError("Unknown logging level %s" % args.log_level)
 
-    logging.basicConfig(format=fmt, level=level)
+    logging.basicConfig(stream=sys.stdout, format=fmt, level=level)
 
     if args.num_servers == 0:
         start_rabit_tracker(args)
