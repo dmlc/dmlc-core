@@ -19,8 +19,8 @@ struct Token {
 class TokenizeError : public exception {
  public:
   explicit TokenizeError(const string& msg = "tokenize error"): msg_(msg) { }
-  ~TokenizeError() throw() {}
-  virtual const char* what() const throw() {
+  ~TokenizeError() noexcept {}
+  virtual const char* what() const noexcept {
     return msg_.c_str();
   }
  private:
