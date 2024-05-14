@@ -70,8 +70,9 @@ class SingleFileSplit : public InputSplit {
     CHECK(part_index == 0 && num_parts == 1);
     this->BeforeFirst();
   }
-  virtual void Write(const void * /*ptr*/, size_t /*size*/) {
+  virtual size_t Write(const void * /*ptr*/, size_t /*size*/) {
     LOG(FATAL) << "InputSplit do not support write";
+    return 0;
   }
   virtual bool NextRecord(Blob *out_rec) {
     if (chunk_begin_ == chunk_end_) {
