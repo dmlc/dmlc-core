@@ -32,16 +32,17 @@ class Stream {  // NOLINT(*)
   /*!
    * \brief reads data from a stream
    * \param ptr pointer to a memory buffer
-   * \param size block size
-   * \return the size of data read
+   * \param size The maximum number of bytes to read
+   * \return The number of bytes read from the stream
    */
-  virtual size_t Read(void *ptr, size_t size) = 0;
+  virtual size_t Read(void* ptr, size_t size) = 0;
   /*!
    * \brief writes data to a stream
    * \param ptr pointer to a memory buffer
-   * \param size block size
+   * \param size The maximum number of bytes to write
+   * \return The number of bytes written
    */
-  virtual void Write(const void *ptr, size_t size) = 0;
+  virtual size_t Write(const void* ptr, size_t size) = 0;
   /*! \brief virtual destructor */
   virtual ~Stream(void) {}
   /*!

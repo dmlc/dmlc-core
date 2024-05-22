@@ -28,7 +28,7 @@ class HDFSStream : public SeekStream {
     }
   }
 
-  virtual size_t Read(void *ptr, size_t size) {
+  virtual size_t Read(void *ptr, size_t size) override {
     char *buf = static_cast<char*>(ptr);
     size_t nleft = size;
     size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max());
@@ -48,7 +48,7 @@ class HDFSStream : public SeekStream {
     return size - nleft;
   }
 
-  virtual void Write(const void *ptr, size_t size) {
+  virtual size_t Write(const void *ptr, size_t size) override {
     const char *buf = reinterpret_cast<const char*>(ptr);
     size_t nleft = size;
     // When using builtin-java classes to write, the maximum write size
@@ -70,14 +70,15 @@ class HDFSStream : public SeekStream {
         LOG(FATAL) << "HDFSStream.hdfsWrite Error:" << strerror(errsv);
       }
     }
+    return size - nleft;
   }
-  virtual void Seek(size_t pos) {
+  virtual void Seek(size_t pos) override {
     if (hdfsSeek(fs_, fp_, pos) != 0) {
       int errsv = errno;
       LOG(FATAL) << "HDFSStream.hdfsSeek Error:" << strerror(errsv);
     }
   }
-  virtual size_t Tell(void) {
+  virtual size_t Tell(void) override {
     tOffset offset = hdfsTell(fs_, fp_);
     if (offset == -1) {
       int errsv = errno;
