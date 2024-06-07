@@ -184,7 +184,7 @@ class ThreadedIter : public DataIter<DType> {
    *  use the other Next instead
    * \return true if there is next record, false if we reach the end
    */
-  virtual bool Next(void) {
+  virtual bool Next(void) override {
     if (out_data_ != NULL) {
       this->Recycle(&out_data_);
     }
@@ -199,12 +199,12 @@ class ThreadedIter : public DataIter<DType> {
    *  NOTE: the call to this function is not threadsafe
    *  use the other Next instead
    */
-  virtual const DType &Value(void) const {
+  virtual const DType &Value(void) const override {
     CHECK(out_data_ != NULL) << "Calling Value at beginning or end?";
     return *out_data_;
   }
   /*! \brief set the iterator before first location */
-  virtual void BeforeFirst(void) {
+  virtual void BeforeFirst(void) override {
     ThrowExceptionIfSet();
     std::unique_lock<std::mutex> lock(mutex_);
     if (out_data_ != NULL) {
