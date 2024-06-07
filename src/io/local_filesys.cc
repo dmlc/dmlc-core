@@ -31,21 +31,22 @@ class FileStream : public SeekStream {
   virtual ~FileStream(void) {
     this->Close();
   }
-  virtual size_t Read(void *ptr, size_t size) {
+  virtual size_t Read(void *ptr, size_t size) override {
     return std::fread(ptr, 1, size, fp_);
   }
-  virtual void Write(const void *ptr, size_t size) {
+  virtual size_t Write(const void *ptr, size_t size) override {
     CHECK(std::fwrite(ptr, 1, size, fp_) == size)
         << "FileStream.Write incomplete";
+    return 0;
   }
-  virtual void Seek(size_t pos) {
+  virtual void Seek(size_t pos) override {
 #ifndef _MSC_VER
     CHECK(!std::fseek(fp_, static_cast<long>(pos), SEEK_SET));  // NOLINT(*)
 #else  // _MSC_VER
     CHECK(!_fseeki64(fp_, pos, SEEK_SET));
 #endif  // _MSC_VER
   }
-  virtual size_t Tell(void) {
+  virtual size_t Tell(void) override {
 #ifndef _MSC_VER
     return std::ftell(fp_);
 #else  // _MSC_VER

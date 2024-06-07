@@ -424,23 +424,24 @@ class CURLReadStreamBase : public SeekStream {
   virtual ~CURLReadStreamBase() {
     this->Cleanup();
   }
-  virtual size_t Tell(void) {
+  virtual size_t Tell(void) override {
     return curr_bytes_;
   }
   virtual bool AtEnd(void) const {
     return at_end_;
   }
-  virtual void Write(const void *ptr, size_t size) {
+  virtual size_t Write(const void *ptr, size_t size) override {
     LOG(FATAL) << "CURL.ReadStream cannot be used for write";
+    return 0;
   }
   // lazy seek function
-  virtual void Seek(size_t pos) {
+  virtual void Seek(size_t pos) override {
     if (curr_bytes_ != pos) {
       this->Cleanup();
       curr_bytes_ = pos;
     }
   }
-  virtual size_t Read(void *ptr, size_t size);
+  virtual size_t Read(void *ptr, size_t size) override ;
 
  protected:
   CURLReadStreamBase()
@@ -790,11 +791,11 @@ class WriteStream : public Stream {
     ecurl_ = curl_easy_init();
     this->Init();
   }
-  virtual size_t Read(void *ptr, size_t size) {
+  virtual size_t Read(void *ptr, size_t size) override {
     LOG(FATAL) << "S3.WriteStream cannot be used for read";
     return 0;
   }
-  virtual void Write(const void *ptr, size_t size);
+  virtual size_t Write(const void *ptr, size_t size) override;
   // destructor
   virtual ~WriteStream() {
     this->Close();
@@ -863,13 +864,14 @@ class WriteStream : public Stream {
   void Finish(void);
 };
 
-void WriteStream::Write(const void *ptr, size_t size) {
+size_t WriteStream::Write(const void *ptr, size_t size) {
   size_t rlen = buffer_.length();
   buffer_.resize(rlen + size);
   std::memcpy(BeginPtr(buffer_) + rlen, ptr, size);
   if (buffer_.length() >= max_buffer_size_) {
     this->Upload();
   }
+  return size;
 }
 
 void WriteStream::Run(const std::string &method,
