@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 project(dmlc VERSION 0.3 LANGUAGES C CXX)
 
@@ -130,16 +130,6 @@ if(USE_OPENMP)
   endif()
 
   find_package(OpenMP REQUIRED)
-
-  # For CMake < 3.9, we need to make target OpenMP::OpenMP_CXX ourselves
-  if(NOT TARGET OpenMP::OpenMP_CXX)
-    find_package(Threads REQUIRED)
-    add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
-    set_property(TARGET OpenMP::OpenMP_CXX
-                 PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
-    set_property(TARGET OpenMP::OpenMP_CXX
-                 PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
-  endif()
   target_link_libraries(dmlc PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
@@ -199,14 +189,12 @@ target_compile_definitions(dmlc PUBLIC -DDMLC_CORE_USE_CMAKE)
 # compiler flags
 if(MSVC)
   target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11=1)
-  if(NOT BUILD_SHARED_LIBS AND NOT DMLC_FORCE_SHARED_CRT)
-    foreach(flag_var
-          CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-          CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      if(${flag_var} MATCHES "/MD")
-        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-      endif(${flag_var} MATCHES "/MD")
-    endforeach(flag_var)
+  if(DMLC_FORCE_SHARED_CRT)
+    message(STATUS "DMLC-Core: Using dynamically linked MSVC runtime...")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+  else()
+    message(STATUS "DMLC-Core: Using statically linked MSVC runtime...")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
   endif()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else()
