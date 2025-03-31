@@ -11,6 +11,7 @@
 #include <sstream>
 #include <mutex>
 #include <utility>
+#include <exception>
 #include "./logging.h"
 
 namespace dmlc {
