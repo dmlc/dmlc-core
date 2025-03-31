@@ -27,34 +27,26 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_
 target_compile_definitions(dmlc_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE -DDMLC_CORE_USE_CMAKE ${ENABLE_GNU_EXTENSION_FLAGS})
 target_include_directories(dmlc_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-find_package(GTest)
+find_package(GTest 1.16.0)
 if (NOT GTEST_FOUND)
   message(STATUS "GTest not found, downloading GTest.")
-  # Download and unpack googletest at configure time
-  message("${CMAKE_LOCAL}/gtest_cmake.in -> ${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt")
-  configure_file("${CMAKE_LOCAL}/gtest_cmake.in" "${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt")
-  execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
-  execute_process(COMMAND "${CMAKE_COMMAND}" --build .
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.16.0
+  )
   # Prevent GoogleTest from overriding our compiler/linker options
   # when building with Visual Studio
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
 
-  # Add googletest directly to our build. This adds
-  # the following targets: gtest, gtest_main, gmock
-  # and gmock_main
-  add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
-    "${CMAKE_BINARY_DIR}/googletest-build")
-
+  add_library(GTest::gtest ALIAS gtest)
+  add_library(GTest::gmock ALIAS gmock)
   target_compile_definitions(gtest PRIVATE ${ENABLE_GNU_EXTENSION_FLAGS})
   target_compile_definitions(gmock PRIVATE ${ENABLE_GNU_EXTENSION_FLAGS})
-  target_compile_definitions(gtest_main PRIVATE ${ENABLE_GNU_EXTENSION_FLAGS})
-  target_compile_definitions(gmock_main PRIVATE ${ENABLE_GNU_EXTENSION_FLAGS})
-  target_include_directories(dmlc_unit_tests PRIVATE
-    "${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
   target_link_libraries(dmlc_unit_tests
-    gtest dmlc Threads::Threads)
+    gtest gmock dmlc Threads::Threads)
 else()
   target_include_directories(dmlc_unit_tests PRIVATE ${GTEST_INCLUDE_DIRS})
   target_link_libraries(dmlc_unit_tests
