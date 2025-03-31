@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-project(dmlc VERSION 0.3 LANGUAGES C CXX)
+project(dmlc VERSION 0.6 LANGUAGES C CXX)
+
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+  cmake_policy(SET CMP0135 NEW)
+endif()
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
   include(${CMAKE_CURRENT_SOURCE_DIR}/build/private/local_config.cmake)
