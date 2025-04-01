@@ -151,8 +151,6 @@ TEST(InputSplit, test_split_libsvm_distributed) {
 
   #include <dmlc/build_config.h>
 
-  #include "./build_config.h"
-
   #ifndef DMLC_CMAKE_LITTLE_ENDIAN
     #error "DMLC_CMAKE_LITTLE_ENDIAN not defined"
   #endif  // DMLC_CMAKE_LITTLE_ENDIAN
@@ -163,7 +161,7 @@ TEST(InputSplit, test_recordio) {
   dmlc::TemporaryDirectory tempdir;
 
   std::unique_ptr<dmlc::InputSplit> source(
-      dmlc::InputSplit::Create(CMAKE_CURRENT_SOURCE_DIR "/sample.rec", 0, 1, "recordio"));
+      dmlc::InputSplit::Create(CMAKE_CURRENT_SOURCE_DIR "/test/sample.rec", 0, 1, "recordio"));
 
   source->BeforeFirst();
   dmlc::InputSplit::Blob rec;
