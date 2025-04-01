@@ -44,26 +44,22 @@ if (NOT GTEST_FOUND)
   add_library(GTest::gmock ALIAS gmock)
   target_compile_definitions(gtest PRIVATE ${ENABLE_GNU_EXTENSION_FLAGS})
   target_compile_definitions(gmock PRIVATE ${ENABLE_GNU_EXTENSION_FLAGS})
-  target_link_libraries(dmlc_unit_tests
+  target_link_libraries(dmlc_unit_tests PRIVATE
     gtest gmock dmlc Threads::Threads)
   foreach(target gtest gmock)
-    set_target_properties(${target} PROPERTIES
-      CXX_STANDARD 14
-      CXX_STANDARD_REQUIRED ON)
+    target_compile_features(${target} PUBLIC cxx_std_14)
   endforeach()
 else()
   target_include_directories(dmlc_unit_tests PRIVATE ${GTEST_INCLUDE_DIRS})
   foreach(target GTest::gtest GTest::gmock)
-    set_target_properties(${target} PROPERTIES
-      CXX_STANDARD 14
-      CXX_STANDARD_REQUIRED ON)
+    target_compile_features(${target} INTERFACE cxx_std_14)
   endforeach()
-  target_link_libraries(dmlc_unit_tests
+  target_link_libraries(dmlc_unit_tests PRIVATE
     GTest::gtest GTest::gmock dmlc Threads::Threads)
 endif()
 
 if(USE_OPENMP)
-  target_link_libraries(dmlc_unit_tests OpenMP::OpenMP_CXX)
+  target_link_libraries(dmlc_unit_tests PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 add_test(AllTestsInDMLCUnitTests ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/dmlc_unit_tests)

@@ -23,7 +23,6 @@ dmlccore_option(USE_AZURE "Build with AZURE support" OFF)
 dmlccore_option(USE_S3 "Build with S3 support" OFF)
 dmlccore_option(USE_PARQUET "Build with Arrow Parquet" OFF)
 dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
-dmlccore_option(USE_CXX14_IF_AVAILABLE "Build with C++14 if the compiler supports it" OFF)
 dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
 dmlccore_option(INSTALL_DOCUMENTATION "Install documentation" OFF)
 dmlccore_option(DMLC_FORCE_SHARED_CRT "Build with dynamic CRT on Windows (/MD)" OFF)
@@ -33,15 +32,6 @@ set(DMLC_ENABLED_SANITIZERS "address" "leak" CACHE STRING
   address, leak and thread.")
 
 include(CheckCXXCompilerFlag)
-if(USE_CXX14_IF_AVAILABLE)
-  check_cxx_compiler_flag("-std=c++14" SUPPORT_CXX14)
-endif()
-if(SUPPORT_CXX14)
-  set(CMAKE_CXX_STANDARD 14)
-else()
-  set(CMAKE_CXX_STANDARD 11)
-endif()
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 FILE(GLOB SOURCE "src/*.cc")
 FILE(GLOB_RECURSE SOURCE_INCLUDE "include/*")
@@ -66,7 +56,7 @@ add_library(dmlc ${SOURCE})
 set_target_properties(dmlc PROPERTIES
   VERSION ${PROJECT_VERSION}
   SOVERSION ${PROJECT_VERSION_MAJOR})
-target_compile_features(dmlc PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
+target_compile_features(dmlc PUBLIC cxx_std_14)
 
 # Sanitizer
 if (DMLC_USE_SANITIZER)
