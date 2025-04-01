@@ -3,18 +3,16 @@ name: continuous build
 on: [push, pull_request]
 
 jobs:
-  tests:
+  unit_tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        task: ["unittest_gtest", "cmake_test", "sanitizer_test", "s390x_test"]
+        task: ["cmake_test", "sanitizer_test"]
         os: [macos-10.15, ubuntu-22.04]
         exclude:
-          # excludes sanitizer_test and s390x_test on macOS
+          # excludes sanitizer_test on macOS
           - os: macos-10.15
             task: "sanitizer_test"
-          - os: macos-10.15
-            task: "s390x_test"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -37,10 +35,27 @@ jobs:
           else
             brew install libomp doxygen gcc@11
           fi
-      - name: googletest
+      - name: Test
         shell: bash -l {0}
         run: |
-          if [[ "${{ matrix.task }}" == "s390x_test" ]]; then
-            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-          fi
           TASK=${{ matrix.task }} ./scripts/test_script.sh
+
+  s390x_test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup multiarch/qemu-user-static
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static:register --reset
+      - name: ubuntu-core:s390x-focal
+        uses: docker://multiarch/ubuntu-core:s390x-focal
+        with:
+          args: >
+            bash -c
+            "uname -a &&
+            lscpu | grep Endian &&
+            apt-get -y update &&
+            apt-get -y install doxygen libcurl4-openssl-dev gcc g++ cmake &&
+            TASK=s390x_test bash scripts/test_script.sh
+            "
