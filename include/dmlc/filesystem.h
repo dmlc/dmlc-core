@@ -7,23 +7,24 @@
 #ifndef DMLC_FILESYSTEM_H_
 #define DMLC_FILESYSTEM_H_
 
-#include <dmlc/logging.h>
-#include <dmlc/io.h>
 #include <algorithm>
+#include <random>
 #include <string>
 #include <vector>
-#include <random>
+
+#include <dmlc/io.h>
+#include <dmlc/logging.h>
 
 /* platform specific headers */
 #ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
-#include <shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")
+  #define NOMINMAX
+  #include <shlwapi.h>
+  #include <windows.h>
+  #pragma comment(lib, "shlwapi.lib")
 #else  // _WIN32
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+  #include <sys/stat.h>
+  #include <sys/types.h>
+  #include <unistd.h>
 #endif  // _WIN32
 
 namespace dmlc {
@@ -58,8 +59,7 @@ class TemporaryDirectory {
    *        Creates a new temporary directory with a unique name.
    * \param verbose whether to emit extra messages
    */
-  explicit TemporaryDirectory(bool verbose = false)
-    : verbose_(verbose) {
+  explicit TemporaryDirectory(bool verbose = false) : verbose_(verbose) {
 #if _WIN32
     /* locate the root directory of temporary area */
     char tmproot[MAX_PATH] = {0};
@@ -75,9 +75,7 @@ class TemporaryDirectory {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> dis(0, letters.length() - 1);
     std::generate(uniqstr.begin(), uniqstr.end(),
-      [&dis, &gen, &letters]() -> char {
-        return letters[dis(gen)];
-      });
+        [&dis, &gen, &letters]() -> char { return letters[dis(gen)]; });
     /* combine paths to get the name of the temporary directory */
     char tmpdir[MAX_PATH] = {0};
     PathCombineA(tmpdir, tmproot, uniqstr.c_str());
@@ -91,7 +89,7 @@ class TemporaryDirectory {
     std::string dirtemplate; /* template for temporary directory name */
     /* Get TMPDIR env variable or fall back to /tmp/ */
     {
-      const char* tmpenv = getenv("TMPDIR");
+      const char *tmpenv = getenv("TMPDIR");
       if (tmpenv) {
         tmproot = std::string(tmpenv);
         // strip trailing forward slashes
@@ -105,7 +103,7 @@ class TemporaryDirectory {
     dirtemplate = tmproot + "/tmpdir.XXXXXX";
     std::vector<char> dirtemplate_buf(dirtemplate.begin(), dirtemplate.end());
     dirtemplate_buf.push_back('\0');
-    char* tmpdir = mkdtemp(&dirtemplate_buf[0]);
+    char *tmpdir = mkdtemp(&dirtemplate_buf[0]);
     if (!tmpdir) {
       LOG(FATAL) << "TemporaryDirectory(): "
                  << "Could not create temporary directory";
@@ -133,16 +131,16 @@ class TemporaryDirectory {
    * \brief Determine whether a given path is a symbolic link
    * \param path String representation of path
    */
-  inline bool IsSymlink(const std::string& path) {
+  inline bool IsSymlink(const std::string &path) {
 #ifdef _WIN32
     DWORD attr = GetFileAttributesA(path.c_str());
     CHECK_NE(attr, INVALID_FILE_ATTRIBUTES)
-      << "dmlc::TemporaryDirectory::IsSymlink(): Unable to read file attributes";
+        << "dmlc::TemporaryDirectory::IsSymlink(): Unable to read file attributes";
     return attr & FILE_ATTRIBUTE_REPARSE_POINT;
 #else  // _WIN32
     struct stat sb;
     CHECK_EQ(lstat(path.c_str(), &sb), 0)
-      << "dmlc::TemporaryDirectory::IsSymlink(): Unable to read file attributes";
+        << "dmlc::TemporaryDirectory::IsSymlink(): Unable to read file attributes";
     return S_ISLNK(sb.st_mode);
 #endif  // _WIN32
   }
@@ -151,7 +149,7 @@ class TemporaryDirectory {
    * \brief Delete a directory recursively, along with sub-directories and files.
    * \param path String representation of path. It must refer to a directory.
    */
-  void RecursiveDelete(const std::string& path);
+  void RecursiveDelete(const std::string &path);
 };
 
 }  // namespace dmlc

@@ -2,32 +2,31 @@
 
 #include <dmlc/base.h>
 #include <dmlc/logging.h>
+
 #include <errno.h>
 extern "C" {
 #include <sys/stat.h>
 }
 #ifndef _WIN32
 extern "C" {
-#include <sys/types.h>
-#include <dirent.h>
+  #include <dirent.h>
+  #include <sys/types.h>
 }
-#define stat_struct stat
+  #define stat_struct stat
 #else  // _WIN32
-#include <windows.h>
-#define stat _stat64
-#define stat_struct __stat64
+  #include <windows.h>
+  #define stat _stat64
+  #define stat_struct __stat64
 #endif  // _WIN32
 
 #include "./local_filesys.h"
-
 
 namespace dmlc {
 namespace io {
 /*! \brief implementation of file i/o stream */
 class FileStream : public SeekStream {
  public:
-  explicit FileStream(FILE *fp, bool use_stdio)
-      : fp_(fp), use_stdio_(use_stdio) {}
+  explicit FileStream(FILE *fp, bool use_stdio) : fp_(fp), use_stdio_(use_stdio) {}
   virtual ~FileStream(void) {
     this->Close();
   }
@@ -35,8 +34,7 @@ class FileStream : public SeekStream {
     return std::fread(ptr, 1, size, fp_);
   }
   virtual size_t Write(const void *ptr, size_t size) override {
-    CHECK(std::fwrite(ptr, 1, size, fp_) == size)
-        << "FileStream.Write incomplete";
+    CHECK(std::fwrite(ptr, 1, size, fp_) == size) << "FileStream.Write incomplete";
     return 0;
   }
   virtual void Seek(size_t pos) override {
@@ -58,7 +56,8 @@ class FileStream : public SeekStream {
   }
   inline void Close(void) {
     if (fp_ != NULL && !use_stdio_) {
-      std::fclose(fp_); fp_ = NULL;
+      std::fclose(fp_);
+      fp_ = NULL;
     }
   }
 
@@ -79,13 +78,12 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
     if (lstat(path.name.c_str(), &sb) == 0) {
       ret.size = 0;
       ret.type = kFile;
-      LOG(INFO) << "LocalFileSystem.GetPathInfo: detected symlink "
-                << path.name << " error: " << strerror(errsv);
+      LOG(INFO) << "LocalFileSystem.GetPathInfo: detected symlink " << path.name
+                << " error: " << strerror(errsv);
       return ret;
     }
 #endif  // _WIN32
-    LOG(FATAL) << "LocalFileSystem.GetPathInfo: "
-               << path.name << " error: " << strerror(errsv);
+    LOG(FATAL) << "LocalFileSystem.GetPathInfo: " << path.name << " error: " << strerror(errsv);
   }
   ret.size = sb.st_size;
 
@@ -102,15 +100,18 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
   DIR *dir = opendir(path.name.c_str());
   if (dir == NULL) {
     int errsv = errno;
-    LOG(FATAL) << "LocalFileSystem.ListDirectory " << path.str()
-               <<" error: " << strerror(errsv);
+    LOG(FATAL) << "LocalFileSystem.ListDirectory " << path.str() << " error: " << strerror(errsv);
   }
   out_list->clear();
   struct dirent *ent;
   /* print all the files and directories within directory */
   while ((ent = readdir(dir)) != NULL) {
-    if (!strcmp(ent->d_name, ".")) continue;
-    if (!strcmp(ent->d_name, "..")) continue;
+    if (!strcmp(ent->d_name, ".")) {
+      continue;
+    }
+    if (!strcmp(ent->d_name, "..")) {
+      continue;
+    }
     URI pp = path;
     if (pp.name[pp.name.length() - 1] != '/') {
       pp.name += '/';
@@ -125,8 +126,7 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
   HANDLE handle = FindFirstFile(pattern.c_str(), &fd);
   if (handle == INVALID_HANDLE_VALUE) {
     int errsv = GetLastError();
-    LOG(FATAL) << "LocalFileSystem.ListDirectory " << path.str()
-               << " error: " << strerror(errsv);
+    LOG(FATAL) << "LocalFileSystem.ListDirectory " << path.str() << " error: " << strerror(errsv);
   }
   do {
     if (strcmp(fd.cFileName, ".") && strcmp(fd.cFileName, "..")) {
@@ -140,14 +140,12 @@ void LocalFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_
       }
       out_list->push_back(GetPathInfo(pp));
     }
-  }  while (FindNextFile(handle, &fd));
+  } while (FindNextFile(handle, &fd));
   FindClose(handle);
 #endif  // _WIN32
 }
 
-SeekStream *LocalFileSystem::Open(const URI &path,
-                                  const char* const mode,
-                                  bool allow_null) {
+SeekStream *LocalFileSystem::Open(const URI &path, const char *const mode, bool allow_null) {
   bool use_stdio = false;
   FILE *fp = NULL;
 #ifdef _WIN32
@@ -162,46 +160,62 @@ SeekStream *LocalFileSystem::Open(const URI &path,
   MultiByteToWideChar(CP_UTF8, 0, mode, -1, &wmode[0], mode_length);
 
   using namespace std;
-#ifndef DMLC_DISABLE_STDIN
+  #ifndef DMLC_DISABLE_STDIN
   if (!wcscmp(fname.c_str(), L"stdin")) {
-    use_stdio = true; fp = stdin;
+    use_stdio = true;
+    fp = stdin;
   }
   if (!wcscmp(fname.c_str(), L"stdout")) {
-    use_stdio = true; fp = stdout;
+    use_stdio = true;
+    fp = stdout;
   }
-#endif  // DMLC_DISABLE_STDIN
-  if (!wcsncmp(fname.c_str(), L"file://", 7)) { fname = fname.substr(7); }
+  #endif  // DMLC_DISABLE_STDIN
+  if (!wcsncmp(fname.c_str(), L"file://", 7)) {
+    fname = fname.substr(7);
+  }
   if (!use_stdio) {
     std::wstring flag(wmode.c_str());
-    if (flag == L"w") flag = L"wb";
-    if (flag == L"r") flag = L"rb";
-#if DMLC_USE_FOPEN64
+    if (flag == L"w") {
+      flag = L"wb";
+    }
+    if (flag == L"r") {
+      flag = L"rb";
+    }
+  #if DMLC_USE_FOPEN64
     fp = _wfopen(fname.c_str(), flag.c_str());
-#else  // DMLC_USE_FOPEN64
+  #else  // DMLC_USE_FOPEN64
     fp = fopen(fname, flag.c_str());
-#endif  // DMLC_USE_FOPEN64
+  #endif  // DMLC_USE_FOPEN64
   }
 #else  // _WIN32
   const char *fname = path.name.c_str();
   using namespace std;
-#ifndef DMLC_DISABLE_STDIN
+  #ifndef DMLC_DISABLE_STDIN
   if (!strcmp(fname, "stdin")) {
-    use_stdio = true; fp = stdin;
+    use_stdio = true;
+    fp = stdin;
   }
   if (!strcmp(fname, "stdout")) {
-    use_stdio = true; fp = stdout;
+    use_stdio = true;
+    fp = stdout;
   }
-#endif  // DMLC_DISABLE_STDIN
-  if (!strncmp(fname, "file://", 7)) fname += 7;
+  #endif  // DMLC_DISABLE_STDIN
+  if (!strncmp(fname, "file://", 7)) {
+    fname += 7;
+  }
   if (!use_stdio) {
     std::string flag = mode;
-    if (flag == "w") flag = "wb";
-    if (flag == "r") flag = "rb";
-#if DMLC_USE_FOPEN64
+    if (flag == "w") {
+      flag = "wb";
+    }
+    if (flag == "r") {
+      flag = "rb";
+    }
+  #if DMLC_USE_FOPEN64
     fp = fopen64(fname, flag.c_str());
-#else  // DMLC_USE_FOPEN64
+  #else  // DMLC_USE_FOPEN64
     fp = fopen(fname, flag.c_str());
-#endif  // DMLC_USE_FOPEN64
+  #endif  // DMLC_USE_FOPEN64
   }
 #endif  // _WIN32
   if (fp != NULL) {

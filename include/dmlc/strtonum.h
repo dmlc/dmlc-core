@@ -7,12 +7,13 @@
 #define DMLC_STRTONUM_H_
 
 #if DMLC_USE_CXX11
-#include <type_traits>
+  #include <type_traits>
 #endif
 
-#include <string>
-#include <limits>
 #include <cstdint>
+#include <limits>
+#include <string>
+
 #include "./base.h"
 #include "./logging.h"
 
@@ -54,9 +55,8 @@ inline bool isdigit(char c) {
  * \return Result of the test
  */
 inline bool isalpha(char c) {
-  static_assert(
-    static_cast<int>('A') == 65 && static_cast<int>('Z' - 'A') == 25,
-    "Only system with ASCII character set is supported");
+  static_assert(static_cast<int>('A') == 65 && static_cast<int>('Z' - 'A') == 25,
+      "Only system with ASCII character set is supported");
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
@@ -68,10 +68,7 @@ inline bool isalpha(char c) {
  * \return Result of the test
  */
 inline bool isdigitchars(char c) {
-  return (c >= '0' && c <= '9')
-    || c == '+' || c == '-'
-    || c == '.'
-    || c == 'e' || c == 'E';
+  return (c >= '0' && c <= '9') || c == '+' || c == '-' || c == '.' || c == 'e' || c == 'E';
 }
 
 /*!
@@ -96,42 +93,38 @@ const int kStrtofMaxDigits = 19;
  *                    all out-of-range vlaues will be silently clipped.
  */
 template <typename FloatType, bool CheckRange = false>
-inline FloatType ParseFloat(const char* nptr, char** endptr) {
+inline FloatType ParseFloat(const char *nptr, char **endptr) {
 #if DMLC_USE_CXX11
-  static_assert(std::is_same<FloatType, double>::value
-                || std::is_same<FloatType, float>::value,
-               "ParseFloat is defined only for 'float' and 'double' types");
-  constexpr unsigned kMaxExponent
-    = (std::is_same<FloatType, double>::value ? 308U : 38U);
-  constexpr FloatType kMaxSignificandForMaxExponent
-    = static_cast<FloatType>(std::is_same<FloatType, double>::value
-                             ? 1.79769313486231570 : 3.402823466);
-    // If a floating-point value has kMaxExponent, what is
-    //   the largest possible significand value?
-  constexpr FloatType kMaxSignificandForNegMaxExponent
-    = static_cast<FloatType>(std::is_same<FloatType, double>::value
-                             ? 2.22507385850720139 : 1.175494351);
+  static_assert(std::is_same<FloatType, double>::value || std::is_same<FloatType, float>::value,
+      "ParseFloat is defined only for 'float' and 'double' types");
+  constexpr unsigned kMaxExponent = (std::is_same<FloatType, double>::value ? 308U : 38U);
+  constexpr FloatType kMaxSignificandForMaxExponent = static_cast<FloatType>(
+      std::is_same<FloatType, double>::value ? 1.79769313486231570 : 3.402823466);
+  // If a floating-point value has kMaxExponent, what is
+  //   the largest possible significand value?
+  constexpr FloatType kMaxSignificandForNegMaxExponent = static_cast<FloatType>(
+      std::is_same<FloatType, double>::value ? 2.22507385850720139 : 1.175494351);
     // If a floating-point value has -kMaxExponent, what is
     //   the largest possible significand value?
 #else
-  const unsigned kMaxExponent
-    = (sizeof(FloatType) == sizeof(double) ? 308U : 38U);
-  const FloatType kMaxSignificandForMaxExponent
-    = static_cast<FloatType>(sizeof(FloatType) == sizeof(double)
-                             ? 1.79769313486231570 : 3.402823466);
-  const FloatType kMaxSignificandForNegMaxExponent
-    = static_cast<FloatType>(sizeof(FloatType) == sizeof(double)
-                             ? 2.22507385850720139 : 1.175494351);
+  const unsigned kMaxExponent = (sizeof(FloatType) == sizeof(double) ? 308U : 38U);
+  const FloatType kMaxSignificandForMaxExponent = static_cast<FloatType>(
+      sizeof(FloatType) == sizeof(double) ? 1.79769313486231570 : 3.402823466);
+  const FloatType kMaxSignificandForNegMaxExponent = static_cast<FloatType>(
+      sizeof(FloatType) == sizeof(double) ? 2.22507385850720139 : 1.175494351);
 #endif
 
   const char *p = nptr;
   // Skip leading white space, if any. Not necessary
-  while (isspace(*p) ) ++p;
+  while (isspace(*p)) {
+    ++p;
+  }
 
   // Get sign, if any.
   bool sign = true;
   if (*p == '-') {
-    sign = false; ++p;
+    sign = false;
+    ++p;
   } else if (*p == '+') {
     ++p;
   }
@@ -141,11 +134,14 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     int i = 0;
     // case-insensitive match for INF and INFINITY
     while (i < 8 && static_cast<char>((*p) | 32) == "infinity"[i]) {
-      ++i; ++p;
+      ++i;
+      ++p;
     }
     if (i == 3 || i == 8) {
-      if (endptr) *endptr = (char*)p;  // NOLINT(*)
-      return sign ?  std::numeric_limits<FloatType>::infinity()
+      if (endptr) {
+        *endptr = (char *)p;  // NOLINT(*)
+      }
+      return sign ? std::numeric_limits<FloatType>::infinity()
                   : -std::numeric_limits<FloatType>::infinity();
     } else {
       p -= i;
@@ -154,19 +150,24 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     // case-insensitive match for NAN
     i = 0;
     while (i < 3 && static_cast<char>((*p) | 32) == "nan"[i]) {
-      ++i; ++p;
+      ++i;
+      ++p;
     }
     if (i == 3) {
       // Got NAN; check if the value is of form NAN(char_sequence)
       if (*p == '(') {
         ++p;
-        while (isdigit(*p) || isalpha(*p) || *p == '_') ++p;
+        while (isdigit(*p) || isalpha(*p) || *p == '_') {
+          ++p;
+        }
         CHECK_EQ(*p, ')') << "Invalid NAN literal";
         ++p;
       }
-      static_assert(std::numeric_limits<FloatType>::has_quiet_NaN,
-        "Only system with quiet NaN is supported");
-      if (endptr) *endptr = (char*)p;  // NOLINT(*)
+      static_assert(
+          std::numeric_limits<FloatType>::has_quiet_NaN, "Only system with quiet NaN is supported");
+      if (endptr) {
+        *endptr = (char *)p;  // NOLINT(*)
+      }
       return std::numeric_limits<FloatType>::quiet_NaN();
     } else {
       p -= i;
@@ -194,8 +195,7 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
       ++p;
       ++digit_cnt;
     }
-    value += static_cast<FloatType>(
-        static_cast<double>(val2) / static_cast<double>(pow10));
+    value += static_cast<FloatType>(static_cast<double>(val2) / static_cast<double>(pow10));
   }
 
   // Handle exponent, if any.
@@ -218,7 +218,9 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     if (expon > kMaxExponent) {  // out of range, clip or raise error
       if (CheckRange) {
         errno = ERANGE;
-        if (endptr) *endptr = (char*)p;  // NOLINT(*)
+        if (endptr) {
+          *endptr = (char *)p;  // NOLINT(*)
+        }
         return std::numeric_limits<FloatType>::infinity();
       } else {
         expon = kMaxExponent;
@@ -227,19 +229,26 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     // handle edge case where exponent is exactly kMaxExponent
     if (expon == kMaxExponent
         && ((!frac && value > kMaxSignificandForMaxExponent)
-           || (frac && value < kMaxSignificandForNegMaxExponent))) {
+            || (frac && value < kMaxSignificandForNegMaxExponent))) {
       if (CheckRange) {
         errno = ERANGE;
-        if (endptr) *endptr = (char*)p;  // NOLINT(*)
+        if (endptr) {
+          *endptr = (char *)p;  // NOLINT(*)
+        }
         return std::numeric_limits<FloatType>::infinity();
       } else {
-        value = (frac ? kMaxSignificandForNegMaxExponent
-                 : kMaxSignificandForMaxExponent);
+        value = (frac ? kMaxSignificandForNegMaxExponent : kMaxSignificandForMaxExponent);
       }
     }
     // Calculate scaling factor.
-    while (expon >= 8U) { scale *= static_cast<FloatType>(1E8f);  expon -= 8U; }
-    while (expon >  0U) { scale *= static_cast<FloatType>(10.0f); expon -= 1U; }
+    while (expon >= 8U) {
+      scale *= static_cast<FloatType>(1E8f);
+      expon -= 8U;
+    }
+    while (expon > 0U) {
+      scale *= static_cast<FloatType>(10.0f);
+      expon -= 1U;
+    }
     // Return signed and scaled floating point result.
     value = frac ? (value / scale) : (value * scale);
   }
@@ -248,8 +257,10 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
     ++p;
   }
 
-  if (endptr) *endptr = (char*)p;  // NOLINT(*)
-  return sign ? value : - value;
+  if (endptr) {
+    *endptr = (char *)p;  // NOLINT(*)
+  }
+  return sign ? value : -value;
 }
 
 /*!
@@ -265,7 +276,7 @@ inline FloatType ParseFloat(const char* nptr, char** endptr) {
  *               past the last character used in the conversion.
  * \return Converted floating-point value, in float type
  */
-inline float strtof(const char* nptr, char** endptr) {
+inline float strtof(const char *nptr, char **endptr) {
   return ParseFloat<float>(nptr, endptr);
 }
 
@@ -283,7 +294,7 @@ inline float strtof(const char* nptr, char** endptr) {
  *               past the last character used in the conversion.
  * \return Converted floating-point value, in float type
  */
-inline float strtof_check_range(const char* nptr, char** endptr) {
+inline float strtof_check_range(const char *nptr, char **endptr) {
   return ParseFloat<float, true>(nptr, endptr);
 }
 
@@ -300,7 +311,7 @@ inline float strtof_check_range(const char* nptr, char** endptr) {
  *               past the last character used in the conversion.
  * \return Converted floating-point value, in double type
  */
-inline double strtod(const char* nptr, char** endptr) {
+inline double strtod(const char *nptr, char **endptr) {
   return ParseFloat<double>(nptr, endptr);
 }
 
@@ -318,7 +329,7 @@ inline double strtod(const char* nptr, char** endptr) {
  *               past the last character used in the conversion.
  * \return Converted floating-point value, in float type
  */
-inline double strtod_check_range(const char* nptr, char** endptr) {
+inline double strtod_check_range(const char *nptr, char **endptr) {
   return ParseFloat<double, true>(nptr, endptr);
 }
 
@@ -334,21 +345,23 @@ inline double strtod_check_range(const char* nptr, char** endptr) {
  * \tparam SignedIntType Type of signed integer to be obtained.
  */
 template <typename SignedIntType>
-inline SignedIntType ParseSignedInt(const char* nptr, char** endptr, int base) {
+inline SignedIntType ParseSignedInt(const char *nptr, char **endptr, int base) {
 #ifdef DMLC_USE_CXX11
-  static_assert(std::is_signed<SignedIntType>::value
-                && std::is_integral<SignedIntType>::value,
-                "ParseSignedInt is defined for signed integers only");
+  static_assert(std::is_signed<SignedIntType>::value && std::is_integral<SignedIntType>::value,
+      "ParseSignedInt is defined for signed integers only");
 #endif
   CHECK(base <= 10 && base >= 2);
-  const char* p = nptr;
+  const char *p = nptr;
   // Skip leading white space, if any. Not necessary
-  while (isspace(*p) ) ++p;
+  while (isspace(*p)) {
+    ++p;
+  }
 
   // Get sign if any
   bool sign = true;
   if (*p == '-') {
-    sign = false; ++p;
+    sign = false;
+    ++p;
   } else if (*p == '+') {
     ++p;
   }
@@ -359,8 +372,10 @@ inline SignedIntType ParseSignedInt(const char* nptr, char** endptr, int base) {
     value = value * base_val + static_cast<SignedIntType>(*p - '0');
   }
 
-  if (endptr) *endptr = (char*)p;  // NOLINT(*)
-  return sign ? value : - value;
+  if (endptr) {
+    *endptr = (char *)p;  // NOLINT(*)
+  }
+  return sign ? value : -value;
 }
 
 /*!
@@ -375,21 +390,24 @@ inline SignedIntType ParseSignedInt(const char* nptr, char** endptr, int base) {
  * \tparam UnsignedIntType Type of unsigned integer to be obtained.
  */
 template <typename UnsignedIntType>
-inline UnsignedIntType ParseUnsignedInt(const char* nptr, char** endptr, int base) {
+inline UnsignedIntType ParseUnsignedInt(const char *nptr, char **endptr, int base) {
 #ifdef DMLC_USE_CXX11
-  static_assert(std::is_unsigned<UnsignedIntType>::value
-                && std::is_integral<UnsignedIntType>::value,
-                "ParseUnsignedInt is defined for unsigned integers only");
+  static_assert(
+      std::is_unsigned<UnsignedIntType>::value && std::is_integral<UnsignedIntType>::value,
+      "ParseUnsignedInt is defined for unsigned integers only");
 #endif
   CHECK(base <= 10 && base >= 2);
   const char *p = nptr;
   // Skip leading white space, if any. Not necessary
-  while (isspace(*p)) ++p;
+  while (isspace(*p)) {
+    ++p;
+  }
 
   // Get sign if any
   bool sign = true;
   if (*p == '-') {
-    sign = false; ++p;
+    sign = false;
+    ++p;
   } else if (*p == '+') {
     ++p;
   }
@@ -403,7 +421,9 @@ inline UnsignedIntType ParseUnsignedInt(const char* nptr, char** endptr, int bas
     value = value * base_val + static_cast<UnsignedIntType>(*p - '0');
   }
 
-  if (endptr) *endptr = (char*)p; // NOLINT(*)
+  if (endptr) {
+    *endptr = (char *)p;  // NOLINT(*)
+  }
   return value;
 }
 
@@ -419,7 +439,7 @@ inline UnsignedIntType ParseUnsignedInt(const char* nptr, char** endptr, int bas
  * \param base Base to use for integer conversion
  * \return Converted value, as unsigned 64-bit integer
  */
-inline uint64_t strtoull(const char* nptr, char **endptr, int base) {
+inline uint64_t strtoull(const char *nptr, char **endptr, int base) {
   return ParseUnsignedInt<uint64_t>(nptr, endptr, base);
 }
 
@@ -431,8 +451,8 @@ inline uint64_t strtoull(const char* nptr, char **endptr, int base) {
  *          type long
  * \return Converted value, as long integer (width is system-dependent)
  */
-inline long atol(const char* p) {  // NOLINT(*)
-  return ParseSignedInt<long>(p, 0, 10); // NOLINT(*)
+inline long atol(const char *p) {  // NOLINT(*)
+  return ParseSignedInt<long>(p, 0, 10);  // NOLINT(*)
 }
 
 /*!
@@ -445,7 +465,7 @@ inline long atol(const char* p) {  // NOLINT(*)
  * \param nptr Beginning of the string that's to be converted into float
  * \return Converted value, in float type
  */
-inline float atof(const char* nptr) {
+inline float atof(const char *nptr) {
   return strtof(nptr, 0);
 }
 
@@ -464,17 +484,17 @@ inline float atof(const char* nptr) {
  *                          of the double type
  * \throw std::invalid_argument If no conversion could be performed
  */
-inline float stof(const std::string& value, size_t* pos = nullptr) {
-  const char* str_source = value.c_str();
-  char* endptr;
+inline float stof(const std::string &value, size_t *pos = nullptr) {
+  const char *str_source = value.c_str();
+  char *endptr;
   const float parsed_value = dmlc::strtof_check_range(str_source, &endptr);
   if (errno == ERANGE && parsed_value == std::numeric_limits<float>::infinity()) {
     throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
+  } else if (const_cast<const char *>(endptr) == str_source) {
     throw std::invalid_argument("No conversion could be performed");
   }
   if (pos) {
-    *pos = static_cast<size_t>(const_cast<const char*>(endptr) - str_source);
+    *pos = static_cast<size_t>(const_cast<const char *>(endptr) - str_source);
   }
   return parsed_value;
 }
@@ -494,17 +514,17 @@ inline float stof(const std::string& value, size_t* pos = nullptr) {
  *                          of the double type
  * \throw std::invalid_argument If no conversion could be performed
  */
-inline double stod(const std::string& value, size_t* pos = nullptr) {
-  const char* str_source = value.c_str();
-  char* endptr;
+inline double stod(const std::string &value, size_t *pos = nullptr) {
+  const char *str_source = value.c_str();
+  char *endptr;
   const double parsed_value = dmlc::strtod_check_range(str_source, &endptr);
   if (errno == ERANGE && parsed_value == std::numeric_limits<double>::infinity()) {
     throw std::out_of_range("Out of range value");
-  } else if (const_cast<const char*>(endptr) == str_source) {
+  } else if (const_cast<const char *>(endptr) == str_source) {
     throw std::invalid_argument("No conversion could be performed");
   }
   if (pos) {
-    *pos = static_cast<size_t>(const_cast<const char*>(endptr) - str_source);
+    *pos = static_cast<size_t>(const_cast<const char *>(endptr) - str_source);
   }
   return parsed_value;
 }
@@ -515,7 +535,7 @@ inline double stod(const std::string& value, size_t* pos = nullptr) {
  *        to define the conversion method for a particular type.
  * \tparam Type of converted value
  */
-template<typename T>
+template <typename T>
 class Str2T {
  public:
   /*!
@@ -523,7 +543,7 @@ class Str2T {
    * \param begin Beginning of the string to convert
    * \return Converted value, in type T
    */
-  static inline T get(const char * begin);
+  static inline T get(const char *begin);
 };
 
 /*!
@@ -532,15 +552,15 @@ class Str2T {
  * \return Converted value, in type T
  * \tparam Type of converted value
  */
-template<typename T>
-inline T Str2Type(const char * begin) {
+template <typename T>
+inline T Str2Type(const char *begin) {
   return Str2T<T>::get(begin);
 }
 
 /*!
  * \brief Template specialization of Str2T<> interface for signed 32-bit integer
  */
-template<>
+template <>
 class Str2T<int32_t> {
  public:
   /*!
@@ -548,7 +568,7 @@ class Str2T<int32_t> {
    * \param begin Beginning of the string to convert
    * \return Converted value, as signed 32-bit integer
    */
-  static inline int32_t get(const char * begin) {
+  static inline int32_t get(const char *begin) {
     return ParseSignedInt<int32_t>(begin, NULL, 10);
   }
 };
@@ -556,7 +576,7 @@ class Str2T<int32_t> {
 /*!
  * \brief Template specialization of Str2T<> interface for unsigned 32-bit integer
  */
-template<>
+template <>
 class Str2T<uint32_t> {
  public:
   /*!
@@ -564,7 +584,7 @@ class Str2T<uint32_t> {
    * \param begin Beginning of the string to convert
    * \return Converted value, as unsigned 32-bit integer
    */
-  static inline uint32_t get(const char* begin) {
+  static inline uint32_t get(const char *begin) {
     return ParseUnsignedInt<uint32_t>(begin, NULL, 10);
   }
 };
@@ -572,7 +592,7 @@ class Str2T<uint32_t> {
 /*!
  * \brief Template specialization of Str2T<> interface for signed 64-bit integer
  */
-template<>
+template <>
 class Str2T<int64_t> {
  public:
   /*!
@@ -580,7 +600,7 @@ class Str2T<int64_t> {
    * \param begin Beginning of the string to convert
    * \return Converted value, as signed 64-bit integer
    */
-  static inline int64_t get(const char * begin) {
+  static inline int64_t get(const char *begin) {
     return ParseSignedInt<int64_t>(begin, NULL, 10);
   }
 };
@@ -588,7 +608,7 @@ class Str2T<int64_t> {
 /*!
  * \brief Template specialization of Str2T<> interface for unsigned 64-bit integer
  */
-template<>
+template <>
 class Str2T<uint64_t> {
  public:
   /*!
@@ -596,7 +616,7 @@ class Str2T<uint64_t> {
    * \param begin Beginning of the string to convert
    * \return Converted value, as unsigned 64-bit integer
    */
-  static inline uint64_t get(const char * begin) {
+  static inline uint64_t get(const char *begin) {
     return ParseUnsignedInt<uint64_t>(begin, NULL, 10);
   }
 };
@@ -604,7 +624,7 @@ class Str2T<uint64_t> {
 /*!
  * \brief Template specialization of Str2T<> interface for float type
  */
-template<>
+template <>
 class Str2T<float> {
  public:
   /*!
@@ -612,7 +632,7 @@ class Str2T<float> {
    * \param begin Beginning of the string to convert
    * \return Converted value, in float type
    */
-  static inline float get(const char * begin) {
+  static inline float get(const char *begin) {
     return atof(begin);
   }
 };
@@ -620,7 +640,7 @@ class Str2T<float> {
 /*!
  * \brief Template specialization of Str2T<> interface for double type
  */
-template<>
+template <>
 class Str2T<double> {
  public:
   /*!
@@ -628,7 +648,7 @@ class Str2T<double> {
    * \param begin Beginning of the string to convert
    * \return Converted value, in double type
    */
-  static inline double get(const char * begin) {
+  static inline double get(const char *begin) {
     return strtod(begin, 0);
   }
 };
@@ -644,29 +664,39 @@ class Str2T<double> {
  * \tparam T1 type of v1
  * \tparam T2 type of v2
  */
-template<typename T1, typename T2>
-inline int ParsePair(const char * begin, const char * end,
-                     const char ** endptr, T1 &v1, T2 &v2) { // NOLINT(*)
-  const char * p = begin;
-  while (p != end && !isdigitchars(*p)) ++p;
+template <typename T1, typename T2>
+inline int ParsePair(
+    const char *begin, const char *end, const char **endptr, T1 &v1, T2 &v2) {  // NOLINT(*)
+  const char *p = begin;
+  while (p != end && !isdigitchars(*p)) {
+    ++p;
+  }
   if (p == end) {
     *endptr = end;
     return 0;
   }
-  const char * q = p;
-  while (q != end && isdigitchars(*q)) ++q;
+  const char *q = p;
+  while (q != end && isdigitchars(*q)) {
+    ++q;
+  }
   v1 = Str2Type<T1>(p);
   p = q;
-  while (p != end && isblank(*p)) ++p;
+  while (p != end && isblank(*p)) {
+    ++p;
+  }
   if (p == end || *p != ':') {
     // only v1
     *endptr = p;
     return 1;
   }
   p++;
-  while (p != end && !isdigitchars(*p)) ++p;
+  while (p != end && !isdigitchars(*p)) {
+    ++p;
+  }
   q = p;
-  while (q != end && isdigitchars(*q)) ++q;
+  while (q != end && isdigitchars(*q)) {
+    ++q;
+  }
   *endptr = q;
   v2 = Str2Type<T2>(p);
   return 2;
@@ -685,41 +715,57 @@ inline int ParsePair(const char * begin, const char * end,
  * \tparam T2 type of v2
  * \tparam T3 type of v3
  */
-template<typename T1, typename T2, typename T3>
-inline int ParseTriple(const char * begin, const char * end,
-                       const char ** endptr, T1 &v1, T2 &v2, T3 &v3) { // NOLINT(*)
-  const char * p = begin;
-  while (p != end && !isdigitchars(*p)) ++p;
+template <typename T1, typename T2, typename T3>
+inline int ParseTriple(
+    const char *begin, const char *end, const char **endptr, T1 &v1, T2 &v2, T3 &v3) {  // NOLINT(*)
+  const char *p = begin;
+  while (p != end && !isdigitchars(*p)) {
+    ++p;
+  }
   if (p == end) {
     *endptr = end;
     return 0;
   }
-  const char * q = p;
-  while (q != end && isdigitchars(*q)) ++q;
+  const char *q = p;
+  while (q != end && isdigitchars(*q)) {
+    ++q;
+  }
   v1 = Str2Type<T1>(p);
   p = q;
-  while (p != end && isblank(*p)) ++p;
+  while (p != end && isblank(*p)) {
+    ++p;
+  }
   if (p == end || *p != ':') {
     // only v1
     *endptr = p;
     return 1;
   }
   p++;
-  while (p != end && !isdigitchars(*p)) ++p;
+  while (p != end && !isdigitchars(*p)) {
+    ++p;
+  }
   q = p;
-  while (q != end && isdigitchars(*q)) ++q;
+  while (q != end && isdigitchars(*q)) {
+    ++q;
+  }
   v2 = Str2Type<T2>(p);
   p = q;
-  while (p != end && isblank(*p)) ++p;
+  while (p != end && isblank(*p)) {
+    ++p;
+  }
   if (p == end || *p != ':') {
     // only v1:v2
     *endptr = p;
     return 2;
   }
   p++;
-  while (p != end && !isdigitchars(*p)) ++p;
+  while (p != end && !isdigitchars(*p)) {
+    ++p;
+  }
   q = p;
-  while (q != end && isdigitchars(*q)) ++q;
+  while (q != end && isdigitchars(*q)) {
+    ++q;
+  }
   *endptr = q;
   v3 = Str2Type<T3>(p);
   return 3;

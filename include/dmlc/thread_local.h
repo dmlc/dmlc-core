@@ -6,9 +6,10 @@
 #ifndef DMLC_THREAD_LOCAL_H_
 #define DMLC_THREAD_LOCAL_H_
 
-#include <mutex>
 #include <memory>
+#include <mutex>
 #include <vector>
+
 #include "./base.h"
 
 namespace dmlc {
@@ -17,13 +18,13 @@ namespace dmlc {
 #ifdef __GNUC__
   #define MX_THREAD_LOCAL __thread
 #elif __STDC_VERSION__ >= 201112L
-  #define  MX_THREAD_LOCAL _Thread_local
+  #define MX_THREAD_LOCAL _Thread_local
 #elif defined(_MSC_VER)
   #define MX_THREAD_LOCAL __declspec(thread)
 #endif
 
 #if DMLC_CXX11_THREAD_LOCAL == 0
-#pragma message("Warning: CXX11 thread_local is not formally supported")
+  #pragma message("Warning: CXX11 thread_local is not formally supported")
 #endif
 
 /*!
@@ -31,16 +32,16 @@ namespace dmlc {
  *  Will return a thread local singleton of type T
  * \tparam T the type we like to store
  */
-template<typename T>
+template <typename T>
 class ThreadLocalStore {
  public:
   /*! \return get a thread local singleton */
-  static T* Get() {
+  static T *Get() {
 #if DMLC_CXX11_THREAD_LOCAL && DMLC_MODERN_THREAD_LOCAL == 1
     static thread_local T inst;
     return &inst;
 #else
-    static MX_THREAD_LOCAL T* ptr = nullptr;
+    static MX_THREAD_LOCAL T *ptr = nullptr;
     if (ptr == nullptr) {
       ptr = new T();
       // Syntactic work-around for the nvcc of the initial cuda v10.1 release,
@@ -77,7 +78,7 @@ class ThreadLocalStore {
   /*! \brief internal mutex */
   std::mutex mutex_;
   /*!\brief internal data */
-  std::vector<T*> data_;
+  std::vector<T *> data_;
 };
 
 }  // namespace dmlc

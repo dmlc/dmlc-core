@@ -8,7 +8,7 @@
 
 #include "./base.h"
 #if DMLC_USE_CXX11
-#include <type_traits>
+  #include <type_traits>
 #endif
 #include <string>
 
@@ -17,7 +17,7 @@ namespace dmlc {
  * \brief whether a type is pod type
  * \tparam T the type to query
  */
-template<typename T>
+template <typename T>
 struct is_pod {
 #if DMLC_USE_CXX11
   /*! \brief the value of the traits */
@@ -28,12 +28,11 @@ struct is_pod {
 #endif
 };
 
-
 /*!
  * \brief whether a type is integer type
  * \tparam T the type to query
  */
-template<typename T>
+template <typename T>
 struct is_integral {
 #if DMLC_USE_CXX11
   /*! \brief the value of the traits */
@@ -48,7 +47,7 @@ struct is_integral {
  * \brief whether a type is floating point type
  * \tparam T the type to query
  */
-template<typename T>
+template <typename T>
 struct is_floating_point {
 #if DMLC_USE_CXX11
   /*! \brief the value of the traits */
@@ -63,15 +62,14 @@ struct is_floating_point {
  * \brief whether a type is arithemetic type
  * \tparam T the type to query
  */
-template<typename T>
+template <typename T>
 struct is_arithmetic {
 #if DMLC_USE_CXX11
   /*! \brief the value of the traits */
   static const bool value = std::is_arithmetic<T>::value;
 #else
   /*! \brief the value of the traits */
-  static const bool value = (dmlc::is_integral<T>::value ||
-                             dmlc::is_floating_point<T>::value);
+  static const bool value = (dmlc::is_integral<T>::value || dmlc::is_floating_point<T>::value);
 #endif
 };
 
@@ -82,7 +80,7 @@ struct is_arithmetic {
  *
  * \tparam T the type to query
  */
-template<typename T>
+template <typename T>
 struct type_name_helper {
   /*!
    * \return a string of typename.
@@ -97,7 +95,7 @@ struct type_name_helper {
  * \tparam T the type to query
  * \return a const string of typename.
  */
-template<typename T>
+template <typename T>
 inline std::string type_name() {
   return type_name_helper<T>::value();
 }
@@ -106,7 +104,7 @@ inline std::string type_name() {
  * \brief whether a type have save/load function
  * \tparam T the type to query
  */
-template<typename T>
+template <typename T>
 struct has_saveload {
   /*! \brief the value of the traits */
   static const bool value = false;
@@ -118,24 +116,24 @@ struct has_saveload {
  * \tparam cond the condition
  * \tparam Then the typename to be returned if cond is true
  * \tparam Else typename to be returned if cond is false
-*/
-template<bool cond, typename Then, typename Else>
+ */
+template <bool cond, typename Then, typename Else>
 struct IfThenElseType;
 
 /*! \brief macro to quickly declare traits information */
-#define DMLC_DECLARE_TRAITS(Trait, Type, Value)       \
-  template<>                                          \
-  struct Trait<Type> {                                \
-    static const bool value = Value;                  \
+#define DMLC_DECLARE_TRAITS(Trait, Type, Value) \
+  template <>                                   \
+  struct Trait<Type> {                          \
+    static const bool value = Value;            \
   }
 
 /*! \brief macro to quickly declare traits information */
-#define DMLC_DECLARE_TYPE_NAME(Type, Name)            \
-  template<>                                          \
-  struct type_name_helper<Type> {                     \
-    static inline std::string value() {               \
-      return Name;                                    \
-    }                                                 \
+#define DMLC_DECLARE_TYPE_NAME(Type, Name) \
+  template <>                              \
+  struct type_name_helper<Type> {          \
+    static inline std::string value() {    \
+      return Name;                         \
+    }                                      \
   }
 
 //! \cond Doxygen_Suppress
@@ -176,14 +174,14 @@ DMLC_DECLARE_TYPE_NAME(uint32_t, "int (non-negative)");
 DMLC_DECLARE_TYPE_NAME(uint64_t, "long (non-negative)");
 DMLC_DECLARE_TYPE_NAME(std::string, "string");
 DMLC_DECLARE_TYPE_NAME(bool, "boolean");
-DMLC_DECLARE_TYPE_NAME(void*, "ptr");
+DMLC_DECLARE_TYPE_NAME(void *, "ptr");
 
-template<typename Then, typename Else>
+template <typename Then, typename Else>
 struct IfThenElseType<true, Then, Else> {
   typedef Then Type;
 };
 
-template<typename Then, typename Else>
+template <typename Then, typename Else>
 struct IfThenElseType<false, Then, Else> {
   typedef Else Type;
 };

@@ -10,26 +10,30 @@
 
 #ifdef DMLC_USE_PARQUET
 
-#include <dmlc/filesystem.h>
-#include <gtest/gtest.h>
-#include <arrow/api.h>
-#include <arrow/io/api.h>
-#include <parquet/arrow/reader.h>
-#include <parquet/arrow/writer.h>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <memory>
-#include <condition_variable>
-#include "../src/data/csv_parser.h"
-#include "../src/data/parquet_parser.h"
+  #include <condition_variable>
+  #include <fstream>
+  #include <iostream>
+  #include <memory>
+  #include <string>
+  #include <vector>
+
+  #include <dmlc/filesystem.h>
+
+  #include <gtest/gtest.h>
+
+  #include "../src/data/csv_parser.h"
+  #include "../src/data/parquet_parser.h"
+
+  #include <arrow/api.h>
+  #include <arrow/io/api.h>
+  #include <parquet/arrow/reader.h>
+  #include <parquet/arrow/writer.h>
 
 namespace {
 
-void write_to_csv(const std::vector<std::vector<float>>& entries, const std::string& filename) {
+void write_to_csv(const std::vector<std::vector<float>> &entries, const std::string &filename) {
   std::ofstream csv_writer(filename);
-  for (auto& row : entries) {
+  for (auto &row : entries) {
     for (auto e : row) {
       csv_writer << e << ',';
     }
@@ -38,7 +42,7 @@ void write_to_csv(const std::vector<std::vector<float>>& entries, const std::str
   csv_writer.close();
 }
 
-void write_to_parquet(const std::vector<std::vector<float>>& entries, const std::string& filename) {
+void write_to_parquet(const std::vector<std::vector<float>> &entries, const std::string &filename) {
   int n_obs = entries.size();
   int n_feature = entries.at(0).size();
   std::vector<arrow::FloatBuilder> column_builders(n_feature);
@@ -57,15 +61,12 @@ void write_to_parquet(const std::vector<std::vector<float>>& entries, const std:
 
   // save to a file
   std::shared_ptr<arrow::io::FileOutputStream> outfile;
-  PARQUET_ASSIGN_OR_THROW(
-      outfile,
-      arrow::io::FileOutputStream::Open(filename));
+  PARQUET_ASSIGN_OR_THROW(outfile, arrow::io::FileOutputStream::Open(filename));
   // The last argument to the function call is the size of the RowGroup in
   // the parquet file. Normally you would choose this to be rather large but
   // for the example, we use a small value to have multiple RowGroups.
-  PARQUET_THROW_NOT_OK(
-      parquet::arrow::WriteTable(*table.get(), arrow::default_memory_pool(), outfile,
-        n_obs * n_feature));
+  PARQUET_THROW_NOT_OK(parquet::arrow::WriteTable(
+      *table.get(), arrow::default_memory_pool(), outfile, n_obs * n_feature));
 
   CHECK(outfile->Close().ok());
 }
@@ -95,15 +96,10 @@ TEST(ParquetParser, test_end_to_end) {
 
   // read both csv and parquet
   dmlc::data::CSVParser<unsigned> csv_parser(
-      dmlc::InputSplit::Create(csv_filename.c_str(), 0, 1, "text"),
-      {{"label_column", "-1"}},
-      1
-  );
+      dmlc::InputSplit::Create(csv_filename.c_str(), 0, 1, "text"), {{"label_column", "-1"}}, 1);
 
   dmlc::data::ParquetParser<unsigned> parquet_parser(
-      parquet_filename,
-      {{"nthreads", "1"}, {"label_column", "-1"}}
-  );
+      parquet_filename, {{"nthreads", "1"}, {"label_column", "-1"}});
 
   std::vector<dmlc::data::RowBlockContainer<unsigned>> csv_data(1), parquet_data(1);
 

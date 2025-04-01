@@ -10,9 +10,11 @@
 #include <dmlc/base.h>
 // this code depends on c++11
 #if DMLC_ENABLE_STD_THREAD
-#include <dmlc/threadediter.h>
-#include <algorithm>
-#include "./input_split_base.h"
+  #include <algorithm>
+
+  #include <dmlc/threadediter.h>
+
+  #include "./input_split_base.h"
 
 namespace dmlc {
 namespace io {
@@ -29,16 +31,18 @@ class ThreadedInputSplit : public InputSplit {
   explicit ThreadedInputSplit(InputSplitBase *base, const size_t batch_size)
       : buffer_size_(InputSplitBase::kBufferSize),
         batch_size_(batch_size),
-        base_(base), tmp_chunk_(NULL) {
+        base_(base),
+        tmp_chunk_(NULL) {
     iter_.set_max_capacity(2);
     // initalize the iterator
-    iter_.Init([this](InputSplitBase::Chunk **dptr) {
-        if (*dptr == NULL) {
-          *dptr = new InputSplitBase::Chunk(buffer_size_);
-        }
-        return base_->NextBatchEx(*dptr, batch_size_);
-      },
-      [base]() { base->BeforeFirst(); });
+    iter_.Init(
+        [this](InputSplitBase::Chunk **dptr) {
+          if (*dptr == NULL) {
+            *dptr = new InputSplitBase::Chunk(buffer_size_);
+          }
+          return base_->NextBatchEx(*dptr, batch_size_);
+        },
+        [base]() { base->BeforeFirst(); });
   }
   // destructor
   virtual ~ThreadedInputSplit(void) {
@@ -58,22 +62,30 @@ class ThreadedInputSplit : public InputSplit {
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
     if (tmp_chunk_ == NULL) {
-      if (!iter_.Next(&tmp_chunk_)) return false;
+      if (!iter_.Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     while (!base_->ExtractNextRecord(out_rec, tmp_chunk_)) {
       iter_.Recycle(&tmp_chunk_);
-      if (!iter_.Next(&tmp_chunk_)) return false;
+      if (!iter_.Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     return true;
   }
   // implement next chunk
   virtual bool NextChunk(Blob *out_chunk) {
     if (tmp_chunk_ == NULL) {
-      if (!iter_.Next(&tmp_chunk_)) return false;
+      if (!iter_.Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     while (!base_->ExtractNextChunk(out_chunk, tmp_chunk_)) {
       iter_.Recycle(&tmp_chunk_);
-      if (!iter_.Next(&tmp_chunk_)) return false;
+      if (!iter_.Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     return true;
   }

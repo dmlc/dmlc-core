@@ -7,8 +7,6 @@
 #ifndef DMLC_INPUT_SPLIT_SHUFFLE_H_
 #define DMLC_INPUT_SPLIT_SHUFFLE_H_
 
-#include <dmlc/io.h>
-
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -16,12 +14,16 @@
 #include <string>
 #include <vector>
 
+#include <dmlc/io.h>
+
 namespace dmlc {
 /*! \brief class to construct input split with global shuffling */
 class InputSplitShuffle : public InputSplit {
  public:
   // destructor
-  virtual ~InputSplitShuffle(void) { source_.reset(); }
+  virtual ~InputSplitShuffle(void) {
+    source_.reset();
+  }
   // implement BeforeFirst
   virtual void BeforeFirst(void) {
     if (num_shuffle_parts_ > 1) {
@@ -47,8 +49,7 @@ class InputSplitShuffle : public InputSplit {
           return false;
         }
         ++cur_shuffle_idx_;
-        int idx =
-            shuffle_indexes_[cur_shuffle_idx_] + part_index_ * num_shuffle_parts_;
+        int idx = shuffle_indexes_[cur_shuffle_idx_] + part_index_ * num_shuffle_parts_;
         source_->ResetPartition(idx, num_parts_ * num_shuffle_parts_);
         return NextRecord(out_rec);
       } else {
@@ -59,15 +60,14 @@ class InputSplitShuffle : public InputSplit {
     }
   }
   // implement next chunk
-  virtual bool NextChunk(Blob* out_chunk) {
+  virtual bool NextChunk(Blob *out_chunk) {
     if (num_shuffle_parts_ > 1) {
       if (!source_->NextChunk(out_chunk)) {
         if (cur_shuffle_idx_ == num_shuffle_parts_ - 1) {
           return false;
         }
         ++cur_shuffle_idx_;
-        int idx =
-            shuffle_indexes_[cur_shuffle_idx_] + part_index_ * num_shuffle_parts_;
+        int idx = shuffle_indexes_[cur_shuffle_idx_] + part_index_ * num_shuffle_parts_;
         source_->ResetPartition(idx, num_parts_ * num_shuffle_parts_);
         return NextChunk(out_chunk);
       } else {
@@ -99,12 +99,8 @@ class InputSplitShuffle : public InputSplit {
    * \param num_shuffle_parts number of shuffle chunks for each split
    * \param shuffle_seed shuffle seed for chunk shuffling
    */
-  InputSplitShuffle(const char* uri,
-                    unsigned part_index,
-                    unsigned num_parts,
-                    const char* type,
-                    unsigned num_shuffle_parts,
-                    int shuffle_seed)
+  InputSplitShuffle(const char *uri, unsigned part_index, unsigned num_parts, const char *type,
+      unsigned num_shuffle_parts, int shuffle_seed)
       : part_index_(part_index),
         num_parts_(num_parts),
         num_shuffle_parts_(num_shuffle_parts),
@@ -112,12 +108,10 @@ class InputSplitShuffle : public InputSplit {
     for (unsigned i = 0; i < num_shuffle_parts_; i++) {
       shuffle_indexes_.push_back(i);
     }
-    trnd_.seed(kRandMagic_ + part_index_ + num_parts_ + num_shuffle_parts_ +
-               shuffle_seed);
+    trnd_.seed(kRandMagic_ + part_index_ + num_parts_ + num_shuffle_parts_ + shuffle_seed);
     std::shuffle(shuffle_indexes_.begin(), shuffle_indexes_.end(), trnd_);
     int idx = shuffle_indexes_[cur_shuffle_idx_] + part_index_ * num_shuffle_parts_;
-    source_.reset(
-        InputSplit::Create(uri, idx , num_parts_ * num_shuffle_parts_, type));
+    source_.reset(InputSplit::Create(uri, idx, num_parts_ * num_shuffle_parts_, type));
   }
   /*!
    * \brief factory function:
@@ -137,15 +131,10 @@ class InputSplitShuffle : public InputSplit {
    * \return a new input split
    * \sa InputSplit::Type
    */
-  static InputSplit* Create(const char* uri,
-                            unsigned part_index,
-                            unsigned num_parts,
-                            const char* type,
-                            unsigned num_shuffle_parts,
-                            int shuffle_seed) {
+  static InputSplit *Create(const char *uri, unsigned part_index, unsigned num_parts,
+      const char *type, unsigned num_shuffle_parts, int shuffle_seed) {
     CHECK(num_shuffle_parts > 0) << "number of shuffle parts should be greater than zero!";
-    return new InputSplitShuffle(
-        uri, part_index, num_parts, type, num_shuffle_parts, shuffle_seed);
+    return new InputSplitShuffle(uri, part_index, num_parts, type, num_shuffle_parts, shuffle_seed);
   }
 
  private:

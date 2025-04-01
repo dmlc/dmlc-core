@@ -2,30 +2,32 @@
 // this is a harder case
 #define DMLC_IO_USE_LITTLE_ENDIAN 0
 
+#include <cstring>
+#include <iostream>
+#include <sstream>
+#include <unordered_map>
+
 #include <dmlc/io.h>
+#include <dmlc/logging.h>
 #include <dmlc/memory_io.h>
 #include <dmlc/parameter.h>
-#include <dmlc/logging.h>
+
 #include <gtest/gtest.h>
-#include <sstream>
-#include <cstring>
-#include <unordered_map>
-#include <iostream>
 
 using namespace std;
 
-template<typename T>
+template <typename T>
 inline void TestSaveLoad(T data) {
   std::string blob;
   dmlc::MemoryStringStream fs(&blob);
   {
     T temp(data);
-    static_cast<dmlc::Stream*>(&fs)->Write(temp);
+    static_cast<dmlc::Stream *>(&fs)->Write(temp);
     temp.clear();
   }
   fs.Seek(0);
   T copy_data;
-  CHECK(static_cast<dmlc::Stream*>(&fs)->Read(&copy_data));
+  CHECK(static_cast<dmlc::Stream *>(&fs)->Read(&copy_data));
   ASSERT_EQ(data, copy_data);
 }
 
@@ -47,7 +49,9 @@ class MyClass {
   std::string data_;
 };
 // need to declare the traits property of my class to dmlc
-namespace dmlc { DMLC_DECLARE_TRAITS(has_saveload, MyClass, true); }
+namespace dmlc {
+DMLC_DECLARE_TRAITS(has_saveload, MyClass, true);
+}
 
 // test serializer
 TEST(Serializer, basics) {
@@ -65,29 +69,25 @@ TEST(Serializer, basics) {
   }
   TestSaveLoad(b);
 
-  std::vector<std::vector<int> > temp {{1,2,3}, {1,2}, {1,2,3,4}};
+  std::vector<std::vector<int>> temp{{1, 2, 3}, {1, 2}, {1, 2, 3, 4}};
   TestSaveLoad(temp);
-  TestSaveLoad(
-      std::map<int, std::string>  {{1, "hellkow"}, {2, "world"}});
-  TestSaveLoad(
-      std::unordered_map<int, std::string>  {{1, "hellkow"}, {2, "world"}});
-  TestSaveLoad(
-      std::unordered_multimap<int, std::string>  {{1, "hellkow"}, {1, "world"}, {2, "111"}});
-  TestSaveLoad(std::set<std::string>  {"hjhjm", "asasa"});
-  TestSaveLoad(std::unordered_set<std::string>  {"hjhjm", "asasa"});
+  TestSaveLoad(std::map<int, std::string>{{1, "hellkow"}, {2, "world"}});
+  TestSaveLoad(std::unordered_map<int, std::string>{{1, "hellkow"}, {2, "world"}});
+  TestSaveLoad(std::unordered_multimap<int, std::string>{{1, "hellkow"}, {1, "world"}, {2, "111"}});
+  TestSaveLoad(std::set<std::string>{"hjhjm", "asasa"});
+  TestSaveLoad(std::unordered_set<std::string>{"hjhjm", "asasa"});
   LOG(INFO) << "jere";
-  TestSaveLoad(std::list<std::string>  {"hjhjm", "asasa"});
+  TestSaveLoad(std::list<std::string>{"hjhjm", "asasa"});
   TestSaveLoad(std::list<int>(a.begin(), a.end()));
-  TestSaveLoad(std::list<MyClass> {MyClass("abc"), MyClass("def")});
+  TestSaveLoad(std::list<MyClass>{MyClass("abc"), MyClass("def")});
 }
-
 
 // test serializer
 TEST(Serializer, endian) {
   int n = 10;
   std::string blob;
   dmlc::MemoryStringStream fs(&blob);
-  dmlc::Stream* strm = &fs;
+  dmlc::Stream *strm = &fs;
   strm->Write(n);
   // big endians
   if (DMLC_IO_USE_LITTLE_ENDIAN == 0) {
@@ -109,7 +109,7 @@ TEST(Serializer, endian) {
 
 TEST(Serializer, endian_detection) {
   std::string little_endian_flag
-    = dmlc::GetEnv("DMLC_UNIT_TEST_LITTLE_ENDIAN", std::string("NULL"));
+      = dmlc::GetEnv("DMLC_UNIT_TEST_LITTLE_ENDIAN", std::string("NULL"));
   if (little_endian_flag == "0" || little_endian_flag == "1") {
     // DMLC_UNIT_TEST_LITTLE_ENDIAN env var needs to be set, so that
     // CI can provide the correct endian value
@@ -121,6 +121,8 @@ TEST(Serializer, endian_detection) {
       ASSERT_FALSE(DMLC_LITTLE_ENDIAN);
     }
   } else {
-    std::cout << "\x1B[33mWarning\u001B[0m: Skipping this test because DMLC_UNIT_TEST_LITTLE_ENDIAN is not set" << std::endl;
+    std::cout << "\x1B[33mWarning\u001B[0m: Skipping this test because "
+                 "DMLC_UNIT_TEST_LITTLE_ENDIAN is not set"
+              << std::endl;
   }
 }

@@ -1,19 +1,19 @@
 // Copyright by Contributors
-#include <dmlc/logging.h>
-#include <dmlc/common.h>
 #include <algorithm>
+
+#include <dmlc/common.h>
+#include <dmlc/logging.h>
+
 #include "./line_split.h"
 
 #if DMLC_USE_REGEX
-#include <regex>
+  #include <regex>
 #endif
 
 namespace dmlc {
 namespace io {
-void InputSplitBase::Init(FileSystem *filesys,
-                          const char *uri,
-                          size_t align_bytes,
-                          const bool recurse_directories) {
+void InputSplitBase::Init(
+    FileSystem *filesys, const char *uri, size_t align_bytes, const bool recurse_directories) {
   this->filesys_ = filesys;
   // initialize the path
   this->InitInputFileInfo(uri, recurse_directories);
@@ -21,14 +21,12 @@ void InputSplitBase::Init(FileSystem *filesys,
   file_offset_[0] = 0;
   for (size_t i = 0; i < files_.size(); ++i) {
     file_offset_[i + 1] = file_offset_[i] + files_[i].size;
-    CHECK(files_[i].size % align_bytes == 0)
-        << "file do not align by " << align_bytes << " bytes";
+    CHECK(files_[i].size % align_bytes == 0) << "file do not align by " << align_bytes << " bytes";
   }
   this->align_bytes_ = align_bytes;
 }
 
-void InputSplitBase::ResetPartition(unsigned rank,
-                                    unsigned nsplit) {
+void InputSplitBase::ResetPartition(unsigned rank, unsigned nsplit) {
   size_t ntotal = file_offset_.back();
   size_t nstep = (ntotal + nsplit - 1) / nsplit;
   // align the nstep to 4 bytes
@@ -36,19 +34,20 @@ void InputSplitBase::ResetPartition(unsigned rank,
   offset_begin_ = std::min(nstep * rank, ntotal);
   offset_end_ = std::min(nstep * (rank + 1), ntotal);
   offset_curr_ = offset_begin_;
-  if (offset_begin_ == offset_end_) return;
-  file_ptr_ = std::upper_bound(file_offset_.begin(),
-                               file_offset_.end(),
-                               offset_begin_) - file_offset_.begin() - 1;
-  file_ptr_end_ = std::upper_bound(file_offset_.begin(),
-                                   file_offset_.end(),
-                                   offset_end_) - file_offset_.begin() - 1;
+  if (offset_begin_ == offset_end_) {
+    return;
+  }
+  file_ptr_ = std::upper_bound(file_offset_.begin(), file_offset_.end(), offset_begin_)
+              - file_offset_.begin() - 1;
+  file_ptr_end_ = std::upper_bound(file_offset_.begin(), file_offset_.end(), offset_end_)
+                  - file_offset_.begin() - 1;
   if (fs_ != NULL) {
-    delete fs_; fs_ = NULL;
+    delete fs_;
+    fs_ = NULL;
   }
   // find the exact ending position
   if (offset_end_ != file_offset_[file_ptr_end_]) {
-    CHECK(offset_end_ >file_offset_[file_ptr_end_]);
+    CHECK(offset_end_ > file_offset_[file_ptr_end_]);
     CHECK(file_ptr_end_ < files_.size());
     fs_ = filesys_->OpenForRead(files_[file_ptr_end_].path);
     fs_->Seek(offset_end_ - file_offset_[file_ptr_end_]);
@@ -64,10 +63,11 @@ void InputSplitBase::ResetPartition(unsigned rank,
 }
 
 void InputSplitBase::BeforeFirst(void) {
-  if (offset_begin_ >= offset_end_) return;
-  size_t fp = std::upper_bound(file_offset_.begin(),
-                               file_offset_.end(),
-                               offset_begin_) - file_offset_.begin() - 1;
+  if (offset_begin_ >= offset_end_) {
+    return;
+  }
+  size_t fp = std::upper_bound(file_offset_.begin(), file_offset_.end(), offset_begin_)
+              - file_offset_.begin() - 1;
   if (file_ptr_ != fp) {
     delete fs_;
     file_ptr_ = fp;
@@ -93,7 +93,7 @@ std::string InputSplitBase::StripEnd(std::string str, char ch) {
   return str;
 }
 
-std::vector<URI> InputSplitBase::ConvertToURIs(const std::string& uri) {
+std::vector<URI> InputSplitBase::ConvertToURIs(const std::string &uri) {
   // split by :
   const char dlm = ';';
   std::vector<std::string> file_list = Split(uri, dlm);
@@ -124,18 +124,21 @@ std::vector<URI> InputSplitBase::ConvertToURIs(const std::string& uri) {
         try {
           std::regex pattern(spattern);
           for (size_t i = 0; i < dfiles.size(); ++i) {
-            if (dfiles[i].type != kFile || dfiles[i].size == 0) continue;
+            if (dfiles[i].type != kFile || dfiles[i].size == 0) {
+              continue;
+            }
             std::string stripped = StripEnd(dfiles[i].path.name, '/');
             std::smatch base_match;
             if (std::regex_match(stripped, base_match, pattern)) {
               for (size_t j = 0; j < base_match.size(); ++j) {
                 if (base_match[j].str() == stripped) {
-                  expanded_list.push_back(dfiles[i].path); break;
+                  expanded_list.push_back(dfiles[i].path);
+                  break;
                 }
               }
             }
           }
-        } catch (std::regex_error& e) {
+        } catch (std::regex_error &e) {
           LOG(FATAL) << e.what() << " bad regex " << spattern
                      << "This could due to compiler version, g++-4.9 is needed";
         }
@@ -146,11 +149,10 @@ std::vector<URI> InputSplitBase::ConvertToURIs(const std::string& uri) {
   return expanded_list;
 }
 
-void InputSplitBase::InitInputFileInfo(const std::string& uri,
-                                       const bool recurse_directories) {
+void InputSplitBase::InitInputFileInfo(const std::string &uri, const bool recurse_directories) {
   std::vector<URI> expanded_list = this->ConvertToURIs(uri);
   for (size_t i = 0; i < expanded_list.size(); ++i) {
-    const URI& path = expanded_list[i];
+    const URI &path = expanded_list[i];
     FileInfo info = filesys_->GetPathInfo(path);
     if (info.type == kDirectory) {
       std::vector<FileInfo> dfiles;
@@ -170,8 +172,7 @@ void InputSplitBase::InitInputFileInfo(const std::string& uri,
       }
     }
   }
-  CHECK_NE(files_.size(), 0U)
-      << "Cannot find any files that matches the URI pattern " << uri;
+  CHECK_NE(files_.size(), 0U) << "Cannot find any files that matches the URI pattern " << uri;
 }
 
 size_t InputSplitBase::Read(void *ptr, size_t size) {
@@ -180,36 +181,45 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
   if (fs_ == NULL) {
     return 0;
   }
-  if (offset_begin_ >= offset_end_) return 0;
-  if (offset_curr_ +  size > offset_end_) {
+  if (offset_begin_ >= offset_end_) {
+    return 0;
+  }
+  if (offset_curr_ + size > offset_end_) {
     size = offset_end_ - offset_curr_;
   }
-  if (size == 0) return 0;
+  if (size == 0) {
+    return 0;
+  }
   size_t nleft = size;
-  char *buf = reinterpret_cast<char*>(ptr);
+  char *buf = reinterpret_cast<char *>(ptr);
   while (true) {
     size_t n = fs_->Read(buf, nleft);
-    nleft -= n; buf += n;
+    nleft -= n;
+    buf += n;
     offset_curr_ += n;
-    if (nleft == 0) break;
+    if (nleft == 0) {
+      break;
+    }
     if (n == 0) {
       if (is_text_parser) {
         // Insert a newline between files to handle files with NOEOL.
         // See https://github.com/dmlc/dmlc-core/pull/385 for explanation.
-        buf[0] = '\n'; ++buf; --nleft;
+        buf[0] = '\n';
+        ++buf;
+        --nleft;
       }
       if (offset_curr_ != file_offset_[file_ptr_ + 1]) {
-        LOG(ERROR) << "curr=" << offset_curr_
-                   << ",begin=" << offset_begin_
-                   << ",end=" << offset_end_
-                   << ",fileptr=" << file_ptr_
+        LOG(ERROR) << "curr=" << offset_curr_ << ",begin=" << offset_begin_
+                   << ",end=" << offset_end_ << ",fileptr=" << file_ptr_
                    << ",fileoffset=" << file_offset_[file_ptr_ + 1];
         for (size_t i = 0; i < file_ptr_; ++i) {
           LOG(ERROR) << "offset[" << i << "]=" << file_offset_[i];
         }
         LOG(FATAL) << "file offset not calculated correctly";
       }
-      if (file_ptr_ + 1 >= files_.size()) break;
+      if (file_ptr_ + 1 >= files_.size()) {
+        break;
+      }
       file_ptr_ += 1;
       delete fs_;
       fs_ = filesys_->OpenForRead(files_[file_ptr_].path);
@@ -221,22 +231,24 @@ size_t InputSplitBase::Read(void *ptr, size_t size) {
 bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
   size_t max_size = *size;
   if (max_size <= overflow_.length()) {
-    *size = 0; return true;
+    *size = 0;
+    return true;
   }
   if (overflow_.length() != 0) {
     std::memcpy(buf, BeginPtr(overflow_), overflow_.length());
   }
   size_t olen = overflow_.length();
   overflow_.resize(0);
-  size_t nread = this->Read(reinterpret_cast<char*>(buf) + olen,
-                            max_size - olen);
+  size_t nread = this->Read(reinterpret_cast<char *>(buf) + olen, max_size - olen);
   nread += olen;
-  if (nread == 0) return false;
+  if (nread == 0) {
+    return false;
+  }
   if (this->IsTextParser()) {
     if (nread == olen) {
       // Insert a newline between files to handle files with NOEOL.
       // See https://github.com/dmlc/dmlc-core/pull/452 for explanation.
-      char *bufptr = reinterpret_cast<char*>(buf);
+      char *bufptr = reinterpret_cast<char *>(buf);
       bufptr[nread] = '\n';
       nread++;
     }
@@ -246,7 +258,7 @@ bool InputSplitBase::ReadChunk(void *buf, size_t *size) {
       return true;
     }
   }
-  const char *bptr = reinterpret_cast<const char*>(buf);
+  const char *bptr = reinterpret_cast<const char *>(buf);
   // return the last position where a record starts
   const char *bend = this->FindLastRecordBegin(bptr, bptr + nread);
   *size = bend - bptr;
@@ -264,7 +276,9 @@ bool InputSplitBase::Chunk::Load(InputSplitBase *split, size_t buffer_size) {
     size_t size = (data.size() - 1) * sizeof(uint32_t);
     // set back to 0 for string safety
     data.back() = 0;
-    if (!split->ReadChunk(BeginPtr(data), &size)) return false;
+    if (!split->ReadChunk(BeginPtr(data), &size)) {
+      return false;
+    }
     if (size == 0) {
       data.resize(data.size() * 2);
     } else {
@@ -284,8 +298,9 @@ bool InputSplitBase::Chunk::Append(InputSplitBase *split, size_t buffer_size) {
     size_t size = buffer_size * sizeof(uint32_t);
     // set back to 0 for string safety
     data.back() = 0;
-    if (!split->ReadChunk(reinterpret_cast<char *>(BeginPtr(data)) + previous_size, &size))
+    if (!split->ReadChunk(reinterpret_cast<char *>(BeginPtr(data)) + previous_size, &size)) {
       return false;
+    }
     if (size == 0) {
       data.resize(data.size() * 2);
     } else {
@@ -298,7 +313,9 @@ bool InputSplitBase::Chunk::Append(InputSplitBase *split, size_t buffer_size) {
 }
 
 bool InputSplitBase::ExtractNextChunk(Blob *out_chunk, Chunk *chunk) {
-  if (chunk->begin == chunk->end) return false;
+  if (chunk->begin == chunk->end) {
+    return false;
+  }
   out_chunk->dptr = chunk->begin;
   out_chunk->size = chunk->end - chunk->begin;
   chunk->begin = chunk->end;

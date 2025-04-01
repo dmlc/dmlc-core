@@ -1,17 +1,19 @@
-#include <dmlc/filesystem.h>
-#include <gtest/gtest.h>
 #include <fstream>
-#include <string>
 #include <queue>
+#include <string>
 #include <utility>
 
+#include <dmlc/filesystem.h>
+
+#include <gtest/gtest.h>
+
 #ifdef _WIN32
-#include <direct.h>
+  #include <direct.h>
 #else  // _WIN32
-#include <sys/stat.h>
+  #include <sys/stat.h>
 #endif  // _WIN32
 
-static inline void MakeDirectory(const std::string& path) {
+static inline void MakeDirectory(const std::string &path) {
 #ifdef _WIN32
   CHECK_EQ(_mkdir(path.c_str()), 0) << "Failed to make directory " << path;
 #else  // _WIN32
@@ -53,7 +55,8 @@ TEST(TemporaryDirectory, test_recursive) {
     std::queue<std::pair<int, std::string>> Q;  // (depth, directory)
     Q.emplace(0, tempdir.path);
     while (!Q.empty()) {
-      auto e = Q.front(); Q.pop();
+      auto e = Q.front();
+      Q.pop();
       const int current_depth = e.first;
       const std::string current_directory = e.second;
       if (current_depth < recurse_depth) {

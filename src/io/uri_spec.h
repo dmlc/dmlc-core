@@ -9,12 +9,13 @@
 #ifndef DMLC_IO_URI_SPEC_H_
 #define DMLC_IO_URI_SPEC_H_
 
-#include <dmlc/common.h>
-#include <string>
-#include <sstream>
 #include <map>
-#include <vector>
+#include <sstream>
+#include <string>
 #include <utility>
+#include <vector>
+
+#include <dmlc/common.h>
 
 namespace dmlc {
 namespace io {
@@ -39,9 +40,7 @@ class URISpec {
    * \param part_index The parition index of the part.
    * \param num_parts total number of parts.
    */
-  explicit URISpec(const std::string& uri,
-                   unsigned part_index,
-                   unsigned num_parts) {
+  explicit URISpec(const std::string &uri, unsigned part_index, unsigned num_parts) {
     std::vector<std::string> name_cache = Split(uri, '#');
 
     if (name_cache.size() == 2) {
@@ -62,9 +61,9 @@ class URISpec {
         std::istringstream is(arg_list[i]);
         std::pair<std::string, std::string> kv;
         CHECK(std::getline(is, kv.first, '=')) << "Invalid uri argument format"
-          << " for key in arg " << i + 1;
+                                               << " for key in arg " << i + 1;
         CHECK(std::getline(is, kv.second)) << "Invalid uri argument format"
-          << " for value in arg " << i + 1;
+                                           << " for value in arg " << i + 1;
         this->args.insert(kv);
       }
     } else {

@@ -1,13 +1,13 @@
 // Copyright by Contributors
 
-#include <dmlc/filesystem.h>
 #include <queue>
+
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {
 
-void FileSystem::ListDirectoryRecursive(const URI &path,
-                                        std::vector<FileInfo> *out_list) {
+void FileSystem::ListDirectoryRecursive(const URI &path, std::vector<FileInfo> *out_list) {
   std::queue<URI> queue;
   queue.push(path);
   while (!queue.empty()) {
@@ -28,12 +28,11 @@ void FileSystem::ListDirectoryRecursive(const URI &path,
 
 void TemporaryDirectory::RecursiveDelete(const std::string &path) {
   io::URI uri(path.c_str());
-  io::FileSystem* fs = io::FileSystem::GetInstance(uri);
+  io::FileSystem *fs = io::FileSystem::GetInstance(uri);
   std::vector<io::FileInfo> file_list;
   fs->ListDirectory(uri, &file_list);
   for (io::FileInfo info : file_list) {
-    CHECK(!IsSymlink(info.path.name))
-        << "Symlink not supported in TemporaryDirectory";
+    CHECK(!IsSymlink(info.path.name)) << "Symlink not supported in TemporaryDirectory";
     if (info.type == io::FileType::kDirectory) {
       RecursiveDelete(info.path.name);
     } else {

@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <vector>
+
 #include "./base.h"
 #include "./logging.h"
 #include "./parameter.h"
@@ -23,19 +24,19 @@ namespace dmlc {
  * \tparam EntryType Type of Registry entries,
  *     EntryType need to name a name field.
  */
-template<typename EntryType>
+template <typename EntryType>
 class Registry {
  public:
   /*! \return list of entries in the registry(excluding alias) */
-  inline static const std::vector<const EntryType*>& List() {
+  inline static const std::vector<const EntryType *> &List() {
     return Get()->const_list_;
   }
   /*! \return list all names registered in the registry, including alias */
   inline static std::vector<std::string> ListAllNames() {
-    const std::map<std::string, EntryType*> &fmap = Get()->fmap_;
-    typename std::map<std::string, EntryType*>::const_iterator p;
+    const std::map<std::string, EntryType *> &fmap = Get()->fmap_;
+    typename std::map<std::string, EntryType *>::const_iterator p;
     std::vector<std::string> names;
-    for (p = fmap.begin(); p !=fmap.end(); ++p) {
+    for (p = fmap.begin(); p != fmap.end(); ++p) {
       names.push_back(p->first);
     }
     return names;
@@ -46,8 +47,8 @@ class Registry {
    * \return the corresponding function, can be NULL
    */
   inline static const EntryType *Find(const std::string &name) {
-    const std::map<std::string, EntryType*> &fmap = Get()->fmap_;
-    typename std::map<std::string, EntryType*>::const_iterator p = fmap.find(name);
+    const std::map<std::string, EntryType *> &fmap = Get()->fmap_;
+    typename std::map<std::string, EntryType *>::const_iterator p = fmap.find(name);
     if (p != fmap.end()) {
       return p->second;
     } else {
@@ -59,13 +60,11 @@ class Registry {
    * \param key_name The original entry key
    * \param alias The alias key.
    */
-  inline void AddAlias(const std::string& key_name,
-                       const std::string& alias) {
-    EntryType* e = fmap_.at(key_name);
+  inline void AddAlias(const std::string &key_name, const std::string &alias) {
+    EntryType *e = fmap_.at(key_name);
     if (fmap_.count(alias)) {
-      CHECK_EQ(e, fmap_.at(alias))
-          << "Trying to register alias " << alias << " for key " << key_name
-          << " but " << alias << " is already taken";
+      CHECK_EQ(e, fmap_.at(alias)) << "Trying to register alias " << alias << " for key "
+                                   << key_name << " but " << alias << " is already taken";
     } else {
       fmap_[alias] = e;
     }
@@ -75,7 +74,7 @@ class Registry {
    * \param name name of the function
    * \return ref to the registered entry, used to set properties
    */
-  inline EntryType &__REGISTER__(const std::string& name) {
+  inline EntryType &__REGISTER__(const std::string &name) {
     std::lock_guard<std::mutex> guard(registering_mutex);
     if (fmap_.count(name) > 0) {
       return *fmap_[name];
@@ -92,7 +91,7 @@ class Registry {
    * \param name name of the function
    * \return ref to the registered entry, used to set properties
    */
-  inline EntryType &__REGISTER_OR_GET__(const std::string& name) {
+  inline EntryType &__REGISTER_OR_GET__(const std::string &name) {
     if (fmap_.count(name) == 0) {
       return __REGISTER__(name);
     } else {
@@ -108,11 +107,11 @@ class Registry {
 
  private:
   /*! \brief list of entry types */
-  std::vector<EntryType*> entry_list_;
+  std::vector<EntryType *> entry_list_;
   /*! \brief list of entry types */
-  std::vector<const EntryType*> const_list_;
+  std::vector<const EntryType *> const_list_;
   /*! \brief map of name->function */
-  std::map<std::string, EntryType*> fmap_;
+  std::map<std::string, EntryType *> fmap_;
   /*! \brief lock guarding the registering*/
   std::mutex registering_mutex;
   /*! \brief constructor */
@@ -147,7 +146,7 @@ class Registry {
  * \tparam EntryType The type of subclass that inheritate the base.
  * \tparam FunctionType The function type this registry is registerd.
  */
-template<typename EntryType, typename FunctionType>
+template <typename EntryType, typename FunctionType>
 class FunctionRegEntryBase {
  public:
   /*! \brief name of the entry */
@@ -186,9 +185,8 @@ class FunctionRegEntryBase {
    * \param description Description of the argument.
    * \return reference to self.
    */
-  inline EntryType &add_argument(const std::string &name,
-                                 const std::string &type,
-                                 const std::string &description) {
+  inline EntryType &add_argument(
+      const std::string &name, const std::string &type, const std::string &description) {
     ParamFieldInfo info;
     info.name = name;
     info.type = type;
@@ -207,10 +205,10 @@ class FunctionRegEntryBase {
     return this->self();
   }
   /*!
-  * \brief Set the return type.
-  * \param type Return type of the function, could be Symbol or Symbol[]
-  * \return reference to self.
-  */
+   * \brief Set the return type.
+   * \param type Return type of the function, could be Symbol or Symbol[]
+   * \return reference to self.
+   */
   inline EntryType &set_return_type(const std::string &type) {
     return_type = type;
     return this->self();
@@ -221,7 +219,7 @@ class FunctionRegEntryBase {
    * \return reference of self as derived type
    */
   inline EntryType &self() {
-    return *(static_cast<EntryType*>(this));
+    return *(static_cast<EntryType *>(this));
   }
 };
 
@@ -231,12 +229,12 @@ class FunctionRegEntryBase {
  * This macro must be used under namespace dmlc, and only used once in cc file.
  * \param EntryType Type of registry entry
  */
-#define DMLC_REGISTRY_ENABLE(EntryType)                                 \
-  template<>                                                            \
-  Registry<EntryType > *Registry<EntryType >::Get() {                   \
-    static Registry<EntryType > inst;                                   \
-    return &inst;                                                       \
-  }                                                                     \
+#define DMLC_REGISTRY_ENABLE(EntryType)             \
+  template <>                                       \
+  Registry<EntryType> *Registry<EntryType>::Get() { \
+    static Registry<EntryType> inst;                \
+    return &inst;                                   \
+  }
 
 /*!
  * \brief Generic macro to register an EntryType
@@ -247,9 +245,9 @@ class FunctionRegEntryBase {
  * \param Name The name to be registered.
  * \sa FactoryRegistryEntryBase
  */
-#define DMLC_REGISTRY_REGISTER(EntryType, EntryTypeName, Name)          \
-  static DMLC_ATTRIBUTE_UNUSED EntryType & __make_ ## EntryTypeName ## _ ## Name ## __ = \
-      ::dmlc::Registry<EntryType>::Get()->__REGISTER__(#Name)           \
+#define DMLC_REGISTRY_REGISTER(EntryType, EntryTypeName, Name)                \
+  static DMLC_ATTRIBUTE_UNUSED EntryType &__make_##EntryTypeName##_##Name##__ \
+      = ::dmlc::Registry<EntryType>::Get()->__REGISTER__(#Name)
 
 /*!
  * \brief (Optional) Declare a file tag to current file that contains object registrations.
@@ -260,8 +258,10 @@ class FunctionRegEntryBase {
  * \param UniqueTag The unique tag used to represent.
  * \sa DMLC_REGISTRY_LINK_TAG
  */
-#define DMLC_REGISTRY_FILE_TAG(UniqueTag)                                \
-  int __dmlc_registry_file_tag_ ## UniqueTag ## __() { return 0; }
+#define DMLC_REGISTRY_FILE_TAG(UniqueTag)          \
+  int __dmlc_registry_file_tag_##UniqueTag##__() { \
+    return 0;                                      \
+  }
 
 /*!
  * \brief (Optional) Force link to all the objects registered in file tag.
@@ -272,8 +272,8 @@ class FunctionRegEntryBase {
  *  DMLC_REGISTRY_FILE_TAG and DMLC_REGISTRY_LINK_TAG are optional macros for registration.
  *  They are used to encforce link of certain file into during static linking.
  *
- *  This is mainly used to solve problem during statically link a library which contains backward registration.
- *  Specifically, this avoids the objects in these file tags to be ignored by compiler.
+ *  This is mainly used to solve problem during statically link a library which contains backward
+ * registration. Specifically, this avoids the objects in these file tags to be ignored by compiler.
  *
  *  For dynamic linking, this problem won't occur as everything is loaded by default.
  *
@@ -302,9 +302,9 @@ class FunctionRegEntryBase {
  * \param UniqueTag The unique tag used to represent.
  * \sa DMLC_REGISTRY_ENABLE, DMLC_REGISTRY_FILE_TAG
  */
-#define DMLC_REGISTRY_LINK_TAG(UniqueTag)                                \
-  int __dmlc_registry_file_tag_ ## UniqueTag ## __();                   \
-  static int DMLC_ATTRIBUTE_UNUSED __reg_file_tag_ ## UniqueTag ## __ = \
-      __dmlc_registry_file_tag_ ## UniqueTag ## __();
+#define DMLC_REGISTRY_LINK_TAG(UniqueTag)                         \
+  int __dmlc_registry_file_tag_##UniqueTag##__();                 \
+  static int DMLC_ATTRIBUTE_UNUSED __reg_file_tag_##UniqueTag##__ \
+      = __dmlc_registry_file_tag_##UniqueTag##__();
 }  // namespace dmlc
 #endif  // DMLC_REGISTRY_H_

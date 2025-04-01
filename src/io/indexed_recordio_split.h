@@ -6,14 +6,16 @@
 #ifndef DMLC_IO_INDEXED_RECORDIO_SPLIT_H_
 #define DMLC_IO_INDEXED_RECORDIO_SPLIT_H_
 
+#include <cstdio>
+#include <cstring>
+#include <random>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <dmlc/io.h>
 #include <dmlc/recordio.h>
-#include <vector>
-#include <cstdio>
-#include <string>
-#include <cstring>
-#include <utility>
-#include <random>
+
 #include "./input_split_base.h"
 
 namespace dmlc {
@@ -22,16 +24,12 @@ const unsigned INDEXED_RECORDIO_ALIGN = 4;
 /*! \brief class that splits the recordIO file by record */
 class IndexedRecordIOSplitter : public InputSplitBase {
  public:
-  IndexedRecordIOSplitter(FileSystem *fs,
-                          const char *uri,
-                          const char *index_uri,
-                          unsigned rank,
-                          unsigned nsplit,
-                          const size_t batch_size,
-                          const bool shuffle,
-                          const int seed = 0) {
+  IndexedRecordIOSplitter(FileSystem *fs, const char *uri, const char *index_uri, unsigned rank,
+      unsigned nsplit, const size_t batch_size, const bool shuffle, const int seed = 0) {
     this->shuffle_ = shuffle;
-    if (shuffle) SetRandomSeed(seed);
+    if (shuffle) {
+      SetRandomSeed(seed);
+    }
     this->batch_size_ = batch_size;
     this->Init(fs, uri, INDEXED_RECORDIO_ALIGN);
     this->ReadIndexFile(fs, index_uri);
@@ -48,7 +46,9 @@ class IndexedRecordIOSplitter : public InputSplitBase {
   bool NextBatch(Blob *out_chunk, size_t n_records) override;
   bool NextRecord(Blob *out_rec) override {
     while (!ExtractNextRecord(out_rec, &tmp_chunk_)) {
-      if (!tmp_chunk_.Load(this, buffer_size_)) return false;
+      if (!tmp_chunk_.Load(this, buffer_size_)) {
+        return false;
+      }
       ++current_index_;
     }
     return true;
@@ -66,12 +66,11 @@ class IndexedRecordIOSplitter : public InputSplitBase {
 
  protected:
   size_t SeekRecordBegin(Stream *fi) override;
-  const char*
-  FindLastRecordBegin(const char *begin, const char *end) override;
-  virtual void ReadIndexFile(FileSystem *fs, const std::string& index_uri);
+  const char *FindLastRecordBegin(const char *begin, const char *end) override;
+  virtual void ReadIndexFile(FileSystem *fs, const std::string &index_uri);
   void ResetPartition(unsigned rank, unsigned nsplit) override;
 
-  std::vector<std::pair<size_t, size_t> > index_;
+  std::vector<std::pair<size_t, size_t>> index_;
   std::vector<size_t> permutation_;
   bool shuffle_;
   size_t current_index_;

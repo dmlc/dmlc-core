@@ -10,10 +10,10 @@
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <vector>
-#include <utility>
-#include <string>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 /*! \brief namespace for dmlc */
 namespace dmlc {
@@ -59,7 +59,7 @@ class Config {
    * \param is input stream
    * \param multi_value whether the config supports multi value
    */
-  explicit Config(std::istream& is, bool multi_value = false);  // NOLINT(*)
+  explicit Config(std::istream &is, bool multi_value = false);  // NOLINT(*)
   /*!
    * \brief clear all the values
    */
@@ -68,7 +68,7 @@ class Config {
    * \brief load the contents from the stream
    * \param is the stream as input
    */
-  void LoadFromStream(std::istream& is);  // NOLINT(*)
+  void LoadFromStream(std::istream &is);  // NOLINT(*)
   /*!
    * \brief set a key-value pair into the config; if the key already exists in the configure file,
    *        it will either replace the old value with the given one (in non-multi value mode) or
@@ -77,8 +77,8 @@ class Config {
    * \param value value
    * \param is_string whether the value should be wrapped by quotes in proto string
    */
-  template<class T>
-  void SetParam(const std::string& key, const T& value, bool is_string = false);
+  template <class T>
+  void SetParam(const std::string &key, const T &value, bool is_string = false);
 
   /*!
    * \brief get the config under the key; if multiple values exist for the same key,
@@ -86,14 +86,14 @@ class Config {
    * \param key key
    * \return config value
    */
-  const std::string& GetParam(const std::string& key) const;
+  const std::string &GetParam(const std::string &key) const;
 
   /*!
    * \brief check whether the configure value given by the key should be wrapped by quotes
    * \param key key
    * \return whether the configure value is represented by string
    */
-  bool IsGenuineString(const std::string& key) const;
+  bool IsGenuineString(const std::string &key) const;
 
   /*!
    * \brief transform all the configuration into string recognizable to protobuf
@@ -119,21 +119,22 @@ class Config {
    */
   class ConfigIterator {
     friend class Config;
+
    public:
     using iterator_category = std::input_iterator_tag;
     using value_type = ConfigEntry;
     using difference_type = std::ptrdiff_t;
-    using pointer = ConfigEntry*;
-    using reference = ConfigEntry&;
+    using pointer = ConfigEntry *;
+    using reference = ConfigEntry &;
     /*!
      * \brief copy constructor
      */
-    ConfigIterator(const ConfigIterator& other);
+    ConfigIterator(const ConfigIterator &other);
     /*!
      * \brief uni-increment operators
      * \return the reference of current config
      */
-    ConfigIterator& operator++();
+    ConfigIterator &operator++();
     /*!
      * \brief uni-increment operators
      * \return the reference of current config
@@ -144,25 +145,25 @@ class Config {
      * \param rhs the other config to compare against
      * \return the compared result
      */
-    bool operator == (const ConfigIterator& rhs) const;
+    bool operator==(const ConfigIterator &rhs) const;
     /*!
      * \brief compare operators not equal
      * \param rhs the other config to compare against
      * \return the compared result
      */
-    bool operator != (const ConfigIterator& rhs) const;
+    bool operator!=(const ConfigIterator &rhs) const;
     /*!
      * \brief retrieve value from operator
      */
-    ConfigEntry operator * () const;
+    ConfigEntry operator*() const;
 
    private:
-    ConfigIterator(size_t index, const Config* config);
+    ConfigIterator(size_t index, const Config *config);
     void FindNextIndex();
 
    private:
     size_t index_;
-    const Config* config_;
+    const Config *config_;
   };
 
  private:
@@ -171,16 +172,16 @@ class Config {
     std::vector<size_t> insert_index;
     bool is_string;
   };
-  void Insert(const std::string& key, const std::string& value, bool is_string);
+  void Insert(const std::string &key, const std::string &value, bool is_string);
 
  private:
   std::map<std::string, ConfigValue> config_map_;
-  std::vector<std::pair<std::string, size_t> > order_;
+  std::vector<std::pair<std::string, size_t>> order_;
   const bool multi_value_;
 };
 
-template<class T>
-void Config::SetParam(const std::string& key, const T& value, bool is_string) {
+template <class T>
+void Config::SetParam(const std::string &key, const T &value, bool is_string) {
   std::ostringstream oss;
   oss << value;
   Insert(key, oss.str(), is_string);

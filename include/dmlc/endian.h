@@ -14,8 +14,7 @@
 #else
   #if defined(__APPLE__) || defined(_WIN32)
     #define DMLC_LITTLE_ENDIAN 1
-  #elif defined(__GLIBC__) || defined(__GNU_LIBRARY__) \
-        || defined(__ANDROID__) || defined(__RISCV__)
+  #elif defined(__GLIBC__) || defined(__GNU_LIBRARY__) || defined(__ANDROID__) || defined(__RISCV__)
     #include <endian.h>
     #define DMLC_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
   #elif defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -51,9 +50,9 @@ namespace dmlc {
  * \note Always try pass in constant elem_bytes to enable
  *       compiler optimization
  */
-inline void ByteSwap(void* data, size_t elem_bytes, size_t num_elems) {
+inline void ByteSwap(void *data, size_t elem_bytes, size_t num_elems) {
   for (size_t i = 0; i < num_elems; ++i) {
-    uint8_t* bptr = reinterpret_cast<uint8_t*>(data) + elem_bytes * i;
+    uint8_t *bptr = reinterpret_cast<uint8_t *>(data) + elem_bytes * i;
     for (size_t j = 0; j < elem_bytes / 2; ++j) {
       uint8_t v = bptr[elem_bytes - 1 - j];
       bptr[elem_bytes - 1 - j] = bptr[j];

@@ -8,15 +8,17 @@
 #ifndef DMLC_DATA_DISK_ROW_ITER_H_
 #define DMLC_DATA_DISK_ROW_ITER_H_
 
-#include <dmlc/io.h>
-#include <dmlc/logging.h>
-#include <dmlc/data.h>
-#include <dmlc/timer.h>
-#include <dmlc/threadediter.h>
 #include <algorithm>
 #include <string>
-#include "./row_block.h"
+
+#include <dmlc/data.h>
+#include <dmlc/io.h>
+#include <dmlc/logging.h>
+#include <dmlc/threadediter.h>
+#include <dmlc/timer.h>
+
 #include "./libsvm_parser.h"
+#include "./row_block.h"
 
 #if DMLC_ENABLE_STD_THREAD
 namespace dmlc {
@@ -25,8 +27,8 @@ namespace data {
  * \brief basic set of row iterators that provides
  * \tparam IndexType the type of index we are using
  */
-template<typename IndexType, typename DType = real_t>
-class DiskRowIter: public RowBlockIter<IndexType, DType> {
+template <typename IndexType, typename DType = real_t>
+class DiskRowIter : public RowBlockIter<IndexType, DType> {
  public:
   // page size 64MB
   static const size_t kPageSize = 64UL << 20UL;
@@ -35,20 +37,16 @@ class DiskRowIter: public RowBlockIter<IndexType, DType> {
    * \param parser parser used to generate this
 
    */
-  explicit DiskRowIter(Parser<IndexType, DType> *parser,
-                       const char *cache_file,
-                       bool reuse_cache)
+  explicit DiskRowIter(Parser<IndexType, DType> *parser, const char *cache_file, bool reuse_cache)
       : cache_file_(cache_file), fi_(NULL) {
     if (reuse_cache) {
       if (!TryLoadCache()) {
         this->BuildCache(parser);
-        CHECK(TryLoadCache())
-            << "failed to build cache file " << cache_file;
+        CHECK(TryLoadCache()) << "failed to build cache file " << cache_file;
       }
     } else {
       this->BuildCache(parser);
-      CHECK(TryLoadCache())
-          << "failed to build cache file " << cache_file;
+      CHECK(TryLoadCache()) << "failed to build cache file " << cache_file;
     }
     delete parser;
   }
@@ -84,7 +82,7 @@ class DiskRowIter: public RowBlockIter<IndexType, DType> {
   // row block to store
   RowBlock<IndexType, DType> row_;
   // iterator
-  ThreadedIter<RowBlockContainer<IndexType, DType> > iter_;
+  ThreadedIter<RowBlockContainer<IndexType, DType>> iter_;
   // load disk cache file
   inline bool TryLoadCache(void);
   // build disk cache
@@ -92,24 +90,26 @@ class DiskRowIter: public RowBlockIter<IndexType, DType> {
 };
 
 // build disk cache
-template<typename IndexType, typename DType>
+template <typename IndexType, typename DType>
 inline bool DiskRowIter<IndexType, DType>::TryLoadCache(void) {
   SeekStream *fi = SeekStream::CreateForRead(cache_file_.c_str(), true);
-  if (fi == NULL) return false;
+  if (fi == NULL) {
+    return false;
+  }
   this->fi_ = fi;
-  iter_.Init([fi](RowBlockContainer<IndexType, DType> **dptr) {
-      if (*dptr ==NULL) {
-        *dptr = new RowBlockContainer<IndexType, DType>();
-      }
-      return (*dptr)->Load(fi);
-    },
-    [fi]() { fi->Seek(0); });
+  iter_.Init(
+      [fi](RowBlockContainer<IndexType, DType> **dptr) {
+        if (*dptr == NULL) {
+          *dptr = new RowBlockContainer<IndexType, DType>();
+        }
+        return (*dptr)->Load(fi);
+      },
+      [fi]() { fi->Seek(0); });
   return true;
 }
 
-template<typename IndexType, typename DType>
-inline void DiskRowIter<IndexType, DType>::
-BuildCache(Parser<IndexType, DType> *parser) {
+template <typename IndexType, typename DType>
+inline void DiskRowIter<IndexType, DType>::BuildCache(Parser<IndexType, DType> *parser) {
   Stream *fo = Stream::Create(cache_file_.c_str(), "w");
   // back end data
   RowBlockContainer<IndexType, DType> data;
@@ -121,23 +121,19 @@ BuildCache(Parser<IndexType, DType> *parser) {
     if (data.MemCostBytes() >= kPageSize) {
       size_t bytes_read = parser->BytesRead();
       bytes_read = bytes_read >> 20UL;
-      LOG(INFO) << bytes_read << "MB read,"
-                << bytes_read / tdiff << " MB/sec";
-      num_col_ = std::max(num_col_,
-                          static_cast<size_t>(data.max_index) + 1);
+      LOG(INFO) << bytes_read << "MB read," << bytes_read / tdiff << " MB/sec";
+      num_col_ = std::max(num_col_, static_cast<size_t>(data.max_index) + 1);
       data.Save(fo);
       data.Clear();
     }
   }
   if (data.Size() != 0) {
-    num_col_ = std::max(num_col_,
-                        static_cast<size_t>(data.max_index) + 1);
+    num_col_ = std::max(num_col_, static_cast<size_t>(data.max_index) + 1);
     data.Save(fo);
   }
   delete fo;
   double tdiff = GetTime() - tstart;
-  LOG(INFO) << "finish reading at %g MB/sec"
-            << (parser->BytesRead() >> 20UL) / tdiff;
+  LOG(INFO) << "finish reading at %g MB/sec" << (parser->BytesRead() >> 20UL) / tdiff;
 }
 }  // namespace data
 }  // namespace dmlc

@@ -6,12 +6,13 @@
 #ifndef DMLC_IO_H_
 #define DMLC_IO_H_
 #include <cstdio>
-#include <string>
 #include <cstring>
-#include <vector>
 #include <istream>
 #include <ostream>
 #include <streambuf>
+#include <string>
+#include <vector>
+
 #include "./logging.h"
 
 // include uint64_t only to make io standalone
@@ -19,7 +20,7 @@
 /*! \brief uint64 */
 typedef unsigned __int64 uint64_t;
 #else
-#include <inttypes.h>
+  #include <inttypes.h>
 #endif
 
 /*! \brief namespace for dmlc */
@@ -35,14 +36,14 @@ class Stream {  // NOLINT(*)
    * \param size The maximum number of bytes to read
    * \return The number of bytes read from the stream
    */
-  virtual size_t Read(void* ptr, size_t size) = 0;
+  virtual size_t Read(void *ptr, size_t size) = 0;
   /*!
    * \brief writes data to a stream
    * \param ptr pointer to a memory buffer
    * \param size The maximum number of bytes to write
    * \return The number of bytes written
    */
-  virtual size_t Write(const void* ptr, size_t size) = 0;
+  virtual size_t Write(const void *ptr, size_t size) = 0;
   /*! \brief virtual destructor */
   virtual ~Stream(void) {}
   /*!
@@ -55,9 +56,7 @@ class Stream {  // NOLINT(*)
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  static Stream *Create(const char *uri,
-                        const char* const flag,
-                        bool allow_null = false);
+  static Stream *Create(const char *uri, const char *const flag, bool allow_null = false);
   // helper functions to write/read different data structures
   /*!
    * \brief writes a data to stream.
@@ -71,7 +70,7 @@ class Stream {  // NOLINT(*)
    * \param data data to be written
    * \tparam T the data type to be written
    */
-  template<typename T>
+  template <typename T>
   inline void Write(const T &data);
   /*!
    * \brief loads a data from stream.
@@ -85,7 +84,7 @@ class Stream {  // NOLINT(*)
    * \param out_data place holder of data to be deserialized
    * \return whether the load was successful
    */
-  template<typename T>
+  template <typename T>
   inline bool Read(T *out_data);
   /*!
    * \brief Endian aware write array of data.
@@ -93,8 +92,8 @@ class Stream {  // NOLINT(*)
    * \param num_elems Number of elements
    * \tparam T the data type.
    */
-  template<typename T>
-  inline void WriteArray(const T* data, size_t num_elems);
+  template <typename T>
+  inline void WriteArray(const T *data, size_t num_elems);
   /*!
    * \brief Endian aware read array of data.
    * \param data The data pointer
@@ -102,12 +101,12 @@ class Stream {  // NOLINT(*)
    * \tparam T the data type.
    * \return whether the load was successful
    */
-  template<typename T>
-  inline bool ReadArray(T* data, size_t num_elems);
+  template <typename T>
+  inline bool ReadArray(T *data, size_t num_elems);
 };
 
 /*! \brief interface of i/o stream that support seek */
-class SeekStream: public Stream {
+class SeekStream : public Stream {
  public:
   // virtual destructor
   virtual ~SeekStream(void) {}
@@ -125,8 +124,7 @@ class SeekStream: public Stream {
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  static SeekStream *CreateForRead(const char *uri,
-                                   bool allow_null = false);
+  static SeekStream *CreateForRead(const char *uri, bool allow_null = false);
 };
 
 /*! \brief interface for serializable objects */
@@ -135,14 +133,14 @@ class Serializable {
   /*! \brief virtual destructor */
   virtual ~Serializable() {}
   /*!
-  * \brief load the model from a stream
-  * \param fi stream where to load the model from
-  */
+   * \brief load the model from a stream
+   * \param fi stream where to load the model from
+   */
   virtual void Load(Stream *fi) = 0;
   /*!
-  * \brief saves the model to a stream
-  * \param fo stream where to save the model to
-  */
+   * \brief saves the model to a stream
+   * \param fo stream where to save the model to
+   */
   virtual void Save(Stream *fo) const = 0;
 };
 
@@ -226,7 +224,9 @@ class InputSplit {
    * \sa InputSplit::Create for definition of record
    * \sa RecordIOChunkReader to parse recordio content from out_chunk
    */
-  virtual bool NextBatch(Blob *out_chunk, size_t /*n_records*/) { return NextChunk(out_chunk); }
+  virtual bool NextBatch(Blob *out_chunk, size_t /*n_records*/) {
+    return NextChunk(out_chunk);
+  }
   /*! \brief destructor*/
   virtual ~InputSplit(void) DMLC_THROW_EXCEPTION {}
   /*!
@@ -255,10 +255,8 @@ class InputSplit {
    * \return a new input split
    * \sa InputSplit::Type
    */
-  static InputSplit* Create(const char *uri,
-                            unsigned part_index,
-                            unsigned num_parts,
-                            const char *type);
+  static InputSplit *Create(
+      const char *uri, unsigned part_index, unsigned num_parts, const char *type);
   /*!
    * \brief factory function:
    *  create input split given a uri for input and index
@@ -287,15 +285,9 @@ class InputSplit {
    * \return a new input split
    * \sa InputSplit::Type
    */
-  static InputSplit* Create(const char *uri,
-                            const char *index_uri,
-                            unsigned part_index,
-                            unsigned num_parts,
-                            const char *type,
-                            const bool shuffle = false,
-                            const int seed = 0,
-                            const size_t batch_size = 256,
-                            const bool recurse_directories = false);
+  static InputSplit *Create(const char *uri, const char *index_uri, unsigned part_index,
+      unsigned num_parts, const char *type, const bool shuffle = false, const int seed = 0,
+      const size_t batch_size = 256, const bool recurse_directories = false);
 };
 
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
@@ -319,8 +311,7 @@ class ostream : public std::basic_ostream<char> {
    * \param stream the Stream output to be used
    * \param buffer_size internal streambuf size
    */
-  explicit ostream(Stream *stream,
-                   size_t buffer_size = (1 << 10))
+  explicit ostream(Stream *stream, size_t buffer_size = (1 << 10))
       : std::basic_ostream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
   }
@@ -346,14 +337,18 @@ class ostream : public std::basic_ostream<char> {
   // internal streambuf
   class OutBuf : public std::streambuf {
    public:
-    explicit OutBuf(size_t buffer_size)
-        : stream_(NULL), buffer_(buffer_size), bytes_out_(0) {
-      if (buffer_size == 0) buffer_.resize(2);
+    explicit OutBuf(size_t buffer_size) : stream_(NULL), buffer_(buffer_size), bytes_out_(0) {
+      if (buffer_size == 0) {
+        buffer_.resize(2);
+      }
     }
     // set stream to the buffer
     inline void set_stream(Stream *stream);
 
-    inline size_t bytes_out() const { return bytes_out_; }
+    inline size_t bytes_out() const {
+      return bytes_out_;
+    }
+
    private:
     /*! \brief internal stream by StreamBuf */
     Stream *stream_;
@@ -390,8 +385,7 @@ class istream : public std::basic_istream<char> {
    * \param stream the Stream output to be used
    * \param buffer_size internal buffer size
    */
-  explicit istream(Stream *stream,
-                   size_t buffer_size = (1 << 10))
+  explicit istream(Stream *stream, size_t buffer_size = (1 << 10))
       : std::basic_istream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
   }
@@ -413,10 +407,10 @@ class istream : public std::basic_istream<char> {
   // internal streambuf
   class InBuf : public std::streambuf {
    public:
-    explicit InBuf(size_t buffer_size)
-        : stream_(NULL), bytes_read_(0),
-          buffer_(buffer_size) {
-      if (buffer_size == 0) buffer_.resize(2);
+    explicit InBuf(size_t buffer_size) : stream_(NULL), bytes_read_(0), buffer_(buffer_size) {
+      if (buffer_size == 0) {
+        buffer_.resize(2);
+      }
     }
     // set stream to the buffer
     inline void set_stream(Stream *stream);
@@ -424,6 +418,7 @@ class istream : public std::basic_istream<char> {
     inline size_t bytes_read(void) const {
       return bytes_read_;
     }
+
    private:
     /*! \brief internal stream by StreamBuf */
     Stream *stream_;
@@ -444,26 +439,28 @@ class istream : public std::basic_istream<char> {
 
 namespace dmlc {
 // implementations of inline functions
-template<typename T>
+template <typename T>
 inline void Stream::Write(const T &data) {
   serializer::Handler<T>::Write(this, data);
 }
-template<typename T>
+template <typename T>
 inline bool Stream::Read(T *out_data) {
   return serializer::Handler<T>::Read(this, out_data);
 }
 
-template<typename T>
-inline void Stream::WriteArray(const T* data, size_t num_elems) {
+template <typename T>
+inline void Stream::WriteArray(const T *data, size_t num_elems) {
   for (size_t i = 0; i < num_elems; ++i) {
     this->Write<T>(data[i]);
   }
 }
 
-template<typename T>
-inline bool Stream::ReadArray(T* data, size_t num_elems) {
+template <typename T>
+inline bool Stream::ReadArray(T *data, size_t num_elems) {
   for (size_t i = 0; i < num_elems; ++i) {
-    if (!this->Read<T>(data + i)) return false;
+    if (!this->Read<T>(data + i)) {
+      return false;
+    }
   }
   return true;
 }
@@ -471,12 +468,16 @@ inline bool Stream::ReadArray(T* data, size_t num_elems) {
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
 // implementations for ostream
 inline void ostream::OutBuf::set_stream(Stream *stream) {
-  if (stream_ != NULL) this->pubsync();
+  if (stream_ != NULL) {
+    this->pubsync();
+  }
   this->stream_ = stream;
   this->setp(&buffer_[0], &buffer_[0] + buffer_.size() - 1);
 }
 inline int ostream::OutBuf::sync(void) {
-  if (stream_ == NULL) return -1;
+  if (stream_ == NULL) {
+    return -1;
+  }
   std::ptrdiff_t n = pptr() - pbase();
   stream_->Write(pbase(), n);
   this->pbump(-static_cast<int>(n));
@@ -542,7 +543,8 @@ struct URI {
       uri = p + 3;
       p = std::strchr(uri, '/');
       if (p == NULL) {
-        host = uri; name = '/';
+        host = uri;
+        name = '/';
       } else {
         host = std::string(uri, p - uri);
         name = p;
@@ -605,8 +607,7 @@ class FileSystem {
    * \param path to the file
    * \param out_list the output information about the files
    */
-  virtual void ListDirectoryRecursive(const URI &path,
-                                      std::vector<FileInfo> *out_list);
+  virtual void ListDirectoryRecursive(const URI &path, std::vector<FileInfo> *out_list);
   /*!
    * \brief open a stream
    * \param path path to file
@@ -614,17 +615,14 @@ class FileSystem {
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual Stream *Open(const URI &path,
-                       const char* const flag,
-                       bool allow_null = false) = 0;
+  virtual Stream *Open(const URI &path, const char *const flag, bool allow_null = false) = 0;
   /*!
    * \brief open a seekable stream for read
    * \param path the path to the file
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual SeekStream *OpenForRead(const URI &path,
-                                  bool allow_null = false) = 0;
+  virtual SeekStream *OpenForRead(const URI &path, bool allow_null = false) = 0;
 };
 
 }  // namespace io

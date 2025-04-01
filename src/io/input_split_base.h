@@ -7,13 +7,14 @@
 #ifndef DMLC_IO_INPUT_SPLIT_BASE_H_
 #define DMLC_IO_INPUT_SPLIT_BASE_H_
 
-#include <dmlc/io.h>
-#include <dmlc/filesystem.h>
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
-#include <vector>
 #include <string>
-#include <algorithm>
+#include <vector>
+
+#include <dmlc/filesystem.h>
+#include <dmlc/io.h>
 
 namespace dmlc {
 namespace io {
@@ -28,9 +29,7 @@ class InputSplitBase : public InputSplit {
     char *begin;
     char *end;
     std::vector<uint32_t> data;
-    explicit Chunk(size_t buffer_size)
-        : begin(NULL), end(NULL),
-          data(buffer_size + 1) {}
+    explicit Chunk(size_t buffer_size) : begin(NULL), end(NULL), data(buffer_size + 1) {}
     // load chunk from split
     bool Load(InputSplitBase *split, size_t buffer_size);
     // append to chunk
@@ -51,14 +50,18 @@ class InputSplitBase : public InputSplit {
   // implement next record
   virtual bool NextRecord(Blob *out_rec) {
     while (!ExtractNextRecord(out_rec, &tmp_chunk_)) {
-      if (!NextChunkEx(&tmp_chunk_)) return false;
+      if (!NextChunkEx(&tmp_chunk_)) {
+        return false;
+      }
     }
     return true;
   }
   // implement next chunk
   virtual bool NextChunk(Blob *out_chunk) {
     while (!ExtractNextChunk(out_chunk, &tmp_chunk_)) {
-      if (!NextChunkEx(&tmp_chunk_)) return false;
+      if (!NextChunkEx(&tmp_chunk_)) {
+        return false;
+      }
     }
     return true;
   }
@@ -104,7 +107,9 @@ class InputSplitBase : public InputSplit {
    *  temporary chunk
    */
   virtual bool NextChunkEx(Chunk *chunk) {
-    if (!chunk->Load(this, buffer_size_)) return false;
+    if (!chunk->Load(this, buffer_size_)) {
+      return false;
+    }
     return true;
   }
   /*!
@@ -141,10 +146,7 @@ class InputSplitBase : public InputSplit {
   size_t buffer_size_;
   // constructor
   InputSplitBase()
-      : fs_(NULL),
-        tmp_chunk_(kBufferSize),
-        buffer_size_(kBufferSize),
-        align_bytes_(8) {}
+      : fs_(NULL), tmp_chunk_(kBufferSize), buffer_size_(kBufferSize), align_bytes_(8) {}
   /*!
    * \brief intialize the base before doing anything
    * \param fs the filesystem ptr
@@ -155,10 +157,8 @@ class InputSplitBase : public InputSplit {
    *   this also checks if file size are multiple of align_bytes
    * \param recurse_directories recursively travese directories
    */
-  void Init(FileSystem *fs,
-            const char *uri,
-            size_t align_bytes,
-            const bool recurse_directories = false);
+  void Init(
+      FileSystem *fs, const char *uri, size_t align_bytes, const bool recurse_directories = false);
   // to be implemented by child class
   /*!
    * \brief seek to the beginning of the first record
@@ -173,11 +173,10 @@ class InputSplitBase : public InputSplit {
    * \return the pointer between [begin, end] indicating the
    *         last record head
    */
-  virtual const char*
-  FindLastRecordBegin(const char *begin, const char *end) = 0;
+  virtual const char *FindLastRecordBegin(const char *begin, const char *end) = 0;
 
   /*! \brief split string list of files into vector of URIs */
-  std::vector<URI> ConvertToURIs(const std::string& uri);
+  std::vector<URI> ConvertToURIs(const std::string &uri);
   /*! \brief same as stream.Read */
   size_t Read(void *ptr, size_t size);
 
@@ -187,8 +186,7 @@ class InputSplitBase : public InputSplit {
   /*! \brief internal overflow buffer */
   std::string overflow_;
   /*! \brief initialize information in files */
-  void InitInputFileInfo(const std::string& uri,
-                         const bool recurse_directories);
+  void InitInputFileInfo(const std::string &uri, const bool recurse_directories);
   /*! \brief strip continous chars in the end of str */
   std::string StripEnd(std::string str, char ch);
 };

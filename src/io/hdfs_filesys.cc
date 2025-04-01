@@ -1,20 +1,18 @@
 // Copyright by Contributors
-#include <dmlc/logging.h>
+#include "./hdfs_filesys.h"
+
 #include <algorithm>
 #include <limits>
-#include "./hdfs_filesys.h"
+
+#include <dmlc/logging.h>
 
 namespace dmlc {
 namespace io {
 // implementation of HDFS stream
 class HDFSStream : public SeekStream {
  public:
-  HDFSStream(hdfsFS fs,
-             int *ref_counter,
-             hdfsFile fp)
-      : fs_(fs), ref_counter_(ref_counter),
-        fp_(fp) {
-  }
+  HDFSStream(hdfsFS fs, int *ref_counter, hdfsFile fp)
+      : fs_(fs), ref_counter_(ref_counter), fp_(fp) {}
 
   virtual ~HDFSStream(void) {
     this->Close();
@@ -29,19 +27,22 @@ class HDFSStream : public SeekStream {
   }
 
   virtual size_t Read(void *ptr, size_t size) override {
-    char *buf = static_cast<char*>(ptr);
+    char *buf = static_cast<char *>(ptr);
     size_t nleft = size;
     size_t nmax = static_cast<size_t>(std::numeric_limits<tSize>::max());
     while (nleft != 0) {
       tSize ret = hdfsRead(fs_, fp_, buf, std::min(nleft, nmax));
       if (ret > 0) {
         size_t n = static_cast<size_t>(ret);
-        nleft -= n; buf += n;
+        nleft -= n;
+        buf += n;
       } else if (ret == 0) {
         break;
       } else {
         int errsv = errno;
-        if (errno == EINTR) continue;
+        if (errno == EINTR) {
+          continue;
+        }
         LOG(FATAL) << "HDFSStream.hdfsRead Error:" << strerror(errsv);
       }
     }
@@ -49,7 +50,7 @@ class HDFSStream : public SeekStream {
   }
 
   virtual size_t Write(const void *ptr, size_t size) override {
-    const char *buf = reinterpret_cast<const char*>(ptr);
+    const char *buf = reinterpret_cast<const char *>(ptr);
     size_t nleft = size;
     // When using builtin-java classes to write, the maximum write size
     // would be limited by the the max array size, which is uncertain
@@ -62,7 +63,8 @@ class HDFSStream : public SeekStream {
       tSize ret = hdfsWrite(fs_, fp_, buf, std::min(nleft, nmax));
       if (ret > 0) {
         size_t n = static_cast<size_t>(ret);
-        nleft -= n; buf += n;
+        nleft -= n;
+        buf += n;
       } else if (ret == 0) {
         break;
       } else {
@@ -102,7 +104,7 @@ class HDFSStream : public SeekStream {
   hdfsFile fp_;
 };
 
-HDFSFileSystem::HDFSFileSystem(const std::string &namenode): namenode_(namenode) {
+HDFSFileSystem::HDFSFileSystem(const std::string &namenode) : namenode_(namenode) {
   fs_ = hdfsConnect(namenode_.c_str(), 0);
   if (fs_ == NULL) {
     LOG(FATAL) << "Failed to load HDFS-configuration:";
@@ -140,9 +142,14 @@ inline FileInfo ConvertPathInfo(const URI &path, const hdfsFileInfo &info) {
   FileInfo ret;
   ret.size = info.mSize;
   switch (info.mKind) {
-    case 'D': ret.type = kDirectory; break;
-    case 'F': ret.type = kFile; break;
-    default: LOG(FATAL) << "unknown file type" << info.mKind;
+  case 'D':
+    ret.type = kDirectory;
+    break;
+  case 'F':
+    ret.type = kFile;
+    break;
+  default:
+    LOG(FATAL) << "unknown file type" << info.mKind;
   }
   URI hpath(info.mName);
   if (hpath.protocol == "hdfs://" || hpath.protocol == "viewfs://") {
@@ -175,16 +182,14 @@ void HDFSFileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_l
   hdfsFreeFileInfo(files, nentry);
 }
 
-SeekStream *HDFSFileSystem::Open(const URI &path,
-                                 const char* const mode,
-                                 bool allow_null) {
+SeekStream *HDFSFileSystem::Open(const URI &path, const char *const mode, bool allow_null) {
   using namespace std;
   int flag = 0;
   if (!strcmp(mode, "r")) {
     flag = O_RDONLY;
-  } else if (!strcmp(mode, "w"))  {
+  } else if (!strcmp(mode, "w")) {
     flag = O_WRONLY;
-  } else if (!strcmp(mode, "a"))  {
+  } else if (!strcmp(mode, "a")) {
     flag = O_WRONLY | O_APPEND;
   } else {
     LOG(FATAL) << "HDFSStream: unknown flag %s" << mode;

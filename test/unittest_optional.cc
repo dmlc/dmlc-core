@@ -2,11 +2,11 @@
 
 #include <iostream>
 #include <vector>
+
 #include <dmlc/optional.h>
 #include <dmlc/parameter.h>
-#include <gtest/gtest.h>
 
-#include <vector>
+#include <gtest/gtest.h>
 
 TEST(Optional, constructors) {
   dmlc::optional<int> o1;
@@ -110,14 +110,10 @@ struct OptionalParamInt : public dmlc::Parameter<OptionalParamInt> {
   dmlc::optional<int> def;
 
   DMLC_DECLARE_PARAMETER(OptionalParamInt) {
-    DMLC_DECLARE_FIELD(none)
-    .add_enum("one", 1);
-    DMLC_DECLARE_FIELD(one)
-    .add_enum("one", 1);
+    DMLC_DECLARE_FIELD(none).add_enum("one", 1);
+    DMLC_DECLARE_FIELD(one).add_enum("one", 1);
     DMLC_DECLARE_FIELD(long_one);
-    DMLC_DECLARE_FIELD(def)
-    .add_enum("one", 1)
-    .set_default(dmlc::optional<int>());
+    DMLC_DECLARE_FIELD(def).add_enum("one", 1).set_default(dmlc::optional<int>());
   }
 };
 
@@ -228,8 +224,7 @@ struct OptionalParamBool : public dmlc::Parameter<OptionalParamBool> {
 
   DMLC_DECLARE_PARAMETER(OptionalParamBool) {
     DMLC_DECLARE_FIELD(none);
-    DMLC_DECLARE_FIELD(none_with_default)
-    .set_default(dmlc::optional<bool>());
+    DMLC_DECLARE_FIELD(none_with_default).set_default(dmlc::optional<bool>());
     DMLC_DECLARE_FIELD(set_to_none);
   }
 };

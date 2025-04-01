@@ -8,13 +8,14 @@
 #ifndef DMLC_DATA_ROW_BLOCK_H_
 #define DMLC_DATA_ROW_BLOCK_H_
 
+#include <algorithm>
+#include <cstring>
+#include <limits>
+#include <vector>
+
+#include <dmlc/data.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
-#include <dmlc/data.h>
-#include <cstring>
-#include <vector>
-#include <limits>
-#include <algorithm>
 
 namespace dmlc {
 namespace data {
@@ -23,7 +24,7 @@ namespace data {
  *        a row block of data
  * \tparam IndexType the type of index we are using
  */
-template<typename IndexType, typename DType = real_t>
+template <typename IndexType, typename DType = real_t>
 struct RowBlockContainer {
   /*! \brief array[size+1], row pointer to beginning of each rows */
   std::vector<size_t> offset;
@@ -62,8 +63,14 @@ struct RowBlockContainer {
   inline bool Load(Stream *fi);
   /*! \brief clear the container */
   inline void Clear(void) {
-    offset.clear(); offset.push_back(0);
-    label.clear(); field.clear(); index.clear(); value.clear(); weight.clear(); qid.clear();
+    offset.clear();
+    offset.push_back(0);
+    label.clear();
+    field.clear();
+    index.clear();
+    value.clear();
+    weight.clear();
+    qid.clear();
     max_field = 0;
     max_index = 0;
   }
@@ -73,20 +80,17 @@ struct RowBlockContainer {
   }
   /*! \return estimation of memory cost of this container */
   inline size_t MemCostBytes(void) const {
-    return offset.size() * sizeof(size_t) +
-        label.size() * sizeof(real_t) +
-        weight.size() * sizeof(real_t) +
-        qid.size() * sizeof(size_t) +
-        field.size() * sizeof(IndexType) +
-        index.size() * sizeof(IndexType) +
-        value.size() * sizeof(DType);
+    return offset.size() * sizeof(size_t) + label.size() * sizeof(real_t)
+           + weight.size() * sizeof(real_t) + qid.size() * sizeof(size_t)
+           + field.size() * sizeof(IndexType) + index.size() * sizeof(IndexType)
+           + value.size() * sizeof(DType);
   }
   /*!
    * \brief push the row into container
    * \param row the row to push back
    * \tparam I the index type of the row
    */
-  template<typename I>
+  template <typename I>
   inline void Push(Row<I, DType> row) {
     label.push_back(row.get_label());
     weight.push_back(row.get_weight());
@@ -98,7 +102,7 @@ struct RowBlockContainer {
         IndexType field_id = static_cast<IndexType>(row.field[i]);
         field.push_back(field_id);
         max_field = std::max(max_field, field_id);
-    }
+      }
     }
     for (size_t i = 0; i < row.length; ++i) {
       CHECK_LE(row.index[i], std::numeric_limits<IndexType>::max())
@@ -119,12 +123,11 @@ struct RowBlockContainer {
    * \param row the row to push back
    * \tparam I the index type of the row
    */
-  template<typename I>
+  template <typename I>
   inline void Push(RowBlock<I, DType> batch) {
     size_t size = label.size();
     label.resize(label.size() + batch.size);
-    std::memcpy(BeginPtr(label) + size, batch.label,
-                batch.size * sizeof(DType));
+    std::memcpy(BeginPtr(label) + size, batch.label, batch.size * sizeof(DType));
     if (batch.weight != NULL) {
       weight.insert(weight.end(), batch.weight, batch.weight + batch.size);
     }
@@ -154,8 +157,7 @@ struct RowBlockContainer {
     }
     if (batch.value != NULL) {
       value.resize(value.size() + ndata);
-      std::memcpy(BeginPtr(value) + value.size() - ndata, batch.value,
-                  ndata * sizeof(DType));
+      std::memcpy(BeginPtr(value) + value.size() - ndata, batch.value, ndata * sizeof(DType));
     }
     size_t shift = offset[size];
     offset.resize(offset.size() + batch.size);
@@ -166,9 +168,8 @@ struct RowBlockContainer {
   }
 };
 
-template<typename IndexType, typename DType>
-inline RowBlock<IndexType, DType>
-RowBlockContainer<IndexType, DType>::GetBlock(void) const {
+template <typename IndexType, typename DType>
+inline RowBlock<IndexType, DType> RowBlockContainer<IndexType, DType>::GetBlock(void) const {
   // consistency check
   if (label.size()) {
     CHECK_EQ(label.size() + 1, offset.size());
@@ -186,9 +187,8 @@ RowBlockContainer<IndexType, DType>::GetBlock(void) const {
   data.value = BeginPtr(value);
   return data;
 }
-template<typename IndexType, typename DType>
-inline void
-RowBlockContainer<IndexType, DType>::Save(Stream *fo) const {
+template <typename IndexType, typename DType>
+inline void RowBlockContainer<IndexType, DType>::Save(Stream *fo) const {
   fo->Write(offset);
   fo->Write(label);
   fo->Write(weight);
@@ -199,10 +199,11 @@ RowBlockContainer<IndexType, DType>::Save(Stream *fo) const {
   fo->Write(&max_field, sizeof(IndexType));
   fo->Write(&max_index, sizeof(IndexType));
 }
-template<typename IndexType, typename DType>
-inline bool
-RowBlockContainer<IndexType, DType>::Load(Stream *fi) {
-  if (!fi->Read(&offset)) return false;
+template <typename IndexType, typename DType>
+inline bool RowBlockContainer<IndexType, DType>::Load(Stream *fi) {
+  if (!fi->Read(&offset)) {
+    return false;
+  }
   CHECK(fi->Read(&label)) << "Bad RowBlock format";
   CHECK(fi->Read(&weight)) << "Bad RowBlock format";
   CHECK(fi->Read(&qid)) << "Bad RowBlock format";

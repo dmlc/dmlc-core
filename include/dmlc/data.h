@@ -7,9 +7,10 @@
 #ifndef DMLC_DATA_H_
 #define DMLC_DATA_H_
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
+
 #include "./base.h"
 #include "./io.h"
 #include "./logging.h"
@@ -52,7 +53,7 @@ typedef unsigned index_t;
  * \endcode
  * \tparam DType the data type
  */
-template<typename DType>
+template <typename DType>
 class DataIter {
  public:
   /*! \brief destructor */
@@ -70,7 +71,7 @@ class DataIter {
  * \tparam IndexType type of index
  * \tparam DType type of data (both label and value will be of DType
  */
-template<typename IndexType, typename DType = real_t>
+template <typename IndexType, typename DType = real_t>
 class Row {
  public:
   /*! \brief label of the instance */
@@ -143,7 +144,7 @@ class Row {
    * \tparam V type of the weight vector
    * \return the result of dot product
    */
-  template<typename V>
+  template <typename V>
   inline V SDot(const V *weight, size_t size) const {
     V sum = static_cast<V>(0);
     if (value == NULL) {
@@ -171,7 +172,7 @@ class Row {
  * \tparam IndexType type to store the index used in row batch
  * \tparam DType type to store the label and value used in row batch
  */
-template<typename IndexType, typename DType = real_t>
+template <typename IndexType, typename DType = real_t>
 struct RowBlock {
   /*! \brief batch size */
   size_t size;
@@ -198,12 +199,22 @@ struct RowBlock {
   /*! \return memory cost of the block in bytes */
   inline size_t MemCostBytes(void) const {
     size_t cost = size * (sizeof(size_t) + sizeof(DType));
-    if (weight != NULL) cost += size * sizeof(real_t);
-    if (qid != NULL) cost += size * sizeof(size_t);
+    if (weight != NULL) {
+      cost += size * sizeof(real_t);
+    }
+    if (qid != NULL) {
+      cost += size * sizeof(size_t);
+    }
     size_t ndata = offset[size] - offset[0];
-    if (field != NULL) cost += ndata * sizeof(IndexType);
-    if (index != NULL) cost += ndata * sizeof(IndexType);
-    if (value != NULL) cost += ndata * sizeof(DType);
+    if (field != NULL) {
+      cost += ndata * sizeof(IndexType);
+    }
+    if (index != NULL) {
+      cost += ndata * sizeof(IndexType);
+    }
+    if (value != NULL) {
+      cost += ndata * sizeof(DType);
+    }
     return cost;
   }
   /*!
@@ -250,8 +261,8 @@ struct RowBlock {
  *  Create function was only implemented for IndexType uint64_t and uint32_t
  *  and DType real_t and int
  */
-template<typename IndexType, typename DType = real_t>
-class RowBlockIter : public DataIter<RowBlock<IndexType, DType> > {
+template <typename IndexType, typename DType = real_t>
+class RowBlockIter : public DataIter<RowBlock<IndexType, DType>> {
  public:
   /*!
    * \brief create a new instance of iterator that returns rowbatch
@@ -264,11 +275,8 @@ class RowBlockIter : public DataIter<RowBlock<IndexType, DType> > {
    *
    * \return the created data iterator
    */
-  static RowBlockIter<IndexType, DType> *
-  Create(const char *uri,
-         unsigned part_index,
-         unsigned num_parts,
-         const char *type);
+  static RowBlockIter<IndexType, DType> *Create(
+      const char *uri, unsigned part_index, unsigned num_parts, const char *type);
   /*! \return maximum feature dimension in the dataset */
   virtual size_t NumCol() const = 0;
 };
@@ -290,33 +298,27 @@ class RowBlockIter : public DataIter<RowBlock<IndexType, DType> > {
  *  and DType real_t and int
  */
 template <typename IndexType, typename DType = real_t>
-class Parser : public DataIter<RowBlock<IndexType, DType> > {
+class Parser : public DataIter<RowBlock<IndexType, DType>> {
  public:
   /*!
-  * \brief create a new instance of parser based on the "type"
-  *
-  * \param uri_ the uri of the input, can contain hdfs prefix
-  * \param part_index the part id of current input
-  * \param num_parts total number of splits
-  * \param type type of dataset can be: "libsvm", "auto", ...
-  *
-  * When "auto" is passed, the type is decided by format argument string in URI.
-  *
-  * \return the created parser
-  */
-  static Parser<IndexType, DType> *
-  Create(const char *uri_,
-         unsigned part_index,
-         unsigned num_parts,
-         const char *type);
+   * \brief create a new instance of parser based on the "type"
+   *
+   * \param uri_ the uri of the input, can contain hdfs prefix
+   * \param part_index the part id of current input
+   * \param num_parts total number of splits
+   * \param type type of dataset can be: "libsvm", "auto", ...
+   *
+   * When "auto" is passed, the type is decided by format argument string in URI.
+   *
+   * \return the created parser
+   */
+  static Parser<IndexType, DType> *Create(
+      const char *uri_, unsigned part_index, unsigned num_parts, const char *type);
   /*! \return size of bytes read so far */
   virtual size_t BytesRead(void) const = 0;
   /*! \brief Factory type of the parser*/
-  typedef Parser<IndexType, DType>* (*Factory)
-      (const std::string& path,
-       const std::map<std::string, std::string>& args,
-       unsigned part_index,
-       unsigned num_parts);
+  typedef Parser<IndexType, DType> *(*Factory)(const std::string &path,
+      const std::map<std::string, std::string> &args, unsigned part_index, unsigned num_parts);
 };
 
 /*!
@@ -324,10 +326,10 @@ class Parser : public DataIter<RowBlock<IndexType, DType> > {
  * \tparam IndexType The type of index
  * \tparam DType The type of label and value
  */
-template<typename IndexType, typename DType = real_t>
-struct ParserFactoryReg
-    : public FunctionRegEntryBase<ParserFactoryReg<IndexType, DType>,
-                                  typename Parser<IndexType, DType>::Factory> {};
+template <typename IndexType, typename DType = real_t>
+struct ParserFactoryReg :
+    public FunctionRegEntryBase<ParserFactoryReg<IndexType, DType>,
+        typename Parser<IndexType, DType>::Factory> {};
 
 /*!
  * \brief Register a new distributed parser to dmlc-core.
@@ -356,15 +358,13 @@ struct ParserFactoryReg
  * \endcode
  */
 #define DMLC_REGISTER_DATA_PARSER(IndexType, DataType, TypeName, FactoryFunction) \
-  DMLC_REGISTRY_REGISTER(ParserFactoryReg<IndexType __DMLC_COMMA DataType>,           \
-                         ParserFactoryReg ## _ ## IndexType ## _ ## DataType, TypeName)  \
-  .set_body(FactoryFunction)
-
+  DMLC_REGISTRY_REGISTER(ParserFactoryReg<IndexType __DMLC_COMMA DataType>,       \
+      ParserFactoryReg##_##IndexType##_##DataType, TypeName)                      \
+      .set_body(FactoryFunction)
 
 // implementation of operator[]
-template<typename IndexType, typename DType>
-inline Row<IndexType, DType>
-RowBlock<IndexType, DType>::operator[](size_t rowid) const {
+template <typename IndexType, typename DType>
+inline Row<IndexType, DType> RowBlock<IndexType, DType>::operator[](size_t rowid) const {
   CHECK(rowid < size);
   Row<IndexType, DType> inst;
   inst.label = label + rowid;

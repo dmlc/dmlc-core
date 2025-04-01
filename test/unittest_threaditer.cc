@@ -1,10 +1,12 @@
+#include "unittest_threaditer.h"
+
+#include <chrono>
+
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
-#include <chrono>
-#include <gtest/gtest.h>
 #include <dmlc/threadediter.h>
 
-#include "unittest_threaditer.h"
+#include <gtest/gtest.h>
 
 using namespace dmlc;
 namespace producer_test {
@@ -22,13 +24,14 @@ struct IntProducer : public ThreadedIter<int>::Producer {
   int counter;
   int maxcap;
   int sleep;
-  IntProducer(int maxcap, int sleep)
-      : counter(0), maxcap(maxcap), sleep(sleep) {}
+  IntProducer(int maxcap, int sleep) : counter(0), maxcap(maxcap), sleep(sleep) {}
   virtual void BeforeFirst(void) {
     counter = 0;
   }
   virtual bool Next(int **inout_dptr) {
-    if (counter == maxcap) return false;
+    if (counter == maxcap) {
+      return false;
+    }
     // allocate space if not exist
     if (*inout_dptr == NULL) {
       *inout_dptr = new int();
@@ -39,7 +42,7 @@ struct IntProducer : public ThreadedIter<int>::Producer {
   }
 };
 
-}
+}  // namespace producer_test
 
 TEST(ThreadedIter, basics) {
   using namespace producer_test;
@@ -52,7 +55,7 @@ TEST(ThreadedIter, basics) {
   while (iter.Next()) {
     CHECK(counter == iter.Value());
     delay(d);
-    LOG(INFO)  << counter;
+    LOG(INFO) << counter;
     ++counter;
   }
   CHECK(!iter.Next());
@@ -65,7 +68,7 @@ TEST(ThreadedIter, basics) {
   counter = 0;
   int *value;
   while (iter.Next(&value)) {
-    LOG(INFO)  << *value;
+    LOG(INFO) << *value;
     CHECK(counter == *value);
     ++counter;
     iter.Recycle(&value);

@@ -9,7 +9,7 @@ import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 public class TaskRecord {
     // task id of the task
     public int taskId = 0;
-    // role of current node 
+    // role of current node
     public String taskRole = "worker";
     // number of failed attempts to run the task
     public int attemptCounter = 0;

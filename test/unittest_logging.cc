@@ -2,6 +2,7 @@
 #define DMLC_LOG_FATAL_THROW 1
 
 #include <dmlc/logging.h>
+
 #include <gtest/gtest.h>
 
 TEST(Logging, basics) {
@@ -41,18 +42,16 @@ TEST(Logging, single_evaluation) {
   try {
     CHECK_EQ(y++, 2);
     FAIL() << "y = 1; CHECK_EQ(y++, 2) must throw an exception";
-  } catch (std::runtime_error& exception) {
+  } catch (std::runtime_error &exception) {
     // if everything is correct, y++ is evaluated only once, and '1' would be
     // mentioned in error message. This relies on specific format of error message,
     // if it changes, this unit test will have to be changed as well.
     EXPECT_NE(std::string(exception.what()).find("(1 vs"), std::string::npos);
   } catch (...) {
-    FAIL() << "unexpected exception in CHECK_EQ(y++, 2)"; 
+    FAIL() << "unexpected exception in CHECK_EQ(y++, 2)";
   }
 }
 
 TEST(Logging, throw_fatal) {
-  EXPECT_THROW({
-    LOG(FATAL) << "message";
-  }, dmlc::Error);
+  EXPECT_THROW({ LOG(FATAL) << "message"; }, dmlc::Error);
 }

@@ -10,14 +10,14 @@
 // This code requires C++11 to compile
 #include <vector>
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
-#include <iostream>
-#include <sstream>
+  #include <iostream>
+  #include <sstream>
 #endif
-#include <cctype>
-#include <string>
 #include <algorithm>
-#include <map>
+#include <cctype>
 #include <list>
+#include <map>
+#include <string>
 #include <utility>
 
 #include "./base.h"
@@ -25,14 +25,14 @@
 #include "./type_traits.h"
 
 #if DMLC_USE_CXX11
-#include <typeindex>
-#include <typeinfo>
-#include <unordered_map>
-#if DMLC_STRICT_CXX11
-#if DMLC_ENABLE_RTTI
-#include "./any.h"
-#endif  // DMLC_ENABLE_RTTI
-#endif  // DMLC_STRICT_CXX11
+  #include <typeindex>
+  #include <typeinfo>
+  #include <unordered_map>
+  #if DMLC_STRICT_CXX11
+    #if DMLC_ENABLE_RTTI
+      #include "./any.h"
+    #endif  // DMLC_ENABLE_RTTI
+  #endif  // DMLC_STRICT_CXX11
 #endif  // DMLC_USE_CXX11
 
 namespace dmlc {
@@ -52,9 +52,8 @@ class JSONReader {
 #else
   explicit JSONReader(std::string *is)
 #endif
-      : is_(is),
-        line_count_r_(0),
-        line_count_n_(0) {}
+      : is_(is), line_count_r_(0), line_count_n_(0) {
+  }
   /*!
    * \brief Parse next JSON string.
    * \param out_str the output string.
@@ -67,7 +66,7 @@ class JSONReader {
    * \throw dmlc::Error when next token is not number of ValueType.
    * \tparam ValueType type of the number
    */
-  template<typename ValueType>
+  template <typename ValueType>
   inline void ReadNumber(ValueType *out_value);
   /*!
    * \brief Begin parsing an object.
@@ -117,7 +116,7 @@ class JSONReader {
    * \throw dmlc::Error when the read of ValueType is not successful.
    * \tparam ValueType the data type to be read.
    */
-  template<typename ValueType>
+  template <typename ValueType>
   inline void Read(ValueType *out_value);
 
   /*! \return current line count */
@@ -135,8 +134,8 @@ class JSONReader {
 
     // string getline
     size_t end_pos = is_->find('\n');
-    end_pos = std::min(static_cast<size_t>(64),
-        end_pos == std::string::npos ? is_->size() : end_pos);
+    end_pos
+        = std::min(static_cast<size_t>(64), end_pos == std::string::npos ? is_->size() : end_pos);
     std::string line = is_->substr(0, end_pos);
     is_->erase(0, line.size() + 1);  // +1 for \n
 
@@ -198,7 +197,8 @@ class JSONWriter {
 #else
   explicit JSONWriter(std::string *os)
 #endif
-      : os_(os) {}
+      : os_(os) {
+  }
   /*!
    * \brief Write a string that do not contain escape characters.
    * \param s the string to be written.
@@ -214,7 +214,7 @@ class JSONWriter {
    * \param v the value to be written.
    * \tparam ValueType The value type to be written.
    */
-  template<typename ValueType>
+  template <typename ValueType>
   inline void WriteNumber(const ValueType &v);
   /*!
    * \brief Start beginning of array.
@@ -250,9 +250,8 @@ class JSONWriter {
    * \param value the value of to be written.
    * \tparam ValueType The value type to be written.
    */
-  template<typename ValueType>
-  inline void WriteObjectKeyValue(const std::string &key,
-                                  const ValueType &value);
+  template <typename ValueType>
+  inline void WriteObjectKeyValue(const std::string &key, const ValueType &value);
   /*!
    * \brief Write seperator of array, before writing next element.
    * User can proceed to call writer->Write to write next item
@@ -263,14 +262,14 @@ class JSONWriter {
    * \param value The value of to be written.
    * \tparam ValueType The value type to be written.
    */
-  template<typename ValueType>
+  template <typename ValueType>
   inline void WriteArrayItem(const ValueType &value);
   /*!
    * \brief Write value to json.
    * \param value any STL or json readable that can be written.
    * \tparam ValueType the data type to be write.
    */
-  template<typename ValueType>
+  template <typename ValueType>
   inline void Write(const ValueType &value);
 
  private:
@@ -317,7 +316,7 @@ class JSONObjectReadHelper {
    * \param addr address of the data type.
    * \tparam T the data type to be read, must be STL composition of JSON serializable.
    */
-  template<typename T>
+  template <typename T>
   inline void DeclareField(const std::string &key, T *addr) {
     DeclareFieldInternal(key, addr, false);
   }
@@ -327,7 +326,7 @@ class JSONObjectReadHelper {
    * \param addr address of the data type.
    * \tparam T the data type to be read, must be STL composition of JSON serializable.
    */
-  template<typename T>
+  template <typename T>
   inline void DeclareOptionalField(const std::string &key, T *addr) {
     DeclareFieldInternal(key, addr, true);
   }
@@ -345,14 +344,14 @@ class JSONObjectReadHelper {
    * \param optional if set to true, no error will be reported if the key is not presented.
    * \tparam T the data type to be read, must be STL composition of JSON serializable.
    */
-  template<typename T>
+  template <typename T>
   inline void DeclareFieldInternal(const std::string &key, T *addr, bool optional);
   /*!
    * \brief The internal reader function.
    * \param reader The reader to read.
    * \param addr The memory address to read.
    */
-  template<typename T>
+  template <typename T>
   inline static void ReaderFunction(JSONReader *reader, void *addr);
   /*! \brief callback type to reader function */
   typedef void (*ReadFunction)(JSONReader *reader, void *addr);
@@ -369,9 +368,8 @@ class JSONObjectReadHelper {
   std::map<std::string, Entry> map_;
 };
 
-#define DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName)                  \
-  static DMLC_ATTRIBUTE_UNUSED ::dmlc::json::AnyJSONManager&   \
-  __make_AnyJSONType ## _ ## KeyName ## __
+#define DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName) \
+  static DMLC_ATTRIBUTE_UNUSED ::dmlc::json::AnyJSONManager &__make_AnyJSONType##_##KeyName##__
 
 /*!
  * \def DMLC_JSON_ENABLE_ANY
@@ -381,9 +379,9 @@ class JSONObjectReadHelper {
  * \param Type The type to be registered.
  * \param KeyName The Type key assigned to the type, must be same during load.
  */
-#define DMLC_JSON_ENABLE_ANY(Type, KeyName)                             \
-  DMLC_STR_CONCAT(DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName), __COUNTER__) = \
-    ::dmlc::json::AnyJSONManager::Global()->EnableType<Type>(#KeyName) \
+#define DMLC_JSON_ENABLE_ANY(Type, KeyName)                           \
+  DMLC_STR_CONCAT(DMLC_JSON_ENABLE_ANY_VAR_DEF(KeyName), __COUNTER__) \
+      = ::dmlc::json::AnyJSONManager::Global()->EnableType<Type>(#KeyName)
 
 //! \cond Doxygen_Suppress
 namespace json {
@@ -392,10 +390,10 @@ namespace json {
  * \brief generic serialization handler
  * \tparam T the type to be serialized
  */
-template<typename T>
+template <typename T>
 struct Handler;
 
-template<typename ValueType>
+template <typename ValueType>
 struct NumericHandler {
   inline static void Write(JSONWriter *writer, const ValueType &value) {
     writer->WriteNumber<ValueType>(value);
@@ -405,13 +403,12 @@ struct NumericHandler {
   }
 };
 
-template<typename ContainerType>
+template <typename ContainerType>
 struct ArrayHandler {
   inline static void Write(JSONWriter *writer, const ContainerType &array) {
     typedef typename ContainerType::value_type ElemType;
     writer->BeginArray(array.size() > 10 || !dmlc::is_pod<ElemType>::value);
-    for (typename ContainerType::const_iterator it = array.begin();
-         it != array.end(); ++it) {
+    for (typename ContainerType::const_iterator it = array.begin(); it != array.end(); ++it) {
       writer->WriteArrayItem(*it);
     }
     writer->EndArray();
@@ -428,8 +425,8 @@ struct ArrayHandler {
   }
 };
 
-template<typename ContainerType>
-struct MapHandler{
+template <typename ContainerType>
+struct MapHandler {
   inline static void Write(JSONWriter *writer, const ContainerType &map) {
     writer->BeginObject(map.size() > 1);
     for (typename ContainerType::const_iterator it = map.begin(); it != map.end(); ++it) {
@@ -450,7 +447,7 @@ struct MapHandler{
   }
 };
 
-template<typename T>
+template <typename T>
 struct CommonJSONSerializer {
   inline static void Write(JSONWriter *writer, const T &value) {
     value.Save(writer);
@@ -460,7 +457,7 @@ struct CommonJSONSerializer {
   }
 };
 
-template<>
+template <>
 struct Handler<std::string> {
   inline static void Write(JSONWriter *writer, const std::string &value) {
     writer->WriteString(value);
@@ -470,12 +467,11 @@ struct Handler<std::string> {
   }
 };
 
-template<typename T>
-struct Handler<std::vector<T> > : public ArrayHandler<std::vector<T> > {
-};
+template <typename T>
+struct Handler<std::vector<T>> : public ArrayHandler<std::vector<T>> {};
 
-template<typename K, typename V>
-struct Handler<std::pair<K, V> > {
+template <typename K, typename V>
+struct Handler<std::pair<K, V>> {
   inline static void Write(JSONWriter *writer, const std::pair<K, V> &kv) {
     writer->BeginArray();
     writer->WriteArrayItem(kv.first);
@@ -484,55 +480,47 @@ struct Handler<std::pair<K, V> > {
   }
   inline static void Read(JSONReader *reader, std::pair<K, V> *kv) {
     reader->BeginArray();
-    CHECK(reader->NextArrayItem())
-        << "Expect array of length 2";
+    CHECK(reader->NextArrayItem()) << "Expect array of length 2";
     Handler<K>::Read(reader, &(kv->first));
-    CHECK(reader->NextArrayItem())
-        << "Expect array of length 2";
+    CHECK(reader->NextArrayItem()) << "Expect array of length 2";
     Handler<V>::Read(reader, &(kv->second));
-    CHECK(!reader->NextArrayItem())
-        << "Expect array of length 2";
+    CHECK(!reader->NextArrayItem()) << "Expect array of length 2";
   }
 };
 
-template<typename T>
-struct Handler<std::list<T> > : public ArrayHandler<std::list<T> > {
-};
+template <typename T>
+struct Handler<std::list<T>> : public ArrayHandler<std::list<T>> {};
 
-template<typename V>
-struct Handler<std::map<std::string, V> > : public MapHandler<std::map<std::string, V> > {
-};
+template <typename V>
+struct Handler<std::map<std::string, V>> : public MapHandler<std::map<std::string, V>> {};
 
 #if DMLC_USE_CXX11
-template<typename V>
-struct Handler<std::unordered_map<std::string, V> >
-    : public MapHandler<std::unordered_map<std::string, V> > {
-};
+template <typename V>
+struct Handler<std::unordered_map<std::string, V>> :
+    public MapHandler<std::unordered_map<std::string, V>> {};
 #endif  // DMLC_USE_CXX11
 
-template<typename T>
+template <typename T>
 struct Handler {
   inline static void Write(JSONWriter *writer, const T &data) {
-    typedef typename dmlc::IfThenElseType<dmlc::is_arithmetic<T>::value,
-                                          NumericHandler<T>,
-                                          CommonJSONSerializer<T> >::Type THandler;
+    typedef typename dmlc::IfThenElseType<dmlc::is_arithmetic<T>::value, NumericHandler<T>,
+        CommonJSONSerializer<T>>::Type THandler;
     THandler::Write(writer, data);
   }
   inline static void Read(JSONReader *reader, T *data) {
-    typedef typename dmlc::IfThenElseType<dmlc::is_arithmetic<T>::value,
-                                          NumericHandler<T>,
-                                          CommonJSONSerializer<T> >::Type THandler;
+    typedef typename dmlc::IfThenElseType<dmlc::is_arithmetic<T>::value, NumericHandler<T>,
+        CommonJSONSerializer<T>>::Type THandler;
     THandler::Read(reader, data);
   }
 };
 
 #if DMLC_STRICT_CXX11
-#if DMLC_ENABLE_RTTI
+  #if DMLC_ENABLE_RTTI
 // Manager to store json serialization strategy.
 class AnyJSONManager {
  public:
-  template<typename T>
-  inline AnyJSONManager& EnableType(const std::string& type_name) {  // NOLINT(*)
+  template <typename T>
+  inline AnyJSONManager &EnableType(const std::string &type_name) {  // NOLINT(*)
     std::type_index tp = std::type_index(typeid(T));
     if (type_name_.count(tp) != 0) {
       CHECK(type_name_.at(tp) == type_name)
@@ -549,7 +537,7 @@ class AnyJSONManager {
     return *this;
   }
   // return global singleton
-  inline static AnyJSONManager* Global() {
+  inline static AnyJSONManager *Global() {
     static AnyJSONManager inst;
     return &inst;
   }
@@ -557,34 +545,33 @@ class AnyJSONManager {
  private:
   AnyJSONManager() {}
 
-  template<typename T>
+  template <typename T>
   inline static void WriteAny(JSONWriter *writer, const any &data) {
     writer->Write(dmlc::unsafe_get<T>(data));
   }
-  template<typename T>
-  inline static void ReadAny(JSONReader *reader, any* data) {
+  template <typename T>
+  inline static void ReadAny(JSONReader *reader, any *data) {
     T temp;
     reader->Read(&temp);
     *data = std::move(temp);
   }
   // data entry to store vtable for any type
   struct Entry {
-    void (*read)(JSONReader* reader, any *data);
-    void (*write)(JSONWriter* reader, const any& data);
+    void (*read)(JSONReader *reader, any *data);
+    void (*write)(JSONWriter *reader, const any &data);
   };
 
-  template<typename T>
+  template <typename T>
   friend struct Handler;
 
   std::unordered_map<std::type_index, std::string> type_name_;
   std::unordered_map<std::string, Entry> type_map_;
 };
 
-template<>
+template <>
 struct Handler<any> {
   inline static void Write(JSONWriter *writer, const any &data) {
-    std::unordered_map<std::type_index, std::string>&
-        nmap = AnyJSONManager::Global()->type_name_;
+    std::unordered_map<std::type_index, std::string> &nmap = AnyJSONManager::Global()->type_name_;
     std::type_index id = std::type_index(data.type());
     auto it = nmap.find(id);
     CHECK(it != nmap.end() && it->first == id)
@@ -602,8 +589,8 @@ struct Handler<any> {
     reader->BeginArray();
     CHECK(reader->NextArrayItem()) << "invalid any json format";
     Handler<std::string>::Read(reader, &type_name);
-    std::unordered_map<std::string, AnyJSONManager::Entry>&
-        tmap = AnyJSONManager::Global()->type_map_;
+    std::unordered_map<std::string, AnyJSONManager::Entry> &tmap
+        = AnyJSONManager::Global()->type_map_;
     auto it = tmap.find(type_name);
     CHECK(it != tmap.end() && it->first == type_name)
         << "Typename " << type_name << " has not been registered via DMLC_JSON_ENABLE_ANY";
@@ -613,7 +600,7 @@ struct Handler<any> {
     CHECK(!reader->NextArrayItem()) << "invalid any json format";
   }
 };
-#endif  // DMLC_ENABLE_RTTI
+  #endif  // DMLC_ENABLE_RTTI
 #endif  // DMLC_STRICT_CXX11
 
 }  // namespace json
@@ -641,8 +628,12 @@ inline int JSONReader::NextNonSpace() {
   int ch;
   do {
     ch = NextChar();
-    if (ch == '\n') ++line_count_n_;
-    if (ch == '\r') ++line_count_r_;
+    if (ch == '\n') {
+      ++line_count_n_;
+    }
+    if (ch == '\r') {
+      ++line_count_r_;
+    }
   } while (isspace(ch));
   return ch;
 }
@@ -651,32 +642,37 @@ inline int JSONReader::PeekNextNonSpace() {
   int ch;
   while (true) {
     ch = PeekNextChar();
-    if (ch == '\n') ++line_count_n_;
-    if (ch == '\r') ++line_count_r_;
-    if (!isspace(ch)) break;
+    if (ch == '\n') {
+      ++line_count_n_;
+    }
+    if (ch == '\r') {
+      ++line_count_r_;
+    }
+    if (!isspace(ch)) {
+      break;
+    }
     NextChar();
   }
   return ch;
 }
 
 namespace {
-  template<typename T>
+template <typename T>
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
-  void Extend(std::ostream *os, T item) {
-    *os << item;
-  }
+void Extend(std::ostream *os, T item) {
+  *os << item;
+}
 #else
-  void Extend(std::string *ostr, T item) {
-    *ostr += item;
-  }
+void Extend(std::string *ostr, T item) {
+  *ostr += item;
+}
 #endif
 }  // namespace
 
 inline void JSONReader::ReadString(std::string *out_str) {
   int ch = NextNonSpace();
-  CHECK_EQ(ch, '\"')
-      << "Error at" << line_info()
-      << ", Expect \'\"\' but get \'" << static_cast<char>(ch) << '\'';
+  CHECK_EQ(ch, '\"') << "Error at" << line_info() << ", Expect \'\"\' but get \'"
+                     << static_cast<char>(ch) << '\'';
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::ostringstream output;
 #else
@@ -687,21 +683,32 @@ inline void JSONReader::ReadString(std::string *out_str) {
     if (ch == '\\') {
       char sch = static_cast<char>(NextChar());
       switch (sch) {
-        case 'r': Extend(&output, "\r"); break;
-        case 'n': Extend(&output, "\n"); break;
-        case '\\': Extend(&output, "\\"); break;
-        case 't': Extend(&output, "\t"); break;
-        case '\"': Extend(&output, "\""); break;
-        default: LOG(FATAL) << "unknown string escape \\" << sch;
+      case 'r':
+        Extend(&output, "\r");
+        break;
+      case 'n':
+        Extend(&output, "\n");
+        break;
+      case '\\':
+        Extend(&output, "\\");
+        break;
+      case 't':
+        Extend(&output, "\t");
+        break;
+      case '\"':
+        Extend(&output, "\"");
+        break;
+      default:
+        LOG(FATAL) << "unknown string escape \\" << sch;
       }
     } else {
-      if (ch == '\"') break;
+      if (ch == '\"') {
+        break;
+      }
       Extend(&output, static_cast<char>(ch));
     }
     if (ch == EOF || ch == '\r' || ch == '\n') {
-      LOG(FATAL)
-          << "Error at" << line_info()
-          << ", Expect \'\"\' but reach end of line ";
+      LOG(FATAL) << "Error at" << line_info() << ", Expect \'\"\' but reach end of line ";
     }
   }
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
@@ -711,16 +718,14 @@ inline void JSONReader::ReadString(std::string *out_str) {
 #endif
 }
 
-template<typename ValueType>
+template <typename ValueType>
 inline void JSONReader::ReadNumber(ValueType *out_value) {
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
   *is_ >> *out_value;
-  CHECK(!is_->fail())
-      << "Error at" << line_info()
-      << ", Expect number";
+  CHECK(!is_->fail()) << "Error at" << line_info() << ", Expect number";
 #else
-  char* endptr;
-  const char* icstr = is_->c_str();
+  char *endptr;
+  const char *icstr = is_->c_str();
   unsigned number = strtol(icstr, &endptr, 10);
   is_->erase(0, endptr - icstr);
   *out_value = static_cast<ValueType>(number);
@@ -729,17 +734,15 @@ inline void JSONReader::ReadNumber(ValueType *out_value) {
 
 inline void JSONReader::BeginObject() {
   int ch = NextNonSpace();
-  CHECK_EQ(ch, '{')
-      << "Error at" << line_info()
-      << ", Expect \'{\' but get \'" << static_cast<char>(ch) << '\'';
+  CHECK_EQ(ch, '{') << "Error at" << line_info() << ", Expect \'{\' but get \'"
+                    << static_cast<char>(ch) << '\'';
   scope_counter_.push_back(0);
 }
 
 inline void JSONReader::BeginArray() {
   int ch = NextNonSpace();
-  CHECK_EQ(ch, '[')
-      << "Error at" << line_info()
-      << ", Expect \'[\' but get \'" << static_cast<char>(ch) << '\'';
+  CHECK_EQ(ch, '[') << "Error at" << line_info() << ", Expect \'[\' but get \'"
+                    << static_cast<char>(ch) << '\'';
   scope_counter_.push_back(0);
 }
 
@@ -752,9 +755,8 @@ inline bool JSONReader::NextObjectItem(std::string *out_key) {
     } else if (ch == '}') {
       next = false;
     } else {
-      CHECK_EQ(ch, ',')
-          << "Error at" << line_info()
-          << ", JSON object expect \'}\' or \',\' \'" << static_cast<char>(ch) << '\'';
+      CHECK_EQ(ch, ',') << "Error at" << line_info() << ", JSON object expect \'}\' or \',\' \'"
+                        << static_cast<char>(ch) << '\'';
     }
   } else {
     int ch = PeekNextNonSpace();
@@ -770,9 +772,8 @@ inline bool JSONReader::NextObjectItem(std::string *out_key) {
     scope_counter_.back() += 1;
     ReadString(out_key);
     int ch = NextNonSpace();
-    CHECK_EQ(ch, ':')
-        << "Error at" << line_info()
-        << ", Expect \':\' but get \'" << static_cast<char>(ch) << '\'';
+    CHECK_EQ(ch, ':') << "Error at" << line_info() << ", Expect \':\' but get \'"
+                      << static_cast<char>(ch) << '\'';
     return true;
   }
 }
@@ -786,9 +787,8 @@ inline bool JSONReader::NextArrayItem() {
     } else if (ch == ']') {
       next = false;
     } else {
-      CHECK_EQ(ch, ',')
-          << "Error at" << line_info()
-          << ", JSON array expect \']\' or \',\'. Get \'" << static_cast<char>(ch) << "\' instead";
+      CHECK_EQ(ch, ',') << "Error at" << line_info() << ", JSON array expect \']\' or \',\'. Get \'"
+                        << static_cast<char>(ch) << "\' instead";
     }
   } else {
     int ch = PeekNextNonSpace();
@@ -806,7 +806,7 @@ inline bool JSONReader::NextArrayItem() {
   }
 }
 
-template<typename ValueType>
+template <typename ValueType>
 inline void JSONReader::Read(ValueType *out_value) {
   json::Handler<ValueType>::Read(this, out_value);
 }
@@ -822,18 +822,29 @@ inline void JSONWriter::WriteString(const std::string &s) {
   for (size_t i = 0; i < s.length(); ++i) {
     char ch = s[i];
     switch (ch) {
-      case '\r': Extend(os_, "\\r"); break;
-      case '\n': Extend(os_, "\\n"); break;
-      case '\\': Extend(os_, "\\\\"); break;
-      case '\t': Extend(os_, "\\t"); break;
-      case '\"': Extend(os_, "\\\""); break;
-      default: Extend(os_, ch);
+    case '\r':
+      Extend(os_, "\\r");
+      break;
+    case '\n':
+      Extend(os_, "\\n");
+      break;
+    case '\\':
+      Extend(os_, "\\\\");
+      break;
+    case '\t':
+      Extend(os_, "\\t");
+      break;
+    case '\"':
+      Extend(os_, "\\\"");
+      break;
+    default:
+      Extend(os_, ch);
     }
   }
   Extend(os_, '\"');
 }
 
-template<typename ValueType>
+template <typename ValueType>
 inline void JSONWriter::WriteNumber(const ValueType &v) {
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
   Extend(os_, v);
@@ -855,7 +866,9 @@ inline void JSONWriter::EndArray() {
   size_t nelem = scope_counter_.back();
   scope_multi_line_.pop_back();
   scope_counter_.pop_back();
-  if (newline && nelem != 0) WriteSeperator();
+  if (newline && nelem != 0) {
+    WriteSeperator();
+  }
   Extend(os_, ']');
 }
 
@@ -872,13 +885,14 @@ inline void JSONWriter::EndObject() {
   size_t nelem = scope_counter_.back();
   scope_multi_line_.pop_back();
   scope_counter_.pop_back();
-  if (newline && nelem != 0) WriteSeperator();
+  if (newline && nelem != 0) {
+    WriteSeperator();
+  }
   Extend(os_, '}');
 }
 
-template<typename ValueType>
-inline void JSONWriter::WriteObjectKeyValue(const std::string &key,
-                                            const ValueType &value) {
+template <typename ValueType>
+inline void JSONWriter::WriteObjectKeyValue(const std::string &key, const ValueType &value) {
   if (scope_counter_.back() > 0) {
     Extend(os_, ", ");
   }
@@ -898,13 +912,13 @@ inline void JSONWriter::WriteArraySeperator() {
   WriteSeperator();
 }
 
-template<typename ValueType>
+template <typename ValueType>
 inline void JSONWriter::WriteArrayItem(const ValueType &value) {
   this->WriteArraySeperator();
   json::Handler<ValueType>::Write(this, value);
 }
 
-template<typename ValueType>
+template <typename ValueType>
 inline void JSONWriter::Write(const ValueType &value) {
   size_t nscope = scope_multi_line_.size();
   json::Handler<ValueType>::Write(this, value);
@@ -937,8 +951,7 @@ inline void JSONObjectReadHelper::ReadAllFields(JSONReader *reader) {
       Extend(&err, "JSONReader: Unknown field ");
       Extend(&err, key);
       Extend(&err, ", candidates are: \n");
-      for (std::map<std::string, Entry>::iterator
-               it = map_.begin(); it != map_.end(); ++it) {
+      for (std::map<std::string, Entry>::iterator it = map_.begin(); it != map_.end(); ++it) {
         Extend(&err, '\"');
         Extend(&err, it->first);
         Extend(&err, "\"\n");
@@ -951,29 +964,28 @@ inline void JSONObjectReadHelper::ReadAllFields(JSONReader *reader) {
     }
   }
   if (visited.size() != map_.size()) {
-    for (std::map<std::string, Entry>::iterator
-             it = map_.begin(); it != map_.end(); ++it) {
-      if (it->second.optional) continue;
+    for (std::map<std::string, Entry>::iterator it = map_.begin(); it != map_.end(); ++it) {
+      if (it->second.optional) {
+        continue;
+      }
       CHECK_NE(visited.count(it->first), 0U)
-          << "JSONReader: Missing field \"" << it->first << "\"\n At "
-          << reader->line_info();
+          << "JSONReader: Missing field \"" << it->first << "\"\n At " << reader->line_info();
     }
   }
 }
 
-template<typename T>
+template <typename T>
 inline void JSONObjectReadHelper::ReaderFunction(JSONReader *reader, void *addr) {
-  json::Handler<T>::Read(reader, static_cast<T*>(addr));
+  json::Handler<T>::Read(reader, static_cast<T *>(addr));
 }
 
-template<typename T>
-inline void JSONObjectReadHelper::
-DeclareFieldInternal(const std::string &key, T *addr, bool optional) {
-  CHECK_EQ(map_.count(key), 0U)
-      << "Adding duplicate field " << key;
+template <typename T>
+inline void JSONObjectReadHelper::DeclareFieldInternal(
+    const std::string &key, T *addr, bool optional) {
+  CHECK_EQ(map_.count(key), 0U) << "Adding duplicate field " << key;
   Entry e;
   e.func = ReaderFunction<T>;
-  e.addr = static_cast<void*>(addr);
+  e.addr = static_cast<void *>(addr);
   e.optional = optional;
   map_[key] = e;
 }
