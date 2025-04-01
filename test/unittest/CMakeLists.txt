@@ -46,16 +46,20 @@ if (NOT GTEST_FOUND)
   target_compile_definitions(gmock PRIVATE ${ENABLE_GNU_EXTENSION_FLAGS})
   target_link_libraries(dmlc_unit_tests
     gtest gmock dmlc Threads::Threads)
-  set_target_properties(gtest PROPERTIES
-    CXX_STANDARD 14
-    CXX_STANDARD_REQUIRED ON)
-  set_target_properties(gmock PROPERTIES
-    CXX_STANDARD 14
-    CXX_STANDARD_REQUIRED ON)
+  foreach(target gtest gmock)
+    set_target_properties(${target} PROPERTIES
+      CXX_STANDARD 14
+      CXX_STANDARD_REQUIRED ON)
+  endforeach()
 else()
   target_include_directories(dmlc_unit_tests PRIVATE ${GTEST_INCLUDE_DIRS})
+  foreach(target GTest::gtest GTest::gmock)
+    set_target_properties(${target} PROPERTIES
+      CXX_STANDARD 14
+      CXX_STANDARD_REQUIRED ON)
+  endforeach()
   target_link_libraries(dmlc_unit_tests
-    ${GTEST_LIBRARIES} dmlc Threads::Threads)
+    GTest::gtest GTest::gmock dmlc Threads::Threads)
 endif()
 
 if(USE_OPENMP)
