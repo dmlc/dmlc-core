@@ -27,13 +27,13 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_
 target_compile_definitions(dmlc_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE -DDMLC_CORE_USE_CMAKE ${ENABLE_GNU_EXTENSION_FLAGS})
 target_include_directories(dmlc_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-find_package(GTest 1.16.0)
+find_package(GTest 1.14.0)
 if (NOT GTEST_FOUND)
   message(STATUS "GTest not found, downloading GTest.")
   include(FetchContent)
   FetchContent_Declare(
     googletest
-    URL https://github.com/google/googletest/releases/download/v1.16.0/googletest-1.16.0.tar.gz
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
   )
   # Prevent GoogleTest from overriding our compiler/linker options
   # when building with Visual Studio
