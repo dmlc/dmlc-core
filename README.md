@@ -31,7 +31,7 @@ Contributing
 
 Contributing to dmlc-core is welcomed! dmlc-core follows google's C style guide. If you are interested in contributing, take a look at [feature wishlist](https://github.com/dmlc/dmlc-core/labels/feature%20wishlist) and open a new issue if you like to add something.
 
-* DMLC-Core uses C++11 standard. Ensure that your C++ compiler supports C++11.
+* DMLC-Core uses C++14 standard. Ensure that your C++ compiler supports C++14.
 * Try to introduce minimum dependency when possible
 
 ### CheckList before submit code
