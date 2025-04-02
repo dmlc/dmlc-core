@@ -193,6 +193,8 @@ if(MSVC)
   endif()
   set(CMAKE_MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+  set_target_properties(dmlc PROPERTIES
+    MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
 else()
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
   check_cxx_compiler_flag("-msse2" SUPPORT_MSSE2)
