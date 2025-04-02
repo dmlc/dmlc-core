@@ -7,6 +7,7 @@
 #define DMLC_ARRAY_VIEW_H_
 
 #include <array>
+#include <cstddef>
 #include <vector>
 
 namespace dmlc {
