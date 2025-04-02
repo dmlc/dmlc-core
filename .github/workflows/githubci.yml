@@ -38,7 +38,7 @@ jobs:
             sudo apt update
             sudo apt install doxygen libcurl4-openssl-dev gcc g++
           else
-            brew install libomp doxygen gcc@11
+            brew install libomp doxygen
           fi
       - name: Test
         shell: bash -el {0}
@@ -46,7 +46,7 @@ jobs:
           TASK=${{ matrix.task }} ./scripts/test_script.sh
 
   s390x_test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

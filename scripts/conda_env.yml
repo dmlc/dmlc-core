@@ -9,4 +9,3 @@ dependencies:
 - pylint
 - cpplint
 - ninja
-- sel(osx): llvm-openmp
