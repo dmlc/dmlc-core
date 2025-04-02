@@ -204,10 +204,7 @@ else()
     target_compile_options(dmlc PRIVATE -O3)
   endif()
 
-  target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11=1)
-  if(SUPPORT_CXX14)
-    target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX14=1)
-  endif()
+  target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11=1 -DDMLC_USE_CXX14=1)
 endif()
 
 
