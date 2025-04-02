@@ -34,6 +34,6 @@ fi
 if [[ ${TASK} == "s390x_test" ]]; then
     # Run unit tests inside emulated s390x Docker container (uses QEMU transparently).
     # This should help us achieve compatibility with big endian targets.
-    scripts/s390x/build_via_cmake.sh
-    DMLC_UNIT_TEST_LITTLE_ENDIAN=0 build/test/unittest/dmlc_unit_tests
+    scripts/s390x/ci_build.sh s390_container scripts/s390x/build_via_cmake.sh
+    scripts/s390x/ci_build.sh s390_container -e DMLC_UNIT_TEST_LITTLE_ENDIAN=0 build/test/unittest/dmlc_unit_tests
 fi
