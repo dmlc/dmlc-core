@@ -32,9 +32,7 @@ if (NOT GTEST_FOUND)
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
   )
-  # Prevent GoogleTest from overriding our compiler/linker options
-  # when building with Visual Studio
-  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  set(gtest_force_shared_crt ${DMLC_FORCE_SHARED_CRT} CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 
   add_library(GTest::gtest ALIAS gtest)
