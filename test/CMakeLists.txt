@@ -18,9 +18,6 @@ find_package(Threads REQUIRED)
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE "*.cc")
 add_executable(dmlc_unit_tests ${UNIT_TEST_SOURCE})
-set_target_properties(dmlc_unit_tests
-  PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
 if(MSVC)
   set_target_properties(dmlc_unit_tests PROPERTIES
     MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
