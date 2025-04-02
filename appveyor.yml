@@ -116,14 +116,14 @@ test_script:
         )
       )
     - if /i "%target%" == "msys2" (
-        .\build_msys2\test\unittest\dmlc_unit_tests.exe
+        .\build_msys2\test\dmlc_unit_tests.exe
       )
     - if /i "%target%" == "mingw32" (
-        .\build_mingw32\test\unittest\dmlc_unit_tests.exe
+        .\build_mingw32\test\dmlc_unit_tests.exe
       )
     - if /i "%target%" == "mingw" (
-        .\build_mingw\test\unittest\dmlc_unit_tests.exe
+        .\build_mingw\test\dmlc_unit_tests.exe
       )
     - if /i "%target%" == "cygwin" (
-        .\build_cygwin\test\unittest\dmlc_unit_tests.exe
+        .\build_cygwin\test\dmlc_unit_tests.exe
       )
