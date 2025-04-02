@@ -7,11 +7,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        include:
         task: ["cmake_test", "sanitizer_test"]
-        os: [macos-10.15, ubuntu-22.04]
+        os: [macos-13, macos-14, ubuntu-24.04, ubuntu-24.04-arm]
         exclude:
           # excludes sanitizer_test on macOS
-          - os: macos-10.15
+          - os: macos-13
+            task: "sanitizer_test"
+          - os: macos-14
             task: "sanitizer_test"
     steps:
       - name: Checkout repository
