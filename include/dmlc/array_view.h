@@ -6,8 +6,8 @@
 #ifndef DMLC_ARRAY_VIEW_H_
 #define DMLC_ARRAY_VIEW_H_
 
-#include <vector>
 #include <array>
+#include <vector>
 
 namespace dmlc {
 
@@ -32,7 +32,7 @@ namespace dmlc {
  *  }
  * \endcode
  */
-template<typename ValueType>
+template <typename ValueType>
 class array_view {
  public:
   /*! \brief default constructor */
@@ -47,13 +47,13 @@ class array_view {
    * \brief default move constructor
    * \param other another array view.
    */
-  array_view(array_view<ValueType>&& other) = default; // NOLINT(*)
+  array_view(array_view<ValueType> &&other) = default;  // NOLINT(*)
 #else
   /*!
-  * \brief default move constructor
-  * \param other another array view.
-  */
-  array_view(array_view<ValueType>&& other) { // NOLINT(*)
+   * \brief default move constructor
+   * \param other another array view.
+   */
+  array_view(array_view<ValueType> &&other) {  // NOLINT(*)
     begin_ = other.begin_;
     size_ = other.size_;
     other.begin_ = nullptr;
@@ -64,24 +64,26 @@ class array_view {
    * \param other another array view.
    * \return self.
    */
-  array_view<ValueType>& operator=(const array_view<ValueType>& other) = default; // NOLINT(*)
+  array_view<ValueType> &operator=(const array_view<ValueType> &other) = default;  // NOLINT(*)
   /*!
    * \brief construct array view std::vector
    * \param other vector container
    */
-  array_view(const std::vector<ValueType>& other) {  // NOLINT(*)
+  array_view(const std::vector<ValueType> &other) {  // NOLINT(*)
     if (other.size() != 0) {
-      begin_ = &other[0]; size_ = other.size();
+      begin_ = &other[0];
+      size_ = other.size();
     }
   }
   /*!
    * \brief construct array std::array
    * \param other another array view.
    */
-  template<std::size_t size>
-  array_view(const std::array<ValueType, size>& other) {  // NOLINT(*)
+  template <std::size_t size>
+  array_view(const std::array<ValueType, size> &other) {  // NOLINT(*)
     if (size != 0) {
-      begin_ = &other[0]; size_ = size;
+      begin_ = &other[0];
+      size_ = size;
     }
   }
   /*!
@@ -89,7 +91,7 @@ class array_view {
    * \param begin beginning pointre
    * \param end end pointer
    */
-  array_view(const ValueType* begin, const ValueType* end) {
+  array_view(const ValueType *begin, const ValueType *end) {
     if (begin < end) {
       begin_ = begin;
       size_ = end - begin;
@@ -100,11 +102,11 @@ class array_view {
     return size_;
   }
   /*! \return begin of the array */
-  inline const ValueType* begin() const {
+  inline const ValueType *begin() const {
     return begin_;
   }
   /*! \return end point of the array */
-  inline const ValueType* end() const {
+  inline const ValueType *end() const {
     return begin_ + size_;
   }
   /*!
@@ -112,13 +114,13 @@ class array_view {
    * \param i The index.
    * \return const reference to i-th element.
    */
-  inline const ValueType& operator[](size_t i) const {
+  inline const ValueType &operator[](size_t i) const {
     return begin_[i];
   }
 
  private:
   /*! \brief the begin of the view */
-  const ValueType* begin_{nullptr};
+  const ValueType *begin_{nullptr};
   /*! \brief The size of the view */
   size_t size_{0};
 };

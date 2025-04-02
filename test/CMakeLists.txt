@@ -21,9 +21,6 @@ add_executable(dmlc_unit_tests ${UNIT_TEST_SOURCE})
 set_property(TARGET dmlc_unit_tests
   PROPERTY RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
 
-message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in -> ${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_config.h.in" "${CMAKE_CURRENT_SOURCE_DIR}/build_config.h")
-
 target_compile_definitions(dmlc_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE -DDMLC_CORE_USE_CMAKE ${ENABLE_GNU_EXTENSION_FLAGS})
 target_include_directories(dmlc_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

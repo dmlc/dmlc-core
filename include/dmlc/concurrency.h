@@ -8,14 +8,15 @@
 #define DMLC_CONCURRENCY_H_
 // this code depends on c++11
 #if DMLC_USE_CXX11
-#include <atomic>
-#include <deque>
-#include <queue>
-#include <mutex>
-#include <vector>
-#include <utility>
-#include <condition_variable>
-#include "dmlc/base.h"
+  #include <atomic>
+  #include <condition_variable>
+  #include <deque>
+  #include <mutex>
+  #include <queue>
+  #include <utility>
+  #include <vector>
+
+  #include "dmlc/base.h"
 
 namespace dmlc {
 
@@ -24,21 +25,20 @@ namespace dmlc {
  */
 class Spinlock {
  public:
-#ifdef _MSC_VER
+  #ifdef _MSC_VER
   Spinlock() {
     lock_.clear();
   }
-#else
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wbraced-scalar-init"
-#endif  // defined(__clang__)
-  Spinlock() : lock_(ATOMIC_FLAG_INIT) {
-  }
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif  // defined(__clang__)
-#endif
+  #else
+    #if defined(__clang__)
+      #pragma clang diagnostic push
+      #pragma clang diagnostic ignored "-Wbraced-scalar-init"
+    #endif  // defined(__clang__)
+  Spinlock() : lock_(ATOMIC_FLAG_INIT) {}
+    #if defined(__clang__)
+      #pragma clang diagnostic pop
+    #endif  // defined(__clang__)
+  #endif
   ~Spinlock() = default;
   /*!
    * \brief Acquire lock.
@@ -68,8 +68,7 @@ enum class ConcurrentQueueType {
 /*!
  * \brief Cocurrent blocking queue.
  */
-template <typename T,
-          ConcurrentQueueType type = ConcurrentQueueType::kFIFO>
+template <typename T, ConcurrentQueueType type = ConcurrentQueueType::kFIFO>
 class ConcurrentBlockingQueue {
  public:
   ConcurrentBlockingQueue();
@@ -85,7 +84,7 @@ class ConcurrentBlockingQueue {
    * the parameter.
    */
   template <typename E>
-  void Push(E&& e, int priority = 0);
+  void Push(E &&e, int priority = 0);
 
   /*!
    * \brief Push element to the front of the queue. Only works for FIFO queue.
@@ -99,7 +98,7 @@ class ConcurrentBlockingQueue {
    * the parameter.
    */
   template <typename E>
-  void PushFront(E&& e, int priority = 0);
+  void PushFront(E &&e, int priority = 0);
   /*!
    * \brief Pop element from the queue.
    * \param rv Element popped.
@@ -107,7 +106,7 @@ class ConcurrentBlockingQueue {
    *
    * The element will be copied or moved into the object passed in.
    */
-  bool Pop(T* rv);
+  bool Pop(T *rv);
   /*!
    * \brief Signal the queue for destruction.
    *
@@ -145,8 +144,7 @@ class ConcurrentBlockingQueue {
 };
 
 inline void Spinlock::lock() noexcept(true) {
-  while (lock_.test_and_set(std::memory_order_acquire)) {
-  }
+  while (lock_.test_and_set(std::memory_order_acquire)) {}
 }
 
 inline void Spinlock::unlock() noexcept(true) {
@@ -159,11 +157,10 @@ ConcurrentBlockingQueue<T, type>::ConcurrentBlockingQueue()
 
 template <typename T, ConcurrentQueueType type>
 template <typename E>
-void ConcurrentBlockingQueue<T, type>::Push(E&& e, int priority) {
-  static_assert(std::is_same<typename std::remove_cv<
-                                 typename std::remove_reference<E>::type>::type,
-                             T>::value,
-                "Types must match.");
+void ConcurrentBlockingQueue<T, type>::Push(E &&e, int priority) {
+  static_assert(std::is_same<typename std::remove_cv<typename std::remove_reference<E>::type>::type,
+                    T>::value,
+      "Types must match.");
   bool notify;
   {
     std::lock_guard<std::mutex> lock{mutex_};
@@ -179,16 +176,17 @@ void ConcurrentBlockingQueue<T, type>::Push(E&& e, int priority) {
       notify = nwait_consumer_ != 0;
     }
   }
-  if (notify) cv_.notify_one();
+  if (notify) {
+    cv_.notify_one();
+  }
 }
 
 template <typename T, ConcurrentQueueType type>
 template <typename E>
-void ConcurrentBlockingQueue<T, type>::PushFront(E&& e, int priority) {
-  static_assert(std::is_same<typename std::remove_cv<
-                                 typename std::remove_reference<E>::type>::type,
-                             T>::value,
-                "Types must match.");
+void ConcurrentBlockingQueue<T, type>::PushFront(E &&e, int priority) {
+  static_assert(std::is_same<typename std::remove_cv<typename std::remove_reference<E>::type>::type,
+                    T>::value,
+      "Types must match.");
   bool notify;
   {
     std::lock_guard<std::mutex> lock{mutex_};
@@ -204,17 +202,17 @@ void ConcurrentBlockingQueue<T, type>::PushFront(E&& e, int priority) {
       notify = nwait_consumer_ != 0;
     }
   }
-  if (notify) cv_.notify_one();
+  if (notify) {
+    cv_.notify_one();
+  }
 }
 
 template <typename T, ConcurrentQueueType type>
-bool ConcurrentBlockingQueue<T, type>::Pop(T* rv) {
+bool ConcurrentBlockingQueue<T, type>::Pop(T *rv) {
   std::unique_lock<std::mutex> lock{mutex_};
   if (type == ConcurrentQueueType::kFIFO) {
     ++nwait_consumer_;
-    cv_.wait(lock, [this] {
-        return !fifo_queue_.empty() || exit_now_.load();
-      });
+    cv_.wait(lock, [this] { return !fifo_queue_.empty() || exit_now_.load(); });
     --nwait_consumer_;
     if (!exit_now_.load()) {
       *rv = std::move(fifo_queue_.front());
@@ -225,9 +223,7 @@ bool ConcurrentBlockingQueue<T, type>::Pop(T* rv) {
     }
   } else {
     ++nwait_consumer_;
-    cv_.wait(lock, [this] {
-        return !priority_queue_.empty() || exit_now_.load();
-      });
+    cv_.wait(lock, [this] { return !priority_queue_.empty() || exit_now_.load(); });
     --nwait_consumer_;
     if (!exit_now_.load()) {
       std::pop_heap(priority_queue_.begin(), priority_queue_.end());

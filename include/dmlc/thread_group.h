@@ -6,24 +6,25 @@
 #ifndef DMLC_THREAD_GROUP_H_
 #define DMLC_THREAD_GROUP_H_
 
-#include <dmlc/concurrentqueue.h>
-#include <dmlc/blockingconcurrentqueue.h>
-#include <dmlc/logging.h>
-#include <string>
-#include <mutex>
-#include <utility>
 #include <memory>
+#include <mutex>
 #include <set>
+#include <string>
 #include <thread>
-#include <unordered_set>
 #include <unordered_map>
-#if defined(DMLC_USE_CXX14) || __cplusplus > 201103L  /* C++14 */
-#include <shared_mutex>
+#include <unordered_set>
+#include <utility>
+
+#include <dmlc/blockingconcurrentqueue.h>
+#include <dmlc/concurrentqueue.h>
+#include <dmlc/logging.h>
+#if defined(DMLC_USE_CXX14) || __cplusplus > 201103L /* C++14 */
+  #include <shared_mutex>
 #endif
 #include <condition_variable>
 #ifdef __linux__
-#include <unistd.h>
-#include <sys/syscall.h>
+  #include <sys/syscall.h>
+  #include <unistd.h>
 #endif
 
 namespace dmlc {
@@ -72,7 +73,7 @@ class ManualEvent {
   std::atomic<bool> signaled_;
 };
 
-#if defined(DMLC_USE_CXX14) || __cplusplus > 201103L  /* C++14 */
+#if defined(DMLC_USE_CXX14) || __cplusplus > 201103L /* C++14 */
 /*! \brief Mutex which can be read-locked and write-locked */
 using SharedMutex = std::shared_timed_mutex;
 /*! \brief Write lock, disallows both reads and writes */
@@ -110,13 +111,13 @@ class ThreadGroup {
      * \param thrd Optionally-assigned std::thread object associated with this Thread class
      */
     Thread(std::string threadName, ThreadGroup *owner, std::thread *thrd = nullptr)
-      : name_(std::move(threadName))
-        , thread_(thrd)
-        , ready_event_(std::make_shared<ManualEvent>())
-        , start_event_(std::make_shared<ManualEvent>())
-        , owner_(owner)
-        , shutdown_requested_(false)
-        , auto_remove_(false) {
+        : name_(std::move(threadName)),
+          thread_(thrd),
+          ready_event_(std::make_shared<ManualEvent>()),
+          start_event_(std::make_shared<ManualEvent>()),
+          owner_(owner),
+          shutdown_requested_(false),
+          auto_remove_(false) {
       CHECK_NOTNULL(owner);
     }
 
@@ -161,14 +162,12 @@ class ThreadGroup {
      * \param args Arguments to pass to the Thread's 'main' function
      * \return true if the thread was successfully created and added to the ThreadGroup
      *              If false is returned, the thread may have already been started, but if something
-     *              went wrong (ie duplicte thread name for the ThreadGroup), then request_shutdown()
-     *              will have been been called on the running thread
+     *              went wrong (ie duplicte thread name for the ThreadGroup), then
+     * request_shutdown() will have been been called on the running thread
      */
-    template<typename StartFunction, typename ...Args>
-    static bool launch(std::shared_ptr<Thread> pThis,
-                       bool autoRemove,
-                       StartFunction start_function,
-                       Args ...args);
+    template <typename StartFunction, typename... Args>
+    static bool launch(
+        std::shared_ptr<Thread> pThis, bool autoRemove, StartFunction start_function, Args... args);
 
     /*!
      * \brief Check if this class represents the currently running thread (self)
@@ -264,8 +263,8 @@ class ThreadGroup {
         if (thread_.load()->joinable()) {
           thread_.load()->join();
         } else {
-          LOG(WARNING) << "Thread " << name_ << " ( "
-                       << thread_.load()->get_id() << " ) not joinable";
+          LOG(WARNING) << "Thread " << name_ << " ( " << thread_.load()->get_id()
+                       << " ) not joinable";
         }
       }
     }
@@ -279,10 +278,9 @@ class ThreadGroup {
      * \param args Arguments to be passed to the start_function
      * \return The thread's return code
      */
-    template <typename StartFunction, typename ...Args>
-    static int entry_and_exit_f(std::shared_ptr<Thread> pThis,
-                                StartFunction start_function,
-                                Args... args);
+    template <typename StartFunction, typename... Args>
+    static int entry_and_exit_f(
+        std::shared_ptr<Thread> pThis, StartFunction start_function, Args... args);
     /*! \brief Thread name */
     std::string name_;
     /*! \brief Shared mutex for some thread operations */
@@ -307,8 +305,7 @@ class ThreadGroup {
   /*!
    * \brief Constructor
    */
-  inline ThreadGroup()
-    : evEmpty_(std::make_shared<ManualEvent>()) {
+  inline ThreadGroup() : evEmpty_(std::make_shared<ManualEvent>()) {
     evEmpty_->signal();  // Starts out empty
   }
 
@@ -332,8 +329,9 @@ class ThreadGroup {
     ReadLock guard(m_);
     for (auto it = threads_.begin(), end = threads_.end(); it != end; ++it) {
       std::shared_ptr<Thread> thrd = *it;
-      if (thrd->get_id() == id)
+      if (thrd->get_id() == id) {
         return true;
+      }
     }
     return false;
   }
@@ -349,8 +347,9 @@ class ThreadGroup {
       ReadLock guard(m_);
       for (auto it = threads_.begin(), end = threads_.end(); it != end; ++it) {
         std::shared_ptr<Thread> thrd = *it;
-        if (thrd->get_id() == id)
+        if (thrd->get_id() == id) {
           return true;
+        }
       }
       return false;
     } else {
@@ -482,11 +481,9 @@ class ThreadGroup {
    *              went wrong (ie duplicte thread name for the ThreadGroup), then request_shutdown()
    *              will have been been called on the running thread
    */
-  template<typename StartFunction, typename ThreadType = Thread, typename ...Args>
-  inline bool create(const std::string &threadName,
-                     bool auto_remove,
-                     StartFunction start_function,
-                     Args... args) {
+  template <typename StartFunction, typename ThreadType = Thread, typename... Args>
+  inline bool create(
+      const std::string &threadName, bool auto_remove, StartFunction start_function, Args... args) {
     typename ThreadType::SharedPtr newThread(new ThreadType(threadName, this));
     return Thread::launch(newThread, auto_remove, start_function, args...);
   }
@@ -496,7 +493,7 @@ class ThreadGroup {
    * \param name Name of the thread to look up
    * \return A shared pointer to the Thread object
    */
-  inline std::shared_ptr<Thread> thread_by_name(const std::string& name) {
+  inline std::shared_ptr<Thread> thread_by_name(const std::string &name) {
     ReadLock guard(m_);
     auto iter = name_to_thread_.find(name);
     if (iter != name_to_thread_.end()) {
@@ -524,7 +521,7 @@ class ThreadGroup {
  * \tparam quit_item Object value to signify queue shutdown (ie nullptr for pointer type is common)
  * \note See gtest unit test Syc.ManagedThreadLaunchQueueThread for a usage example
  */
-template<typename ObjectType, ObjectType quit_item>
+template <typename ObjectType, ObjectType quit_item>
 class BlockingQueueThread : public ThreadGroup::Thread {
   using BQT = BlockingQueueThread<ObjectType, quit_item>;
 
@@ -535,13 +532,9 @@ class BlockingQueueThread : public ThreadGroup::Thread {
    * \param owner ThreadGroup lifecycle manafger/owner
    * \param thrd Optionally attach an existing stl thread object
    */
-  BlockingQueueThread(const std::string& name,
-                      dmlc::ThreadGroup *owner,
-                      std::thread *thrd = nullptr)
-    : ThreadGroup::Thread(std::move(name), owner, thrd)
-      , shutdown_in_progress_(false) {
-  }
-
+  BlockingQueueThread(
+      const std::string &name, dmlc::ThreadGroup *owner, std::thread *thrd = nullptr)
+      : ThreadGroup::Thread(std::move(name), owner, thrd), shutdown_in_progress_(false) {}
 
   /*!
    * \brief Destructor
@@ -572,7 +565,7 @@ class BlockingQueueThread : public ThreadGroup::Thread {
    * \brief Enqueue and item
    * \param item The item to enqueue
    */
-  void enqueue(const ObjectType& item) {
+  void enqueue(const ObjectType &item) {
     if (!shutdown_in_progress_) {
       queue_->enqueue(item);
     }
@@ -582,7 +575,9 @@ class BlockingQueueThread : public ThreadGroup::Thread {
    * \brief Get the approximate size of the queue
    * \return The approximate size of the queue
    */
-  size_t size_approx() const { return queue_->size_approx(); }
+  size_t size_approx() const {
+    return queue_->size_approx();
+  }
 
   /*!
    * \brief Launch to the 'run' function which will, in turn, call the class'
@@ -594,14 +589,14 @@ class BlockingQueueThread : public ThreadGroup::Thread {
    * \param secondary_function secondary function for 'run' override to call as needed
    * \return true if thread is launched successfully and added to the ThreadGroup
    */
-  template<typename SecondaryFunction>
-  static bool launch_run(std::shared_ptr<BQT> pThis,
-                         SecondaryFunction secondary_function) {
-    return ThreadGroup::Thread::launch(pThis, true, [](std::shared_ptr<BQT> pThis,
-                                                       SecondaryFunction secondary_function) {
-                                         return pThis->run(secondary_function);
-                                       },
-                                       pThis, secondary_function);
+  template <typename SecondaryFunction>
+  static bool launch_run(std::shared_ptr<BQT> pThis, SecondaryFunction secondary_function) {
+    return ThreadGroup::Thread::launch(
+        pThis, true,
+        [](std::shared_ptr<BQT> pThis, SecondaryFunction secondary_function) {
+          return pThis->run(secondary_function);
+        },
+        pThis, secondary_function);
   }
 
   /*!
@@ -610,7 +605,7 @@ class BlockingQueueThread : public ThreadGroup::Thread {
    * \param on_item_function Function to call when an item is dequeued
    * \return 0 if completed through a `quit_item`, nonzero if on_item_function requested an exit
    */
-  template<typename OnItemFunction>
+  template <typename OnItemFunction>
   inline int run(OnItemFunction on_item_function) {
     int rc = 0;
     do {
@@ -629,8 +624,8 @@ class BlockingQueueThread : public ThreadGroup::Thread {
 
  private:
   /*! \brief The blocking queue associated with this thread */
-  std::shared_ptr<dmlc::moodycamel::BlockingConcurrentQueue<ObjectType>> queue_ =
-    std::make_shared<dmlc::moodycamel::BlockingConcurrentQueue<ObjectType>>();
+  std::shared_ptr<dmlc::moodycamel::BlockingConcurrentQueue<ObjectType>> queue_
+      = std::make_shared<dmlc::moodycamel::BlockingConcurrentQueue<ObjectType>>();
   /*! \brief Whether shutdown request is in progress */
   std::atomic<bool> shutdown_in_progress_;
 };
@@ -639,7 +634,7 @@ class BlockingQueueThread : public ThreadGroup::Thread {
  * \brief Managed timer thread
  * \tparam Duration Duration type (ie seconds, microseconds, etc)
  */
-template<typename Duration>
+template <typename Duration>
 class TimerThread : public ThreadGroup::Thread {
   using ThreadGroup::Thread::is_shutdown_requested;
 
@@ -649,9 +644,7 @@ class TimerThread : public ThreadGroup::Thread {
    * \param name Name of the timer thread
    * \param owner ThreadGroup owner if the timer thread
    */
-  TimerThread(const std::string& name, ThreadGroup *owner)
-    : Thread(name, owner) {
-  }
+  TimerThread(const std::string &name, ThreadGroup *owner) : Thread(name, owner) {}
 
   /*!
    * \brief Destructor
@@ -670,14 +663,15 @@ class TimerThread : public ThreadGroup::Thread {
    * \param secondary_function secondary function for 'run' override to call as needed
    * \return true if thread is launched successfully and added to the ThreadGroup
    */
-  template<typename SecondaryFunction>
-  static bool launch_run(std::shared_ptr<TimerThread<Duration>> pThis,
-                         SecondaryFunction secondary_function) {
-    return ThreadGroup::Thread::launch(pThis, true, [](std::shared_ptr<TimerThread<Duration>> pThis,
-                                                       SecondaryFunction secondary_function) {
-                                         return pThis->run(secondary_function);
-                                       },
-                                       pThis, secondary_function);
+  template <typename SecondaryFunction>
+  static bool launch_run(
+      std::shared_ptr<TimerThread<Duration>> pThis, SecondaryFunction secondary_function) {
+    return ThreadGroup::Thread::launch(
+        pThis, true,
+        [](std::shared_ptr<TimerThread<Duration>> pThis, SecondaryFunction secondary_function) {
+          return pThis->run(secondary_function);
+        },
+        pThis, secondary_function);
   }
 
   /*!
@@ -689,10 +683,9 @@ class TimerThread : public ThreadGroup::Thread {
    * \note Calling shutdown_requested() will cause the thread to exit the next time that the timer
    *       expires.
    */
-  template<typename Function>
-  static void start(std::shared_ptr<TimerThread> timer_thread,
-                    Duration duration,
-                    Function function) {
+  template <typename Function>
+  static void start(
+      std::shared_ptr<TimerThread> timer_thread, Duration duration, Function function) {
     timer_thread->duration_ = duration;
     launch_run(timer_thread, function);
   }
@@ -703,7 +696,7 @@ class TimerThread : public ThreadGroup::Thread {
    * \param on_timer_function Function to call each time the timer expires
    * \return Exit code of the thread
    */
-  template<typename OnTimerFunction>
+  template <typename OnTimerFunction>
   inline int run(OnTimerFunction on_timer_function) {
     int rc = 0;
     while (!is_shutdown_requested()) {
@@ -722,10 +715,9 @@ class TimerThread : public ThreadGroup::Thread {
 /*
  * Inline functions - see declarations for usage
  */
-template <typename StartFunction, typename ...Args>
-inline int ThreadGroup::Thread::entry_and_exit_f(std::shared_ptr<Thread> pThis,
-                                                 StartFunction start_function,
-                                                 Args... args) {
+template <typename StartFunction, typename... Args>
+inline int ThreadGroup::Thread::entry_and_exit_f(
+    std::shared_ptr<Thread> pThis, StartFunction start_function, Args... args) {
   int rc;
   if (pThis) {
     // Signal launcher that we're up and running
@@ -753,22 +745,17 @@ inline int ThreadGroup::Thread::entry_and_exit_f(std::shared_ptr<Thread> pThis,
   return rc;
 }
 
-template<typename StartFunction, typename ...Args>
-inline bool ThreadGroup::Thread::launch(std::shared_ptr<Thread> pThis,
-                                        bool autoRemove,
-                                        StartFunction start_function,
-                                        Args ...args) {
+template <typename StartFunction, typename... Args>
+inline bool ThreadGroup::Thread::launch(
+    std::shared_ptr<Thread> pThis, bool autoRemove, StartFunction start_function, Args... args) {
   WriteLock guard(pThis->thread_mutex_);
   CHECK_EQ(!pThis->thread_.load(), true);
   CHECK_NOTNULL(pThis->owner_);
   // Set auto remove
   pThis->auto_remove_ = autoRemove;
   // Create the actual stl thread object
-  pThis->thread_ = new std::thread(Thread::template entry_and_exit_f<
-                                     StartFunction, Args...>,
-                                   pThis,
-                                   start_function,
-                                   args...);
+  pThis->thread_ = new std::thread(
+      Thread::template entry_and_exit_f<StartFunction, Args...>, pThis, start_function, args...);
   // Attempt to add the thread to the thread group (after started, since in case
   // something goes wrong, there's not a zombie thread in the thread group)
   if (!pThis->owner_->add_thread(pThis)) {
@@ -793,13 +780,11 @@ inline bool ThreadGroup::Thread::launch(std::shared_ptr<Thread> pThis,
  * \param timer_function Function to call each time the timer expires
  * \return true if the timer was successfully created
  */
-template<typename Duration, typename TimerFunction>
-inline bool CreateTimer(const std::string& timer_name,
-                        const Duration& duration,
-                        ThreadGroup *owner,
-                        TimerFunction timer_function) {
-  std::shared_ptr<dmlc::TimerThread<Duration>> timer_thread =
-    std::make_shared<dmlc::TimerThread<Duration>>(timer_name, owner);
+template <typename Duration, typename TimerFunction>
+inline bool CreateTimer(const std::string &timer_name, const Duration &duration, ThreadGroup *owner,
+    TimerFunction timer_function) {
+  std::shared_ptr<dmlc::TimerThread<Duration>> timer_thread
+      = std::make_shared<dmlc::TimerThread<Duration>>(timer_name, owner);
   dmlc::TimerThread<Duration>::start(timer_thread, duration, timer_function);
   return timer_thread != nullptr;
 }

@@ -1,8 +1,10 @@
 // Copyright by Contributors
+#include "./line_split.h"
+
+#include <algorithm>
+
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
-#include <algorithm>
-#include "./line_split.h"
 
 namespace dmlc {
 namespace io {
@@ -11,36 +13,51 @@ size_t LineSplitter::SeekRecordBegin(Stream *fi) {
   size_t nstep = 0;
   // search till fist end-of-line
   while (true) {
-    if (fi->Read(&c, sizeof(c)) == 0) return nstep;
+    if (fi->Read(&c, sizeof(c)) == 0) {
+      return nstep;
+    }
     nstep += 1;
-    if (c == '\n' || c == '\r') break;
+    if (c == '\n' || c == '\r') {
+      break;
+    }
   }
   // search until first non-endofline
   while (true) {
-    if (fi->Read(&c, sizeof(c)) == 0) return nstep;
-    if (c != '\n' && c != '\r') break;
+    if (fi->Read(&c, sizeof(c)) == 0) {
+      return nstep;
+    }
+    if (c != '\n' && c != '\r') {
+      break;
+    }
     // non-end-of-line should not count
     nstep += 1;
   }
   return nstep;
 }
-const char* LineSplitter::FindLastRecordBegin(const char *begin,
-                                              const char *end) {
+const char *LineSplitter::FindLastRecordBegin(const char *begin, const char *end) {
   CHECK(begin != end);
   for (const char *p = end - 1; p != begin; --p) {
-    if (*p == '\n' || *p == '\r') return p + 1;
+    if (*p == '\n' || *p == '\r') {
+      return p + 1;
+    }
   }
   return begin;
 }
 
 bool LineSplitter::ExtractNextRecord(Blob *out_rec, Chunk *chunk) {
-  if (chunk->begin == chunk->end) return false;
+  if (chunk->begin == chunk->end) {
+    return false;
+  }
   char *p;
   for (p = chunk->begin; p != chunk->end; ++p) {
-    if (*p == '\n' || *p == '\r') break;
+    if (*p == '\n' || *p == '\r') {
+      break;
+    }
   }
   for (; p != chunk->end; ++p) {
-    if (*p != '\n' && *p != '\r') break;
+    if (*p != '\n' && *p != '\r') {
+      break;
+    }
   }
   // set the string end sign for safety
   if (p == chunk->end) {

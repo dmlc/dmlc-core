@@ -1,6 +1,7 @@
-#include <dmlc/logging.h>
-#include <gtest/gtest.h>
 #include <dmlc/array_view.h>
+#include <dmlc/logging.h>
+
+#include <gtest/gtest.h>
 
 void ArrayViewTest(dmlc::array_view<int> view, int base) {
   int cnt = base;

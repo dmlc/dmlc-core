@@ -12,16 +12,17 @@
 #include "./base.h"
 // this code depends on c++11
 #if DMLC_ENABLE_STD_THREAD
-#include <condition_variable>
-#include <functional>
-#include <mutex>
-#include <queue>
-#include <atomic>
-#include <thread>
-#include <utility>
-#include <memory>
-#include "./data.h"
-#include "./logging.h"
+  #include <atomic>
+  #include <condition_variable>
+  #include <functional>
+  #include <memory>
+  #include <mutex>
+  #include <queue>
+  #include <thread>
+  #include <utility>
+
+  #include "./data.h"
+  #include "./logging.h"
 
 namespace dmlc {
 
@@ -35,8 +36,7 @@ class ScopedThread {
    * \brief constructor
    * \param thread thread to manage
    */
-  explicit ScopedThread(std::thread thread)
-      : thread_(std::move(thread)) {
+  explicit ScopedThread(std::thread thread) : thread_(std::move(thread)) {
     if (!thread_.joinable()) {
       throw std::logic_error("No thread");
     }
@@ -46,8 +46,8 @@ class ScopedThread {
     thread_.join();
   }
   // copy assignment and construction are not allowed
-  ScopedThread(ScopedThread const&) = delete;
-  ScopedThread& operator=(ScopedThread const&) = delete;
+  ScopedThread(const ScopedThread &) = delete;
+  ScopedThread &operator=(const ScopedThread &) = delete;
 
  private:
   std::thread thread_;
@@ -74,7 +74,7 @@ class ScopedThread {
  * \endcode
  * \tparam DType the type of data blob we support
  */
-template<typename DType>
+template <typename DType>
 class ThreadedIter : public DataIter<DType> {
  public:
   /*!
@@ -148,8 +148,8 @@ class ThreadedIter : public DataIter<DType> {
    * \param next the function called to get next element, see Producer.Next
    * \param beforefirst the function to call to reset the producer, see Producer.BeforeFirst
    */
-  inline void Init(std::function<bool(DType **)> next,
-                   std::function<void()> beforefirst = NotImplemented);
+  inline void Init(
+      std::function<bool(DType **)> next, std::function<void()> beforefirst = NotImplemented);
   /*!
    * \brief get the next data, this function is threadsafe
    * \param out_dptr used to hold the pointer to the record
@@ -211,7 +211,9 @@ class ThreadedIter : public DataIter<DType> {
       free_cells_.push(out_data_);
       out_data_ = NULL;
     }
-    if (producer_sig_.load(std::memory_order_acquire) == kDestroy)  return;
+    if (producer_sig_.load(std::memory_order_acquire) == kDestroy) {
+      return;
+    }
 
     producer_sig_.store(kBeforeFirst, std::memory_order_release);
     CHECK(!producer_sig_processed_.load(std::memory_order_acquire));
@@ -220,14 +222,15 @@ class ThreadedIter : public DataIter<DType> {
     }
     CHECK(!producer_sig_processed_.load(std::memory_order_acquire));
     // wait until the request has been processed
-    consumer_cond_.wait(lock, [this]() {
-        return producer_sig_processed_.load(std::memory_order_acquire);
-      });
+    consumer_cond_.wait(
+        lock, [this]() { return producer_sig_processed_.load(std::memory_order_acquire); });
     producer_sig_processed_.store(false, std::memory_order_release);
     bool notify = nwait_producer_ != 0 && !produce_end_;
     lock.unlock();
     // notify producer, in case they are waiting for the condition.
-    if (notify) producer_cond_.notify_one();
+    if (notify) {
+      producer_cond_.notify_one();
+    }
     ThrowExceptionIfSet();
   }
 
@@ -237,11 +240,7 @@ class ThreadedIter : public DataIter<DType> {
     LOG(FATAL) << "BeforeFirst is not supported";
   }
   /*! \brief signals send to producer */
-  enum Signal {
-    kProduce,
-    kBeforeFirst,
-    kDestroy
-  };
+  enum Signal { kProduce, kBeforeFirst, kDestroy };
   /*! \brief producer class */
   // Producer *producer_owned_;
   std::shared_ptr<Producer> producer_;
@@ -271,15 +270,16 @@ class ThreadedIter : public DataIter<DType> {
   /*! \brief the current output cell */
   DType *out_data_;
   /*! \brief internal queue of producer */
-  std::queue<DType*> queue_;
+  std::queue<DType *> queue_;
   /*! \brief free cells that can be used */
-  std::queue<DType*> free_cells_;
+  std::queue<DType *> free_cells_;
   /*! \brief holds a reference to iterator exception thrown in spawned threads */
   std::exception_ptr iter_exception_{nullptr};
 };
 
 // implementation of functions
-template <typename DType> inline void ThreadedIter<DType>::Destroy(void) {
+template <typename DType>
+inline void ThreadedIter<DType>::Destroy(void) {
   if (producer_thread_) {
     {
       // lock the mutex
@@ -311,22 +311,17 @@ template <typename DType> inline void ThreadedIter<DType>::Destroy(void) {
   }
 }
 
-template<typename DType>
-inline void ThreadedIter<DType>::
-Init(std::shared_ptr<Producer> producer) {
+template <typename DType>
+inline void ThreadedIter<DType>::Init(std::shared_ptr<Producer> producer) {
   CHECK(producer_ == NULL) << "can only call Init once";
-  auto next = [producer](DType **dptr) {
-      return producer->Next(dptr);
-  };
-  auto beforefirst = [producer]() {
-    producer->BeforeFirst();
-  };
+  auto next = [producer](DType **dptr) { return producer->Next(dptr); };
+  auto beforefirst = [producer]() { producer->BeforeFirst(); };
   this->Init(next, beforefirst);
 }
 
 template <typename DType>
-inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
-                                      std::function<void()> beforefirst) {
+inline void ThreadedIter<DType>::Init(
+    std::function<bool(DType **)> next, std::function<void()> beforefirst) {
   producer_sig_.store(kProduce, std::memory_order_release);
   producer_sig_processed_.store(false, std::memory_order_release);
   produce_end_.store(false, std::memory_order_release);
@@ -344,8 +339,7 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
           producer_cond_.wait(lock, [this]() {
             if (producer_sig_.load(std::memory_order_acquire) == kProduce) {
               bool ret = !produce_end_.load(std::memory_order_acquire)
-                         && (queue_.size() < max_capacity_ ||
-                             free_cells_.size() != 0);
+                         && (queue_.size() < max_capacity_ || free_cells_.size() != 0);
               return ret;
             } else {
               return true;
@@ -393,14 +387,16 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
           if (!produce_end_.load(std::memory_order_acquire)) {
             queue_.push(cell);
           } else {
-            if (cell != NULL)
+            if (cell != NULL) {
               free_cells_.push(cell);
+            }
           }
           // put things into queue
           notify = nwait_consumer_ != 0;
         }
-        if (notify)
+        if (notify) {
           consumer_cond_.notify_all();
+        }
       } catch (std::exception &e) {
         // Shouldn't throw exception in destructor
         DCHECK(producer_sig_.load(std::memory_order_acquire) != kDestroy);
@@ -426,8 +422,9 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
             produce_end_.store(true, std::memory_order_release);
             next_notify = nwait_consumer_ != 0;
             lock.unlock();
-            if (next_notify)
+            if (next_notify) {
               consumer_cond_.notify_all();
+            }
           }
         }
         return;
@@ -439,25 +436,25 @@ inline void ThreadedIter<DType>::Init(std::function<bool(DType **)> next,
 
 template <typename DType>
 inline bool ThreadedIter<DType>::Next(DType **out_dptr) {
-  if (producer_sig_.load(std::memory_order_acquire) == kDestroy)
+  if (producer_sig_.load(std::memory_order_acquire) == kDestroy) {
     return false;
+  }
   ThrowExceptionIfSet();
   std::unique_lock<std::mutex> lock(mutex_);
   CHECK(producer_sig_.load(std::memory_order_acquire) == kProduce)
       << "Make sure you call BeforeFirst not inconcurrent with Next!";
   ++nwait_consumer_;
   consumer_cond_.wait(lock,
-                      [this]() { return queue_.size() != 0
-                                 || produce_end_.load(std::memory_order_acquire); });
+      [this]() { return queue_.size() != 0 || produce_end_.load(std::memory_order_acquire); });
   --nwait_consumer_;
   if (queue_.size() != 0) {
     *out_dptr = queue_.front();
     queue_.pop();
-    bool notify = nwait_producer_ != 0
-                  && !produce_end_.load(std::memory_order_acquire);
+    bool notify = nwait_producer_ != 0 && !produce_end_.load(std::memory_order_acquire);
     lock.unlock();
-    if (notify)
+    if (notify) {
       producer_cond_.notify_one();
+    }
 
     ThrowExceptionIfSet();
     return true;
@@ -480,12 +477,14 @@ inline void ThreadedIter<DType>::Recycle(DType **inout_dptr) {
     *inout_dptr = NULL;
     notify = nwait_producer_ != 0 && !produce_end_.load(std::memory_order_acquire);
   }
-  if (notify)
+  if (notify) {
     producer_cond_.notify_one();
+  }
   ThrowExceptionIfSet();
 }
 
-template <typename DType> inline void ThreadedIter<DType>::ThrowExceptionIfSet(void) {
+template <typename DType>
+inline void ThreadedIter<DType>::ThrowExceptionIfSet(void) {
   std::exception_ptr tmp_exception{nullptr};
   {
     std::lock_guard<std::mutex> lock(mutex_exception_);
@@ -496,13 +495,14 @@ template <typename DType> inline void ThreadedIter<DType>::ThrowExceptionIfSet(v
   if (tmp_exception) {
     try {
       std::rethrow_exception(tmp_exception);
-    } catch (std::exception& exc) {
+    } catch (std::exception &exc) {
       LOG(FATAL) << exc.what();
     }
   }
 }
 
-template <typename DType> inline void ThreadedIter<DType>::ClearException(void) {
+template <typename DType>
+inline void ThreadedIter<DType>::ClearException(void) {
   std::lock_guard<std::mutex> lock(mutex_exception_);
   iter_exception_ = nullptr;
 }

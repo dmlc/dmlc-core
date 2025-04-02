@@ -3,19 +3,6 @@
 set -e
 set -x
 
-if [[ ${TASK} == "lint" ]]; then
-    # Disable pylint for now as they are not yet fixed.
-    # stop the build if there are Python syntax errors or undefined names
-    # python3 -m flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
-    # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
-    # python3 -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    make lint
-    make doxygen 2>log.txt
-    (cat log.txt| grep -v ENABLE_PREPROCESSING |grep -v "unsupported tag" |grep warning) && exit 1
-    exit 0
-fi
-
 # For all tests other than s390x_test, expect little endian
 export DMLC_UNIT_TEST_LITTLE_ENDIAN=1
 

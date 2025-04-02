@@ -6,12 +6,13 @@
 #ifndef DMLC_COMMON_H_
 #define DMLC_COMMON_H_
 
-#include <vector>
-#include <string>
-#include <sstream>
-#include <mutex>
-#include <utility>
 #include <exception>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "./logging.h"
 
 namespace dmlc {
@@ -21,7 +22,7 @@ namespace dmlc {
  * \param delim The delimiter.
  * \return a splitted vector of strings.
  */
-inline std::vector<std::string> Split(const std::string& s, char delim) {
+inline std::vector<std::string> Split(const std::string &s, char delim) {
   std::string item;
   std::istringstream is(s);
   std::vector<std::string> ret;
@@ -34,8 +35,8 @@ inline std::vector<std::string> Split(const std::string& s, char delim) {
 /*!
  * \brief hash an object and combines the key with previous keys
  */
-template<typename T>
-inline size_t HashCombine(size_t key, const T& value) {
+template <typename T>
+inline size_t HashCombine(size_t key, const T &value) {
   std::hash<T> hash_func;
   return key ^ (hash_func(value) + 0x9e3779b9 + (key << 6) + (key >> 2));
 }
@@ -43,8 +44,8 @@ inline size_t HashCombine(size_t key, const T& value) {
 /*!
  * \brief specialize for size_t
  */
-template<>
-inline size_t HashCombine<size_t>(size_t key, const size_t& value) {
+template <>
+inline size_t HashCombine<size_t>(size_t key, const size_t &value) {
   return key ^ (value + 0x9e3779b9 + (key << 6) + (key >> 2));
 }
 
@@ -83,7 +84,9 @@ class OMPException {
    * \brief should be called from the main thread to rethrow the exception
    */
   void Rethrow() {
-    if (this->omp_exception_) std::rethrow_exception(this->omp_exception_);
+    if (this->omp_exception_) {
+      std::rethrow_exception(this->omp_exception_);
+    }
   }
 };
 

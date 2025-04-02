@@ -1,13 +1,14 @@
 // Copyright by Contributors
 #include <dmlc/config.h>
-#include <gtest/gtest.h>
 #include <dmlc/parameter.h>
 
+#include <gtest/gtest.h>
+
 #ifdef _WIN32
-static int setenv(const char* name, const char* value, int overwrite) {
+static int setenv(const char *name, const char *value, int overwrite) {
   return _putenv_s(name, value);
 }
-#define putenv _putenv
+  #define putenv _putenv
 #endif
 
 TEST(Env, Blank) {

@@ -1,7 +1,9 @@
 #include <chrono>
+
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
 #include <dmlc/threadediter.h>
+
 #include <gtest/gtest.h>
 
 #include "unittest_threaditer.h"
@@ -24,10 +26,13 @@ struct IntProducerNextExc : public ThreadedIter<int>::Producer {
   IntProducerNextExc(int maxcap, int sleep, ExcType exc_type = ExcType::kDMLCException)
       : counter(0), maxcap(maxcap), sleep(sleep), exc_type(exc_type) {}
   virtual ~IntProducerNextExc() = default;
-  virtual void BeforeFirst(void) { counter = 0; }
+  virtual void BeforeFirst(void) {
+    counter = 0;
+  }
   virtual bool Next(int **inout_dptr) {
-    if (counter == maxcap)
+    if (counter == maxcap) {
       return false;
+    }
     if (counter == (maxcap - 1)) {
       counter++;
       if (exc_type == kDMLCException) {
@@ -49,8 +54,7 @@ struct IntProducerNextExc : public ThreadedIter<int>::Producer {
 
 struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
   ExcType exc_type;
-  IntProducerBeforeFirst(ExcType exc_type = ExcType::kDMLCException)
-      : exc_type(exc_type) {}
+  IntProducerBeforeFirst(ExcType exc_type = ExcType::kDMLCException) : exc_type(exc_type) {}
   virtual ~IntProducerBeforeFirst() = default;
   void BeforeFirst() override {
     if (exc_type == ExcType::kDMLCException) {
@@ -59,13 +63,15 @@ struct IntProducerBeforeFirst : public ThreadedIter<int>::Producer {
       throw std::exception();
     }
   }
-  bool Next(int ** /*inout_dptr*/) override { return true; }
+  bool Next(int ** /*inout_dptr*/) override {
+    return true;
+  }
 };
-}
+}  // namespace producer_test
 
 TEST(ThreadedIter, dmlc_exception) {
   using namespace producer_test;
-  int* value = nullptr;
+  int *value = nullptr;
   ThreadedIter<int> iter2;
   iter2.set_max_capacity(7);
   auto prod = std::make_shared<IntProducerNextExc>(5, 100);
@@ -106,13 +112,13 @@ TEST(ThreadedIter, dmlc_exception) {
   }
   caught = false;
   try {
-  iter3.BeforeFirst();
+    iter3.BeforeFirst();
   } catch (dmlc::Error &e) {
     LOG(INFO) << "beforefirst exception thrown/caught";
     caught = true;
   }
   CHECK(caught);
-  delete(value);
+  delete (value);
 }
 
 TEST(ThreadedIter, std_exception) {
@@ -120,7 +126,7 @@ TEST(ThreadedIter, std_exception) {
   int *value = nullptr;
   ThreadedIter<int> iter2;
   iter2.set_max_capacity(7);
-  auto prod =std::make_shared<IntProducerNextExc>(5, 100, ExcType::kStdException);
+  auto prod = std::make_shared<IntProducerNextExc>(5, 100, ExcType::kStdException);
   bool caught = false;
   iter2.Init(prod);
   iter2.BeforeFirst();
@@ -158,11 +164,11 @@ TEST(ThreadedIter, std_exception) {
   }
   caught = false;
   try {
-  iter3.BeforeFirst();
+    iter3.BeforeFirst();
   } catch (dmlc::Error &e) {
     LOG(INFO) << "beforefirst exception thrown/caught";
     caught = true;
   }
   CHECK(caught);
-  delete(value);
+  delete (value);
 }

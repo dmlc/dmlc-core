@@ -7,9 +7,10 @@
 #ifndef DMLC_IO_S3_FILESYS_H_
 #define DMLC_IO_S3_FILESYS_H_
 
-#include <dmlc/filesystem.h>
-#include <vector>
 #include <string>
+#include <vector>
+
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {
@@ -25,8 +26,7 @@ class S3FileSystem : public FileSystem {
    * \param s3_secret_key The S3 Secret Key
    * \return the information about the file
    */
-  void SetCredentials(const std::string& s3_access_id,
-                      const std::string& s3_secret_key);
+  void SetCredentials(const std::string &s3_access_id, const std::string &s3_secret_key);
 
   /*!
    * \brief get information about a path
@@ -49,7 +49,7 @@ class S3FileSystem : public FileSystem {
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual Stream *Open(const URI &path, const char* const flag, bool allow_null);
+  virtual Stream *Open(const URI &path, const char *const flag, bool allow_null);
   /*!
    * \brief open a seekable stream for read
    * \param path the path to the file
@@ -92,10 +92,10 @@ class S3FileSystem : public FileSystem {
   bool TryGetPathInfo(const URI &path, FileInfo *info);
 
   /*!
-  * \brief list the objects in the bucket with prefix specified by path.name
-  * \param path the path to query
-  * \param out_list stores the output results which match given prefix
-  */
+   * \brief list the objects in the bucket with prefix specified by path.name
+   * \param path the path to query
+   * \param out_list stores the output results which match given prefix
+   */
   void ListObjects(const URI &path, std::vector<FileInfo> *out_list);
 };
 }  // namespace io

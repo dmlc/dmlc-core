@@ -7,12 +7,14 @@
 #ifndef DMLC_IO_RECORDIO_SPLIT_H_
 #define DMLC_IO_RECORDIO_SPLIT_H_
 
+#include <cstdio>
+#include <cstring>
+#include <string>
+#include <vector>
+
 #include <dmlc/io.h>
 #include <dmlc/recordio.h>
-#include <vector>
-#include <cstdio>
-#include <string>
-#include <cstring>
+
 #include "./input_split_base.h"
 
 namespace dmlc {
@@ -20,11 +22,8 @@ namespace io {
 /*! \brief class that split the files by line */
 class RecordIOSplitter : public InputSplitBase {
  public:
-  RecordIOSplitter(FileSystem *fs,
-                   const char *uri,
-                   unsigned rank,
-                   unsigned nsplit,
-                   const bool recurse_directories) {
+  RecordIOSplitter(FileSystem *fs, const char *uri, unsigned rank, unsigned nsplit,
+      const bool recurse_directories) {
     this->Init(fs, uri, 4, recurse_directories);
     this->ResetPartition(rank, nsplit);
   }
@@ -36,8 +35,7 @@ class RecordIOSplitter : public InputSplitBase {
 
  protected:
   virtual size_t SeekRecordBegin(Stream *fi);
-  virtual const char*
-  FindLastRecordBegin(const char *begin, const char *end);
+  virtual const char *FindLastRecordBegin(const char *begin, const char *end);
 };
 }  // namespace io
 }  // namespace dmlc

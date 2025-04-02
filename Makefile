@@ -31,7 +31,7 @@ CFLAGS+= -I$(DEPS_PATH)/include
 LDFLAGS+= -L$(DEPS_PATH)/lib
 endif
 
-.PHONY: clean all test lint doc example pylint
+.PHONY: clean all test doc example
 
 OBJ=line_split.o indexed_recordio_split.o recordio_split.o input_split_base.o io.o filesys.o local_filesys.o data.o recordio.o config.o
 
@@ -53,13 +53,11 @@ endif
 
 
 ALIB=libdmlc.a
-all: $(ALIB) test
+all: $(ALIB)
 
-include test/dmlc_test.mk
 include example/dmlc_example.mk
 
 ifeq ($(BUILD_TEST), 1)
-test: $(ALL_TEST)
 endif
 
 example: $(ALL_EXAMPLE)
@@ -90,14 +88,8 @@ $(OBJ) :
 $(ALIB):
 	$(AR) cr $@ $+
 
-lint:
-	scripts/lint.py dmlc ${LINT_LANG} include src scripts $(NOLINT_FILES)
-
-pylint:
-	scripts/lint.py dmlc ${LINT_LANG} tracker/dmlc_tracker
-
 doxygen:
 	doxygen doc/Doxyfile
 
 clean:
-	$(RM) $(OBJ) $(BIN) $(ALIB) $(ALL_TEST) $(ALL_TEST_OBJ) *~ src/*~ src/*/*~ include/dmlc/*~ test/*~
+	$(RM) $(OBJ) $(BIN) $(ALIB) $(ALL_TEST) $(ALL_TEST_OBJ) *~ src/*~ src/*/*~ include/dmlc/*~

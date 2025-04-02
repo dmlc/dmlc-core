@@ -17,14 +17,17 @@ struct MyParam : public dmlc::Parameter<MyParam> {
   std::string name;
   // declare parameters in header file
   DMLC_DECLARE_PARAMETER(MyParam) {
-    DMLC_DECLARE_FIELD(num_hidden).set_range(0, 1000)
+    DMLC_DECLARE_FIELD(num_hidden)
+        .set_range(0, 1000)
         .describe("Number of hidden unit in the fully connected layer.");
-    DMLC_DECLARE_FIELD(learning_rate).set_default(0.01f)
+    DMLC_DECLARE_FIELD(learning_rate)
+        .set_default(0.01f)
         .describe("Learning rate of SGD optimization.");
-    DMLC_DECLARE_FIELD(activation).add_enum("relu", 1).add_enum("sigmoid", 2)
+    DMLC_DECLARE_FIELD(activation)
+        .add_enum("relu", 1)
+        .add_enum("sigmoid", 2)
         .describe("Activation function type.");
-    DMLC_DECLARE_FIELD(name).set_default("mnet")
-        .describe("Name of the net.");
+    DMLC_DECLARE_FIELD(name).set_default("mnet").describe("Name of the net.");
 
     // user can also set nhidden besides num_hidden
     DMLC_DECLARE_ALIAS(num_hidden, nhidden);
@@ -34,7 +37,6 @@ struct MyParam : public dmlc::Parameter<MyParam> {
 
 // register it in cc file
 DMLC_REGISTER_PARAMETER(MyParam);
-
 
 int main(int argc, char *argv[]) {
   if (argc == 1) {
@@ -61,4 +63,3 @@ int main(int argc, char *argv[]) {
   printf("param.activation=%d\n", param.activation);
   return 0;
 }
-

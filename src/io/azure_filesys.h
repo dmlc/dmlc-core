@@ -7,9 +7,10 @@
 #ifndef DMLC_IO_AZURE_FILESYS_H_
 #define DMLC_IO_AZURE_FILESYS_H_
 
-#include <dmlc/filesystem.h>
-#include <vector>
 #include <string>
+#include <vector>
+
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {
@@ -19,11 +20,13 @@ class AzureFileSystem : public FileSystem {
  public:
   virtual ~AzureFileSystem() {}
 
-  virtual FileInfo GetPathInfo(const URI &path) { return FileInfo(); }
+  virtual FileInfo GetPathInfo(const URI &path) {
+    return FileInfo();
+  }
 
   virtual void ListDirectory(const URI &path, std::vector<FileInfo> *out_list);
 
-  virtual Stream *Open(const URI &path, const char* const flag, bool allow_null) {
+  virtual Stream *Open(const URI &path, const char *const flag, bool allow_null) {
     return NULL;
   }
 

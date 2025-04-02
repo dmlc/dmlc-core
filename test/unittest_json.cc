@@ -1,16 +1,18 @@
-#include <dmlc/json.h>
-#include <dmlc/io.h>
-#include <dmlc/memory_io.h>
-#include <dmlc/logging.h>
-#include <gtest/gtest.h>
-#include <sstream>
 #include <cstring>
-#include <unordered_map>
 #include <iostream>
+#include <sstream>
+#include <unordered_map>
+
+#include <dmlc/io.h>
+#include <dmlc/json.h>
+#include <dmlc/logging.h>
+#include <dmlc/memory_io.h>
+
+#include <gtest/gtest.h>
 
 using namespace std;
 namespace json {
-template<typename T>
+template <typename T>
 inline void TestSaveLoad(T data) {
 #ifndef _LIBCPP_SGX_NO_IOSTREAMS
   std::ostringstream os;
@@ -61,7 +63,7 @@ class MyClass {
   std::vector<std::string> data_;
   int value_;
 };
-}
+}  // namespace json
 
 DMLC_JSON_ENABLE_ANY(std::vector<std::string>, StrVector);
 
@@ -82,22 +84,19 @@ TEST(JSON, basics) {
   }
   TestSaveLoad(b);
 
-  std::vector<std::vector<int> > temp {{1,2,3}, {1,2}, {1,2,3,4}};
+  std::vector<std::vector<int>> temp{{1, 2, 3}, {1, 2}, {1, 2, 3, 4}};
   TestSaveLoad(temp);
 
-  std::vector<std::vector<int> > temp2 {{}, {}, {1,2,3,4}};
+  std::vector<std::vector<int>> temp2{{}, {}, {1, 2, 3, 4}};
   TestSaveLoad(temp2);
 
-  TestSaveLoad(
-      std::map<std::string, int>  {{"hellkow", 1}, {"world", 2}});
+  TestSaveLoad(std::map<std::string, int>{{"hellkow", 1}, {"world", 2}});
 
-  TestSaveLoad(
-      std::unordered_map<std::string, int>  {{"hellkow", 1}, {"world", 2}});
-  TestSaveLoad(std::list<std::string>  {"hjhjm", "asasa"});
+  TestSaveLoad(std::unordered_map<std::string, int>{{"hellkow", 1}, {"world", 2}});
+  TestSaveLoad(std::list<std::string>{"hjhjm", "asasa"});
   TestSaveLoad(std::list<int>(a.begin(), a.end()));
-  TestSaveLoad(std::list<MyClass> {MyClass("abc"), MyClass("def")});
+  TestSaveLoad(std::list<MyClass>{MyClass("abc"), MyClass("def")});
 }
-
 
 TEST(JSON, any) {
   dmlc::any x = std::vector<std::string>{"a", "b", "c"};
@@ -125,6 +124,5 @@ TEST(JSON, any) {
   dmlc::any copy_data;
   reader.Read(&copy_data);
 
-  ASSERT_EQ(dmlc::get<std::vector<std::string> >(x),
-            dmlc::get<std::vector<std::string> >(copy_data));
+  ASSERT_EQ(dmlc::get<std::vector<std::string>>(x), dmlc::get<std::vector<std::string>>(copy_data));
 }

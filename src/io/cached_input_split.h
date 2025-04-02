@@ -13,10 +13,12 @@
 // this code depends on c++11
 
 #if DMLC_ENABLE_STD_THREAD
-#include <dmlc/threadediter.h>
-#include <string>
-#include <algorithm>
-#include "./input_split_base.h"
+  #include <algorithm>
+  #include <string>
+
+  #include <dmlc/threadediter.h>
+
+  #include "./input_split_base.h"
 
 namespace dmlc {
 namespace io {
@@ -33,13 +35,13 @@ class CachedInputSplit : public InputSplit {
    * \param cache_file the path to cache file
    * \param reuse_exist_cache whether reuse existing cache file, if any
    */
-  CachedInputSplit(InputSplitBase *base,
-                   const char *cache_file,
-                   bool reuse_exist_cache = true)
+  CachedInputSplit(InputSplitBase *base, const char *cache_file, bool reuse_exist_cache = true)
       : buffer_size_(InputSplitBase::kBufferSize),
         cache_file_(cache_file),
-        fo_(NULL), fi_(NULL),
-        base_(base), tmp_chunk_(NULL),
+        fo_(NULL),
+        fi_(NULL),
+        base_(base),
+        tmp_chunk_(NULL),
         iter_preproc_(NULL) {
     if (reuse_exist_cache) {
       if (!this->InitCachedIter()) {
@@ -75,8 +77,7 @@ class CachedInputSplit : public InputSplit {
       delete fo_;
       iter_preproc_ = NULL;
       fo_ = NULL;
-      CHECK(this->InitCachedIter())
-          << "Failed to initialize CachedIter";
+      CHECK(this->InitCachedIter()) << "Failed to initialize CachedIter";
     } else {
       iter_cached_.BeforeFirst();
     }
@@ -97,11 +98,15 @@ class CachedInputSplit : public InputSplit {
   virtual bool NextRecord(Blob *out_rec) {
     auto *iter = iter_preproc_ != NULL ? iter_preproc_ : &iter_cached_;
     if (tmp_chunk_ == NULL) {
-      if (!iter->Next(&tmp_chunk_)) return false;
+      if (!iter->Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     while (!base_->ExtractNextRecord(out_rec, tmp_chunk_)) {
       iter->Recycle(&tmp_chunk_);
-      if (!iter->Next(&tmp_chunk_)) return false;
+      if (!iter->Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     return true;
   }
@@ -109,11 +114,15 @@ class CachedInputSplit : public InputSplit {
   virtual bool NextChunk(Blob *out_chunk) {
     auto *iter = iter_preproc_ != NULL ? iter_preproc_ : &iter_cached_;
     if (tmp_chunk_ == NULL) {
-      if (!iter->Next(&tmp_chunk_)) return false;
+      if (!iter->Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     while (!base_->ExtractNextChunk(out_chunk, tmp_chunk_)) {
       iter->Recycle(&tmp_chunk_);
-      if (!iter->Next(&tmp_chunk_)) return false;
+      if (!iter->Next(&tmp_chunk_)) {
+        return false;
+      }
     }
     return true;
   }
@@ -145,46 +154,51 @@ class CachedInputSplit : public InputSplit {
   inline bool InitCachedIter(void);
 };
 
-inline void CachedInputSplit:: InitPreprocIter(void) {
+inline void CachedInputSplit::InitPreprocIter(void) {
   fo_ = dmlc::Stream::Create(cache_file_.c_str(), "w");
   iter_preproc_ = new ThreadedIter<InputSplitBase::Chunk>();
   iter_preproc_->set_max_capacity(16);
   iter_preproc_->Init([this](InputSplitBase::Chunk **dptr) {
-      if (*dptr == NULL) {
-        *dptr = new InputSplitBase::Chunk(buffer_size_);
-      }
-      auto *p = *dptr;
-      if (!base_->NextChunkEx(p)) return false;
-      // after loading, save to disk
-      size_t size = p->end - p->begin;
-      fo_->Write(&size, sizeof(size));
-      fo_->Write(p->begin, size);
-      return true;
-    });
+    if (*dptr == NULL) {
+      *dptr = new InputSplitBase::Chunk(buffer_size_);
+    }
+    auto *p = *dptr;
+    if (!base_->NextChunkEx(p)) {
+      return false;
+    }
+    // after loading, save to disk
+    size_t size = p->end - p->begin;
+    fo_->Write(&size, sizeof(size));
+    fo_->Write(p->begin, size);
+    return true;
+  });
 }
 
 inline bool CachedInputSplit::InitCachedIter(void) {
   fi_ = dmlc::SeekStream::CreateForRead(cache_file_.c_str(), true);
-  if (fi_ == NULL) return false;
-  iter_cached_.Init([this](InputSplitBase::Chunk **dptr) {
-      if (*dptr == NULL) {
-        *dptr = new InputSplitBase::Chunk(buffer_size_);
-      }
-      auto *p = *dptr;
-      // read data from cache file
-      size_t size;
-      size_t nread = fi_->Read(&size, sizeof(size));
-      if (nread == 0) return false;
-      CHECK(nread == sizeof(size))
-          << cache_file_ << " has invalid cache file format";
-      p->data.resize(size / sizeof(size_t) + 1);
-      p->begin = reinterpret_cast<char*>(BeginPtr(p->data));
-      p->end = p->begin + size;
-      CHECK(fi_->Read(p->begin, size) == size)
-          << cache_file_ << " has invalid cache file format";
-      return true;
-    },
-    [this]() { fi_->Seek(0); });
+  if (fi_ == NULL) {
+    return false;
+  }
+  iter_cached_.Init(
+      [this](InputSplitBase::Chunk **dptr) {
+        if (*dptr == NULL) {
+          *dptr = new InputSplitBase::Chunk(buffer_size_);
+        }
+        auto *p = *dptr;
+        // read data from cache file
+        size_t size;
+        size_t nread = fi_->Read(&size, sizeof(size));
+        if (nread == 0) {
+          return false;
+        }
+        CHECK(nread == sizeof(size)) << cache_file_ << " has invalid cache file format";
+        p->data.resize(size / sizeof(size_t) + 1);
+        p->begin = reinterpret_cast<char *>(BeginPtr(p->data));
+        p->end = p->begin + size;
+        CHECK(fi_->Read(p->begin, size) == size) << cache_file_ << " has invalid cache file format";
+        return true;
+      },
+      [this]() { fi_->Seek(0); });
   return true;
 }
 }  // namespace io

@@ -7,23 +7,24 @@
 #ifndef DMLC_DATA_PARQUET_PARSER_H_
 #define DMLC_DATA_PARQUET_PARSER_H_
 
-#include <dmlc/data.h>
-#include <dmlc/strtonum.h>
-#include <dmlc/parameter.h>
+#include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <map>
-#include <string>
-#include <limits>
 #include <future>
-#include <algorithm>
+#include <limits>
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
-#include "../data/row_block.h"
+
+#include <dmlc/data.h>
+#include <dmlc/parameter.h>
+#include <dmlc/strtonum.h>
+
 #include "../data/parser.h"
+#include "../data/row_block.h"
 #include "arrow/io/api.h"
 #include "parquet/api/reader.h"
-
 
 namespace dmlc {
 namespace data {
@@ -35,22 +36,23 @@ struct ParquetParserParam : public Parameter<ParquetParserParam> {
   int nthreads;
 
   DMLC_DECLARE_PARAMETER(ParquetParserParam) {
-    DMLC_DECLARE_FIELD(format).set_default("parquet")
-      .describe("File format.");
-    DMLC_DECLARE_FIELD(label_column).set_default(0)
-      .describe("Column index (0-based) that will put into label.");
-    DMLC_DECLARE_FIELD(weight_column).set_default(-1)
-      .describe("Column index that will put into instance weights.");
-    DMLC_DECLARE_FIELD(nthreads).set_default(1)
-      .describe("Column index that will put into instance weights.");
+    DMLC_DECLARE_FIELD(format).set_default("parquet").describe("File format.");
+    DMLC_DECLARE_FIELD(label_column)
+        .set_default(0)
+        .describe("Column index (0-based) that will put into label.");
+    DMLC_DECLARE_FIELD(weight_column)
+        .set_default(-1)
+        .describe("Column index that will put into instance weights.");
+    DMLC_DECLARE_FIELD(nthreads).set_default(1).describe(
+        "Column index that will put into instance weights.");
   }
 };
 
 template <typename IndexType, typename DType = real_t>
 class ParquetParser : public ParserImpl<IndexType, DType> {
  public:
-  ParquetParser(const std::string& filename,
-                const std::map<std::string, std::string>& args) : row_groups_read_(0) {
+  ParquetParser(const std::string &filename, const std::map<std::string, std::string> &args)
+      : row_groups_read_(0) {
     param_.Init(args);
     nthread_ = param_.nthreads;
     CHECK_EQ(param_.format, "parquet");
@@ -69,11 +71,10 @@ class ParquetParser : public ParserImpl<IndexType, DType> {
    * \param data vector of data to be returned
    * \return true if the data is loaded, false if reach end
    */
-  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data);
+  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType>> *data);
 
  protected:
-  virtual void ParseRowGroup(int row_group_id,
-                            RowBlockContainer<IndexType, DType> *out);
+  virtual void ParseRowGroup(int row_group_id, RowBlockContainer<IndexType, DType> *out);
 
   virtual size_t BytesRead(void) const {
     return -1;
@@ -98,8 +99,8 @@ class ParquetParser : public ParserImpl<IndexType, DType> {
 };
 
 template <typename IndexType, typename DType>
-bool ParquetParser<IndexType, DType>::
-ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
+bool ParquetParser<IndexType, DType>::ParseNext(
+    std::vector<RowBlockContainer<IndexType, DType>> *data) {
   if (!have_next_) {
     parquet_reader_->Close();
     return false;
@@ -112,9 +113,8 @@ ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
 
   for (int tid = 0; tid < next_row_groups; ++tid) {
     int row_group_id = row_groups_read_ + tid;
-    futures[tid] = std::async(std::launch::async, [&, row_group_id, data, tid] {
-      ParseRowGroup(row_group_id, &(*data)[tid]);
-    });
+    futures[tid] = std::async(std::launch::async,
+        [&, row_group_id, data, tid] { ParseRowGroup(row_group_id, &(*data)[tid]); });
   }
 
   for (int i = 0; i < next_row_groups; ++i) {
@@ -127,22 +127,21 @@ ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
 }
 
 template <typename IndexType, typename DType>
-void ParquetParser<IndexType, DType>::
-ParseRowGroup(int row_group_id,
-              RowBlockContainer<IndexType, DType> *out) {
+void ParquetParser<IndexType, DType>::ParseRowGroup(
+    int row_group_id, RowBlockContainer<IndexType, DType> *out) {
   out->Clear();
   DType v;
 
   std::shared_ptr<parquet::RowGroupReader> row_group_reader
       = parquet_reader_->RowGroup(row_group_id);
   std::vector<std::shared_ptr<parquet::ColumnReader>> all_column_readers;
-  std::vector<parquet::FloatReader*> all_float_readers;
+  std::vector<parquet::FloatReader *> all_float_readers;
 
   // get all the column readers; will iterate each column row-wise later
   for (int i_col = 0; i_col < num_cols_; ++i_col) {
     all_column_readers.push_back(row_group_reader->Column(i_col));
     all_float_readers.push_back(
-        static_cast<parquet::FloatReader*>(all_column_readers[i_col].get()));
+        static_cast<parquet::FloatReader *>(all_column_readers[i_col].get()));
   }
 
   int num_rows_this_group = metadata_->RowGroup(row_group_id)->num_rows();
@@ -159,8 +158,7 @@ ParseRowGroup(int row_group_id,
       CHECK_EQ(values_read, chunk_size);
       if (i_col == param_.label_column) {
         label = v;
-      } else if (std::is_same<DType, real_t>::value
-                 && i_col == param_.weight_column) {
+      } else if (std::is_same<DType, real_t>::value && i_col == param_.weight_column) {
         weight = v;
       } else {
         out->value.push_back(v);

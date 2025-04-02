@@ -12,9 +12,9 @@ general machine learning libraries. It comes with the following nice properties:
 Use Parameter Module
 --------------------
 ### Declare the Parameter
-In the dmlc parameter module, every parameter can be declared as a structure. 
+In the dmlc parameter module, every parameter can be declared as a structure.
 This means you can easily access these fields as they normally are efficiently.
-For example, it is very common to write 
+For example, it is very common to write
 ```c++
 weight -= param.learning_rate * gradient;
 ```
@@ -54,13 +54,13 @@ where all the fields are declared. In this example, we have declared parameters 
 Here are some highlights in this example:
 
 - For the numeric parameters, it is possible to set a range constraints via ```.set_range(begin, end)```.
-- It is possible to define enumeration types, in this case activation. 
+- It is possible to define enumeration types, in this case activation.
   User is only allowed to set ```sigmoid``` or ```relu``` into the activation field, and they will be mapped into 1 and 2 separately.
-- The ```describe``` function adds a description on the field, which is used to generate human readable docstring. 
+- The ```describe``` function adds a description on the field, which is used to generate human readable docstring.
 
 ### Set the Parameters
 After we declared the parameters, we can declare this structure as normal structure.
-Except that the ```MyParam``` structure now comes with a few member functions 
+Except that the ```MyParam``` structure now comes with a few member functions
 to make parameter manipulation easy.
 To set the parameters from external data source, we can use the ```Init``` function.
 ```c++
@@ -77,12 +77,12 @@ int main() {
 }
 ```
 After the ```Init``` function is called, the ```param``` will be filled with the specified key values in ```param_data```.
-More importantly, the ```Init``` function will do automatic checking of parameter range and throw an ```dmlc::ParamError``` 
+More importantly, the ```Init``` function will do automatic checking of parameter range and throw an ```dmlc::ParamError```
 with detailed error message if things went wrong.
 
 ### Generate Human Readable Docstrings
 Another useful feature of the parameter module is to get an human readable docstring of the parameter.
-This is helpful when we are creating language binding such as python and R, and we can use it to generate docstring of 
+This is helpful when we are creating language binding such as python and R, and we can use it to generate docstring of
 foreign language interface.
 
 The following code obtains the dostring of ```MyParam```.
@@ -97,7 +97,7 @@ std::vector<dmlc::ParamFieldInfo> fields = MyParam::__FIELDS__();
 
 ### Serialization of Parameters
 One of the most common way to serialize the parameter is to convert it back to representation of ```std::map<string, string>```
-by using the following code. 
+by using the following code.
 ```c++
 std::map<string, string> dict = param.__DICT__();
 ```
@@ -107,14 +107,14 @@ However, this is not very compact, and recommended only used to serialize the ge
 Direct serialization and loading of JSON format is also support.
 
 ### Play with an Example
-We provide an example program [parameter.cc](https://github.com/dmlc/dmlc-core/blob/main/example/parameter.cc), to 
+We provide an example program [parameter.cc](https://github.com/dmlc/dmlc-core/blob/main/example/parameter.cc), to
 demonstrate the usage mentioned above, and allow you to play with it and get sense of what is going on.
 
 How does it work
 ----------------
-Hope you like the parameter module so far. In this section, we will explain how does it work. Making such parameter module 
-in ```C++``` is not easy. Because this basically means some way of reflection -- getting the information of fields in a 
-structure out, which is not supported by ```C++```. 
+Hope you like the parameter module so far. In this section, we will explain how does it work. Making such parameter module
+in ```C++``` is not easy. Because this basically means some way of reflection -- getting the information of fields in a
+structure out, which is not supported by ```C++```.
 
 Consider the following program, how do the Init function know the location of ```num_hidden```, and set it correctly
 in ```Init``` function?
@@ -186,7 +186,7 @@ struct MyParam : public dmlc::Parameter<MyParam> {
   tmp->__DECLARE__(&manager);
 }
 ```
-This is not the actual code that runs, but generally shows the idea on how it works. 
+This is not the actual code that runs, but generally shows the idea on how it works.
 The key is that the structure layout is fixed for all the instances of objects.
 To figure out how to access each of the field, we can
 - Create an instance of MyParam, call the ```__DECLARE__``` function.

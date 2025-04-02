@@ -1,21 +1,22 @@
 // Copyright by Contributors
 extern "C" {
-#include <errno.h>
 #include <curl/curl.h>
-#include <openssl/hmac.h>
+#include <errno.h>
 #include <openssl/buffer.h>
+#include <openssl/hmac.h>
 #include <openssl/sha.h>
 }
-#include <dmlc/io.h>
-#include <dmlc/logging.h>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <string>
-#include <algorithm>
 #include <ctime>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+#include <string>
+
+#include <dmlc/io.h>
+#include <dmlc/logging.h>
 
 #include "./s3_filesys.h"
 
@@ -29,17 +30,16 @@ struct XMLIter {
   const char *content_;
   // end of content
   const char *cend_;
-  XMLIter()
-      : content_(NULL), cend_(NULL) {
-  }
+  XMLIter() : content_(NULL), cend_(NULL) {}
   // constructor
-  explicit XMLIter(const char *content)
-      : content_(content) {
+  explicit XMLIter(const char *content) : content_(content) {
     cend_ = content_ + strlen(content_);
   }
   /*! \brief convert to string */
   inline std::string str(void) const {
-    if (content_ >= cend_) return std::string("");
+    if (content_ >= cend_) {
+      return std::string("");
+    }
     return std::string(content_, cend_ - content_);
   }
   /*!
@@ -48,12 +48,13 @@ struct XMLIter {
    * \param value the return value if success
    * \return if the get is success
    */
-  inline bool GetNext(const char *key,
-                      XMLIter *value) {
-    std::string begin = std::string("<") + key +">";
-    std::string end = std::string("</") + key +">";
+  inline bool GetNext(const char *key, XMLIter *value) {
+    std::string begin = std::string("<") + key + ">";
+    std::string end = std::string("</") + key + ">";
     const char *pbegin = strstr(content_, begin.c_str());
-    if (pbegin == NULL || pbegin > cend_) return false;
+    if (pbegin == NULL || pbegin > cend_) {
+      return false;
+    }
     content_ = pbegin + begin.size();
     const char *pend = strstr(content_, end.c_str());
     CHECK(pend != NULL) << "bad xml format";
@@ -73,7 +74,7 @@ struct XMLIter {
 static std::string SHA256HashToHex(unsigned char *hash, int size) {
   CHECK_EQ(size, SHA256_DIGEST_LENGTH);
   std::stringstream ss;
-  for (int i=0; i < SHA256_DIGEST_LENGTH; i++) {
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
     ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
   }
   return ss.str();
@@ -85,7 +86,9 @@ static std::string SHA256HashToHex(unsigned char *hash, int size) {
  * \return string with hex representation of SHA256 Hash
  */
 static std::string SHA256Hex(const std::string &str) noexcept {
-  if (str.empty()) return "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  if (str.empty()) {
+    return "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  }
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
@@ -119,10 +122,8 @@ static std::string GetDateYYYYMMDD(const std::time_t &t) noexcept {
 }
 
 static void AddDefaultCanonicalHeaders(std::map<std::string, std::string> *canonical_headers,
-                                       const time_t &curr_time,
-                                       const std::string &s3_session_token,
-                                       const std::string &data,
-                                       bool addDataHash = false) {
+    const time_t &curr_time, const std::string &s3_session_token, const std::string &data,
+    bool addDataHash = false) {
   (*canonical_headers)["x-amz-date"] = GetDateISO8601(curr_time);
   if (s3_session_token != "") {
     (*canonical_headers)["x-amz-security-token"] = s3_session_token;
@@ -131,7 +132,6 @@ static void AddDefaultCanonicalHeaders(std::map<std::string, std::string> *canon
     (*canonical_headers)["x-amz-content-sha256"] = SHA256Hex(data);
   }
 }
-
 
 /*!
  * \brief Returns keys of canonical_headers separated with semicolon
@@ -156,17 +156,13 @@ static std::string GetSignedHeaders(const std::map<std::string, std::string> &ca
  * \param encodeSlash whether or not to encode slash (/) character
  * \return
  */
-std::string URIEncode(const std::string& str,
-                      bool encodeSlash = true) {
+std::string URIEncode(const std::string &str, bool encodeSlash = true) {
   std::stringstream encoded_str;
   encoded_str << std::hex << std::uppercase << std::setfill('0');
   for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
     char c = *it;
-    if ((c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        (c >= '0' && c <= '9') ||
-        c == '-' || c == '_' ||
-        c == '.' || c == '~') {
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-'
+        || c == '_' || c == '.' || c == '~') {
       encoded_str << c;
     } else if (c == '/') {
       if (encodeSlash) {
@@ -188,8 +184,8 @@ std::string URIEncode(const std::string& str,
  * \param is_canonical whether or not to produce canonical query by URIEncoding
  * \return query as a string
  */
-static std::string GetQueryMultipart(const std::map<std::string, std::string> &params,
-                                     const bool is_canonical) {
+static std::string GetQueryMultipart(
+    const std::map<std::string, std::string> &params, const bool is_canonical) {
   bool init_request = (params.find("uploads") != params.end());
   std::ostringstream stream;
   for (auto it = params.begin(); it != params.end(); ++it) {
@@ -216,7 +212,7 @@ static std::string GetQueryMultipart(const std::map<std::string, std::string> &p
  * \return credential scope
  */
 static std::string GetCredentialScope(const time_t &time, const std::string &region) {
-  return GetDateYYYYMMDD(time) + "/" + region  + "/s3/aws4_request";
+  return GetDateYYYYMMDD(time) + "/" + region + "/s3/aws4_request";
 }
 
 /*!
@@ -228,44 +224,38 @@ static std::string GetCredentialScope(const time_t &time, const std::string &reg
  * \param string_to_sign
  * \return signature
  */
-static std::string CalculateSig4Sign(const std::time_t &request_date,
-                                     const std::string &secret,
-                                     const std::string &region,
-                                     const std::string &service,
-                                     const std::string &string_to_sign) {
+static std::string CalculateSig4Sign(const std::time_t &request_date, const std::string &secret,
+    const std::string &region, const std::string &service, const std::string &string_to_sign) {
   const std::string key1{"AWS4" + secret};
   const std::string yyyymmdd = GetDateYYYYMMDD(request_date);
 
-  unsigned char* kDate;
+  unsigned char *kDate;
   unsigned int kDateLen;
   kDate = HMAC(EVP_sha256(), key1.c_str(), key1.size(),
-               reinterpret_cast<const unsigned char*>(yyyymmdd.c_str()),
-               yyyymmdd.size(), NULL, &kDateLen);
+      reinterpret_cast<const unsigned char *>(yyyymmdd.c_str()), yyyymmdd.size(), NULL, &kDateLen);
 
   unsigned char *kRegion;
   unsigned int kRegionLen;
   kRegion = HMAC(EVP_sha256(), kDate, kDateLen,
-                 reinterpret_cast<const unsigned char*>(region.c_str()),
-                 region.size(), NULL, &kRegionLen);
+      reinterpret_cast<const unsigned char *>(region.c_str()), region.size(), NULL, &kRegionLen);
 
   unsigned char *kService;
   unsigned int kServiceLen;
   kService = HMAC(EVP_sha256(), kRegion, kRegionLen,
-                  reinterpret_cast<const unsigned char*>(service.c_str()),
-                  service.size(), NULL, &kServiceLen);
+      reinterpret_cast<const unsigned char *>(service.c_str()), service.size(), NULL, &kServiceLen);
 
   const std::string AWS4_REQUEST{"aws4_request"};
   unsigned char *kSigning;
   unsigned int kSigningLen;
   kSigning = HMAC(EVP_sha256(), kService, kServiceLen,
-                  reinterpret_cast<const unsigned char*>(AWS4_REQUEST.c_str()),
-                  AWS4_REQUEST.size(), NULL, &kSigningLen);
+      reinterpret_cast<const unsigned char *>(AWS4_REQUEST.c_str()), AWS4_REQUEST.size(), NULL,
+      &kSigningLen);
 
   unsigned char *kSig;
   unsigned int kSigLen;
   kSig = HMAC(EVP_sha256(), kSigning, kSigningLen,
-              reinterpret_cast<const unsigned char*>(string_to_sign.c_str()),
-              string_to_sign.size(), NULL, &kSigLen);
+      reinterpret_cast<const unsigned char *>(string_to_sign.c_str()), string_to_sign.size(), NULL,
+      &kSigLen);
   return SHA256HashToHex(kSig, SHA256_DIGEST_LENGTH);
 }
 
@@ -283,17 +273,12 @@ static std::string CalculateSig4Sign(const std::time_t &request_date,
  * \param signature SIG4 signature
  * \param payload data to send as payload
  */
-static void BuildRequestHeaders(std::ostringstream& sauth,
-                                std::ostringstream& sdate,
-                                std::ostringstream& stoken,
-                                std::ostringstream& scontent,
-                                const time_t& curr_time,
-                                const std::string& s3_access_id,
-                                const std::string& s3_region,
-                                const std::string& s3_session_token,
-                                const std::map<std::string, std::string>& canonical_headers,
-                                const std::string& signature,
-                                const std::string& payload) {
+static void BuildRequestHeaders(std::ostringstream &sauth, std::ostringstream &sdate,
+    std::ostringstream &stoken, std::ostringstream &scontent, const time_t &curr_time,
+    const std::string &s3_access_id, const std::string &s3_region,
+    const std::string &s3_session_token,
+    const std::map<std::string, std::string> &canonical_headers, const std::string &signature,
+    const std::string &payload) {
   sauth << "Authorization: AWS4-HMAC-SHA256 ";
   sauth << "Credential=" << s3_access_id << "/" << GetCredentialScope(curr_time, s3_region) << ",";
   sauth << "SignedHeaders=" << GetSignedHeaders(canonical_headers) << ",";
@@ -316,19 +301,15 @@ static void BuildRequestHeaders(std::ostringstream& sauth,
  * \param payload data to send as payload
  * return signature
  */
-static std::string SignSig4(const std::string &key,
-                            const std::string &s3_region,
-                            const std::string &method,
-                            const time_t &time,
-                            const std::string &canonical_uri,
-                            const std::string &canonical_query,
-                            const std::map<std::string, std::string> &canonical_headers,
-                            const std::string &payload) {
+static std::string SignSig4(const std::string &key, const std::string &s3_region,
+    const std::string &method, const time_t &time, const std::string &canonical_uri,
+    const std::string &canonical_query, const std::map<std::string, std::string> &canonical_headers,
+    const std::string &payload) {
   std::ostringstream can_req;
   can_req << method << "\n";
   can_req << canonical_uri << "\n";
   can_req << canonical_query << "\n";
-  for (const auto & header : canonical_headers) {
+  for (const auto &header : canonical_headers) {
     can_req << header.first << ":" << header.second << "\n";
   }
   can_req << "\n";
@@ -371,14 +352,14 @@ inline bool FindHttpError(const std::string &header) {
 
 // curl callback to write sstream
 size_t WriteSStreamCallback(char *buf, size_t size, size_t count, void *fp) {
-  static_cast<std::ostringstream*>(fp)->write(buf, size * count);
+  static_cast<std::ostringstream *>(fp)->write(buf, size * count);
   return size * count;
 }
 
 // callback by curl to write to std::string
 size_t WriteStringCallback(char *buf, size_t size, size_t count, void *fp) {
   size *= count;
-  std::string *str = static_cast<std::string*>(fp);
+  std::string *str = static_cast<std::string *>(fp);
   size_t len = str->length();
   str->resize(len + size);
   std::memcpy(BeginPtr(*str) + len, buf, size);
@@ -390,7 +371,7 @@ std::string getEndpoint(std::string region_name) {
   if (region_name == "us-east-1") {
     return "s3.amazonaws.com";
   } else if (region_name == "cn-north-1" || region_name == "cn-northwest-1") {
-    return "s3."+ region_name + ".amazonaws.com.cn";
+    return "s3." + region_name + ".amazonaws.com.cn";
   } else {
     return "s3-" + region_name + ".amazonaws.com";
   }
@@ -408,10 +389,11 @@ struct ReadStringStream {
   // curl callback to write sstream
   static size_t Callback(char *buf, size_t size, size_t count, void *fp) {
     size *= count;
-    ReadStringStream *s = static_cast<ReadStringStream*>(fp);
+    ReadStringStream *s = static_cast<ReadStringStream *>(fp);
     size_t nread = std::min(size, s->nleft);
     std::memcpy(buf, s->dptr, nread);
-    s->dptr += nread; s->nleft -= nread;
+    s->dptr += nread;
+    s->nleft -= nread;
     return nread;
   }
 };
@@ -441,12 +423,11 @@ class CURLReadStreamBase : public SeekStream {
       curr_bytes_ = pos;
     }
   }
-  virtual size_t Read(void *ptr, size_t size) override ;
+  virtual size_t Read(void *ptr, size_t size) override;
 
  protected:
   CURLReadStreamBase()
-      : mcurl_(NULL), ecurl_(NULL), slist_(NULL),
-        read_ptr_(0), curr_bytes_(0), at_end_(false) {
+      : mcurl_(NULL), ecurl_(NULL), slist_(NULL), read_ptr_(0), curr_bytes_(0), at_end_(false) {
     expect_file_size_ = 0;
   }
   /*!
@@ -455,9 +436,7 @@ class CURLReadStreamBase : public SeekStream {
    * \param ecurl a curl easy handle that can be used to set request
    * \param slist a curl slist handle that can be used to set headers
    */
-  virtual void InitRequest(size_t begin_bytes,
-                           CURL *ecurl,
-                           curl_slist **slist) = 0;
+  virtual void InitRequest(size_t begin_bytes, CURL *ecurl, curl_slist **slist) = 0;
 
  protected:
   // the total size of the file
@@ -498,15 +477,20 @@ class CURLReadStreamBase : public SeekStream {
 // read data in
 size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
   // lazy initialize
-  if (mcurl_ == NULL) Init(curr_bytes_);
+  if (mcurl_ == NULL) {
+    Init(curr_bytes_);
+  }
   // check at end
-  if (at_end_) return 0;
+  if (at_end_) {
+    return 0;
+  }
 
   size_t nleft = size;
-  char *buf = reinterpret_cast<char*>(ptr);
+  char *buf = reinterpret_cast<char *>(ptr);
   while (nleft != 0) {
     if (read_ptr_ == buffer_.length()) {
-      read_ptr_ = 0; buffer_.clear();
+      read_ptr_ = 0;
+      buffer_.clear();
       if (this->FillBuffer(nleft) == 0 && buffer_.length() == 0) {
         at_end_ = true;
         break;
@@ -514,14 +498,15 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
     }
     size_t nread = std::min(nleft, buffer_.length() - read_ptr_);
     std::memcpy(buf, BeginPtr(buffer_) + read_ptr_, nread);
-    buf += nread; read_ptr_ += nread; nleft -= nread;
+    buf += nread;
+    read_ptr_ += nread;
+    nleft -= nread;
   }
   size_t read_bytes = size - nleft;
   curr_bytes_ += read_bytes;
 
   // safety check, re-establish connection if failure happens
-  if (at_end_ && expect_file_size_ != 0 &&
-      curr_bytes_ != expect_file_size_) {
+  if (at_end_ && expect_file_size_ != 0 && curr_bytes_ != expect_file_size_) {
     int nretry = 0;
     CHECK_EQ(buffer_.length(), 0U);
     while (true) {
@@ -529,17 +514,18 @@ size_t CURLReadStreamBase::Read(void *ptr, size_t size) {
       size_t rec_curr_bytes = curr_bytes_;
       this->Cleanup();
       this->Init(rec_curr_bytes);
-      if (this->FillBuffer(nleft) != 0) break;
+      if (this->FillBuffer(nleft) != 0) {
+        break;
+      }
       ++nretry;
-      CHECK_LT(nretry, 50)
-          << "Unable to re-establish connection to read full file"
-          << " ,expect_file_size=" << expect_file_size_
-          << " ,curr_bytes=" << curr_bytes_;
+      CHECK_LT(nretry, 50) << "Unable to re-establish connection to read full file"
+                           << " ,expect_file_size=" << expect_file_size_
+                           << " ,curr_bytes=" << curr_bytes_;
       // sleep 100ms
 #ifdef _WIN32
       Sleep(100);
 #else
-      struct timeval wait = { 0, 100 * 1000 };
+      struct timeval wait = {0, 100 * 1000};
       select(0, NULL, NULL, NULL, &wait);
 #endif
     }
@@ -560,13 +546,14 @@ void CURLReadStreamBase::Cleanup() {
     curl_slist_free_all(slist_);
     slist_ = NULL;
   }
-  buffer_.clear(); header_.clear();
-  curr_bytes_ = 0; at_end_ = false;
+  buffer_.clear();
+  header_.clear();
+  curr_bytes_ = 0;
+  at_end_ = false;
 }
 
 void CURLReadStreamBase::Init(size_t begin_bytes) {
-  CHECK(mcurl_ == NULL && ecurl_ == NULL &&
-        slist_ == NULL) << "must call init in clean state";
+  CHECK(mcurl_ == NULL && ecurl_ == NULL && slist_ == NULL) << "must call init in clean state";
   // make request
   ecurl_ = curl_easy_init();
   this->InitRequest(begin_bytes, ecurl_, &slist_);
@@ -608,7 +595,9 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
     timeval timeout;
     long curl_timeo;  // NOLINT(*)
     curl_multi_timeout(mcurl_, &curl_timeo);
-    if (curl_timeo < 0) curl_timeo = 980;
+    if (curl_timeo < 0) {
+      curl_timeo = 980;
+    }
     timeout.tv_sec = curl_timeo / 1000;
     timeout.tv_usec = (curl_timeo % 1000) * 1000;
     CHECK(curl_multi_fdset(mcurl_, &fdread, &fdwrite, &fdexcep, &maxfd) == CURLM_OK);
@@ -618,7 +607,7 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
       Sleep(100);
       rc = 0;
 #else
-      struct timeval wait = { 0, 100 * 1000 };
+      struct timeval wait = {0, 100 * 1000};
       rc = select(0, NULL, NULL, NULL, &wait);
 #endif
     } else {
@@ -626,9 +615,13 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
     }
     if (rc != -1) {
       CURLMcode ret = curl_multi_perform(mcurl_, &nrun);
-      if (ret ==  CURLM_CALL_MULTI_PERFORM) continue;
+      if (ret == CURLM_CALL_MULTI_PERFORM) {
+        continue;
+      }
       CHECK(ret == CURLM_OK);
-      if (nrun == 0) break;
+      if (nrun == 0) {
+        break;
+      }
     }
   }
 
@@ -639,8 +632,7 @@ int CURLReadStreamBase::FillBuffer(size_t nwant) {
     m = curl_multi_info_read(mcurl_, &msgq);
     if (m && (m->msg == CURLMSG_DONE)) {
       if (m->data.result != CURLE_OK) {
-        LOG(INFO) << "request failed with error "
-                  << curl_easy_strerror(m->data.result);
+        LOG(INFO) << "request failed with error " << curl_easy_strerror(m->data.result);
       }
     }
   } while (m);
@@ -665,27 +657,25 @@ static CURLGlobal curl_global;
 /*! \brief reader stream that can be used to read */
 class ReadStream : public CURLReadStreamBase {
  public:
-  ReadStream(const URI &path,
-             const std::string &s3_id,
-             const std::string &s3_key,
-             const std::string &s3_session_token,
-             const std::string &s3_region,
-             const std::string &s3_endpoint,
-             const bool s3_verify_ssl,
-             const bool s3_is_aws,
-             size_t file_size)
-      : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
-         s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl),
-         s3_is_aws_(s3_is_aws) {
+  ReadStream(const URI &path, const std::string &s3_id, const std::string &s3_key,
+      const std::string &s3_session_token, const std::string &s3_region,
+      const std::string &s3_endpoint, const bool s3_verify_ssl, const bool s3_is_aws,
+      size_t file_size)
+      : path_(path),
+        s3_id_(s3_id),
+        s3_key_(s3_key),
+        s3_session_token_(s3_session_token),
+        s3_region_(s3_region),
+        s3_endpoint_(s3_endpoint),
+        s3_verify_ssl_(s3_verify_ssl),
+        s3_is_aws_(s3_is_aws) {
     this->expect_file_size_ = file_size;
   }
   virtual ~ReadStream(void) {}
 
  protected:
   // implement InitRequest
-  virtual void InitRequest(size_t begin_bytes,
-                           CURL *ecurl,
-                           curl_slist **slist);
+  virtual void InitRequest(size_t begin_bytes, CURL *ecurl, curl_slist **slist);
 
  private:
   // path we are reading
@@ -696,9 +686,7 @@ class ReadStream : public CURLReadStreamBase {
 };
 
 // initialize the reader at begin bytes
-void ReadStream::InitRequest(size_t begin_bytes,
-                             CURL *ecurl,
-                             curl_slist **slist) {
+void ReadStream::InitRequest(size_t begin_bytes, CURL *ecurl, curl_slist **slist) {
   std::string payload;
   time_t curr_time = time(NULL);
   std::map<std::string, std::string> canonical_headers;
@@ -713,20 +701,16 @@ void ReadStream::InitRequest(size_t begin_bytes,
     // use virtual host style if no period in host
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + "." + s3::getEndpoint(s3_region_);
-    surl << "https://" << canonical_headers["host"]
-         << '/' << RemoveBeginSlash(path_.name);
+    surl << "https://" << canonical_headers["host"] << '/' << RemoveBeginSlash(path_.name);
   } else {
     canonical_uri = URIEncode("/" + path_.host + path_.name, false);
     canonical_headers["host"] = s3_endpoint_;
-    surl << "https://" << s3_endpoint_ << '/' << path_.host << '/'
-         << RemoveBeginSlash(path_.name);
+    surl << "https://" << s3_endpoint_ << '/' << path_.host << '/' << RemoveBeginSlash(path_.name);
   }
-  std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time,
-                                   canonical_uri, canonical_querystring,
-                                   canonical_headers, payload);
-  BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                      curr_time, s3_id_, s3_region_, s3_session_token_,
-                      canonical_headers, signature, payload);
+  std::string signature = SignSig4(s3_key_, s3_region_, "GET", curr_time, canonical_uri,
+      canonical_querystring, canonical_headers, payload);
+  BuildRequestHeaders(sauth, sdate, stoken, scontent, curr_time, s3_id_, s3_region_,
+      s3_session_token_, canonical_headers, signature, payload);
 
   srange << "Range: bytes=" << begin_bytes << "-";
   *slist = curl_slist_append(*slist, sdate.str().c_str());
@@ -750,14 +734,10 @@ void ReadStream::InitRequest(size_t begin_bytes,
 /*! \brief simple http read stream to check */
 class HttpReadStream : public CURLReadStreamBase {
  public:
-  explicit HttpReadStream(const URI &path)
-      : path_(path) {}
+  explicit HttpReadStream(const URI &path) : path_(path) {}
   // implement InitRequest
-  virtual void InitRequest(size_t begin_bytes,
-                           CURL *ecurl,
-                           curl_slist **slist) {
-    CHECK(begin_bytes == 0)
-        << " HttpReadStream: do not support Seek";
+  virtual void InitRequest(size_t begin_bytes, CURL *ecurl, curl_slist **slist) {
+    CHECK(begin_bytes == 0) << " HttpReadStream: do not support Seek";
     CHECK(curl_easy_setopt(ecurl, CURLOPT_URL, path_.str().c_str()) == CURLE_OK);
     CHECK(curl_easy_setopt(ecurl, CURLOPT_NOSIGNAL, 1) == CURLE_OK);
   }
@@ -768,17 +748,18 @@ class HttpReadStream : public CURLReadStreamBase {
 
 class WriteStream : public Stream {
  public:
-  WriteStream(const URI &path,
-              const std::string &s3_id,
-              const std::string &s3_key,
-              const std::string &s3_session_token,
-              const std::string &s3_region,
-              const std::string &s3_endpoint,
-              bool s3_verify_ssl,
-              bool s3_is_aws)
-      : path_(path), s3_id_(s3_id), s3_key_(s3_key), s3_session_token_(s3_session_token),
-         s3_region_(s3_region), s3_endpoint_(s3_endpoint), s3_verify_ssl_(s3_verify_ssl),
-         s3_is_aws_(s3_is_aws), closed_(false) {
+  WriteStream(const URI &path, const std::string &s3_id, const std::string &s3_key,
+      const std::string &s3_session_token, const std::string &s3_region,
+      const std::string &s3_endpoint, bool s3_verify_ssl, bool s3_is_aws)
+      : path_(path),
+        s3_id_(s3_id),
+        s3_key_(s3_key),
+        s3_session_token_(s3_session_token),
+        s3_region_(s3_region),
+        s3_endpoint_(s3_endpoint),
+        s3_verify_ssl_(s3_verify_ssl),
+        s3_is_aws_(s3_is_aws),
+        closed_(false) {
     const char *buz = getenv("DMLC_S3_WRITE_BUFFER_MB");
     if (buz != NULL) {
       max_buffer_size_ = static_cast<size_t>(atol(buz)) << 20UL;
@@ -843,12 +824,9 @@ class WriteStream : public Stream {
    * \param out_header holds output Header
    * \param out_data holds output data
    */
-  void Run(const std::string &method,
-           const std::map<std::string, std::string> &params,
-           const std::string &content_type,
-           const std::string &data,
-           std::string *out_header,
-           std::string *out_data);
+  void Run(const std::string &method, const std::map<std::string, std::string> &params,
+      const std::string &content_type, const std::string &data, std::string *out_header,
+      std::string *out_data);
   /*!
    * \brief initialize the upload request
    */
@@ -874,12 +852,9 @@ size_t WriteStream::Write(const void *ptr, size_t size) {
   return size;
 }
 
-void WriteStream::Run(const std::string &method,
-                      const std::map<std::string, std::string> &params,
-                      const std::string &content_type,
-                      const std::string &data,
-                      std::string *out_header,
-                      std::string *out_data) {
+void WriteStream::Run(const std::string &method, const std::map<std::string, std::string> &params,
+    const std::string &content_type, const std::string &data, std::string *out_header,
+    std::string *out_data) {
   CHECK(path_.host.length() != 0) << "bucket name not specified for s3 location";
   CHECK(path_.name.length() != 0) << "key name not specified for s3 location";
   time_t curr_time = time(NULL);
@@ -892,21 +867,19 @@ void WriteStream::Run(const std::string &method,
   if (s3_is_aws_ && path_.host.find('.', 0) == std::string::npos) {
     canonical_uri = URIEncode(path_.name, false);
     canonical_headers["host"] = path_.host + "." + s3::getEndpoint(s3_region_);
-    surl << "https://" << canonical_headers["host"]
-         << path_.name << "?" << GetQueryMultipart(params, false);
+    surl << "https://" << canonical_headers["host"] << path_.name << "?"
+         << GetQueryMultipart(params, false);
   } else {
     canonical_uri = URIEncode("/" + path_.host + path_.name, false);
     canonical_headers["host"] = s3_endpoint_;
-    surl << "https://" << s3_endpoint_ << "/" << path_.host
-         << path_.name << "?" << GetQueryMultipart(params, false);
+    surl << "https://" << s3_endpoint_ << "/" << path_.host << path_.name << "?"
+         << GetQueryMultipart(params, false);
   }
-  std::string signature = SignSig4(s3_key_, s3_region_, method, curr_time,
-                                   canonical_uri, canonical_query,
-                                   canonical_headers, data);
-  BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                      curr_time, s3_id_, s3_region_, s3_session_token_,
-                      canonical_headers, signature, data);
-  scontent << "\nContent-Type: "<< content_type;
+  std::string signature = SignSig4(s3_key_, s3_region_, method, curr_time, canonical_uri,
+      canonical_query, canonical_headers, data);
+  BuildRequestHeaders(sauth, sdate, stoken, scontent, curr_time, s3_id_, s3_region_,
+      s3_session_token_, canonical_headers, signature, data);
+  scontent << "\nContent-Type: " << content_type;
 
   // list
   curl_slist *slist = NULL;
@@ -946,9 +919,8 @@ void WriteStream::Run(const std::string &method,
     }
     CURLcode ret = curl_easy_perform(ecurl_);
     if (ret != CURLE_OK) {
-      LOG(INFO) << "request " << surl.str() << "failed with error "
-                << curl_easy_strerror(ret) << " Progress "
-                << etags_.size() << " uploaded " << " retry=" << num_retry;
+      LOG(INFO) << "request " << surl.str() << "failed with error " << curl_easy_strerror(ret)
+                << " Progress " << etags_.size() << " uploaded " << " retry=" << num_retry;
       num_retry += 1;
       CHECK(num_retry < max_error_retry_) << " maximum retry time reached";
       curl_easy_cleanup(ecurl_);
@@ -960,8 +932,7 @@ void WriteStream::Run(const std::string &method,
   curl_slist_free_all(slist);
   *out_header = rheader.str();
   *out_data = rdata.str();
-  if (FindHttpError(*out_header) ||
-      out_data->find("<Error>") != std::string::npos) {
+  if (FindHttpError(*out_header) || out_data->find("<Error>") != std::string::npos) {
     LOG(FATAL) << "AWS S3 Error:\n" << *out_header << *out_data;
   }
 }
@@ -978,7 +949,9 @@ void WriteStream::Init(void) {
 }
 
 void WriteStream::Upload(bool force_upload_even_if_zero_bytes) {
-  if (buffer_.length() == 0 && !force_upload_even_if_zero_bytes) return;
+  if (buffer_.length() == 0 && !force_upload_even_if_zero_bytes) {
+    return;
+  }
   std::string rheader, rdata;
   size_t partno = etags_.size() + 1;
   std::map<std::string, std::string> params;
@@ -1036,11 +1009,11 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
 
     AddDefaultCanonicalHeaders(&canonical_headers, curr_time, s3_session_token_, payload, true);
     if (next_token == "") {
-        canonical_querystring = "delimiter=%2F&prefix=" +
-            URIEncode(std::string{RemoveBeginSlash(path.name)});
+      canonical_querystring
+          = "delimiter=%2F&prefix=" + URIEncode(std::string{RemoveBeginSlash(path.name)});
     } else {
-        canonical_querystring = "delimiter=%2F&marker=" + URIEncode(std::string{next_token}) +
-            "&prefix=" + URIEncode(std::string{RemoveBeginSlash(path.name)});
+      canonical_querystring = "delimiter=%2F&marker=" + URIEncode(std::string{next_token})
+                              + "&prefix=" + URIEncode(std::string{RemoveBeginSlash(path.name)});
     }
 
     if (s3_is_aws_ && path.host.find('.', 0) == std::string::npos) {
@@ -1052,20 +1025,18 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
     } else {
       canonical_uri = URIEncode("/" + path.host + "/", false);
       canonical_headers["host"] = s3_endpoint_;
-      surl << "https://" << s3_endpoint_ << "/" << path.host << "/?delimiter=/&prefix="
-           << RemoveBeginSlash(path.name);
+      surl << "https://" << s3_endpoint_ << "/" << path.host
+           << "/?delimiter=/&prefix=" << RemoveBeginSlash(path.name);
     }
 
     if (next_token != "") {
-        surl << "&marker=" << next_token;
+      surl << "&marker=" << next_token;
     }
 
-    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time,
-                                     canonical_uri, canonical_querystring,
-                                     canonical_headers, payload);
-    BuildRequestHeaders(sauth, sdate, stoken, scontent,
-                        curr_time, s3_access_id_, s3_region_, s3_session_token_,
-                        canonical_headers, signature, payload);
+    std::string signature = SignSig4(s3_secret_key_, s3_region_, "GET", curr_time, canonical_uri,
+        canonical_querystring, canonical_headers, payload);
+    BuildRequestHeaders(sauth, sdate, stoken, scontent, curr_time, s3_access_id_, s3_region_,
+        s3_session_token_, canonical_headers, signature, payload);
 
     // make request
     CURL *curl = curl_easy_init();
@@ -1142,7 +1113,8 @@ void S3FileSystem::ListObjects(const URI &path, std::vector<FileInfo> *out_list)
         CHECK(data.GetNext("Prefix", &value));
         // add root path to be consistent with other filesys convention
         info.path.name = '/' + value.str();
-        info.size = 0; info.type = kDirectory;
+        info.size = 0;
+        info.type = kDirectory;
         out_list->push_back(info);
       }
     }
@@ -1214,51 +1186,50 @@ S3FileSystem::S3FileSystem() {
   }
 }
 
-void S3FileSystem::SetCredentials(const std::string& s3_access_id,
-                                  const std::string& s3_secret_key) {
+void S3FileSystem::SetCredentials(
+    const std::string &s3_access_id, const std::string &s3_secret_key) {
   s3_access_id_ = s3_access_id;
   s3_secret_key_ = s3_secret_key;
 }
 
 bool S3FileSystem::TryGetPathInfo(const URI &path_, FileInfo *out_info) {
   URI path = path_;
-  while (path.name.length() > 1 &&
-         *path.name.rbegin() == '/') {
+  while (path.name.length() > 1 && *path.name.rbegin() == '/') {
     path.name.resize(path.name.length() - 1);
   }
   std::vector<FileInfo> files;
-  ListObjects(path,  &files);
+  ListObjects(path, &files);
   std::string pdir = path.name + '/';
   for (size_t i = 0; i < files.size(); ++i) {
     if (files[i].path.name == path.name) {
-      *out_info = files[i]; return true;
+      *out_info = files[i];
+      return true;
     }
     if (files[i].path.name == pdir) {
-      *out_info = files[i]; return true;
+      *out_info = files[i];
+      return true;
     }
   }
   return false;
 }
 
 FileInfo S3FileSystem::GetPathInfo(const URI &path) {
-  CHECK(path.protocol == "s3://")
-      << " S3FileSystem.ListDirectory";
+  CHECK(path.protocol == "s3://") << " S3FileSystem.ListDirectory";
   FileInfo info;
   CHECK(TryGetPathInfo(path, &info))
       << "S3FileSytem.GetPathInfo cannot find information about " + path.str();
   return info;
 }
 void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_list) {
-  CHECK(path.protocol == "s3://")
-      << " S3FileSystem.ListDirectory";
+  CHECK(path.protocol == "s3://") << " S3FileSystem.ListDirectory";
   if (path.name[path.name.length() - 1] == '/') {
-    ListObjects(path,  out_list);
+    ListObjects(path, out_list);
     return;
   }
   std::vector<FileInfo> files;
   std::string pdir = path.name + '/';
   out_list->clear();
-  ListObjects(path,  &files);
+  ListObjects(path, &files);
   if (path.name.empty()) {
     // then insert all files in the bucket
     out_list->insert(out_list->end(), files.begin(), files.end());
@@ -1278,14 +1249,14 @@ void S3FileSystem::ListDirectory(const URI &path, std::vector<FileInfo> *out_lis
   }
 }
 
-Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_null) {
+Stream *S3FileSystem::Open(const URI &path, const char *const flag, bool allow_null) {
   using namespace std;
   if (!strcmp(flag, "r") || !strcmp(flag, "rb")) {
     return OpenForRead(path, allow_null);
   } else if (!strcmp(flag, "w") || !strcmp(flag, "wb")) {
     CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
-    return new s3::WriteStream(path, s3_access_id_, s3_secret_key_, s3_session_token_,
-                               s3_region_, s3_endpoint_, s3_verify_ssl_, s3_is_aws_);
+    return new s3::WriteStream(path, s3_access_id_, s3_secret_key_, s3_session_token_, s3_region_,
+        s3_endpoint_, s3_verify_ssl_, s3_is_aws_);
   } else {
     LOG(FATAL) << "S3FileSytem.Open do not support flag " << flag;
     return NULL;
@@ -1294,14 +1265,14 @@ Stream *S3FileSystem::Open(const URI &path, const char* const flag, bool allow_n
 
 SeekStream *S3FileSystem::OpenForRead(const URI &path, bool allow_null) {
   // simple http read stream
-  if (!allow_null && (path.protocol == "http://"|| path.protocol == "https://")) {
+  if (!allow_null && (path.protocol == "http://" || path.protocol == "https://")) {
     return new s3::HttpReadStream(path);
   }
   CHECK(path.protocol == "s3://") << " S3FileSystem.Open";
   FileInfo info;
   if (TryGetPathInfo(path, &info) && info.type == kFile) {
-    return new s3::ReadStream(path, s3_access_id_, s3_secret_key_, s3_session_token_,
-                              s3_region_, s3_endpoint_, s3_verify_ssl_, s3_is_aws_, info.size);
+    return new s3::ReadStream(path, s3_access_id_, s3_secret_key_, s3_session_token_, s3_region_,
+        s3_endpoint_, s3_verify_ssl_, s3_is_aws_, info.size);
   } else {
     CHECK(allow_null) << " S3FileSystem: fail to open \"" << path.str() << "\"";
     return NULL;

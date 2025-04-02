@@ -9,10 +9,10 @@
 extern "C" {
 #include <hdfs.h>
 }
-#include <dmlc/filesystem.h>
-
-#include <vector>
 #include <string>
+#include <vector>
+
+#include <dmlc/filesystem.h>
 
 namespace dmlc {
 namespace io {
@@ -42,9 +42,7 @@ class HDFSFileSystem : public FileSystem {
    * \param allow_null whether NULL can be returned, or directly report error
    * \return the created stream, can be NULL when allow_null == true and file do not exist
    */
-  virtual SeekStream *Open(const URI &path,
-                           const char* const flag,
-                           bool allow_null);
+  virtual SeekStream *Open(const URI &path, const char *const flag, bool allow_null);
   /*!
    * \brief open a seekable stream for read
    * \param path the path to the file

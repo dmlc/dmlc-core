@@ -1,16 +1,18 @@
-#include <gtest/gtest.h>
-#include <dmlc/parameter.h>
-#include <vector>
+#include <cmath>
 #include <string>
 #include <utility>
-#include <cmath>
+#include <vector>
+
+#include <dmlc/parameter.h>
+
+#include <gtest/gtest.h>
 
 struct LearningParam : public dmlc::Parameter<LearningParam> {
   float float_param;
   double double_param;
   DMLC_DECLARE_PARAMETER(LearningParam) {
-      DMLC_DECLARE_FIELD(float_param).set_default(0.01f);
-      DMLC_DECLARE_FIELD(double_param).set_default(0.1);
+    DMLC_DECLARE_FIELD(float_param).set_default(0.01f);
+    DMLC_DECLARE_FIELD(double_param).set_default(0.1);
   }
 };
 
@@ -130,9 +132,8 @@ TEST(Parameter, parsing_float) {
   // INF and NAN
   kwargs = std::map<std::string, std::string>();
   errno = 0;  // clear errno, to clear previous range error
-  for (const char* s : {
-      "inf", "+inf", "-inf", "INF", "+INF", "-INF", "infinity", "+infinity",
-      "-infinity", "INFINITY", "+INFINITY", "-INFINITY"}) {
+  for (const char *s : {"inf", "+inf", "-inf", "INF", "+INF", "-INF", "infinity", "+infinity",
+           "-infinity", "INFINITY", "+INFINITY", "-INFINITY"}) {
     kwargs["float_param"] = s;
     ASSERT_NO_THROW(param.Init(kwargs));
     ASSERT_TRUE(std::isinf(param.float_param));
@@ -140,11 +141,9 @@ TEST(Parameter, parsing_float) {
     ASSERT_NO_THROW(param.Init(kwargs));
     ASSERT_TRUE(std::isinf(param.double_param));
   }
-  for (const char* s : {
-      "nan", "NAN", "nan(foobar)", "NAN(FooBar)", "NaN", "NaN(foo_bar_12)",
-      "+nan", "+NAN", "+nan(foobar)", "+NAN(FooBar)", "+NaN", "+NaN(foo_bar_12)",
-      "-nan", "-NAN", "-nan(foobar)", "-NAN(FooBar)", "-NaN",
-      "-NaN(foo_bar_12)"}) {
+  for (const char *s : {"nan", "NAN", "nan(foobar)", "NAN(FooBar)", "NaN", "NaN(foo_bar_12)",
+           "+nan", "+NAN", "+nan(foobar)", "+NAN(FooBar)", "+NaN", "+NaN(foo_bar_12)", "-nan",
+           "-NAN", "-nan(foobar)", "-NAN(FooBar)", "-NaN", "-NaN(foo_bar_12)"}) {
     kwargs["float_param"] = s;
     ASSERT_NO_THROW(param.Init(kwargs));
     ASSERT_TRUE(std::isnan(param.float_param));
@@ -162,21 +161,17 @@ TEST(Parameter, parsing_float) {
 
 TEST(Parameter, Update) {
   LearningParam param;
-  using Args = std::vector<std::pair<std::string, std::string> >;
-  auto unknown =
-      param.UpdateAllowUnknown(Args{{"float_param", "0.02"},
-                                    {"foo", "bar"}});
+  using Args = std::vector<std::pair<std::string, std::string>>;
+  auto unknown = param.UpdateAllowUnknown(Args{{"float_param", "0.02"}, {"foo", "bar"}});
   ASSERT_EQ(unknown.size(), 1);
   ASSERT_EQ(unknown[0].first, "foo");
   ASSERT_EQ(unknown[0].second, "bar");
   ASSERT_NEAR(param.float_param, 0.02f, 1e-6);
 
   param.float_param = 0.02;
-  param.UpdateAllowUnknown(Args{{"float_param", "0.02"},
-                                {"foo", "bar"}});
+  param.UpdateAllowUnknown(Args{{"float_param", "0.02"}, {"foo", "bar"}});
   param.UpdateAllowUnknown(Args{{"foo", "bar"}});
-  param.UpdateAllowUnknown(Args{{"double_param", "0.13"},
-                                {"foo", "bar"}});
+  param.UpdateAllowUnknown(Args{{"double_param", "0.13"}, {"foo", "bar"}});
   ASSERT_NEAR(param.float_param, 0.02f, 1e-6);  // stays the same
   ASSERT_NEAR(param.double_param, 0.13, 1e-6);
 }

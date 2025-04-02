@@ -9,6 +9,7 @@
 #define DMLC_RECORDIO_H_
 #include <cstring>
 #include <string>
+
 #include "./io.h"
 #include "./logging.h"
 
@@ -73,8 +74,7 @@ class RecordIOWriter {
    * \param stream the stream to be constructed
    */
   explicit RecordIOWriter(Stream *stream)
-      : stream_(stream), seek_stream_(dynamic_cast<SeekStream*>(stream)),
-        except_counter_(0) {
+      : stream_(stream), seek_stream_(dynamic_cast<SeekStream *>(stream)), except_counter_(0) {
     CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
@@ -123,8 +123,7 @@ class RecordIOReader {
    * \param stream the stream to be constructed
    */
   explicit RecordIOReader(Stream *stream)
-      : stream_(stream), seek_stream_(dynamic_cast<SeekStream*>(stream)),
-        end_of_stream_(false) {
+      : stream_(stream), seek_stream_(dynamic_cast<SeekStream *>(stream)), end_of_stream_(false) {
     CHECK(sizeof(uint32_t) == 4) << "uint32_t needs to be 4 bytes";
   }
   /*!
@@ -171,9 +170,8 @@ class RecordIOChunkReader {
    * \param part_index which part we want to reado
    * \param num_parts number of total segments
    */
-  explicit RecordIOChunkReader(InputSplit::Blob chunk,
-                               unsigned part_index = 0,
-                               unsigned num_parts = 1);
+  explicit RecordIOChunkReader(
+      InputSplit::Blob chunk, unsigned part_index = 0, unsigned num_parts = 1);
   /*!
    * \brief read next complete record from stream
    *   the blob contains the memory content

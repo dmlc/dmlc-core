@@ -9,20 +9,18 @@
 #define DMLC_BUILD_CONFIG_DEFAULT_H_
 
 /* default logic for fopen64 */
-#if DMLC_USE_FOPEN64 && \
-  (!defined(__GNUC__) || (defined __ANDROID__) || (defined __FreeBSD__) \
-  || (defined __APPLE__) || ((defined __MINGW32__) && !(defined __MINGW64__)) \
-  || (defined __CYGWIN__) )
+#if DMLC_USE_FOPEN64                                                                \
+    && (!defined(__GNUC__) || (defined __ANDROID__) || (defined __FreeBSD__)        \
+        || (defined __APPLE__) || ((defined __MINGW32__) && !(defined __MINGW64__)) \
+        || (defined __CYGWIN__))
   #define fopen64 std::fopen
 #endif
 
 /* default logic for stack trace */
-#if (defined(__GNUC__) && !defined(__MINGW32__)\
-     && !defined(__sun) && !defined(__SVR4)\
-     && !(defined __MINGW64__) && !(defined __ANDROID__))\
-     && !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__)\
-     && !defined(__RISCV__) && !defined(__hexagon__)\
-     && !defined(__QNX__)
+#if (defined(__GNUC__) && !defined(__MINGW32__) && !defined(__sun) && !defined(__SVR4) \
+     && !(defined __MINGW64__) && !(defined __ANDROID__))                              \
+    && !defined(__CYGWIN__) && !defined(__EMSCRIPTEN__) && !defined(__RISCV__)         \
+    && !defined(__hexagon__) && !defined(__QNX__)
   #if !defined(DMLC_LOG_STACK_TRACE)
     #define DMLC_LOG_STACK_TRACE 1
     #define DMLC_EXECINFO_H <execinfo.h>
@@ -34,7 +32,7 @@
     #endif
   #endif
   #ifndef DMLC_LOG_STACK_TRACE_SIZE
-  #define DMLC_LOG_STACK_TRACE_SIZE 10
+    #define DMLC_LOG_STACK_TRACE_SIZE 10
   #endif
 #endif
 

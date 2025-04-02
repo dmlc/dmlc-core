@@ -261,5 +261,5 @@ add_custom_target(dmlc_lint COMMAND ${CMAKE_COMMAND} -DMSVC=${MSVC} -DPYTHON_EXE
 # Setup testing
 if(GOOGLE_TEST)
   include(CTest)
-  add_subdirectory(test/unittest)
+  add_subdirectory(test)
 endif()

@@ -7,10 +7,12 @@
 #ifndef DMLC_DATA_PARSER_H_
 #define DMLC_DATA_PARSER_H_
 
+#include <vector>
+
 #include <dmlc/base.h>
 #include <dmlc/logging.h>
 #include <dmlc/threadediter.h>
-#include <vector>
+
 #include "./row_block.h"
 
 namespace dmlc {
@@ -36,7 +38,9 @@ class ParserImpl : public Parser<IndexType, DType> {
           return true;
         }
       }
-      if (!ParseNext(&data_)) break;
+      if (!ParseNext(&data_)) {
+        break;
+      }
       data_ptr_ = 0;
       data_end_ = static_cast<IndexType>(data_.size());
     }
@@ -56,11 +60,11 @@ class ParserImpl : public Parser<IndexType, DType> {
    * \param data vector of data to be returned
    * \return true if the data is loaded, false if reach end
    */
-  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) = 0;
+  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType>> *data) = 0;
   /*! \brief pointer to begin and end of data */
   IndexType data_ptr_, data_end_;
   /*! \brief internal data */
-  std::vector<RowBlockContainer<IndexType, DType> > data_;
+  std::vector<RowBlockContainer<IndexType, DType>> data_;
   /*! \brief internal row block */
   RowBlock<IndexType, DType> block_;
 };
@@ -70,15 +74,16 @@ class ParserImpl : public Parser<IndexType, DType> {
 template <typename IndexType, typename DType = real_t>
 class ThreadedParser : public ParserImpl<IndexType, DType> {
  public:
-  explicit ThreadedParser(ParserImpl<IndexType, DType> *base)
-      : base_(base), tmp_(NULL) {
+  explicit ThreadedParser(ParserImpl<IndexType, DType> *base) : base_(base), tmp_(NULL) {
     iter_.set_max_capacity(8);
-    iter_.Init([base](std::vector<RowBlockContainer<IndexType, DType> > **dptr) {
-        if (*dptr == NULL) {
-          *dptr = new std::vector<RowBlockContainer<IndexType, DType> >();
-        }
-        return base->ParseNext(*dptr);
-      }, [base]() {base->BeforeFirst();});
+    iter_.Init(
+        [base](std::vector<RowBlockContainer<IndexType, DType>> **dptr) {
+          if (*dptr == NULL) {
+            *dptr = new std::vector<RowBlockContainer<IndexType, DType>>();
+          }
+          return base->ParseNext(*dptr);
+        },
+        [base]() { base->BeforeFirst(); });
   }
   virtual ~ThreadedParser(void) {
     // stop things before base is deleted
@@ -101,9 +106,14 @@ class ThreadedParser : public ParserImpl<IndexType, DType> {
           return true;
         }
       }
-      if (tmp_ != NULL) iter_.Recycle(&tmp_);
-      if (!iter_.Next(&tmp_)) break;
-      data_ptr_ = 0; data_end_ = tmp_->size();
+      if (tmp_ != NULL) {
+        iter_.Recycle(&tmp_);
+      }
+      if (!iter_.Next(&tmp_)) {
+        break;
+      }
+      data_ptr_ = 0;
+      data_end_ = tmp_->size();
     }
     return false;
   }
@@ -121,9 +131,9 @@ class ThreadedParser : public ParserImpl<IndexType, DType> {
   /*! \brief the place where we get the data */
   Parser<IndexType, DType> *base_;
   /*! \brief backend threaded iterator */
-  ThreadedIter<std::vector<RowBlockContainer<IndexType, DType> > > iter_;
+  ThreadedIter<std::vector<RowBlockContainer<IndexType, DType>>> iter_;
   /*! \brief current chunk of data */
-  std::vector<RowBlockContainer<IndexType, DType> > *tmp_;
+  std::vector<RowBlockContainer<IndexType, DType>> *tmp_;
 };
 #endif  // DMLC_USE_CXX11
 }  // namespace data

@@ -1,0 +1,4 @@
+target-version = "py38"
+
+[lint]
+ignore = ["E402"]

@@ -6,28 +6,29 @@
 #ifndef DMLC_PARAMETER_H_
 #define DMLC_PARAMETER_H_
 
+#include <algorithm>
+#include <cerrno>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <cmath>
-#include <sstream>
+#include <iomanip>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <set>
-#include <typeinfo>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <utility>
+#include <sstream>
 #include <stdexcept>
-#include <iostream>
-#include <iomanip>
-#include <cerrno>
+#include <string>
+#include <typeinfo>
+#include <utility>
+#include <vector>
+
 #include "./base.h"
 #include "./json.h"
 #include "./logging.h"
-#include "./type_traits.h"
 #include "./optional.h"
 #include "./strtonum.h"
+#include "./type_traits.h"
 
 namespace dmlc {
 // this file is backward compatible with non-c++11
@@ -37,8 +38,7 @@ struct ParamError : public dmlc::Error {
    * \brief constructor
    * \param msg error message
    */
-  explicit ParamError(const std::string &msg)
-      : dmlc::Error(msg) {}
+  explicit ParamError(const std::string &msg) : dmlc::Error(msg) {}
 };
 
 /*!
@@ -47,18 +47,16 @@ struct ParamError : public dmlc::Error {
  * \param default_value the default value of environment vriable.
  * \return The value received
  */
-template<typename ValueType>
-inline ValueType GetEnv(const char *key,
-                        ValueType default_value);
+template <typename ValueType>
+inline ValueType GetEnv(const char *key, ValueType default_value);
 /*!
  * \brief Set environment variable.
  * \param key the name of environment variable.
  * \param value the new value for key.
  * \return The value received
  */
-template<typename ValueType>
-inline void SetEnv(const char *key,
-                   ValueType value);
+template <typename ValueType>
+inline void SetEnv(const char *key, ValueType value);
 
 /*!
  * \brief Unset environment variable.
@@ -73,10 +71,10 @@ class ParamManager;
 // forward declare FieldAccessEntry
 class FieldAccessEntry;
 // forward declare FieldEntry
-template<typename DType>
+template <typename DType>
 class FieldEntry;
 // forward declare ParamManagerSingleton
-template<typename PType>
+template <typename PType>
 struct ParamManagerSingleton;
 
 /*! \brief option in parameter initialization */
@@ -130,7 +128,7 @@ struct ParamFieldInfo {
  *
  * \sa DMLC_DECLARE_FIELD, DMLC_REGISTER_PARAMETER, DMLC_DECLARE_PARAMETER
  */
-template<typename PType>
+template <typename PType>
 struct Parameter {
  public:
   /*!
@@ -143,13 +141,11 @@ struct Parameter {
    * \tparam Container container type
    * \throw ParamError when something go wrong.
    */
-  template<typename Container>
-  inline void Init(const Container &kwargs,
-                   parameter::ParamInitOption option = parameter::kAllowHidden) {
-    PType::__MANAGER__()->RunInit(static_cast<PType*>(this),
-                                  kwargs.begin(), kwargs.end(),
-                                  NULL,
-                                  option);
+  template <typename Container>
+  inline void Init(
+      const Container &kwargs, parameter::ParamInitOption option = parameter::kAllowHidden) {
+    PType::__MANAGER__()->RunInit(
+        static_cast<PType *>(this), kwargs.begin(), kwargs.end(), NULL, option);
   }
   /*!
    * \brief initialize the parameter by keyword arguments.
@@ -160,13 +156,12 @@ struct Parameter {
    * \throw ParamError when something go wrong.
    * \return vector of pairs of unknown arguments.
    */
-  template<typename Container>
-  inline std::vector<std::pair<std::string, std::string> >
-  InitAllowUnknown(const Container &kwargs) {
-    std::vector<std::pair<std::string, std::string> > unknown;
-    PType::__MANAGER__()->RunInit(static_cast<PType*>(this),
-                                  kwargs.begin(), kwargs.end(),
-                                  &unknown, parameter::kAllowUnknown);
+  template <typename Container>
+  inline std::vector<std::pair<std::string, std::string>> InitAllowUnknown(
+      const Container &kwargs) {
+    std::vector<std::pair<std::string, std::string>> unknown;
+    PType::__MANAGER__()->RunInit(static_cast<PType *>(this), kwargs.begin(), kwargs.end(),
+        &unknown, parameter::kAllowUnknown);
     return unknown;
   }
 
@@ -182,12 +177,10 @@ struct Parameter {
    * \return vector of pairs of unknown arguments.
    */
   template <typename Container>
-  std::vector<std::pair<std::string, std::string> >
-  UpdateAllowUnknown(Container const& kwargs) {
-    std::vector<std::pair<std::string, std::string> > unknown;
-    PType::__MANAGER__()->RunUpdate(static_cast<PType *>(this), kwargs.begin(),
-                                    kwargs.end(), parameter::kAllowUnknown,
-                                    &unknown, nullptr);
+  std::vector<std::pair<std::string, std::string>> UpdateAllowUnknown(const Container &kwargs) {
+    std::vector<std::pair<std::string, std::string>> unknown;
+    PType::__MANAGER__()->RunUpdate(static_cast<PType *>(this), kwargs.begin(), kwargs.end(),
+        parameter::kAllowUnknown, &unknown, nullptr);
     return unknown;
   }
 
@@ -197,7 +190,7 @@ struct Parameter {
    * \param dict The dictionary to be updated.
    * \tparam Container container type
    */
-  template<typename Container>
+  template <typename Container>
   inline void UpdateDict(Container *dict) const {
     PType::__MANAGER__()->UpdateDict(this->head(), dict);
   }
@@ -206,7 +199,7 @@ struct Parameter {
    * \return A dictionary that maps key -> value
    */
   inline std::map<std::string, std::string> __DICT__() const {
-    std::vector<std::pair<std::string, std::string> > vec
+    std::vector<std::pair<std::string, std::string>> vec
         = PType::__MANAGER__()->GetDict(this->head());
     return std::map<std::string, std::string>(vec.begin(), vec.end());
   }
@@ -251,12 +244,10 @@ struct Parameter {
    * \param key the key name of the parameter
    * \param ref the reference to the parameter in the struct.
    */
-  template<typename DType>
-  inline parameter::FieldEntry<DType>& DECLARE(
-      parameter::ParamManagerSingleton<PType> *manager,
-      const std::string &key, DType &ref) { // NOLINT(*)
-    parameter::FieldEntry<DType> *e =
-        new parameter::FieldEntry<DType>();
+  template <typename DType>
+  inline parameter::FieldEntry<DType> &DECLARE(parameter::ParamManagerSingleton<PType> *manager,
+      const std::string &key, DType &ref) {  // NOLINT(*)
+    parameter::FieldEntry<DType> *e = new parameter::FieldEntry<DType>();
     e->Init(key, this->head(), ref);
     manager->manager.AddEntry(key, e);
     return *e;
@@ -265,7 +256,7 @@ struct Parameter {
  private:
   /*! \return Get head pointer of child structure */
   inline PType *head() const {
-    return static_cast<PType*>(const_cast<Parameter<PType>*>(this));
+    return static_cast<PType *>(const_cast<Parameter<PType> *>(this));
   }
 };
 
@@ -289,22 +280,22 @@ struct Parameter {
  * \param PType the name of parameter struct.
  * \sa Parameter
  */
-#define DMLC_DECLARE_PARAMETER(PType)                                   \
-  static ::dmlc::parameter::ParamManager *__MANAGER__();                \
-  inline void __DECLARE__(::dmlc::parameter::ParamManagerSingleton<PType> *manager) \
+#define DMLC_DECLARE_PARAMETER(PType)                    \
+  static ::dmlc::parameter::ParamManager *__MANAGER__(); \
+  inline void __DECLARE__(::dmlc::parameter::ParamManagerSingleton<PType> *manager)
 
 /*!
  * \brief macro to declare fields
  * \param FieldName the name of the field.
  */
-#define DMLC_DECLARE_FIELD(FieldName)  this->DECLARE(manager, #FieldName, FieldName)
+#define DMLC_DECLARE_FIELD(FieldName) this->DECLARE(manager, #FieldName, FieldName)
 
 /*!
  * \brief macro to declare alias of a fields
  * \param FieldName the name of the field.
  * \param AliasName the name of the alias, must be declared after the field is declared.
  */
-#define DMLC_DECLARE_ALIAS(FieldName, AliasName)  manager->manager.AddAlias(#FieldName, #AliasName)
+#define DMLC_DECLARE_ALIAS(FieldName, AliasName) manager->manager.AddAlias(#FieldName, #AliasName)
 
 /*!
  * \brief Macro used to register parameter.
@@ -314,14 +305,13 @@ struct Parameter {
  * \param PType the type of parameter struct.
  * \sa Parameter
  */
-#define DMLC_REGISTER_PARAMETER(PType)                                  \
-  ::dmlc::parameter::ParamManager *PType::__MANAGER__() {               \
-    static ::dmlc::parameter::ParamManagerSingleton<PType> inst(#PType); \
-    return &inst.manager;                                               \
-  }                                                                     \
-  static DMLC_ATTRIBUTE_UNUSED ::dmlc::parameter::ParamManager&         \
-  __make__ ## PType ## ParamManager__ =                                 \
-      (*PType::__MANAGER__())                                           \
+#define DMLC_REGISTER_PARAMETER(PType)                                                          \
+  ::dmlc::parameter::ParamManager *PType::__MANAGER__() {                                       \
+    static ::dmlc::parameter::ParamManagerSingleton<PType> inst(#PType);                        \
+    return &inst.manager;                                                                       \
+  }                                                                                             \
+  static DMLC_ATTRIBUTE_UNUSED ::dmlc::parameter::ParamManager &__make__##PType##ParamManager__ \
+      = (*PType::__MANAGER__())
 
 //! \endcond
 /*!
@@ -337,8 +327,7 @@ namespace parameter {
  */
 class FieldAccessEntry {
  public:
-  FieldAccessEntry()
-      : has_default_(false), index_(0) {}
+  FieldAccessEntry() : has_default_(false), index_(0) {}
   /*! \brief destructor */
   virtual ~FieldAccessEntry() {}
   /*!
@@ -380,8 +369,8 @@ class FieldAccessEntry {
   // internal offset of the field
   ptrdiff_t offset_;
   /*! \brief get pointer to parameter */
-  char* GetRawPtr(void* head) const {
-    return reinterpret_cast<char*>(head) + offset_;
+  char *GetRawPtr(void *head) const {
+    return reinterpret_cast<char *>(head) + offset_;
   }
   /*!
    * \brief print string representation of default value
@@ -410,9 +399,10 @@ class ParamManager {
    * \return pointer to FieldAccessEntry, NULL if nothing is found.
    */
   inline FieldAccessEntry *Find(const std::string &key) const {
-    std::map<std::string, FieldAccessEntry*>::const_iterator it =
-        entry_map_.find(key);
-    if (it == entry_map_.end()) return NULL;
+    std::map<std::string, FieldAccessEntry *>::const_iterator it = entry_map_.find(key);
+    if (it == entry_map_.end()) {
+      return NULL;
+    }
     return it->second;
   }
   /*!
@@ -421,25 +411,25 @@ class ParamManager {
    * \param begin begin iterator of original kwargs
    * \param end end iterator of original kwargs
    * \param unknown_args optional, used to hold unknown arguments
-   *          When it is specified, unknown arguments will be stored into here, instead of raise an error
+   *          When it is specified, unknown arguments will be stored into here, instead of raise an
+   * error
    * \tparam RandomAccessIterator iterator type
-   * \throw ParamError when there is unknown argument and unknown_args == NULL, or required argument is missing.
+   * \throw ParamError when there is unknown argument and unknown_args == NULL, or required argument
+   * is missing.
    */
-  template<typename RandomAccessIterator>
-  inline void RunInit(void *head,
-                      RandomAccessIterator begin,
-                      RandomAccessIterator end,
-                      std::vector<std::pair<std::string, std::string> > *unknown_args,
-                      parameter::ParamInitOption option) const {
-    std::set<FieldAccessEntry*> selected_args;
+  template <typename RandomAccessIterator>
+  inline void RunInit(void *head, RandomAccessIterator begin, RandomAccessIterator end,
+      std::vector<std::pair<std::string, std::string>> *unknown_args,
+      parameter::ParamInitOption option) const {
+    std::set<FieldAccessEntry *> selected_args;
     RunUpdate(head, begin, end, option, unknown_args, &selected_args);
-    for (auto const& kv : entry_map_) {
+    for (const auto &kv : entry_map_) {
       if (selected_args.find(kv.second) == selected_args.cend()) {
         kv.second->SetDefault(head);
       }
     }
-    for (std::map<std::string, FieldAccessEntry*>::const_iterator it = entry_map_.begin();
-         it != entry_map_.end(); ++it) {
+    for (std::map<std::string, FieldAccessEntry *>::const_iterator it = entry_map_.begin();
+        it != entry_map_.end(); ++it) {
       if (selected_args.count(it->second) == 0) {
         it->second->SetDefault(head);
       }
@@ -453,17 +443,17 @@ class ParamManager {
    * \param begin begin iterator of original kwargs
    * \param end end iterator of original kwargs
    * \param unknown_args optional, used to hold unknown arguments
-   *          When it is specified, unknown arguments will be stored into here, instead of raise an error
+   *          When it is specified, unknown arguments will be stored into here, instead of raise an
+   * error
    * \param selected_args The arguments used in update will be pushed into it, defaullt to nullptr.
-   * \throw ParamError when there is unknown argument and unknown_args == NULL, or required argument is missing.
+   * \throw ParamError when there is unknown argument and unknown_args == NULL, or required argument
+   * is missing.
    */
   template <typename RandomAccessIterator>
-  void RunUpdate(void *head,
-                 RandomAccessIterator begin,
-                 RandomAccessIterator end,
-                 parameter::ParamInitOption option,
-                 std::vector<std::pair<std::string, std::string> > *unknown_args,
-                 std::set<FieldAccessEntry*>* selected_args = nullptr) const {
+  void RunUpdate(void *head, RandomAccessIterator begin, RandomAccessIterator end,
+      parameter::ParamInitOption option,
+      std::vector<std::pair<std::string, std::string>> *unknown_args,
+      std::set<FieldAccessEntry *> *selected_args = nullptr) const {
     for (RandomAccessIterator it = begin; it != end; ++it) {
       if (FieldAccessEntry *e = Find(it->first)) {
         e->Set(head, it->second);
@@ -476,10 +466,8 @@ class ParamManager {
           unknown_args->push_back(*it);
         } else {
           if (option != parameter::kAllowUnknown) {
-            if (option == parameter::kAllowHidden &&
-                it->first.length() > 4 &&
-                it->first.find("__") == 0 &&
-                it->first.rfind("__") == it->first.length()-2) {
+            if (option == parameter::kAllowHidden && it->first.length() > 4
+                && it->first.find("__") == 0 && it->first.rfind("__") == it->first.length() - 2) {
               continue;
             }
             std::ostringstream os;
@@ -513,7 +501,7 @@ class ParamManager {
    * \param key the key to the parameters
    * \param e the pointer to the new entry.
    */
-  inline void AddAlias(const std::string& field, const std::string& alias) {
+  inline void AddAlias(const std::string &field, const std::string &alias) {
     if (entry_map_.count(field) == 0) {
       LOG(FATAL) << "key " << field << " has not been registered in " << name_;
     }
@@ -559,10 +547,10 @@ class ParamManager {
    * \param skip_default skip the values that equals default value.
    * \return the parameter dictionary.
    */
-  inline std::vector<std::pair<std::string, std::string> > GetDict(void * head) const {
-    std::vector<std::pair<std::string, std::string> > ret;
-    for (std::map<std::string, FieldAccessEntry*>::const_iterator
-            it = entry_map_.begin(); it != entry_map_.end(); ++it) {
+  inline std::vector<std::pair<std::string, std::string>> GetDict(void *head) const {
+    std::vector<std::pair<std::string, std::string>> ret;
+    for (std::map<std::string, FieldAccessEntry *>::const_iterator it = entry_map_.begin();
+        it != entry_map_.end(); ++it) {
       ret.push_back(std::make_pair(it->first, it->second->GetStringValue(head)));
     }
     return ret;
@@ -573,10 +561,10 @@ class ParamManager {
    * \tparam Container The container type
    * \return the parameter dictionary.
    */
-  template<typename Container>
-  inline void UpdateDict(void * head, Container* dict) const {
-    for (std::map<std::string, FieldAccessEntry*>::const_iterator
-            it = entry_map_.begin(); it != entry_map_.end(); ++it) {
+  template <typename Container>
+  inline void UpdateDict(void *head, Container *dict) const {
+    for (std::map<std::string, FieldAccessEntry *>::const_iterator it = entry_map_.begin();
+        it != entry_map_.end(); ++it) {
       (*dict)[it->first] = it->second->GetStringValue(head);
     }
   }
@@ -585,16 +573,16 @@ class ParamManager {
   /*! \brief parameter struct name */
   std::string name_;
   /*! \brief positional list of entries */
-  std::vector<FieldAccessEntry*> entry_;
+  std::vector<FieldAccessEntry *> entry_;
   /*! \brief map from key to entry */
-  std::map<std::string, FieldAccessEntry*> entry_map_;
+  std::map<std::string, FieldAccessEntry *> entry_map_;
 };
 
 //! \cond Doxygen_Suppress
 
 // The following piece of code will be template heavy and less documented
 // singleton parameter manager for certain type, used for initialization
-template<typename PType>
+template <typename PType>
 struct ParamManagerSingleton {
   ParamManager manager;
   explicit ParamManagerSingleton(const std::string &param_name) {
@@ -606,7 +594,7 @@ struct ParamManagerSingleton {
 
 // Base class of FieldEntry
 // implement set_default
-template<typename TEntry, typename DType>
+template <typename TEntry, typename DType>
 class FieldEntryBase : public FieldAccessEntry {
  public:
   // entry type
@@ -619,18 +607,20 @@ class FieldEntryBase : public FieldAccessEntry {
       while (!is.eof()) {
         int ch = is.get();
         if (ch == EOF) {
-          is.clear(); break;
+          is.clear();
+          break;
         }
         if (!isspace(ch)) {
-          is.setstate(std::ios::failbit); break;
+          is.setstate(std::ios::failbit);
+          break;
         }
       }
     }
 
     if (is.fail()) {
       std::ostringstream os;
-      os << "Invalid Parameter format for " << key_
-         << " expect " << type_ << " but value=\'" << value<< '\'';
+      os << "Invalid Parameter format for " << key_ << " expect " << type_ << " but value=\'"
+         << value << '\'';
       throw dmlc::ParamError(os.str());
     }
   }
@@ -660,8 +650,7 @@ class FieldEntryBase : public FieldAccessEntry {
   void SetDefault(void *head) const override {
     if (!has_default_) {
       std::ostringstream os;
-      os << "Required parameter " << key_
-         << " of " << type_ << " is not presented";
+      os << "Required parameter " << key_ << " of " << type_ << " is not presented";
       throw dmlc::ParamError(os.str());
     } else {
       this->Get(head) = default_value_;
@@ -669,7 +658,7 @@ class FieldEntryBase : public FieldAccessEntry {
   }
   // return reference of self as derived type
   inline TEntry &self() {
-    return *(static_cast<TEntry*>(this));
+    return *(static_cast<TEntry *>(this));
   }
   // implement set_default
   inline TEntry &set_default(const DType &default_value) {
@@ -685,18 +674,17 @@ class FieldEntryBase : public FieldAccessEntry {
     return this->self();
   }
   // initialization function
-  inline void Init(const std::string &key,
-                   void *head, DType &ref) { // NOLINT(*)
+  inline void Init(const std::string &key, void *head, DType &ref) {  // NOLINT(*)
     this->key_ = key;
     if (this->type_.length() == 0) {
       this->type_ = dmlc::type_name<DType>();
     }
-    this->offset_ = ((char*)&ref) - ((char*)head);  // NOLINT(*)
+    this->offset_ = ((char *)&ref) - ((char *)head);  // NOLINT(*)
   }
 
  protected:
   // print the value
-  virtual void PrintValue(std::ostream &os, DType value) const { // NOLINT(*)
+  virtual void PrintValue(std::ostream &os, DType value) const {  // NOLINT(*)
     os << value;
   }
   void PrintDefaultValueString(std::ostream &os) const override {  // NOLINT(*)
@@ -706,28 +694,29 @@ class FieldEntryBase : public FieldAccessEntry {
   // for example if this entry corresponds field param.learning_rate
   // then Get(&param) will return reference to param.learning_rate
   inline DType &Get(void *head) const {
-    return *(DType*)this->GetRawPtr(head);  // NOLINT(*)
+    return *(DType *)this->GetRawPtr(head);  // NOLINT(*)
   }
   // default value of field
   DType default_value_;
 };
 
 // parameter base for numeric types that have range
-template<typename TEntry, typename DType>
-class FieldEntryNumeric
-    : public FieldEntryBase<TEntry, DType> {
+template <typename TEntry, typename DType>
+class FieldEntryNumeric : public FieldEntryBase<TEntry, DType> {
  public:
-  FieldEntryNumeric()
-      : has_begin_(false), has_end_(false) {}
+  FieldEntryNumeric() : has_begin_(false), has_end_(false) {}
   // implement set_range
   virtual TEntry &set_range(DType begin, DType end) {
-    begin_ = begin; end_ = end;
-    has_begin_ = true; has_end_ = true;
+    begin_ = begin;
+    end_ = end;
+    has_begin_ = true;
+    has_end_ = true;
     return this->self();
   }
   // implement set_range
   virtual TEntry &set_lower_bound(DType begin) {
-    begin_ = begin; has_begin_ = true;
+    begin_ = begin;
+    has_begin_ = true;
     return this->self();
   }
   // consistency check for numeric ranges
@@ -737,23 +726,23 @@ class FieldEntryNumeric
     if (has_begin_ && has_end_) {
       if (v < begin_ || v > end_) {
         std::ostringstream os;
-        os << "value " << v << " for Parameter " << this->key_
-           << " exceed bound [" << begin_ << ',' << end_ <<']' << '\n';
+        os << "value " << v << " for Parameter " << this->key_ << " exceed bound [" << begin_ << ','
+           << end_ << ']' << '\n';
         os << this->key_ << ": " << this->description_;
         throw dmlc::ParamError(os.str());
       }
     } else if (has_begin_ && v < begin_) {
-        std::ostringstream os;
-        os << "value " << v << " for Parameter " << this->key_
-           << " should be greater equal to " << begin_ << '\n';
-        os << this->key_ << ": " << this->description_;
-        throw dmlc::ParamError(os.str());
+      std::ostringstream os;
+      os << "value " << v << " for Parameter " << this->key_ << " should be greater equal to "
+         << begin_ << '\n';
+      os << this->key_ << ": " << this->description_;
+      throw dmlc::ParamError(os.str());
     } else if (has_end_ && v > end_) {
-        std::ostringstream os;
-        os << "value " << v << " for Parameter " << this->key_
-           << " should be smaller equal to " << end_ << '\n';
-        os << this->key_ << ": " << this->description_;
-        throw dmlc::ParamError(os.str());
+      std::ostringstream os;
+      os << "value " << v << " for Parameter " << this->key_ << " should be smaller equal to "
+         << end_ << '\n';
+      os << this->key_ << ": " << this->description_;
+      throw dmlc::ParamError(os.str());
     }
   }
 
@@ -769,17 +758,15 @@ class FieldEntryNumeric
  * This class can be specialized to implement specific behavior of more settings.
  * \tparam DType the data type of the entry.
  */
-template<typename DType>
+template <typename DType>
 class FieldEntry :
-      public IfThenElseType<dmlc::is_arithmetic<DType>::value,
-                            FieldEntryNumeric<FieldEntry<DType>, DType>,
-                            FieldEntryBase<FieldEntry<DType>, DType> >::Type {
-};
+    public IfThenElseType<dmlc::is_arithmetic<DType>::value,
+        FieldEntryNumeric<FieldEntry<DType>, DType>,
+        FieldEntryBase<FieldEntry<DType>, DType>>::Type {};
 
 // specialize define for int(enum)
-template<>
-class FieldEntry<int>
-    : public FieldEntryNumeric<FieldEntry<int>, int> {
+template <>
+class FieldEntry<int> : public FieldEntryNumeric<FieldEntry<int>, int> {
  public:
   // construct
   FieldEntry() : is_enum_(false) {}
@@ -825,13 +812,12 @@ class FieldEntry<int>
   }
   // add enum
   inline FieldEntry<int> &add_enum(const std::string &key, int value) {
-    if ((enum_map_.size() != 0 && enum_map_.count(key) != 0) || \
-        enum_back_map_.count(value) != 0) {
+    if ((enum_map_.size() != 0 && enum_map_.count(key) != 0) || enum_back_map_.count(value) != 0) {
       std::ostringstream os;
       os << "Enum " << "(" << key << ": " << value << " exisit!" << ")\n";
       os << "Enums: ";
-      for (std::map<std::string, int>::const_iterator it = enum_map_.begin();
-           it != enum_map_.end(); ++it) {
+      for (std::map<std::string, int>::const_iterator it = enum_map_.begin(); it != enum_map_.end();
+          ++it) {
         os << "(" << it->first << ": " << it->second << "), ";
       }
       throw dmlc::ParamError(os.str());
@@ -850,7 +836,7 @@ class FieldEntry<int>
   // enum map
   std::map<int, std::string> enum_back_map_;
   // override print behavior
-  virtual void PrintDefaultValueString(std::ostream &os) const { // NOLINT(*)
+  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     os << '\'';
     PrintValue(os, default_value_);
     os << '\'';
@@ -858,20 +844,18 @@ class FieldEntry<int>
   // override print default
   virtual void PrintValue(std::ostream &os, int value) const {  // NOLINT(*)
     if (is_enum_) {
-      CHECK_NE(enum_back_map_.count(value), 0U)
-          << "Value not found in enum declared";
+      CHECK_NE(enum_back_map_.count(value), 0U) << "Value not found in enum declared";
       os << enum_back_map_.at(value);
     } else {
       os << value;
     }
   }
 
-
  private:
   inline void PrintEnums(std::ostream &os) const {  // NOLINT(*)
     os << '{';
-    for (std::map<std::string, int>::const_iterator
-             it = enum_map_.begin(); it != enum_map_.end(); ++it) {
+    for (std::map<std::string, int>::const_iterator it = enum_map_.begin(); it != enum_map_.end();
+        ++it) {
       if (it != enum_map_.begin()) {
         os << ", ";
       }
@@ -881,16 +865,14 @@ class FieldEntry<int>
   }
 };
 
-
 // specialize define for optional<int>(enum)
-template<>
-class FieldEntry<optional<int> >
-    : public FieldEntryBase<FieldEntry<optional<int> >, optional<int> > {
+template <>
+class FieldEntry<optional<int>> : public FieldEntryBase<FieldEntry<optional<int>>, optional<int>> {
  public:
   // construct
   FieldEntry() : is_enum_(false) {}
   // parent
-  typedef FieldEntryBase<FieldEntry<optional<int> >, optional<int> > Parent;
+  typedef FieldEntryBase<FieldEntry<optional<int>>, optional<int>> Parent;
   // override set
   virtual void Set(void *head, const std::string &value) const {
     if (is_enum_ && value != "None") {
@@ -930,15 +912,14 @@ class FieldEntry<optional<int> >
     }
   }
   // add enum
-  inline FieldEntry<optional<int> > &add_enum(const std::string &key, int value) {
+  inline FieldEntry<optional<int>> &add_enum(const std::string &key, int value) {
     CHECK_NE(key, "None") << "None is reserved for empty optional<int>";
-    if ((enum_map_.size() != 0 && enum_map_.count(key) != 0) || \
-        enum_back_map_.count(value) != 0) {
+    if ((enum_map_.size() != 0 && enum_map_.count(key) != 0) || enum_back_map_.count(value) != 0) {
       std::ostringstream os;
       os << "Enum " << "(" << key << ": " << value << " exisit!" << ")\n";
       os << "Enums: ";
-      for (std::map<std::string, int>::const_iterator it = enum_map_.begin();
-           it != enum_map_.end(); ++it) {
+      for (std::map<std::string, int>::const_iterator it = enum_map_.begin(); it != enum_map_.end();
+          ++it) {
         os << "(" << it->first << ": " << it->second << "), ";
       }
       throw dmlc::ParamError(os.str());
@@ -957,7 +938,7 @@ class FieldEntry<optional<int> >
   // enum map
   std::map<int, std::string> enum_back_map_;
   // override print behavior
-  virtual void PrintDefaultValueString(std::ostream &os) const { // NOLINT(*)
+  virtual void PrintDefaultValueString(std::ostream &os) const {  // NOLINT(*)
     os << '\'';
     PrintValue(os, default_value_);
     os << '\'';
@@ -968,8 +949,7 @@ class FieldEntry<optional<int> >
       if (!value) {
         os << "None";
       } else {
-        CHECK_NE(enum_back_map_.count(value.value()), 0U)
-            << "Value not found in enum declared";
+        CHECK_NE(enum_back_map_.count(value.value()), 0U) << "Value not found in enum declared";
         os << enum_back_map_.at(value.value());
       }
     } else {
@@ -977,12 +957,11 @@ class FieldEntry<optional<int> >
     }
   }
 
-
  private:
   inline void PrintEnums(std::ostream &os) const {  // NOLINT(*)
     os << "{None";
-    for (std::map<std::string, int>::const_iterator
-             it = enum_map_.begin(); it != enum_map_.end(); ++it) {
+    for (std::map<std::string, int>::const_iterator it = enum_map_.begin(); it != enum_map_.end();
+        ++it) {
       os << ", ";
       os << "\'" << it->first << '\'';
     }
@@ -991,9 +970,8 @@ class FieldEntry<optional<int> >
 };
 
 // specialize define for string
-template<>
-class FieldEntry<std::string>
-    : public FieldEntryBase<FieldEntry<std::string>, std::string> {
+template <>
+class FieldEntry<std::string> : public FieldEntryBase<FieldEntry<std::string>, std::string> {
  public:
   // parent class
   typedef FieldEntryBase<FieldEntry<std::string>, std::string> Parent;
@@ -1008,15 +986,15 @@ class FieldEntry<std::string>
 };
 
 // specialize define for bool
-template<>
-class FieldEntry<bool>
-    : public FieldEntryBase<FieldEntry<bool>, bool> {
+template <>
+class FieldEntry<bool> : public FieldEntryBase<FieldEntry<bool>, bool> {
  public:
   // parent class
   typedef FieldEntryBase<FieldEntry<bool>, bool> Parent;
   // override set
   virtual void Set(void *head, const std::string &value) const {
-    std::string lower_case; lower_case.resize(value.length());
+    std::string lower_case;
+    lower_case.resize(value.length());
     std::transform(value.begin(), value.end(), lower_case.begin(), ::tolower);
     bool &ref = this->Get(head);
     if (lower_case == "true") {
@@ -1029,8 +1007,8 @@ class FieldEntry<bool>
       ref = false;
     } else {
       std::ostringstream os;
-      os << "Invalid Parameter format for " << key_
-         << " expect " << type_ << " but value=\'" << value<< '\'';
+      os << "Invalid Parameter format for " << key_ << " expect " << type_ << " but value=\'"
+         << value << '\'';
       throw dmlc::ParamError(os.str());
     }
   }
@@ -1041,7 +1019,6 @@ class FieldEntry<bool>
     os << static_cast<int>(value);
   }
 };
-
 
 // specialize define for float. Uses stof for platform independent handling of
 // INF, -INF, NAN, etc.
@@ -1058,10 +1035,10 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
       this->Get(head) = dmlc::stof(value, &pos);
     } catch (const std::invalid_argument &) {
       std::ostringstream os;
-      os << "Invalid Parameter format for " << key_ << " expect " << type_
-         << " but value=\'" << value << '\'';
+      os << "Invalid Parameter format for " << key_ << " expect " << type_ << " but value=\'"
+         << value << '\'';
       throw dmlc::ParamError(os.str());
-    } catch (const std::out_of_range&) {
+    } catch (const std::out_of_range &) {
       std::ostringstream os;
       os << "Out of range value for " << key_ << ", value=\'" << value << '\'';
       throw dmlc::ParamError(os.str());
@@ -1069,8 +1046,7 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
     CHECK_LE(pos, value.length());  // just in case
     if (pos < value.length()) {
       std::ostringstream os;
-      os << "Some trailing characters could not be parsed: \'"
-         << value.substr(pos) << "\'";
+      os << "Some trailing characters could not be parsed: \'" << value.substr(pos) << "\'";
       throw dmlc::ParamError(os.str());
     }
   }
@@ -1085,8 +1061,7 @@ class FieldEntry<float> : public FieldEntryNumeric<FieldEntry<float>, float> {
 // specialize define for double. Uses stod for platform independent handling of
 // INF, -INF, NAN, etc.
 template <>
-class FieldEntry<double>
-    : public FieldEntryNumeric<FieldEntry<double>, double> {
+class FieldEntry<double> : public FieldEntryNumeric<FieldEntry<double>, double> {
  public:
   // parent
   typedef FieldEntryNumeric<FieldEntry<double>, double> Parent;
@@ -1097,10 +1072,10 @@ class FieldEntry<double>
       this->Get(head) = dmlc::stod(value, &pos);
     } catch (const std::invalid_argument &) {
       std::ostringstream os;
-      os << "Invalid Parameter format for " << key_ << " expect " << type_
-         << " but value=\'" << value << '\'';
+      os << "Invalid Parameter format for " << key_ << " expect " << type_ << " but value=\'"
+         << value << '\'';
       throw dmlc::ParamError(os.str());
-    } catch (const std::out_of_range&) {
+    } catch (const std::out_of_range &) {
       std::ostringstream os;
       os << "Out of range value for " << key_ << ", value=\'" << value << '\'';
       throw dmlc::ParamError(os.str());
@@ -1108,8 +1083,7 @@ class FieldEntry<double>
     CHECK_LE(pos, value.length());  // just in case
     if (pos < value.length()) {
       std::ostringstream os;
-      os << "Some trailing characters could not be parsed: \'"
-         << value.substr(pos) << "\'";
+      os << "Some trailing characters could not be parsed: \'" << value.substr(pos) << "\'";
       throw dmlc::ParamError(os.str());
     }
   }
@@ -1126,9 +1100,8 @@ class FieldEntry<double>
 //! \endcond
 
 // implement GetEnv
-template<typename ValueType>
-inline ValueType GetEnv(const char *key,
-                        ValueType default_value) {
+template <typename ValueType>
+inline ValueType GetEnv(const char *key, ValueType default_value) {
   const char *val = getenv(key);
   // On some implementations, if the var is set to a blank string (i.e. "FOO="), then
   // a blank string will be returned instead of NULL.  In order to be consistent, if
@@ -1144,9 +1117,8 @@ inline ValueType GetEnv(const char *key,
 }
 
 // implement SetEnv
-template<typename ValueType>
-inline void SetEnv(const char *key,
-                   ValueType value) {
+template <typename ValueType>
+inline void SetEnv(const char *key, ValueType value) {
   parameter::FieldEntry<ValueType> e;
   e.Init(key, &value, value);
 #ifdef _WIN32

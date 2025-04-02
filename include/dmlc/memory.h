@@ -6,9 +6,10 @@
 #ifndef DMLC_MEMORY_H_
 #define DMLC_MEMORY_H_
 
-#include <vector>
 #include <memory>
 #include <utility>
+#include <vector>
+
 #include "./base.h"
 #include "./logging.h"
 #include "./thread_local.h"
@@ -20,19 +21,18 @@ namespace dmlc {
  * \tparam size The size of each piece.
  * \tparam align The alignment requirement of the memory.
  */
-template<size_t size, size_t align>
+template <size_t size, size_t align>
 class MemoryPool {
  public:
   /*! \brief constructor */
   MemoryPool() {
-    static_assert(align % alignof(LinkedList) == 0,
-                  "alignment requirement failed.");
+    static_assert(align % alignof(LinkedList) == 0, "alignment requirement failed.");
     curr_page_.reset(new Page());
   }
   /*! \brief allocate a new memory of size */
-  inline void* allocate() {
+  inline void *allocate() {
     if (head_ != nullptr) {
-      LinkedList* ret = head_;
+      LinkedList *ret = head_;
       head_ = head_->next;
       return ret;
     } else {
@@ -50,8 +50,8 @@ class MemoryPool {
    * \brief deallocate a piece of memory
    * \param p The pointer to the memory to be de-allocated.
    */
-  inline void deallocate(void* p) {
-    LinkedList* ptr = static_cast<LinkedList*>(p);
+  inline void deallocate(void *p) {
+    LinkedList *ptr = static_cast<LinkedList *>(p);
     ptr->next = head_;
     head_ = ptr;
   }
@@ -65,31 +65,30 @@ class MemoryPool {
   };
   // internal linked list structure.
   struct LinkedList {
-    LinkedList* next{nullptr};
+    LinkedList *next{nullptr};
   };
   // head of free list
-  LinkedList* head_{nullptr};
+  LinkedList *head_{nullptr};
   // current free page
   std::unique_ptr<Page> curr_page_;
   // pointer to the current free page position.
   size_t page_ptr_{0};
   // allocated pages.
-  std::vector<std::unique_ptr<Page> > allocated_;
+  std::vector<std::unique_ptr<Page>> allocated_;
 };
-
 
 /*!
  * \brief A thread local allocator that get memory from a threadlocal memory pool.
  * This is suitable to allocate objects that do not cross thread.
  * \tparam T the type of the data to be allocated.
  */
-template<typename T>
+template <typename T>
 class ThreadlocalAllocator {
  public:
   /*! \brief pointer type */
-  typedef T* pointer;
+  typedef T *pointer;
   /*! \brief const pointer type */
-  typedef const T* const_ptr;
+  typedef const T *const_ptr;
   /*! \brief value type */
   typedef T value_type;
   /*! \brief default constructor */
@@ -99,30 +98,29 @@ class ThreadlocalAllocator {
    * \param other another allocator
    * \tparam U another type
    */
-  template<typename U>
-  ThreadlocalAllocator(const ThreadlocalAllocator<U>& other) {}
+  template <typename U>
+  ThreadlocalAllocator(const ThreadlocalAllocator<U> &other) {}
   /*!
    * \brief allocate memory
    * \param n number of blocks
    * \return an uninitialized memory of type T.
    */
-  inline T* allocate(size_t n) {
+  inline T *allocate(size_t n) {
     CHECK_EQ(n, 1);
-    typedef ThreadLocalStore<MemoryPool<sizeof(T), alignof(T)> > Store;
-    return static_cast<T*>(Store::Get()->allocate());
+    typedef ThreadLocalStore<MemoryPool<sizeof(T), alignof(T)>> Store;
+    return static_cast<T *>(Store::Get()->allocate());
   }
   /*!
    * \brief deallocate memory
    * \param p a memory to be returned.
    * \param n number of blocks
    */
-  inline void deallocate(T* p, size_t n) {
+  inline void deallocate(T *p, size_t n) {
     CHECK_EQ(n, 1);
-    typedef ThreadLocalStore<MemoryPool<sizeof(T), alignof(T)> > Store;
+    typedef ThreadLocalStore<MemoryPool<sizeof(T), alignof(T)>> Store;
     Store::Get()->deallocate(p);
   }
 };
-
 
 /*!
  * \brief a shared pointer like type that allocate object
@@ -130,7 +128,7 @@ class ThreadlocalAllocator {
  *   but can be faster than shared_ptr in certain usecases.
  * \tparam T the data type.
  */
-template<typename T>
+template <typename T>
 struct ThreadlocalSharedPtr {
  public:
   /*! \brief default constructor */
@@ -144,16 +142,14 @@ struct ThreadlocalSharedPtr {
    * \brief copy constructor
    * \param other another pointer.
    */
-  ThreadlocalSharedPtr(const ThreadlocalSharedPtr<T>& other)
-      : block_(other.block_) {
+  ThreadlocalSharedPtr(const ThreadlocalSharedPtr<T> &other) : block_(other.block_) {
     IncRef(block_);
   }
   /*!
    * \brief move constructor
    * \param other another pointer.
    */
-  ThreadlocalSharedPtr(ThreadlocalSharedPtr<T>&& other)
-      : block_(other.block_) {
+  ThreadlocalSharedPtr(ThreadlocalSharedPtr<T> &&other) : block_(other.block_) {
     other.block_ = nullptr;
   }
   /*!
@@ -167,7 +163,7 @@ struct ThreadlocalSharedPtr {
    * \param other another object to be assigned.
    * \return self.
    */
-  inline ThreadlocalSharedPtr<T>& operator=(ThreadlocalSharedPtr<T>&& other) {
+  inline ThreadlocalSharedPtr<T> &operator=(ThreadlocalSharedPtr<T> &&other) {
     DecRef(block_);
     block_ = other.block_;
     other.block_ = nullptr;
@@ -178,7 +174,7 @@ struct ThreadlocalSharedPtr {
    * \param other another object to be assigned.
    * \return self.
    */
-  inline ThreadlocalSharedPtr<T> &operator=(const ThreadlocalSharedPtr<T>& other) {
+  inline ThreadlocalSharedPtr<T> &operator=(const ThreadlocalSharedPtr<T> &other) {
     DecRef(block_);
     block_ = other.block_;
     IncRef(block_);
@@ -191,9 +187,11 @@ struct ThreadlocalSharedPtr {
   /*!
    * \return get the pointer content.
    */
-  inline T* get() const {
-    if (block_ == nullptr) return nullptr;
-    return reinterpret_cast<T*>(&(block_->data));
+  inline T *get() const {
+    if (block_ == nullptr) {
+      return nullptr;
+    }
+    return reinterpret_cast<T *>(&(block_->data));
   }
   /*!
    * \brief reset the pointer to nullptr.
@@ -204,16 +202,18 @@ struct ThreadlocalSharedPtr {
   }
   /*! \return if use_count == 1*/
   inline bool unique() const {
-    if (block_ == nullptr) return false;
+    if (block_ == nullptr) {
+      return false;
+    }
     return block_->use_count_ == 1;
   }
   /*! \return dereference pointer */
-  inline T* operator*() const {
-    return reinterpret_cast<T*>(&(block_->data));
+  inline T *operator*() const {
+    return reinterpret_cast<T *>(&(block_->data));
   }
   /*! \return dereference pointer */
-  inline T* operator->() const {
-    return reinterpret_cast<T*>(&(block_->data));
+  inline T *operator->() const {
+    return reinterpret_cast<T *>(&(block_->data));
   }
   /*!
    * \brief create a new space from threadlocal storage and return it.
@@ -222,7 +222,7 @@ struct ThreadlocalSharedPtr {
    * \return the allocated pointer.
    */
   template <typename... Args>
-  inline static ThreadlocalSharedPtr<T> Create(Args&&... args) {
+  inline static ThreadlocalSharedPtr<T> Create(Args &&...args) {
     ThreadlocalAllocator<RefBlock> arena;
     ThreadlocalSharedPtr<T> p;
     p.block_ = arena.allocate(1);
@@ -238,18 +238,18 @@ struct ThreadlocalSharedPtr {
     unsigned use_count_;
   };
   // decrease ref counter
-  inline static void DecRef(RefBlock* block) {
+  inline static void DecRef(RefBlock *block) {
     if (block != nullptr) {
       if (--block->use_count_ == 0) {
         ThreadlocalAllocator<RefBlock> arena;
-        T* dptr = reinterpret_cast<T*>(&(block->data));
+        T *dptr = reinterpret_cast<T *>(&(block->data));
         dptr->~T();
         arena.deallocate(block, 1);
       }
     }
   }
   // increase ref counter
-  inline static void IncRef(RefBlock* block) {
+  inline static void IncRef(RefBlock *block) {
     if (block != nullptr) {
       ++block->use_count_;
     }

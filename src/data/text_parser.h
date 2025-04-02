@@ -7,16 +7,18 @@
 #ifndef DMLC_DATA_TEXT_PARSER_H_
 #define DMLC_DATA_TEXT_PARSER_H_
 
+#include <algorithm>
+#include <cstring>
+#include <mutex>
+#include <thread>
+#include <vector>
+
+#include <dmlc/common.h>
 #include <dmlc/data.h>
 #include <dmlc/omp.h>
-#include <dmlc/common.h>
-#include <thread>
-#include <mutex>
-#include <vector>
-#include <cstring>
-#include <algorithm>
-#include "./row_block.h"
+
 #include "./parser.h"
+#include "./row_block.h"
 
 namespace dmlc {
 namespace data {
@@ -27,9 +29,7 @@ namespace data {
 template <typename IndexType, typename DType = real_t>
 class TextParserBase : public ParserImpl<IndexType, DType> {
  public:
-  explicit TextParserBase(InputSplit *source,
-                          int nthread)
-      : bytes_read_(0), source_(source) {
+  explicit TextParserBase(InputSplit *source, int nthread) : bytes_read_(0), source_(source) {
     int maxthread = std::max(omp_get_num_procs() / 2 - 4, 1);
     nthread_ = std::min(maxthread, nthread);
   }
@@ -42,36 +42,38 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   virtual size_t BytesRead(void) const {
     return bytes_read_;
   }
-  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType> > *data) {
+  virtual bool ParseNext(std::vector<RowBlockContainer<IndexType, DType>> *data) {
     return FillData(data);
   }
 
  protected:
-   /*!
-    * \brief parse data into out
-    * \param begin beginning of buffer
-    * \param end end of buffer
-    */
-  virtual void ParseBlock(const char *begin, const char *end,
-                          RowBlockContainer<IndexType, DType> *out) = 0;
-   /*!
-    * \brief read in next several blocks of data
-    * \param data vector of data to be returned
-    * \return true if the data is loaded, false if reach end
-    */
+  /*!
+   * \brief parse data into out
+   * \param begin beginning of buffer
+   * \param end end of buffer
+   */
+  virtual void ParseBlock(
+      const char *begin, const char *end, RowBlockContainer<IndexType, DType> *out)
+      = 0;
+  /*!
+   * \brief read in next several blocks of data
+   * \param data vector of data to be returned
+   * \return true if the data is loaded, false if reach end
+   */
   inline bool FillData(std::vector<RowBlockContainer<IndexType, DType>> *data);
-   /*!
-    * \brief start from bptr, go backward and find first endof line
-    * \param bptr end position to go backward
-    * \param begin the beginning position of buffer
-    * \return position of first endof line going backward, returns begin if not found
-    */
+  /*!
+   * \brief start from bptr, go backward and find first endof line
+   * \param bptr end position to go backward
+   * \param begin the beginning position of buffer
+   * \return position of first endof line going backward, returns begin if not found
+   */
   static inline const char *BackFindEndLine(const char *bptr, const char *begin) {
-     for (; bptr != begin; --bptr) {
-       if (*bptr == '\n' || *bptr == '\r')
-         return bptr;
-     }
-     return begin;
+    for (; bptr != begin; --bptr) {
+      if (*bptr == '\n' || *bptr == '\r') {
+        return bptr;
+      }
+    }
+    return begin;
   }
   /*!
    * \brief Ignore UTF-8 BOM if present
@@ -81,17 +83,22 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   static inline void IgnoreUTF8BOM(const char **begin, const char **end) {
     int count = 0;
     for (count = 0; *begin != *end && count < 3; count++, ++*begin) {
-      if (!begin || !*begin)
+      if (!begin || !*begin) {
         break;
-      if (**begin != '\xEF' && count == 0)
+      }
+      if (**begin != '\xEF' && count == 0) {
         break;
-      if (**begin != '\xBB' && count == 1)
+      }
+      if (**begin != '\xBB' && count == 1) {
         break;
-      if (**begin != '\xBF' && count == 2)
+      }
+      if (**begin != '\xBF' && count == 2) {
         break;
+      }
     }
-    if (count < 3)
+    if (count < 3) {
       *begin -= count;
+    }
   }
 
  private:
@@ -108,9 +115,11 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
 // implementation
 template <typename IndexType, typename DType>
 inline bool TextParserBase<IndexType, DType>::FillData(
-    std::vector<RowBlockContainer<IndexType, DType> > *data) {
+    std::vector<RowBlockContainer<IndexType, DType>> *data) {
   InputSplit::Blob chunk;
-  if (!source_->NextChunk(&chunk)) return false;
+  if (!source_->NextChunk(&chunk)) {
+    return false;
+  }
   const int nthread = this->nthread_;
   // reserve space for data
   data->resize(nthread);

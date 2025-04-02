@@ -7,20 +7,22 @@
 #ifndef DMLC_IO_SINGLE_FILE_SPLIT_H_
 #define DMLC_IO_SINGLE_FILE_SPLIT_H_
 
+#include <algorithm>
+#include <cstdio>
+#include <string>
+
 #include <dmlc/base.h>
 #include <dmlc/io.h>
 #include <dmlc/logging.h>
+
 #include <sys/stat.h>
-#include <cstdio>
-#include <string>
-#include <algorithm>
 
 #ifdef _WIN32
-#define stat_struct __stat64
-#define fstat _fstat64
-#define fileno _fileno
+  #define stat_struct __stat64
+  #define fstat _fstat64
+  #define fileno _fileno
 #else  // _WIN32
-#define stat_struct stat
+  #define stat_struct stat
 #endif  // _WIN32
 
 namespace dmlc {
@@ -32,11 +34,11 @@ namespace io {
 class SingleFileSplit : public InputSplit {
  public:
   explicit SingleFileSplit(const char *fname)
-      : use_stdin_(false), buffer_size_(kBufferSize),
-        chunk_begin_(NULL), chunk_end_(NULL) {
+      : use_stdin_(false), buffer_size_(kBufferSize), chunk_begin_(NULL), chunk_end_(NULL) {
     if (!std::strcmp(fname, "stdin")) {
 #ifndef DMLC_STRICT_CXX98_
-      use_stdin_ = true; fp_ = stdin;
+      use_stdin_ = true;
+      fp_ = stdin;
 #endif
     }
     if (!use_stdin_) {
@@ -50,7 +52,9 @@ class SingleFileSplit : public InputSplit {
     buffer_.resize(kBufferSize);
   }
   virtual ~SingleFileSplit(void) {
-    if (!use_stdin_) std::fclose(fp_);
+    if (!use_stdin_) {
+      std::fclose(fp_);
+    }
   }
   virtual void BeforeFirst(void) {
     fseek(fp_, 0, SEEK_SET);
@@ -76,10 +80,11 @@ class SingleFileSplit : public InputSplit {
   }
   virtual bool NextRecord(Blob *out_rec) {
     if (chunk_begin_ == chunk_end_) {
-      if (!LoadChunk()) return false;
+      if (!LoadChunk()) {
+        return false;
+      }
     }
-    char *next = FindNextRecord(chunk_begin_,
-                                chunk_end_);
+    char *next = FindNextRecord(chunk_begin_, chunk_end_);
     out_rec->dptr = chunk_begin_;
     out_rec->size = next - chunk_begin_;
     chunk_begin_ = next;
@@ -87,7 +92,9 @@ class SingleFileSplit : public InputSplit {
   }
   virtual bool NextChunk(Blob *out_chunk) {
     if (chunk_begin_ == chunk_end_) {
-      if (!LoadChunk()) return false;
+      if (!LoadChunk()) {
+        return false;
+      }
     }
     out_chunk->dptr = chunk_begin_;
     out_chunk->size = chunk_end_ - chunk_begin_;
@@ -97,22 +104,24 @@ class SingleFileSplit : public InputSplit {
   inline bool ReadChunk(void *buf, size_t *size) {
     size_t max_size = *size;
     if (max_size <= overflow_.length()) {
-      *size = 0; return true;
+      *size = 0;
+      return true;
     }
     if (overflow_.length() != 0) {
       std::memcpy(buf, BeginPtr(overflow_), overflow_.length());
     }
     size_t olen = overflow_.length();
     overflow_.resize(0);
-    size_t nread = this->Read(reinterpret_cast<char*>(buf) + olen,
-                              max_size - olen);
+    size_t nread = this->Read(reinterpret_cast<char *>(buf) + olen, max_size - olen);
     nread += olen;
-    if (nread == 0) return false;
+    if (nread == 0) {
+      return false;
+    }
     if (nread != max_size) {
       *size = nread;
       return true;
     } else {
-      const char *bptr = reinterpret_cast<const char*>(buf);
+      const char *bptr = reinterpret_cast<const char *>(buf);
       // return the last position where a record starts
       const char *bend = this->FindLastRecordBegin(bptr, bptr + max_size);
       *size = bend - bptr;
@@ -125,21 +134,28 @@ class SingleFileSplit : public InputSplit {
   }
 
  protected:
-  inline const char* FindLastRecordBegin(const char *begin,
-                                         const char *end) {
-    if (begin == end) return begin;
+  inline const char *FindLastRecordBegin(const char *begin, const char *end) {
+    if (begin == end) {
+      return begin;
+    }
     for (const char *p = end - 1; p != begin; --p) {
-      if (*p == '\n' || *p == '\r') return p + 1;
+      if (*p == '\n' || *p == '\r') {
+        return p + 1;
+      }
     }
     return begin;
   }
-  inline char* FindNextRecord(char *begin, char *end) {
+  inline char *FindNextRecord(char *begin, char *end) {
     char *p;
     for (p = begin; p != end; ++p) {
-      if (*p == '\n' || *p == '\r') break;
+      if (*p == '\n' || *p == '\r') {
+        break;
+      }
     }
     for (; p != end; ++p) {
-      if (*p != '\n' && *p != '\r') return p;
+      if (*p != '\n' && *p != '\r') {
+        return p;
+      }
     }
     return end;
   }
@@ -149,7 +165,9 @@ class SingleFileSplit : public InputSplit {
     }
     while (true) {
       size_t size = buffer_.length();
-      if (!ReadChunk(BeginPtr(buffer_), &size)) return false;
+      if (!ReadChunk(BeginPtr(buffer_), &size)) {
+        return false;
+      }
       if (size == 0) {
         buffer_.resize(buffer_.length() * 2);
       } else {

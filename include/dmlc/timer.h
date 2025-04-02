@@ -10,13 +10,13 @@
 #include "base.h"
 
 #if DMLC_USE_CXX11
-#include <chrono>
+  #include <chrono>
 #endif
 
 #include <time.h>
 #if defined(__MACH__) && defined(__APPLE__)
-#include <mach/clock.h>
-#include <mach/mach.h>
+  #include <mach/clock.h>
+  #include <mach/mach.h>
 #endif
 #include "./logging.h"
 
@@ -25,17 +25,17 @@ namespace dmlc {
  * \brief return time in seconds
  */
 inline double GetTime(void) {
-  #if DMLC_USE_CXX11
-  return std::chrono::duration<double>(
-      std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-  #elif defined(__MACH__) && defined(__APPLE__)
+#if DMLC_USE_CXX11
+  return std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch())
+      .count();
+#elif defined(__MACH__) && defined(__APPLE__)
   clock_serv_t cclock;
   mach_timespec_t mts;
   host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
   CHECK(clock_get_time(cclock, &mts) == 0) << "failed to get time";
   mach_port_deallocate(mach_task_self(), cclock);
   return static_cast<double>(mts.tv_sec) + static_cast<double>(mts.tv_nsec) * 1e-9;
-  #else
+#else
   #if defined(__unix__) || defined(__linux__)
   timespec ts;
   CHECK(clock_gettime(CLOCK_REALTIME, &ts) == 0) << "failed to get time";
@@ -43,7 +43,7 @@ inline double GetTime(void) {
   #else
   return static_cast<double>(time(NULL));
   #endif
-  #endif
+#endif
 }
 }  // namespace dmlc
 #endif  // DMLC_TIMER_H_

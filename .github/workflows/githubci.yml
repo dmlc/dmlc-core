@@ -37,10 +37,6 @@ jobs:
           else
             brew install libomp doxygen gcc@11
           fi
-      - name: Lint
-        shell: bash -l {0}
-        run: |
-          TASK=lint ./scripts/test_script.sh
       - name: googletest
         shell: bash -l {0}
         run: |
