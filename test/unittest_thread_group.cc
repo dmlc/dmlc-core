@@ -164,7 +164,7 @@ static inline uint64_t GetDurationInNanoseconds(const Tick &since) {
 
 constexpr size_t SLEEP_DURATION = 500;
 constexpr size_t TIMER_PERIOD = 10;  // Ideal is 50 periods occur
-constexpr size_t MIN_COUNT_WHILE_SLEEPING = 10;
+constexpr size_t MIN_COUNT_WHILE_SLEEPING = 9;
 constexpr size_t MAX_COUNT_WHILE_SLEEPING = 150;
 
 inline size_t GetDurationInMilliseconds(const Tick &start_time) {
