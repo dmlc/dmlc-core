@@ -534,7 +534,7 @@ class BlockingQueueThread : public ThreadGroup::Thread {
    */
   BlockingQueueThread(
       const std::string &name, dmlc::ThreadGroup *owner, std::thread *thrd = nullptr)
-      : ThreadGroup::Thread(std::move(name), owner, thrd), shutdown_in_progress_(false) {}
+      : ThreadGroup::Thread(name, owner, thrd), shutdown_in_progress_(false) {}
 
   /*!
    * \brief Destructor
