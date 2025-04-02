@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
+cmake_policy(SET CMP0091 NEW)
 
 project(dmlc VERSION 0.6 LANGUAGES C CXX)
 
@@ -116,14 +117,14 @@ else()
 endif()
 
 # OpenMP
+include(cmake/FindOpenMPMacOS.cmake)
 if(USE_OPENMP)
-  if(APPLE AND (NOT CMAKE_COMPILER_IS_GNUCC))
-    # Require CMake 3.16+ for Mac to ensure that OpenMP can be located
-    # (Exception: it's okay if Homebrew GCC is used)
-    cmake_minimum_required(VERSION 3.16)
+  if(APPLE)
+    find_openmp_macos()
+    patch_openmp_path_macos(dmlc libdmlc)
+  else()
+    find_package(OpenMP REQUIRED)
   endif()
-
-  find_package(OpenMP REQUIRED)
   target_link_libraries(dmlc PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
@@ -185,12 +186,15 @@ if(MSVC)
   target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11=1)
   if(DMLC_FORCE_SHARED_CRT)
     message(STATUS "DMLC-Core: Using dynamically linked MSVC runtime...")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    set(DMLC_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
   else()
     message(STATUS "DMLC-Core: Using statically linked MSVC runtime...")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    set(DMLC_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
   endif()
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+  set_target_properties(dmlc PROPERTIES
+    MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
 else()
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
   check_cxx_compiler_flag("-msse2" SUPPORT_MSSE2)

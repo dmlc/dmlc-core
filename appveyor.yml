@@ -112,18 +112,18 @@ test_script:
     - cd %APPVEYOR_BUILD_FOLDER%
     - if /i "%target%" == "msvc" (
         if /i not "%generator%" == "Visual Studio 12 2013 Win64" (
-          .\build_msvc%ver%\test\unittest\%configuration%\dmlc_unit_tests.exe
+          .\build_msvc%ver%\test\%configuration%\dmlc_unit_tests.exe
         )
       )
     - if /i "%target%" == "msys2" (
-        .\build_msys2\test\unittest\dmlc_unit_tests.exe
+        .\build_msys2\test\dmlc_unit_tests.exe
       )
     - if /i "%target%" == "mingw32" (
-        .\build_mingw32\test\unittest\dmlc_unit_tests.exe
+        .\build_mingw32\test\dmlc_unit_tests.exe
       )
     - if /i "%target%" == "mingw" (
-        .\build_mingw\test\unittest\dmlc_unit_tests.exe
+        .\build_mingw\test\dmlc_unit_tests.exe
       )
     - if /i "%target%" == "cygwin" (
-        .\build_cygwin\test\unittest\dmlc_unit_tests.exe
+        .\build_cygwin\test\dmlc_unit_tests.exe
       )
