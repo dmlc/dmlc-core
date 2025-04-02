@@ -43,6 +43,8 @@ if (NOT GTEST_FOUND)
     gtest gmock dmlc Threads::Threads)
   foreach(target gtest gmock)
     target_compile_features(${target} PUBLIC cxx_std_14)
+    set_target_properties(${target} PROPERTIES
+      MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
   endforeach()
 else()
   target_include_directories(dmlc_unit_tests PRIVATE ${GTEST_INCLUDE_DIRS})
