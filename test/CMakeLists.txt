@@ -18,8 +18,13 @@ find_package(Threads REQUIRED)
 
 file(GLOB_RECURSE UNIT_TEST_SOURCE "*.cc")
 add_executable(dmlc_unit_tests ${UNIT_TEST_SOURCE})
-set_property(TARGET dmlc_unit_tests
-  PROPERTY RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
+set_target_properties(dmlc_unit_tests
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${PRIVATE_RUNTIME_DIR})
+if(MSVC)
+  set_target_properties(dmlc_unit_tests PROPERTIES
+    MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
+endif()
 
 target_compile_definitions(dmlc_unit_tests PRIVATE -DDMLC_UNIT_TESTS_USE_CMAKE -DDMLC_CORE_USE_CMAKE ${ENABLE_GNU_EXTENSION_FLAGS})
 target_include_directories(dmlc_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -43,8 +48,10 @@ if (NOT GTEST_FOUND)
     gtest gmock dmlc Threads::Threads)
   foreach(target gtest gmock)
     target_compile_features(${target} PUBLIC cxx_std_14)
-    set_target_properties(${target} PROPERTIES
-      MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
+    if(MSVC)
+      set_target_properties(${target} PROPERTIES
+        MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
+    endif()
   endforeach()
 else()
   target_include_directories(dmlc_unit_tests PRIVATE ${GTEST_INCLUDE_DIRS})
