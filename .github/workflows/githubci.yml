@@ -7,7 +7,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
         task: ["cmake_test", "sanitizer_test"]
         os: [macos-13, macos-14, ubuntu-24.04, ubuntu-24.04-arm]
         exclude:
