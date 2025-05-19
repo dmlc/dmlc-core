@@ -33,7 +33,7 @@ repos:
     #  additional_dependencies: [cpplint==1.6.1]
     #  types_or: [c++]
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.11.8
+  rev: v0.11.10
   hooks:
     - id: ruff
       args: [ "--fix", "--config", "ruff.toml" ]
