@@ -1,0 +1,24 @@
+name: Create tag for every commit
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get date
+        run: |
+          echo "NOW=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+      - name: Create tag
+        uses: actions/github-script@v8
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/0.6-${{ env.NOW }}',
+              sha: context.sha
+            })
