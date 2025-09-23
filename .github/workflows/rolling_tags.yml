@@ -1,6 +1,9 @@
 name: Create tag for every commit
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
