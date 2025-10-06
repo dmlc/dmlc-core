@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Get date
         run: |
-          echo "NOW=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+          echo "NOW=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
       - name: Create tag
         uses: actions/github-script@v8
         with:
@@ -22,6 +22,6 @@ jobs:
             github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: 'refs/tags/0.6-${{ env.NOW }}',
+              ref: 'refs/tags/0.6.dev${{ env.NOW }}',
               sha: context.sha
             })
