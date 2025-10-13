@@ -7,12 +7,12 @@ repos:
   - id: check-yaml
   - id: check-added-large-files
     args: ["--maxkb=4000"]
-- repo: https://github.com/psf/black
+- repo: https://github.com/psf/black-pre-commit-mirror
   rev: 25.9.0
   hooks:
   - id: black
 - repo: https://github.com/pycqa/isort
-  rev: 6.0.1
+  rev: 7.0.0
   hooks:
   - id: isort
     args: ["--profile", "black", "--filter-files"]
@@ -33,7 +33,7 @@ repos:
     #  additional_dependencies: [cpplint==1.6.1]
     #  types_or: [c++]
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.13.1
+  rev: v0.14.0
   hooks:
     - id: ruff
       args: [ "--fix", "--config", "ruff.toml" ]
