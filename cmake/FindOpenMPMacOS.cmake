@@ -3,7 +3,7 @@
 
 # lint_cmake: -package/consistency
 
-macro(find_openmp_macos)
+macro(dmlc_find_openmp_macos)
   if(NOT APPLE)
     message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}() must only be used on MacOS")
   endif()
@@ -33,7 +33,7 @@ endmacro()
 # explanation. Adapted from https://github.com/microsoft/LightGBM/pull/6391
 # by James Lamb.
 # MacOS only.
-function(patch_openmp_path_macos target target_default_output_name)
+function(dmlc_patch_openmp_path_macos target target_default_output_name)
   if(NOT APPLE)
     message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}() must only be used on MacOS")
   endif()
