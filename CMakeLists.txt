@@ -26,6 +26,7 @@ dmlccore_option(USE_PARQUET "Build with Arrow Parquet" OFF)
 dmlccore_option(USE_OPENMP "Build with OpenMP" ON)
 dmlccore_option(GOOGLE_TEST "Build google tests" OFF)
 dmlccore_option(INSTALL_DOCUMENTATION "Install documentation" OFF)
+dmlccore_option(DMLC_SHARED_LIBRARY "Build a shared library" OFF)
 dmlccore_option(DMLC_FORCE_SHARED_CRT "Build with dynamic CRT on Windows (/MD)" OFF)
 dmlccore_option(DMLC_USE_SANITIZER "Use santizer flags; to specify a custom path for sanitizers, set this variable a value that's not ON or OFF" OFF)
 set(DMLC_ENABLED_SANITIZERS "address" "leak" CACHE STRING
@@ -53,10 +54,14 @@ if(USE_AZURE)
   list(APPEND SOURCE "src/io/azure_filesys.cc")
 endif()
 
-add_library(dmlc ${SOURCE})
-set_target_properties(dmlc PROPERTIES
-  VERSION ${PROJECT_VERSION}
-  SOVERSION ${PROJECT_VERSION_MAJOR})
+if (DMLC_SHARED_LIBRARY)
+  add_library(dmlc SHARED ${SOURCE})
+  set_target_properties(dmlc PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR})
+else()
+  add_library(dmlc STATIC ${SOURCE})
+endif()
 target_compile_features(dmlc PUBLIC cxx_std_14)
 
 # Sanitizer
