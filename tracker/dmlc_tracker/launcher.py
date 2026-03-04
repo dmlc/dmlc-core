@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=invalid-name
 """The container launcher script that launches DMLC with the right env variable."""
+
 from __future__ import absolute_import
 
 import glob
@@ -55,7 +56,7 @@ def main():
     if hadoop_home:
         library_path.append("%s/lib/native" % hdfs_home)
         library_path.append("%s/lib" % hdfs_home)
-        (classpath, _) = subprocess.Popen(
+        classpath, _ = subprocess.Popen(
             "%s/bin/hadoop classpath" % hadoop_home,
             stdout=subprocess.PIPE,
             shell=True,
