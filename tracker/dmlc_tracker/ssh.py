@@ -4,6 +4,7 @@ DMLC submission script by ssh
 
 One need to make sure all slaves machines are ssh-able.
 """
+
 from __future__ import absolute_import
 
 import logging
@@ -98,7 +99,7 @@ def submit(args):
         # launch jobs
         for i in range(nworker + nserver):
             pass_envs["DMLC_ROLE"] = "server" if i < nserver else "worker"
-            (node, port) = hosts[i % len(hosts)]
+            node, port = hosts[i % len(hosts)]
             pass_envs["DMLC_NODE_HOST"] = node
             prog = (
                 get_env(pass_envs)
