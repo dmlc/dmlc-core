@@ -53,8 +53,7 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
    * \param end end of buffer
    */
   virtual void ParseBlock(
-      const char *begin, const char *end, RowBlockContainer<IndexType, DType> *out)
-      = 0;
+      const char *begin, const char *end, RowBlockContainer<IndexType, DType> *out) = 0;
   /*!
    * \brief read in next several blocks of data
    * \param data vector of data to be returned

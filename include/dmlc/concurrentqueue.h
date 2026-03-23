@@ -158,11 +158,11 @@ struct thread_id_converter<thread_id_t> {
   typedef thread_id_numeric_size_t thread_id_hash_t;
     #endif
 
-  static thread_id_hash_t prehash(thread_id_t const &x) {
+  static thread_id_hash_t prehash(const thread_id_t &x) {
     #ifndef __APPLE__
     return std::hash<std::thread::id>()(x);
     #else
-    return *reinterpret_cast<thread_id_hash_t const *>(&x);
+    return *reinterpret_cast<const thread_id_hash_t *>(&x);
     #endif
   }
 };
