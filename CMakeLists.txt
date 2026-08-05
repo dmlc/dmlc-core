@@ -207,12 +207,6 @@ else()
     target_compile_options(dmlc PRIVATE -msse2)
   endif()
   target_compile_options(dmlc PRIVATE -Wall -Wno-unknown-pragmas -fPIC)
-  if(CMAKE_BUILD_TYPE STREQUAL "DEBUG" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(dmlc PRIVATE -g -O0)
-  else()
-    target_compile_options(dmlc PRIVATE -O3)
-  endif()
-
   target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11=1 -DDMLC_USE_CXX14=1)
 endif()
 
