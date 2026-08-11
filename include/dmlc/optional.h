@@ -95,15 +95,9 @@ class optional {
   }
   /*! \brief move constructor: If other contains a value, then stored value is
    * direct-intialized with it. */
-  optional(optional &&other) noexcept(
-      std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_assignable<T>::value) {
-    if (!other.has_value()) {
-      reset();
-    } else if (has_value()) {
-      **this = std::move(*other);
-    } else {
-      new (&val) T(std::move(*other));
-      is_none = false;
+  optional(optional &&other) noexcept(std::is_nothrow_move_constructible<T>::value) {
+    if (other.has_value()) {
+      this->construct(std::move(*other));
     }
   }
   /*! \brief constructs an optional object that contains a value, initialized as
@@ -186,8 +180,16 @@ class optional {
   }
   /*! \brief swap two optional */
   void swap(optional<T> &other) {
-    std::swap(val, other.val);
-    std::swap(is_none, other.is_none);
+    if (this->has_value() && other.has_value()) {
+      using std::swap;  // Use ADL
+      swap(**this, *other);
+    } else if (this->has_value()) {
+      other.construct(std::move(**this));
+      this->reset();
+    } else if (other.has_value()) {
+      this->construct(std::move(*other));
+      other.reset();
+    }
   }
   /*! \brief set this object to hold value
    *  \param value the value to hold
@@ -214,7 +216,7 @@ class optional {
    *         optional<T> x = nullopt;
    */
   optional<T> &operator=(nullopt_t) {
-    (optional<T>()).swap(*this);
+    this->reset();
     return *this;
   }
   /*! \brief non-const dereference operator */
@@ -273,7 +275,7 @@ class optional {
   typename std::aligned_storage<sizeof(T), alignof(T)>::type val;
 
   template <typename... Args>
-  void construct(Args &&...args) noexcept {
+  void construct(Args &&...args) noexcept(std::is_nothrow_constructible<T, Args &&...>::value) {
     new (std::addressof(val)) T(std::forward<Args>(args)...);
     is_none = false;
   }
