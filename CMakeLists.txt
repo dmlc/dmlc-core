@@ -34,6 +34,7 @@ set(DMLC_ENABLED_SANITIZERS "address" "leak" CACHE STRING
   address, leak and thread.")
 
 include(CheckCXXCompilerFlag)
+include(CheckCXXSourceCompiles)
 
 FILE(GLOB SOURCE "src/*.cc")
 FILE(GLOB_RECURSE SOURCE_INCLUDE "include/*")
@@ -202,9 +203,18 @@ if(MSVC)
     MSVC_RUNTIME_LIBRARY "${DMLC_MSVC_RUNTIME_LIBRARY}")
 else()
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-  check_cxx_compiler_flag("-msse2" SUPPORT_MSSE2)
-  if(SUPPORT_MSSE2)
-    target_compile_options(dmlc PRIVATE -msse2)
+  # -sse2 is an x86-specific flag. Avoid adding it when targeting other platforms, to supress compiler warnings.
+  check_cxx_source_compiles("
+    #if !defined(__i386__) && !defined(__x86_64__) && !defined(_M_IX86) && !defined(_M_X64)
+    #error not targeting x86
+    #endif
+    int main() { return 0; }
+  " DMLC_TARGET_ARCH_X86)
+  if(DMLC_TARGET_ARCH_X86)
+    check_cxx_compiler_flag("-msse2" SUPPORT_MSSE2)
+    if(SUPPORT_MSSE2)
+      target_compile_options(dmlc PRIVATE -msse2)
+    endif()
   endif()
   target_compile_options(dmlc PRIVATE -Wall -Wno-unknown-pragmas -fPIC)
   target_compile_definitions(dmlc PUBLIC -DDMLC_USE_CXX11=1 -DDMLC_USE_CXX14=1)
