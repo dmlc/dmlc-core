@@ -3,7 +3,6 @@ DMLC submission script, MPI version
 """
 
 # pylint: disable=invalid-name
-from __future__ import absolute_import
 
 import logging
 import subprocess
@@ -26,7 +25,7 @@ def get_mpi_env(envs):
         return cmd
 
     # decide MPI version.
-    (out, err) = subprocess.Popen(
+    out, err = subprocess.Popen(
         ["mpirun", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ).communicate()
     if b"Open MPI" in out:

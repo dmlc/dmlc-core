@@ -1,5 +1,6 @@
 # pylint: disable=invalid-name
 """Command line options of job submission script."""
+
 import argparse
 import os
 
@@ -317,7 +318,7 @@ def get_opts(args=None):
         type=int,
         help=("Number of attempt local tracker can restart slave."),
     )
-    (args, unknown) = parser.parse_known_args(args)
+    args, unknown = parser.parse_known_args(args)
     args.command += unknown
 
     if args.cluster is None:

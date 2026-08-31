@@ -9,7 +9,6 @@ Tianqi Chen
 
 # pylint: disable=invalid-name, missing-docstring, too-many-arguments, too-many-locals
 # pylint: disable=too-many-branches, too-many-statements
-from __future__ import absolute_import
 
 import argparse
 import logging
@@ -22,7 +21,7 @@ import time
 from threading import Thread
 
 
-class ExSocket(object):
+class ExSocket:
     """
     Extension of socket to handle recv and send of special data
     """
@@ -66,7 +65,7 @@ def get_family(addr):
     return socket.getaddrinfo(addr, None)[0][0]
 
 
-class SlaveEntry(object):
+class SlaveEntry:
     def __init__(self, sock, s_addr):
         slave = ExSocket(sock)
         self.sock = slave
@@ -151,7 +150,7 @@ class SlaveEntry(object):
             return rmset
 
 
-class RabitTracker(object):
+class RabitTracker:
     """
     tracker for rabit
     """
@@ -163,7 +162,7 @@ class RabitTracker(object):
                 sock.bind((hostIP, port))
                 self.port = port
                 break
-            except socket.error as e:
+            except OSError as e:
                 if e.errno in [98, 48]:
                     continue
                 else:
@@ -358,7 +357,7 @@ class RabitTracker(object):
         return self.thread.is_alive()
 
 
-class PSTracker(object):
+class PSTracker:
     """
     Tracker module for PS
     """
@@ -379,7 +378,7 @@ class PSTracker(object):
                 self.port = port
                 sock.close()
                 break
-            except socket.error:
+            except OSError:
                 continue
         env = os.environ.copy()
 
@@ -429,7 +428,7 @@ def get_host_ip(hostIP=None):
         try:
             hostIP = socket.gethostbyname(socket.getfqdn())
         except gaierror:
-            logging.warn(
+            logging.warning(
                 "gethostbyname(socket.getfqdn()) failed... trying on hostname()"
             )
             hostIP = socket.gethostbyname(socket.gethostname())
