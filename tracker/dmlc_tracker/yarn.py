@@ -4,7 +4,6 @@ dmlc will run as a Yarn application
 """
 
 # pylint: disable=invalid-name, too-many-locals, too-many-branches, missing-docstring
-from __future__ import absolute_import
 
 import logging
 import os
@@ -55,13 +54,13 @@ def yarn_submit(args, nworker, nserver, pass_env):
         ), "failed to build dmlc-yarn.jar, try it manually"
 
     # detech hadoop version
-    (out, _) = subprocess.Popen(
+    out, _ = subprocess.Popen(
         "%s version" % hadoop_binary, shell=True, stdout=subprocess.PIPE
     ).communicate()
     out = py_str(out).split("\n")[0].split()
     assert out[0] == "Hadoop", "cannot parse hadoop version string"
     hadoop_version = int(out[1].split(".")[0])
-    (classpath, _) = subprocess.Popen(
+    classpath, _ = subprocess.Popen(
         "%s classpath" % hadoop_binary, shell=True, stdout=subprocess.PIPE
     ).communicate()
     classpath = py_str(classpath).strip()
