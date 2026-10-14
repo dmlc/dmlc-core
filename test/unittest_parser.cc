@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 
 #include <dmlc/io.h>
 
@@ -118,6 +119,20 @@ TEST(CSVParser, missing_values) {
   for (size_t i = 2; i < rctr->value.size(); ++i) {
     CHECK_EQ(rctr->value[i], i + 2);
   }
+}
+
+TEST(CSVParser, float_boundaries) {
+  using namespace parser_test;
+  const std::map<std::string, std::string> args;
+  CSVParserTest<unsigned> parser(nullptr, args, 1);
+  RowBlockContainer<unsigned> rows;
+  std::string data = "3.40282347e38,-3.40282347e38,1.17549435e-38,-1.17549435e-38,1e38\n";
+  char *begin = &data[0];
+  parser.CallParseBlock(begin, begin + data.size(), &rows);
+  const auto max = std::numeric_limits<real_t>::max();
+  const auto min = std::numeric_limits<real_t>::min();
+  const std::vector<real_t> expected{max, -max, min, -min, 1e38f};
+  EXPECT_EQ(rows.value, expected);
 }
 
 TEST(CSVParser, test_int32_parse) {
