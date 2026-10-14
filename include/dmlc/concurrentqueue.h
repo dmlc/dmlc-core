@@ -220,7 +220,7 @@ static inline thread_id_t thread_id() {
     #define MOODYCAMEL_NOEXCEPT_ASSIGN(type, valueType, expr) true
   #elif defined(_MSC_VER) && defined(_NOEXCEPT) && _MSC_VER < 1800
    // VS2012's std::is_nothrow_[move_]constructible is broken and returns true when it shouldn't
-      // :-( We have to assume *all* non-trivial constructors may throw on VS2012!
+   // :-( We have to assume *all* non-trivial constructors may throw on VS2012!
     #define MOODYCAMEL_NOEXCEPT _NOEXCEPT
     #define MOODYCAMEL_NOEXCEPT_CTOR(type, valueType, expr)                                  \
       (std::is_rvalue_reference<valueType>::value && std::is_move_constructible<type>::value \
@@ -269,8 +269,8 @@ static inline thread_id_t thread_id() {
         && (!defined(__APPLE__) || !TARGET_OS_IPHONE) && !defined(__arm__) && !defined(_M_ARM) \
         && !defined(__aarch64__)
    // Assume `thread_local` is fully supported in all other C++11 compilers/platforms
-    // #define MOODYCAMEL_CPP11_THREAD_LOCAL_SUPPORTED    // always disabled for now since several
-    // users report having problems with it on
+   // #define MOODYCAMEL_CPP11_THREAD_LOCAL_SUPPORTED    // always disabled for now since several
+   // users report having problems with it on
     #endif
   #endif
 #endif
