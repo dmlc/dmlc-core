@@ -179,7 +179,8 @@ inline FloatType ParseFloat(const char *nptr, char **endptr) {
   for (predec = 0; isdigit(*p); ++p) {
     predec = predec * 10ULL + static_cast<uint64_t>(*p - '0');
   }
-  FloatType value = static_cast<FloatType>(predec);
+  // Keep double precision until the final conversion, including exponent scaling.
+  double value = static_cast<double>(predec);
 
   // Get digits after decimal point, if any.
   if (*p == '.') {
@@ -195,14 +196,14 @@ inline FloatType ParseFloat(const char *nptr, char **endptr) {
       ++p;
       ++digit_cnt;
     }
-    value += static_cast<FloatType>(static_cast<double>(val2) / static_cast<double>(pow10));
+    value += static_cast<double>(val2) / static_cast<double>(pow10);
   }
 
   // Handle exponent, if any.
   if ((*p == 'e') || (*p == 'E')) {
     ++p;
     bool frac = false;
-    FloatType scale = static_cast<FloatType>(1.0f);
+    double scale = 1.0;
     unsigned expon;
     // Get sign of exponent, if any.
     if (*p == '-') {
@@ -228,8 +229,8 @@ inline FloatType ParseFloat(const char *nptr, char **endptr) {
     }
     // handle edge case where exponent is exactly kMaxExponent
     if (expon == kMaxExponent
-        && ((!frac && value > kMaxSignificandForMaxExponent)
-            || (frac && value < kMaxSignificandForNegMaxExponent))) {
+        && ((!frac && static_cast<FloatType>(value) > kMaxSignificandForMaxExponent)
+            || (frac && static_cast<FloatType>(value) < kMaxSignificandForNegMaxExponent))) {
       if (CheckRange) {
         errno = ERANGE;
         if (endptr) {
@@ -242,11 +243,11 @@ inline FloatType ParseFloat(const char *nptr, char **endptr) {
     }
     // Calculate scaling factor.
     while (expon >= 8U) {
-      scale *= static_cast<FloatType>(1E8f);
+      scale *= 1E8;
       expon -= 8U;
     }
     while (expon > 0U) {
-      scale *= static_cast<FloatType>(10.0f);
+      scale *= 10.0;
       expon -= 1U;
     }
     // Return signed and scaled floating point result.
@@ -260,7 +261,7 @@ inline FloatType ParseFloat(const char *nptr, char **endptr) {
   if (endptr) {
     *endptr = (char *)p;  // NOLINT(*)
   }
-  return sign ? value : -value;
+  return static_cast<FloatType>(sign ? value : -value);
 }
 
 /*!

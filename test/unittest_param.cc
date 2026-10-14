@@ -1,4 +1,5 @@
 #include <cmath>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -17,6 +18,27 @@ struct LearningParam : public dmlc::Parameter<LearningParam> {
 };
 
 DMLC_REGISTER_PARAMETER(LearningParam);
+
+TEST(Parameter, float_boundaries) {
+  const std::vector<std::pair<std::string, float>> cases = {
+      {"3.4028234663852886e38", std::numeric_limits<float>::max()},
+      {"3.40282347e38", std::numeric_limits<float>::max()},
+      {"1.1754943508222875e-38", std::numeric_limits<float>::min()},
+      {"1.17549435e-38", std::numeric_limits<float>::min()},
+      {"1e38", 1e38f},
+  };
+  for (const auto &test : cases) {
+    for (const char *sign : {"", "-"}) {
+      for (const char *suffix : {"", "f"}) {
+        const std::string input = sign + test.first + suffix;
+        SCOPED_TRACE(input);
+        LearningParam param;
+        param.Init(std::map<std::string, std::string>{{"float_param", input}});
+        EXPECT_EQ(param.float_param, *sign == '-' ? -test.second : test.second);
+      }
+    }
+  }
+}
 
 TEST(Parameter, parsing_float) {
   LearningParam param;
