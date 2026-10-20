@@ -17,7 +17,9 @@
 
 /* platform specific headers */
 #ifdef _WIN32
-  #define NOMINMAX
+  #if !defined(NOMINMAX)
+    #define NOMINMAX
+  #endif  // !defined(NOMINMAX)
   #include <shlwapi.h>
   #include <windows.h>
   #pragma comment(lib, "shlwapi.lib")
