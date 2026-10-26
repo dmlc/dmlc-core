@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """Helper utilty function for customization."""
+
 import os
 import subprocess
 import sys
