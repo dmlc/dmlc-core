@@ -6,19 +6,19 @@
 // separate zlib license, embedded below).
 
 #ifndef DMLC_BLOCKINGCONCURRENTQUEUE_H_
-  #define DMLC_BLOCKINGCONCURRENTQUEUE_H_
+#define DMLC_BLOCKINGCONCURRENTQUEUE_H_
 
-  #pragma once
+#pragma once
 
-  #include <cerrno>
-  #include <chrono>
-  #include <ctime>
-  #include <memory>
-  #include <type_traits>
+#include <cerrno>
+#include <chrono>
+#include <ctime>
+#include <memory>
+#include <type_traits>
 
-  #include "concurrentqueue.h"
+#include "concurrentqueue.h"
 
-  #if defined(_WIN32)
+#if defined(_WIN32)
 // Avoid including windows.h in a header; we only need a handful of
 // items, so we'll redeclare them here (this is relatively safe since
 // the API generally has to remain stable between Windows versions).
@@ -34,11 +34,11 @@ __declspec(dllimport) unsigned long __stdcall WaitForSingleObject(
 __declspec(dllimport) int __stdcall ReleaseSemaphore(
     void *hSemaphore, long lReleaseCount, long *lpPreviousCount);
 }
-  #elif defined(__MACH__)
-    #include <mach/mach.h>
-  #elif defined(__unix__)
-    #include <semaphore.h>
-  #endif
+#elif defined(__MACH__)
+  #include <mach/mach.h>
+#elif defined(__unix__)
+  #include <semaphore.h>
+#endif
 
 namespace dmlc {
 
@@ -66,7 +66,7 @@ namespace details {
 //	misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 namespace mpmc_sema {
-  #if defined(_WIN32)
+#if defined(_WIN32)
 class Semaphore {
  private:
   void *m_hSema;
@@ -104,7 +104,7 @@ class Semaphore {
     ReleaseSemaphore(m_hSema, count, nullptr);
   }
 };
-  #elif defined(__MACH__)
+#elif defined(__MACH__)
 //---------------------------------------------------------
 // Semaphore (Apple iOS and OSX)
 // Can't use POSIX semaphores due to
@@ -157,7 +157,7 @@ class Semaphore {
     }
   }
 };
-  #elif defined(__unix__)
+#elif defined(__unix__)
 //---------------------------------------------------------
 // Semaphore (POSIX, Linux)
 //---------------------------------------------------------
@@ -225,9 +225,9 @@ class Semaphore {
     }
   }
 };
-  #else
-    #error Unsupported platform! (No semaphore wrapper available)
-  #endif
+#else
+  #error Unsupported platform! (No semaphore wrapper available)
+#endif
 
 //---------------------------------------------------------
 // LightweightSemaphore
