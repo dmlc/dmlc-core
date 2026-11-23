@@ -3,7 +3,6 @@ DMLC submission script, SLURM version
 """
 
 # pylint: disable=invalid-name
-from __future__ import absolute_import
 
 import logging
 import subprocess
